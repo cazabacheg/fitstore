@@ -1,15 +1,16 @@
 # SPEC-2 — Catálogo e inventario
 
-> Versión: **v2 (borrador)** — 2026-10-18 · Estados: ✅ decidido · 🟡 propuesto · ❓ abierto
+> Versión: **v3 (aprobado)** — 2026-10-18 · Estados: ✅ decidido · 🟡 propuesto · ❓ abierto
 > **Dueña de:** `backend/catalog-service` (módulos catálogo e inventario) · tienda: `features/catalogo` · backoffice: `features/catalogo`, `features/inventario`.
 > **Depende de:** 0a, 0b, 1 (sesión de staff) · **Habilita:** 3 (destacados de la landing), 4 (cotización y reserva), 8.
 > **Contratos:** `contracts/openapi/catalog-service.yaml` (incluye `/internal/v1/inventario/reservas`); usa el contrato de order (`POST /carrito/items`); eventos `StockBajo`, `StockNoConfirmado` (publica) y `PedidoPagado`, `PedidoCancelado`, `PedidoExpirado` (consume).
 
 **Historial:**
+- v3 (2026-10-18): categorías semilla definidas (Shorts y Faldas dentro de Leggings y pantalones; Vestidos como raíz) → **spec aprobada**.
 - v2 (2026-10-18): galería solo del color elegido y colores sin stock no seleccionables; publicar exige foto por color; nueva HU-2-12 de carga masiva (P-2-09); filtros de categoría en lista vertical; nombres de categorías propuestos; fotos de demo libres con variantes de color generadas; SKU aprobado.
 - v1 (2026-10-18): borrador inicial.
 
-**Estado de revisión por sección:** 1 ⏳ · 2 ⏳ · 3 ⏳ · 4 ⏳ · 5 ⏳ · 6 ⏳ · 7 ⏳ · 8 ⏳ · 9 ⏳
+**Estado de revisión por sección:** 1 ✅ · 2 ✅ · 3 ✅ · 4 ✅ · 5 ✅ · 6 ✅ · 7 ✅ · 8 ✅ · 9 ✅
 
 ---
 
@@ -414,7 +415,7 @@ Todo según el micro de catalog. Decisiones de implementación de esta spec:
 
 - **Sin migraciones nuevas** (esquema y semillas en `V1`/`V2` de la 0a: tallas, colores, política de descuentos, configuración de inventario).
 - **Datos de demostración (solo `dev`)**, `R__catalogo_demo.sql` en `db/dev/`:
-  - árbol 🟡 (nombres propuestos, ver pregunta 1): **Polos y tops** (Polos, Tops), **Leggings y pantalones** (Leggings, Joggers), **Shorts**, **Casacas y polerones**, **Conjuntos**, **Nueva colección**; guía de tallas en "Polos y tops" y "Leggings y pantalones";
+  - árbol ✅: **Polos y tops** (Polos, Tops), **Leggings y pantalones** (Leggings, Joggers, Pantalones, Shorts, Faldas), **Casacas y polerones**, **Vestidos**, **Conjuntos**, **Nueva colección**; guía de tallas en "Polos y tops", "Leggings y pantalones" y "Vestidos";
   - color maestro adicional **"Variado"** (para estampados y surtidos);
   - unos 15 productos ACTIVO con 6–15 variantes cada uno, stock variado (incluye casos agotado y "últimas unidades") y 2 en BORRADOR;
   - **imágenes de demostración** ✅: fotos de producto tomadas de bancos **con licencia libre que permite modificarlas** (Unsplash, Pexels), preferentemente con fondo blanco. Un script (`infra/scripts/semilla-imagenes`) **genera las variantes de color**: recolorea la prenda manteniendo sombras y fondo, de modo que cada color muestra la misma foto con la prenda en ese color. Las fuentes y créditos quedan en `infra/scripts/semilla-imagenes/CREDITOS.md`;
@@ -465,6 +466,4 @@ Todo según el micro de catalog. Decisiones de implementación de esta spec:
 1. **Fotos de demostración:** de internet con licencia libre que permita modificarlas, y variantes de color generadas por script.
 2. **SKU:** `LEG01-NEG-M` (C2).
 
-## Preguntas abiertas ❓
-
-1. **Nombres de las categorías raíz** (reemplazan "Partes de arriba / abajo"): propuesta **Polos y tops**, **Leggings y pantalones**, **Shorts**, **Casacas y polerones**, **Conjuntos**, **Nueva colección**. Son solo datos semilla: el admin los cambia cuando quiera.
+3. **Categorías semilla:** Polos y tops › (Polos, Tops) · Leggings y pantalones › (Leggings, Joggers, Pantalones, Shorts, Faldas) · Casacas y polerones · Vestidos · Conjuntos · Nueva colección. El admin puede cambiarlas.
