@@ -48,6 +48,7 @@ Gestionadas por los BOM de Spring Boot y Spring Cloud salvo que se indique versi
 | Azure Blob (adaptador alternativo) | `com.azure:azure-storage-blob` (BOM `azure-sdk-bom`) | se fija al implementarlo |
 | Imágenes (solo catalog, settings) | `net.coobird:thumbnailator` | **0.4.21** |
 | PDF (solo payment) | `io.github.openhtmltopdf:openhtmltopdf-pdfbox` | **1.1.x** |
+| Carga masiva (solo catalog) | `org.apache.poi:poi-ooxml`, `org.apache.commons:commons-csv` | **5.5.1**, **1.14.1** |
 | Mercado Pago (solo payment) | `com.mercadopago:sdk-java` | **3.7.0** |
 | Culqi (solo payment) | Cliente HTTP propio (`RestClient`) sobre su API REST | — |
 

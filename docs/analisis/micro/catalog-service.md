@@ -4,6 +4,7 @@
 > Estados: ✅ decidido · 🟡 propuesto · ❓ abierto · 🕓 diferido
 
 **Historial:**
+- (2026-10-18, por SPEC-2) Cada imagen pertenece a un color (D3) y publicar exige una imagen por color activo (invariante 4); color maestro "Variado"; carga masiva de productos por CSV/XLSX (4.4.1); ejemplo de categorías renombrado.
 - v6 (2026-10-18): sección 10 aprobada → **documento completo aprobado**.
 - (2026-10-18) `ExpiradorReservas` pasa a llamarse **`LiberadorReservasVencidas`** y se documenta como red de seguridad del evento `PedidoExpirado` (4.7, 10.1, 10.3).
 - v5 (2026-10-18): sección 10 (diseño técnico) redactada: C3, código de las partes críticas, paquetes, dependencias, configuración e infraestructura.
@@ -135,7 +136,7 @@ classDiagram
 |---|---|---|---|
 | D1 | **Tallas y colores como tablas maestras** administradas por el ADMIN (talla: código y orden; color: nombre y código hex para la muestra) | Los filtros de la tienda (CU-02) necesitan valores consistentes: "Negro" y "negro" no deben ser dos colores; las tallas se ordenan XS < S < M < L < XL | Texto libre en cada variante (rápido de cargar, pero rompe los filtros) |
 | D2 | **Variante = producto × talla × color**, con SKU único. El SKU se genera solo (`{codigoProducto}-{COLOR}-{TALLA}`, editable) y el backoffice ofrece un **generador de matriz**: eliges tallas y colores y crea todas las combinaciones | En Gamarra un modelo sale en 4–6 tallas y 3–5 colores: cargarlas una por una es tedioso | Crear variantes una a una |
-| D3 | **Imágenes con color opcional:** una imagen puede asociarse a un color; al elegir "Rojo" en la tienda se muestran sus fotos | En ropa, el cliente quiere ver el color que va a comprar | Galería única por producto |
+| D3 | **Cada imagen pertenece a un color** del producto. Al elegir "Rojo" en la tienda se muestran **solo** las fotos rojas; nunca fotos de otro color. Para estampados o surtidos existe el color maestro **"Variado"**. Si el producto tiene un solo color, sus imágenes se asignan a ese color automáticamente (SPEC-2) | En ropa, el cliente quiere ver exactamente el color que va a comprar | Galería única por producto |
 | D4 | **Precio base en el producto y precio opcional por variante** (p. ej. tallas XXL más caras). `precioDesde` se recalcula al guardar (el menor precio de las variantes activas) y se usa para filtrar y ordenar por precio | Filtrar por precio sin recalcular en cada consulta | Precio solo en la variante |
 | D5 | **Un producto puede estar en categorías de cualquier nivel.** Al listar una categoría padre se incluyen los productos de sus hijas. **Cada producto aparece una sola vez** aunque esté asignado al padre y a una hija: la consulta pregunta "¿el producto pertenece a alguna de estas categorías?" (`EXISTS`), no une filas por cada asignación. El backoffice además avisa que asignar padre e hija a la vez es redundante | "Partes de abajo" muestra leggings y shorts sin asignarlos dos veces | Asignar solo a hojas |
 | D6 | **Guía de tallas por categoría** como tabla estructurada (filas = tallas, columnas = medidas en cm), editable en el backoffice como una hoja de cálculo pequeña y mostrada en el detalle del producto con el botón "Guía de tallas". Una subcategoría sin guía usa la de su padre (ejemplo en 2.3) | Se muestra como tabla accesible y responsive, no como imagen | Subir una imagen de la guía |
@@ -149,7 +150,7 @@ Estado: D1–D8 ✅.
 1. El árbol de categorías tiene **como máximo 2 niveles**: una categoría con padre no puede tener hijas. Nombre único entre hermanas; slug único global.
 2. Slug de producto único; se genera del nombre (sin tildes, minúsculas, guiones) y puede editarse.
 3. Combinación (producto, talla, color) única; SKU único global.
-4. **Un producto solo puede pasar a `ACTIVO`** si tiene: precio > 0, al menos una categoría, al menos una variante activa y al menos una imagen.
+4. **Un producto solo puede pasar a `ACTIVO`** si tiene: precio > 0, al menos una categoría, al menos una variante activa y **al menos una imagen por cada color que tenga variantes activas** (SPEC-2).
 5. Máximo **10 imágenes** por producto y **exactamente una principal** si hay imágenes.
 6. `fisico ≥ 0`, `reservado ≥ 0` y `reservado ≤ fisico` (restricciones `CHECK` en BD). Nunca hay sobreventa.
 7. Tramos de descuento: el admin puede **agregar, editar y quitar** tramos libremente (global y por producto), hasta **10**; sin tramos no hay descuento. Unidades mínimas **estrictamente crecientes**, porcentajes **crecientes**, entre 0 % y 50 %.
@@ -158,7 +159,7 @@ Estado: D1–D8 ✅.
 
 ### 2.3 Ejemplo de guía de tallas (D6)
 
-Categoría "Partes de abajo" (la heredan "Leggings" y "Shorts" si no tienen la suya):
+Categoría "Leggings y pantalones" (la heredan "Leggings" y "Joggers" si no tienen la suya):
 
 | Talla | Cintura (cm) | Cadera (cm) | Largo (cm) |
 |---|---|---|---|
@@ -256,6 +257,9 @@ Bucket `fitstore-media`, clave `productos/{productoId}/{uuid}-{tamaño}.jpg`. Se
 | PATCH | `/api/v1/admin/productos/{id}/destacado` | Marcar/desmarcar y orden | ADMIN |
 | POST | `/api/v1/admin/productos/{id}/variantes` | Crear una variante | ADMIN |
 | POST | `/api/v1/admin/productos/{id}/variantes/matriz` | Generar variantes `{tallaIds[], colorIds[]}` (omite las que ya existen) | ADMIN |
+| GET | `/api/v1/admin/productos/carga-masiva/plantilla?formato=xlsx\|csv` | Descargar la plantilla de carga masiva | ADMIN |
+| POST | `/api/v1/admin/productos/carga-masiva/validar` | Subir el archivo y obtener el informe de validación (no crea nada) | ADMIN |
+| POST | `/api/v1/admin/productos/carga-masiva/{validacionId}/confirmar` | Crear todo lo validado | ADMIN |
 | PUT / DELETE | `/api/v1/admin/variantes/{id}` | Editar / eliminar (solo sin movimientos ni reservas; si no → `409`) | ADMIN |
 | PATCH | `/api/v1/admin/variantes/{id}/desactivar` · `/activar` | Borrado lógico | ADMIN |
 | POST | `/api/v1/admin/productos/{id}/imagenes` | Subir imagen (multipart) | ADMIN |
@@ -300,6 +304,15 @@ Bucket `fitstore-media`, clave `productos/{productoId}/{uuid}-{tamaño}.jpg`. Se
 - Formatos: JPG, PNG o WebP; máximo **5 MB**; se valida el tipo real del archivo (no solo la extensión).
 - ✅ **Se redimensionan al subir** con Thumbnailator: `1200 px` (detalle) y `400 px` (tarjetas), en JPG. Así la tienda no descarga fotos de 4 MB tomadas con el celular (RNF-18, Lighthouse).
 - Se guardan con el puerto `FileStorage` (ADR-013). Al eliminar una imagen se borran sus archivos; si era la principal, pasa a serlo la siguiente.
+- **Cada imagen tiene color obligatorio** (D3). La galería de la tienda muestra solo las del color elegido.
+
+### 4.4.1 Carga masiva de productos (RF-CAT-09, SPEC-2)
+
+- Plantilla única para **CSV y XLSX**: **una fila por variante**, con las columnas del producto repetidas (`codigo`, `nombre`, `descripcion`, `precio_base`, `categorias` separadas por `|`) y las de la variante (`talla`, `color`, `precio_variante` opcional, `stock_inicial` opcional). El XLSX trae además una hoja de instrucciones.
+- **Dos pasos:** *validar* (informe por fila, sin crear nada; el resultado se guarda 30 min en Redis) y *confirmar* (crea **todo o nada** en una transacción).
+- Crea productos en `BORRADOR` y sus variantes; `stock_inicial` > 0 genera un movimiento `ENTRADA` con motivo "Carga masiva". Las imágenes se suben después (o como mejora futura, en un ZIP).
+- Reglas: máximo 2 000 filas y 5 MB; solo crea (un `codigo` existente es error); tallas, colores y categorías deben existir; los datos de producto repetidos deben coincidir en todas sus filas.
+- Librerías: Apache POI (XLSX) y Commons CSV.
 
 ### 4.5 Descuentos por volumen y cotización (CU-35, RF-CAT-08, RF-CRT-02)
 

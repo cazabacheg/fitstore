@@ -1,11 +1,12 @@
 # SPEC-2 — Catálogo e inventario
 
-> Versión: **v1 (borrador)** — 2026-10-18 · Estados: ✅ decidido · 🟡 propuesto · ❓ abierto
+> Versión: **v2 (borrador)** — 2026-10-18 · Estados: ✅ decidido · 🟡 propuesto · ❓ abierto
 > **Dueña de:** `backend/catalog-service` (módulos catálogo e inventario) · tienda: `features/catalogo` · backoffice: `features/catalogo`, `features/inventario`.
 > **Depende de:** 0a, 0b, 1 (sesión de staff) · **Habilita:** 3 (destacados de la landing), 4 (cotización y reserva), 8.
 > **Contratos:** `contracts/openapi/catalog-service.yaml` (incluye `/internal/v1/inventario/reservas`); usa el contrato de order (`POST /carrito/items`); eventos `StockBajo`, `StockNoConfirmado` (publica) y `PedidoPagado`, `PedidoCancelado`, `PedidoExpirado` (consume).
 
 **Historial:**
+- v2 (2026-10-18): galería solo del color elegido y colores sin stock no seleccionables; publicar exige foto por color; nueva HU-2-12 de carga masiva (P-2-09); filtros de categoría en lista vertical; nombres de categorías propuestos; fotos de demo libres con variantes de color generadas; SKU aprobado.
 - v1 (2026-10-18): borrador inicial.
 
 **Estado de revisión por sección:** 1 ⏳ · 2 ⏳ · 3 ⏳ · 4 ⏳ · 5 ⏳ · 6 ⏳ · 7 ⏳ · 8 ⏳ · 9 ⏳
@@ -43,7 +44,7 @@ Al cerrar esta spec, el admin **arma el catálogo completo** (categorías con gu
 Como visitante, quiero navegar por categorías, buscar y filtrar productos, para encontrar rápido lo que busco. · Cubre: CU-02, RF-CAT-05 · Pantallas: [P-2-01](#p-2-01--listado-de-productos)
 
 ```gherkin
-CA-2-01  Cuando entro a una categoría padre (p. ej. "Partes de abajo")
+CA-2-01  Cuando entro a una categoría padre (p. ej. "Leggings y pantalones")
          Entonces veo los productos ACTIVO de esa categoría y de sus hijas, cada uno UNA sola vez,
               aunque esté asignado al padre y a una hija
 
@@ -73,12 +74,16 @@ CA-2-07  Dado un producto en BORRADOR o INACTIVO
 Como visitante, quiero ver el detalle, elegir color y talla y saber si hay stock, para agregarlo al carrito con confianza. · Cubre: CU-03, CU-04 (inicio), RF-CAT-03, 04, 06, 08, RF-INV-04 · Pantallas: [P-2-02](#p-2-02--detalle-de-producto)
 
 ```gherkin
-CA-2-08  Cuando elijo un color
-         Entonces la galería muestra primero las fotos asociadas a ese color (y después las generales)
+CA-2-08  Cuando abro un producto
+         Entonces queda preseleccionado el primer color con stock y la galería muestra SOLO las fotos de ese color
+         Y al elegir otro color, la galería cambia a SOLO las fotos de ese color (nunca se mezclan fotos de otros colores;
+              los estampados o surtidos usan el color "Variado")
 
 CA-2-09  Cuando elijo color y talla
          Entonces veo la disponibilidad: "Agotado" (0, botón deshabilitado), "¡Últimas N unidades!" (1 a 5) o "Disponible" (más de 5)
          Y las tallas sin stock en ese color se ven tachadas y no se pueden elegir
+         Y los colores que no tienen stock en NINGUNA talla (o cuyas variantes están inactivas) se ven opacos y tachados
+              y no se pueden elegir; si ningún color tiene stock, el producto se muestra "Agotado"
          Y el precio mostrado es el de esa variante (o el base)
 
 CA-2-10  Cuando abro "Guía de tallas"
@@ -146,7 +151,8 @@ CA-2-22  Cuando genero la matriz con 5 tallas y 3 colores
 CA-2-23  Cuando pongo un precio propio a una variante o cambio el precio base
          Entonces "desde" se recalcula con el menor precio de las variantes activas
 
-CA-2-24  Cuando intento publicar sin imagen, sin categoría, sin variante activa o con precio 0
+CA-2-24  Cuando intento publicar sin categoría, sin variante activa, con precio 0
+              o con algún color de variantes activas que no tiene al menos una foto
          Entonces recibo 409 con la lista de lo que falta, que se muestra en el aviso del formulario
 
 CA-2-25  Cuando publico un producto completo
@@ -176,8 +182,9 @@ CA-2-30  Cuando subo un archivo de otro tipo (aunque tenga extensión .jpg) o de
 CA-2-31  Dado 10 imágenes
          Entonces no se puede subir otra
 
-CA-2-32  Cuando reordeno, asigno un color o marco la principal
-         Entonces se guarda; siempre hay exactamente una principal
+CA-2-32  Cuando subo una imagen a un producto con varios colores
+         Entonces debo elegir su color (obligatorio); si el producto tiene un solo color, se asigna solo
+         Y cuando reordeno, cambio el color o marco la principal, se guarda; siempre hay exactamente una principal
          Y si borro la principal, pasa a serlo la siguiente en orden, y se borran sus archivos
 ```
 
@@ -276,6 +283,29 @@ CA-2-54  Cuando el navegador intenta llamar a /internal/v1/inventario/reservas
          Entonces el gateway responde 404
 ```
 
+### HU-2-12 — Cargar productos de forma masiva
+
+Como administrador, quiero crear muchos productos y variantes desde una hoja de cálculo, para no cargar el catálogo uno por uno. · Cubre: RF-CAT-09 · Pantallas: [P-2-09](#p-2-09--carga-masiva)
+
+```gherkin
+CA-2-58  Cuando descargo la plantilla (CSV o XLSX)
+         Entonces tiene una fila por variante con las columnas codigo, nombre, descripcion, precio_base, categorias,
+              talla, color, precio_variante (opcional) y stock_inicial (opcional), y el XLSX trae una hoja de instrucciones
+
+CA-2-59  Cuando subo un archivo para validar
+         Entonces veo un informe: cuántos productos y variantes se crearían y, por fila, los errores
+              (código ya existente, talla, color o categoría inexistentes, precio inválido, datos del producto que no coinciden entre sus filas)
+         Y todavía no se crea nada
+
+CA-2-60  Dado un informe sin errores
+         Cuando confirmo
+         Entonces se crean todos los productos en BORRADOR con sus variantes, en una sola transacción (todo o nada)
+         Y cada stock_inicial mayor que 0 genera un movimiento ENTRADA con motivo "Carga masiva"
+
+CA-2-61  Dado un informe con errores, un archivo de más de 2 000 filas o 5 MB, o una validación de hace más de 30 minutos
+         Entonces no se puede confirmar y se indica el motivo
+```
+
 ### HU-2-11 — Catálogo rápido
 
 Como visitante, quiero que el catálogo cargue rápido incluso con muchos usuarios. · Cubre: RNF-01, ADR-020 · Pantallas: no aplica
@@ -351,6 +381,14 @@ CA-2-57  Dado Redis caído
 - **Componentes:** `InventarioPage` (tabla con filas resaltadas por stock bajo y agotado), `DialogoEntrada` (varias líneas), `DialogoAjuste`, `DialogoConfiguracionInventario`.
 - **Endpoints:** `GET /admin/inventario`, `POST /admin/inventario/entradas|ajustes`, `PATCH /admin/inventario/{varianteId}/minimo`, `GET/PUT /admin/inventario/configuracion`.
 
+### P-2-09 — Carga masiva
+
+- **Ruta / proyecto:** `/catalogo/productos/carga-masiva` · backoffice · ADMIN.
+- **Boceto:** ![P-2-09](img/P-2-09-carga-masiva.png)
+- **Diseño de alta fidelidad:** 🕓 deriva del sistema de diseño.
+- **Componentes:** `CargaMasivaPage` en 3 pasos: (1) descargar plantilla, (2) subir y ver el informe (resumen + tabla de errores por fila), (3) confirmar y ver el resultado con enlaces a los productos creados.
+- **Endpoints:** `GET /admin/productos/carga-masiva/plantilla`, `POST …/validar`, `POST …/{validacionId}/confirmar`.
+
 ### P-2-08 — Kardex
 
 - **Ruta / proyecto:** `/inventario/:varianteId` · backoffice · OPERADOR y ADMIN.
@@ -365,18 +403,21 @@ Todo según el micro de catalog. Decisiones de implementación de esta spec:
 | # | Decisión | Detalle |
 |---|---|---|
 | C1 | **"Agregar al carrito" contra el contrato de order** | El detalle llama a `POST /carrito/items` con el cliente generado; mientras la spec 4 no esté integrada, se prueba con el mock del contrato. Al responder, actualiza `CarritoContador` (0b R8) |
-| C2 | **Formato del SKU** 🟡 | `{CODIGO}-{COL}-{TALLA}`: `COL` = 3 primeras letras del color en mayúsculas y sin tildes (`NEG`, `AZU`, `ROJ`); si choca con otro color, se agrega un dígito (`AZU2`). Editable |
+| C2 | **Formato del SKU** ✅ | `{CODIGO}-{COL}-{TALLA}`: `COL` = 3 primeras letras del color en mayúsculas y sin tildes (`NEG`, `AZU`, `ROJ`); si choca con otro color, se agrega un dígito (`AZU2`). Editable |
 | C3 | **Filtros en la URL** | El listado lee y escribe sus filtros como *query params* (enlace compartible; el botón atrás funciona) |
 | C4 | **Página por defecto** | 24 productos (máximo 48, catalog 4.3); en el backoffice, 20 filas |
 | C5 | **Arrastrar para ordenar** | Angular CDK *drag and drop* en categorías, tallas e imágenes |
+| C6 | **Galería por color** ✅ | La tienda filtra las imágenes por el color elegido; el color preseleccionado es el primero con stock. Los colores sin stock en ninguna talla se muestran opacos y tachados (CA-2-08, CA-2-09) |
+| C7 | **Carga masiva** ✅ | Ver catalog 4.4.1: plantilla única (fila por variante) para CSV y XLSX, validar y luego confirmar todo o nada; Apache POI y Commons CSV |
 
 ## 6. Datos
 
 - **Sin migraciones nuevas** (esquema y semillas en `V1`/`V2` de la 0a: tallas, colores, política de descuentos, configuración de inventario).
 - **Datos de demostración (solo `dev`)**, `R__catalogo_demo.sql` en `db/dev/`:
-  - árbol: Partes de arriba (Tops, Polos), Partes de abajo (Leggings, Shorts, Joggers), Conjuntos, Nueva colección; guía de tallas en "Partes de abajo" y "Partes de arriba";
+  - árbol 🟡 (nombres propuestos, ver pregunta 1): **Polos y tops** (Polos, Tops), **Leggings y pantalones** (Leggings, Joggers), **Shorts**, **Casacas y polerones**, **Conjuntos**, **Nueva colección**; guía de tallas en "Polos y tops" y "Leggings y pantalones";
+  - color maestro adicional **"Variado"** (para estampados y surtidos);
   - unos 15 productos ACTIVO con 6–15 variantes cada uno, stock variado (incluye casos agotado y "últimas unidades") y 2 en BORRADOR;
-  - imágenes de demostración subidas a Garage por un script de semilla (`infra/scripts/semilla-imagenes`) ❓ (ver pregunta 1).
+  - **imágenes de demostración** ✅: fotos de producto tomadas de bancos **con licencia libre que permite modificarlas** (Unsplash, Pexels), preferentemente con fondo blanco. Un script (`infra/scripts/semilla-imagenes`) **genera las variantes de color**: recolorea la prenda manteniendo sombras y fondo, de modo que cada color muestra la misma foto con la prenda en ese color. Las fuentes y créditos quedan en `infra/scripts/semilla-imagenes/CREDITOS.md`;
 
 ## 7. Pruebas
 
@@ -394,6 +435,7 @@ Todo según el micro de catalog. Decisiones de implementación de esta spec:
 | 45–53 | Datos + integración | `StockRepositoryTest` (incluye la prueba de concurrencia de 20 hilos), `ReservaServiceTest`, consumidores con RabbitMQ en Testcontainers |
 | 54 | Integración | gateway (`/internal` → 404) |
 | 55 | Carga | `k6/catalogo.js` |
+| 58–61 | Integración | `CargaMasivaServiceTest` (CSV y XLSX de ejemplo con y sin errores, todo o nada, entradas de stock) |
 | 56–57 | Integración | invalidación de caché y Redis caído |
 | Todas | Postman | `postman/catalog.postman_collection.json` (flujo admin y flujo tienda) |
 
@@ -412,13 +454,17 @@ Todo según el micro de catalog. Decisiones de implementación de esta spec:
 
 ## 9. Definición de terminado
 
-- [ ] CA-2-01 a CA-2-57 cumplidos en CI (k6 en Lyanna).
+- [ ] CA-2-01 a CA-2-61 cumplidos en CI (k6 en Lyanna).
 - [ ] Postman `catalog` en verde.
 - [ ] El OpenAPI de catalog coincide con lo implementado.
 - [ ] Demostración: cargar un producto completo desde el backoffice (matriz, fotos, publicar) y verlo en la tienda con filtros, detalle y descuento.
 - [ ] Revisado y aprobado por el autor.
 
+## Decisiones ✅
+
+1. **Fotos de demostración:** de internet con licencia libre que permita modificarlas, y variantes de color generadas por script.
+2. **SKU:** `LEG01-NEG-M` (C2).
+
 ## Preguntas abiertas ❓
 
-1. **Fotos de demostración:** ¿usamos fotos reales de la MYPE (si tienes acceso), fotos libres de uso (por ejemplo, Unsplash o Pexels, que permiten uso gratuito) o imágenes generadas simples? Para el video y la sustentación conviene que se vean reales.
-2. **C2, formato del SKU** (`LEG01-NEG-M`): ¿te parece bien?
+1. **Nombres de las categorías raíz** (reemplazan "Partes de arriba / abajo"): propuesta **Polos y tops**, **Leggings y pantalones**, **Shorts**, **Casacas y polerones**, **Conjuntos**, **Nueva colección**. Son solo datos semilla: el admin los cambia cuando quiera.

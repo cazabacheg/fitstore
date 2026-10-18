@@ -1,0 +1,14 @@
+<!doctype html><html><head><meta charset="utf-8"><link rel="stylesheet" href="_boceto.css"><style>body{width:1440px}</style></head><body><h1 class="title">P-2-09 · Carga masiva de productos (backoffice) — /catalogo/productos/carga-masiva · ADMIN</h1>
+<div class="row" style="align-items:stretch"><div class="side">menú lateral</div><div class="col sp pad">
+<div class="t" style="font-size:22px">Carga masiva de productos</div>
+<div class="row b pad" style="gap:30px"><b>① Plantilla ✔</b><b style="border-bottom:3px solid #0d9488">② Validar</b><span>③ Confirmar</span></div>
+<div class="row" style="align-items:flex-start">
+<div class="card col" style="width:380px"><b>① Descarga la plantilla</b><div class="row"><div class="btn b">⬇ XLSX</div><div class="btn b">⬇ CSV</div></div><div class="s">Una fila por variante: codigo · nombre · descripcion · precio_base · categorias (a|b) · talla · color · precio_variante? · stock_inicial?</div></div>
+<div class="card col sp"><b>② Sube el archivo</b><div class="d box" style="height:70px">productos-octubre.xlsx · 312 filas ✔</div>
+<div class="row"><div class="b pad">Productos: <b>24</b></div><div class="b pad">Variantes: <b>312</b></div><div class="b pad">Con stock inicial: <b>290</b></div><div class="pad" style="background:#fee2e2;border-radius:6px">Errores: <b>3</b></div></div>
+<div class="b"><div class="row g pad s"><b style="width:70px">Fila</b><b style="width:120px">Código</b><b class="sp">Error</b></div>
+<div class="row pad s"><span style="width:70px">14</span><span style="width:120px">LEG07</span><span class="sp err">El color "Celeste" no existe (créalo en Colores o corrige el nombre)</span></div>
+<div class="row pad s"><span style="width:70px">88</span><span style="width:120px">TOP03</span><span class="sp err">El código ya existe</span></div>
+<div class="row pad s"><span style="width:70px">201</span><span style="width:120px">SHO02</span><span class="sp err">precio_base distinto entre filas del mismo producto (39.90 vs 49.90)</span></div></div>
+<div class="row"><div class="btn b">Subir otro archivo</div><span class="sp"></span><div class="btn g" style="color:#999">Confirmar carga (corrige los errores primero)</div></div>
+<div class="s">Nada se crea hasta confirmar · todo o nada · productos en BORRADOR · las fotos se suben después</div></div></div></div></div></body></html>

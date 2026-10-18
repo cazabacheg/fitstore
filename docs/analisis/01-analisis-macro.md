@@ -1,11 +1,12 @@
 # FitStore — Análisis técnico macro
 
 > Proyecto final DAW II (4697) + DSW II (4698) — Cibertec, 6.º ciclo.
-> Autor: Carlos Azabache. Versión: **v16 (aprobado)** — 2026-10-16.
+> Autor: Carlos Azabache. Versión: **v17 (aprobado)** — 2026-10-16.
 > Documento base: [`CONSOLIDADO-PROYECTO.md`](../../../CONSOLIDADO-PROYECTO.md).
 > Siguiente etapa: análisis técnico micro (por servicio) → C4 → specs → contratos.
 
 **Historial:**
+- v17 (2026-10-18): por SPEC-2: imágenes por color (RF-CAT-04), carga masiva de productos (RF-CAT-09), ejemplos de categorías renombrados.
 - v16 (2026-10-16): micro de `notification-service`: sin correo antes del pago (el primero es "pedido confirmado" con boleta); **editor de plantillas pasa a alcance actual** (RF-NOT-04, CU-33: C → M); nuevo parámetro de tienda "correos para alertas".
 - v15 (2026-10-16): micro de `payment-service` aprobado: eventos `PagoReembolsado` y `ReembolsoFallido`; 3-D Secure se implementa solo si el sandbox lo exige.
 - v14 (2026-10-16): Yape vía Culqi incluido (RF-PAY-09); 3-D Secure fuera del MVP; nuevo riesgo R16 (particularidades del sandbox).
@@ -242,10 +243,11 @@ Formato: `RF-<CONTEXTO>-NN`. Prioridad MoSCoW.
 
 | ID | Requisito | P |
 |---|---|---|
-| RF-CAT-01 | CRUD de categorías por **tipo de prenda**, hasta **2 niveles** (p. ej. Partes de abajo › Leggings, Shorts; Partes de arriba › Tops, Polos), con orden y estado; **sin clasificación por género**. El menú y las secciones de la tienda se generan a partir de este árbol | M |
+| RF-CAT-01 | CRUD de categorías por **tipo de prenda**, hasta **2 niveles** (p. ej. Leggings y pantalones › Leggings, Joggers; Polos y tops › Polos, Tops), con orden y estado; **sin clasificación por género**. El menú y las secciones de la tienda se generan a partir de este árbol | M |
 | RF-CAT-02 | CRUD de productos: nombre, slug, descripción, precio base, estado (borrador/activo/inactivo). Un producto puede pertenecer a **varias categorías** (p. ej. "Leggings" y "Nueva colección"); la asignación se hace desde el backoffice | M |
 | RF-CAT-03 | Variantes por producto (SKU único, talla, color, precio opcional) | M |
-| RF-CAT-04 | Imágenes por producto (subida, orden, imagen principal) | M |
+| RF-CAT-04 | Imágenes por producto y **por color** (subida, orden, imagen principal); la tienda muestra solo las fotos del color elegido | M |
+| RF-CAT-09 | **Carga masiva de productos y variantes** desde CSV o XLSX, con validación previa y creación todo-o-nada | M |
 | RF-CAT-05 | Búsqueda y filtros con paginación y orden (precio, novedad) | M |
 | RF-CAT-06 | Guía de tallas por categoría | S |
 | RF-CAT-07 | Productos destacados para la landing | S |
