@@ -23,7 +23,7 @@
 4. **Permisos con `@PreAuthorize`** por método; sin configuración central de rutas por servicio.
 5. **Un consumidor por tipo de evento**, en su propio archivo.
 6. **Clientes de API del frontend generados** desde OpenAPI en `shared/api`; nunca se editan a mano.
-7. **Una rama / worktree por spec**, merge de uno en uno con CI en verde.
+7. **Una rama / worktree por spec desde `dev`**, PR a `dev` con *squash*, de uno en uno con CI en verde; promociones `dev → stage → main` por PR (ADR-021). Nunca push directo a `main` ni a `stage`.
 8. Commits sin atribución de IA; autor `cazabacheg`.
 
 ## Proceso y diseño

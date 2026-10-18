@@ -1,11 +1,12 @@
 # SPEC-0a — Plataforma backend y esqueletos de servicios
 
-> Versión: **v3 (aprobado)** — 2026-10-18 · Estados: ✅ decidido · 🟡 propuesto · ❓ abierto
+> Versión: **v4 (aprobado)** — 2026-10-18 · Estados: ✅ decidido · 🟡 propuesto · ❓ abierto
 > **Dueña de:** monorepo, `fitstore-common`, `config-server`, `discovery-server`, `api-gateway`, `infra/` (entorno dev), CI, y el **esqueleto** de los 7 servicios de negocio.
 > **Depende de:** — · **Habilita:** todas las demás specs.
 > **Contratos:** los esqueletos exponen solo `actuator` y la documentación base; los endpoints de negocio llegan con cada spec.
 
 **Historial:**
+- v4 (2026-10-18): CI según la ADR-021 (`ci.yml` + `stage.yml` + plantilla de PR); sin protección de rama.
 - v3 (2026-10-18): secciones 2, 3, 4, 6, 7, 8 y 9 aprobadas → **spec aprobada**.
 - v2 (2026-10-18): estructura de la plantilla v2 (CA dentro de cada HU). Aprobados: alcance, orden interno (I1), JWKS de prueba (I2), seguridad base (I3), Garage (I5). El repo en GitHub lo crea el asistente (privado). Azure Blob queda para la decisión de despliegue en la nube.
 - v1 (2026-10-18): borrador inicial.
@@ -32,7 +33,7 @@ Al cerrar esta spec, en Lyanna se ejecuta `docker compose up` y **toda la plataf
   - clases de los eventos que publica y consume (sección 6) como `record`;
   - seguridad base (*resource server* de `fitstore-common`), `actuator/health`, OpenAPI base.
 - Imagen Docker de cada servicio (Dockerfile común de infraestructura 10.6).
-- CI en GitHub Actions: compilación y pruebas con filtros por ruta y caché.
+- CI en GitHub Actions según la ADR-021: `ci.yml` (PR y push a `dev`: compilación y pruebas con filtros por ruta y caché, gitleaks) y `stage.yml` (PR y push a `stage`/PR a `main`: imágenes, compose en el runner, `smoke.sh`, Postman con Newman). Plantilla de PR con la lista de verificación.
 - Colección Postman base: *health* de todos los servicios a través del gateway.
 
 **No incluye (y dónde va):**
@@ -253,14 +254,14 @@ Total: **29 repositorios** con pruebas de datos.
 | `infra/config-repo/application.yml` | crea | **congelado** |
 | `infra/config-repo/<servicio>*.yml` | crea | pasa a su spec dueña |
 | `infra/docker-compose.yml`, `docker-compose.dev.yml`, `.env.example`, `postgres/`, `garage/`, `smoke.sh`, `dev/` | crea | congelados (spec 8 agrega `docker-compose.cloud.yml` y `caddy/`) |
-| `.github/workflows/ci.yml` | crea | congelado |
+| `.github/workflows/ci.yml`, `.github/workflows/stage.yml`, `.github/pull_request_template.md` | crea | congelados (0b agrega el job de frontend; la spec 8 crea `deploy.yml`) |
 | `postman/fitstore-base.postman_collection.json`, `postman/local.postman_environment.json` | crea | cada spec agrega su colección |
 | `docs/` | solo lectura | |
 
 ## 9. Definición de terminado
 
 - [ ] CA-0a-01 a CA-0a-20 cumplidos (pruebas en CI y `smoke.sh` en Lyanna).
-- [ ] Repositorio privado `cazabacheg/fitstore` creado y con `main` protegida (requiere CI en verde para hacer merge).
+- [ ] Repositorio privado `cazabacheg/fitstore` con `dev` como rama por defecto y el flujo de la ADR-021 (sin reglas forzadas).
 - [ ] `README.md` con cómo levantar el entorno dev (sin atribución de IA).
 - [ ] Revisado y aprobado por el autor.
 
