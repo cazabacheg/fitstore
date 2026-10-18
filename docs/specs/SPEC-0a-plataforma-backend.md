@@ -224,7 +224,7 @@ Todo está definido en [`infraestructura.md`](../analisis/micro/infraestructura.
 | 08–13 | Integración | `api-gateway/src/test` (WebTestClient + WireMock + Redis Testcontainers) |
 | 14, 15 | Integración | `fitstore-common/src/test` (PostgreSQL + RabbitMQ Testcontainers) |
 | 16 | Integración | `fitstore-common/src/test` (Garage en Testcontainers) |
-| 18 | Revisión | `.gitignore` + *secret scanning* de GitHub |
+| 18 | CI | `.gitignore` + paso **gitleaks** en `ci.yml` (el *secret scanning* nativo de GitHub no está disponible en repos privados del plan gratuito) |
 
 **Pruebas de capa de datos por servicio (CA-0a-06):**
 
