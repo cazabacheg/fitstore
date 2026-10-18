@@ -1,11 +1,12 @@
 # FitStore — Análisis técnico macro
 
 > Proyecto final DAW II (4697) + DSW II (4698) — Cibertec, 6.º ciclo.
-> Autor: Carlos Azabache. Versión: **v17 (aprobado)** — 2026-10-16.
+> Autor: Carlos Azabache. Versión: **v18 (aprobado; ADR-021 en revisión)** — 2026-10-16.
 > Documento base: [`CONSOLIDADO-PROYECTO.md`](../../../CONSOLIDADO-PROYECTO.md).
 > Siguiente etapa: análisis técnico micro (por servicio) → C4 → specs → contratos.
 
 **Historial:**
+- v18 (2026-10-18): ADR-021 propuesta (flujo de ramas dev → stage → main). Desde ahora todo entra por PR a `dev`.
 - v17 (2026-10-18): por SPEC-2: imágenes por color (RF-CAT-04), carga masiva de productos (RF-CAT-09), ejemplos de categorías renombrados.
 - v16 (2026-10-16): micro de `notification-service`: sin correo antes del pago (el primero es "pedido confirmado" con boleta); **editor de plantillas pasa a alcance actual** (RF-NOT-04, CU-33: C → M); nuevo parámetro de tienda "correos para alertas".
 - v15 (2026-10-16): micro de `payment-service` aprobado: eventos `PagoReembolsado` y `ReembolsoFallido`; 3-D Secure se implementa solo si el sandbox lo exige.
@@ -243,7 +244,7 @@ Formato: `RF-<CONTEXTO>-NN`. Prioridad MoSCoW.
 
 | ID | Requisito | P |
 |---|---|---|
-| RF-CAT-01 | CRUD de categorías por **tipo de prenda**, hasta **2 niveles** (p. ej. Leggings y pantalones › Leggings, Joggers; Polos y tops › Polos, Tops), con orden y estado; **sin clasificación por género**. El menú y las secciones de la tienda se generan a partir de este árbol | M |
+| RF-CAT-01 | CRUD de categorías por **tipo de prenda**, hasta **2 niveles** (p. ej. Leggings y pantalones › Leggings, Joggers, Shorts, Faldas; Polos y tops › Polos, Tops; Vestidos), con orden y estado; **sin clasificación por género**. El menú y las secciones de la tienda se generan a partir de este árbol | M |
 | RF-CAT-02 | CRUD de productos: nombre, slug, descripción, precio base, estado (borrador/activo/inactivo). Un producto puede pertenecer a **varias categorías** (p. ej. "Leggings" y "Nueva colección"); la asignación se hace desde el backoffice | M |
 | RF-CAT-03 | Variantes por producto (SKU único, talla, color, precio opcional) | M |
 | RF-CAT-04 | Imágenes por producto y **por color** (subida, orden, imagen principal); la tienda muestra solo las fotos del color elegido | M |
@@ -643,6 +644,11 @@ Formato breve: contexto → decisión → alternativas → consecuencias. Desde 
   - **Caché de lecturas críticas** (Spring Cache): configuración pública de la tienda (`settings`), árbol de categorías, listados y detalle de productos (`catalog`), con invalidación por evento o TTL corto.
 - **Alternativas:** rate limiting en memoria con Bucket4j (sin contenedor extra, pero no se comparte entre servicios ni sobrevive reinicios); sin caché.
 - **Consecuencias:** +~64 MB de RAM y un contenedor; una tecnología más en la exposición (útil para mostrar rendimiento con k6 antes/después de la caché). Redis no es fuente de verdad salvo para el carrito; si se cae, el resto del sistema sigue funcionando (degradación sin caché).
+
+### ADR-021 — Flujo de ramas dev → stage → main con CI/CD por etapa 🟡
+
+- **Propuesta:** ramas de trabajo → PR → `dev` (squash) → PR → `stage` (integración completa en el runner) → PR → `main` (despliegue a la VM con aprobación). Rulesets que impiden push directo a `main`, `stage` y `dev`. Detalle en [`docs/adr/0021-flujo-de-ramas-dev-stage-main.md`](../adr/0021-flujo-de-ramas-dev-stage-main.md).
+- **Requisito:** GitHub Pro (gratis con el Student Developer Pack) para los rulesets en repo privado; mientras tanto, *hook* local `pre-push`.
 
 ### Presupuesto de memoria estimado (ADR-002 / RNF-03)
 
