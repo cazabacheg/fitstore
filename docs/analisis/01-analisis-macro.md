@@ -1,11 +1,12 @@
 # FitStore — Análisis técnico macro
 
 > Proyecto final DAW II (4697) + DSW II (4698) — Cibertec, 6.º ciclo.
-> Autor: Carlos Azabache. Versión: **v18 (aprobado; ADR-021 en revisión)** — 2026-10-16.
+> Autor: Carlos Azabache. Versión: **v19 (aprobado)** — 2026-10-16.
 > Documento base: [`CONSOLIDADO-PROYECTO.md`](../../../CONSOLIDADO-PROYECTO.md).
 > Siguiente etapa: análisis técnico micro (por servicio) → C4 → specs → contratos.
 
 **Historial:**
+- v19 (2026-10-18): ADR-021 aprobada, sin políticas de rama forzadas.
 - v18 (2026-10-18): ADR-021 propuesta (flujo de ramas dev → stage → main). Desde ahora todo entra por PR a `dev`.
 - v17 (2026-10-18): por SPEC-2: imágenes por color (RF-CAT-04), carga masiva de productos (RF-CAT-09), ejemplos de categorías renombrados.
 - v16 (2026-10-16): micro de `notification-service`: sin correo antes del pago (el primero es "pedido confirmado" con boleta); **editor de plantillas pasa a alcance actual** (RF-NOT-04, CU-33: C → M); nuevo parámetro de tienda "correos para alertas".
@@ -645,10 +646,10 @@ Formato breve: contexto → decisión → alternativas → consecuencias. Desde 
 - **Alternativas:** rate limiting en memoria con Bucket4j (sin contenedor extra, pero no se comparte entre servicios ni sobrevive reinicios); sin caché.
 - **Consecuencias:** +~64 MB de RAM y un contenedor; una tecnología más en la exposición (útil para mostrar rendimiento con k6 antes/después de la caché). Redis no es fuente de verdad salvo para el carrito; si se cae, el resto del sistema sigue funcionando (degradación sin caché).
 
-### ADR-021 — Flujo de ramas dev → stage → main con CI/CD por etapa 🟡
+### ADR-021 — Flujo de ramas dev → stage → main con CI/CD por etapa ✅
 
-- **Propuesta:** ramas de trabajo → PR → `dev` (squash) → PR → `stage` (integración completa en el runner) → PR → `main` (despliegue a la VM con aprobación). Rulesets que impiden push directo a `main`, `stage` y `dev`. Detalle en [`docs/adr/0021-flujo-de-ramas-dev-stage-main.md`](../adr/0021-flujo-de-ramas-dev-stage-main.md).
-- **Requisito:** GitHub Pro (gratis con el Student Developer Pack) para los rulesets en repo privado; mientras tanto, *hook* local `pre-push`.
+- **Decisión:** ramas de trabajo → PR → `dev` (squash) → PR → `stage` (integración completa en el runner) → PR → `main` (despliegue a la VM). Sin push directo a `main` ni `stage`, **por convención** (no se configuran reglas de GitHub). Detalle en [`docs/adr/0021-flujo-de-ramas-dev-stage-main.md`](../adr/0021-flujo-de-ramas-dev-stage-main.md).
+- Las reglas de rama de GitHub requerirían GitHub Pro en repo privado; se omiten por decisión del autor.
 
 ### Presupuesto de memoria estimado (ADR-002 / RNF-03)
 

@@ -4,7 +4,7 @@ Date: 2026-10-18
 
 ## Status
 
-Proposed
+Accepted (2026-10-18) — sin políticas de rama forzadas por GitHub
 
 ## Contexto
 
@@ -31,22 +31,13 @@ Hasta la aprobación de la SPEC-2 todo se trabajó directamente en `main`. Con l
 | PR a `dev` / push a `dev` | `ci.yml` | Compilación y pruebas (unitarias y de datos con Testcontainers), lint y pruebas del frontend, gitleaks, verificación de clientes de API generados. Filtros por ruta y caché |
 | PR a `stage` / push a `stage` | `stage.yml` | Además: construye las imágenes Docker, levanta el compose completo **en el runner** (entorno efímero, sin costo), corre `smoke.sh`, las colecciones Postman (Newman) y las pruebas E2E (desde la spec 8) |
 | PR a `main` | `stage.yml` | Las mismas verificaciones de `stage` |
-| push a `main` | `deploy.yml` | Publica las imágenes en GitHub Container Registry y despliega en la VM por SSH (`docker compose pull && up -d`), con aprobación manual del entorno `produccion`. Se activa con la spec 8 |
+| push a `main` | `deploy.yml` | Publica las imágenes en GitHub Container Registry y despliega en la VM por SSH (`docker compose pull && up -d`). El PR de `stage` a `main` es la aprobación; también se puede lanzar a mano (`workflow_dispatch`). Se activa con la spec 8 |
 
-**Políticas (rulesets de GitHub)**
+**Políticas: por convención, no forzadas**
 
-| Rama | Reglas |
-|---|---|
-| `main`, `stage` | PR obligatorio, checks obligatorios en verde, sin *force push*, sin borrado, sin bypass |
-| `dev` | PR obligatorio, check `ci` obligatorio, sin *force push* |
-
-Al ser un desarrollador único, los PR no exigen aprobación de otra persona (no hay quién apruebe), pero sí PR y checks; cada PR usa una plantilla con la lista de verificación.
-
-## Requisito
-
-Los *rulesets* y los entornos con aprobación **no están disponibles en repositorios privados del plan Free** (la API responde "Upgrade to GitHub Pro"). Se resuelve activando **GitHub Pro gratis con el GitHub Student Developer Pack**.
-
-**Mientras no esté activo:** un *hook* local `pre-push` versionado (`.githooks/`, `core.hooksPath`) que impide hacer push directo a `main` y `stage`, y un workflow que avisa si llega un push directo. Es una barrera de disciplina, no de seguridad.
+- Nunca se hace commit ni push directo a `main` ni a `stage`; todo entra por PR.
+- Los PR usan una plantilla con la lista de verificación y se integran solo con los checks en verde.
+- Las reglas de rama de GitHub (*rulesets*) y los entornos con aprobación **no se configuran**: en repositorios privados del plan Free requieren GitHub Pro, y el autor decidió no activarlo (era deseable, no obligatorio). Tampoco se agrega un *hook* local.
 
 ## Alternativas
 
@@ -55,5 +46,6 @@ Los *rulesets* y los entornos con aprobación **no están disponibles en reposit
 
 ## Consecuencias
 
-- Toda la documentación y el código entran por PR a `dev` desde 2026-10-18.
-- La SPEC-0a cambia: su CI pasa a ser tres workflows (`ci.yml`, `stage.yml`, `deploy.yml`) y crea `.githooks/` y la plantilla de PR.
+- Toda la documentación y el código entran por PR a `dev` desde 2026-10-18; `dev` es la rama por defecto del repositorio.
+- La SPEC-0a cambia: crea `ci.yml`, `stage.yml` y la plantilla de PR; `deploy.yml` lo crea la spec 8.
+- La disciplina de ramas depende del autor y de las instrucciones a los agentes (estrategia multiagente).
