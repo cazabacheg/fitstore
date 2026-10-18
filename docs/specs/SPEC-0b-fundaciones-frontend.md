@@ -1,10 +1,11 @@
 # SPEC-0b — Fundaciones del frontend
 
-> Versión: **v1 (borrador)** — 2026-10-18 · Estados: ✅ decidido · 🟡 propuesto · ❓ abierto
+> Versión: **v2 (borrador)** — 2026-10-18 · Estados: ✅ decidido · 🟡 propuesto · ❓ abierto
 > **Dueña de:** workspace Angular (`frontend/`), librería `shared`, *shells* (layouts) de storefront y backoffice, rutas y menús generales, tema white-label, carpetas `ui/` de cada app, job de frontend en CI.
-> **Depende de:** 0a (gateway y CI) y la etapa de contratos (OpenAPI para generar los clientes). · **Habilita:** pantallas de las specs 1–8.
+> **Depende de:** 0a (gateway y CI), la etapa de contratos (OpenAPI para generar los clientes) y la etapa de diseño (**sistema de diseño**: los componentes de `ui/` se construyen según él). · **Habilita:** pantallas de las specs 1–8.
 
 **Historial:**
+- v2 (2026-10-18): bocetos aprobados; cada pantalla reserva su diseño de alta fidelidad (etapa de diseño). Landing → spec 3. Clientes de API versionados en Git (R5).
 - v1 (2026-10-18): borrador inicial.
 
 **Estado de revisión por sección:** 1 ⏳ · 2 ⏳ · 3 ⏳ · 4 ⏳ · 5 ⏳ · 6 ⏳ · 7 ⏳ · 8 ⏳ · 9 ⏳
@@ -28,7 +29,7 @@ Al cerrar esta spec, **las dos aplicaciones arrancan** (`ng serve storefront` y 
 
 **No incluye (y dónde va):**
 - Pantallas de login, registro y perfil → spec 1 (aquí solo la sesión y los guards).
-- Contenido de la landing, menú de categorías con datos reales de prueba, carrito real → specs 3, 2 y 4 (aquí el *shell* los consume por contrato).
+- Contenido de la landing (`/`, incluidos los destacados que pide a catalog) → spec 3. Menú de categorías con datos reales y carrito real → specs 2 y 4 (aquí el *shell* los consume por contrato).
 - Pruebas E2E (Playwright) y Lighthouse → spec 8.
 - Imagen de Caddy con los frontends compilados → spec 8.
 
@@ -206,6 +207,7 @@ CA-0b-30  Dado que alguien cambió un contrato sin regenerar
 - **Proyecto / acceso:** storefront · público.
 - **Boceto (escritorio):** ![P-0b-01](img/P-0b-01-tienda.png)
 - **Boceto (móvil):** ![P-0b-01 móvil](img/P-0b-01-tienda-movil.png)
+- **Diseño de alta fidelidad:** 🕓 pendiente de la etapa de diseño (pantalla clave: cabecera y pie de la tienda, en dos marcas)
 - **Componentes:** `TiendaShell`, `Cabecera` (logo, `MenuCategorias`, `Buscador`, `IconoCuenta`, `IconoCarrito`), `MenuMovil`, `Pie`, `BarraAnuncio`.
 - **Estados:** si `/categorias` falla, la cabecera se muestra sin categorías (no bloquea); el contador del carrito empieza en 0.
 - **Endpoints:** `GET /settings/public`, `GET /categorias`.
@@ -214,6 +216,7 @@ CA-0b-30  Dado que alguien cambió un contrato sin regenerar
 
 - **Proyecto / acceso:** backoffice · OPERADOR y ADMIN.
 - **Boceto:** ![P-0b-02](img/P-0b-02-backoffice.png)
+- **Diseño de alta fidelidad:** 🕓 pendiente de la etapa de diseño (pantalla clave: shell del backoffice)
 - **Componentes:** `BackofficeShell` (Material `sidenav`), `MenuLateral` (ítems por rol, tabla R3), `BarraSuperior` (migas, menú de usuario), `EncabezadoPagina` (título + acción principal, usado por todas las pantallas).
 - **Estados:** menú colapsable en tablet; ítem activo resaltado.
 - **Endpoints:** `GET /settings/public`, `GET /staff/me`.
@@ -222,6 +225,7 @@ CA-0b-30  Dado que alguien cambió un contrato sin regenerar
 
 - **Proyecto:** ambos.
 - **Boceto:** ![P-0b-03](img/P-0b-03-estados.png)
+- **Diseño de alta fidelidad:** 🕓 deriva del sistema de diseño
 - **Componentes:** `EstadoCargando` (skeleton), `EstadoVacio`, `EstadoError` (con reintentar), `Pagina404`, `Pagina403`, `BannerServicioNoDisponible`, `Toast`, `DialogoConfirmacion`.
 - **Regla:** toda pantalla de las specs 1–8 usa estos estados; ninguna crea los suyos.
 
@@ -229,6 +233,7 @@ CA-0b-30  Dado que alguien cambió un contrato sin regenerar
 
 - **Ruta:** `/_ui` en ambas apps · solo en desarrollo.
 - **Boceto:** ![P-0b-04](img/P-0b-04-componentes.png)
+- **Diseño de alta fidelidad:** 🕓 deriva del sistema de diseño (el catálogo `/_ui` implementa los componentes del sistema de diseño)
 - **Componentes de `ui/`:**
 
 | Storefront (Tailwind) | Backoffice (Angular Material) |
@@ -245,7 +250,7 @@ No modifica el backend. Decisiones de implementación del frontend:
 | R2 | **Rutas registradas** ✅ | Tabla de abajo; cada ruta carga `features/<carpeta>/<carpeta>.routes.ts`, que 0b crea con una página "Próximamente". La spec dueña solo reemplaza el contenido de su carpeta |
 | R3 | **Menú por rol** | Definido en `layout/menu.ts` del backoffice con el rol mínimo de cada ítem (ver P-0b-02) |
 | R4 | **Tema** 🟡 | `provideAppInitializer` carga `/settings/public` y escribe variables CSS en `:root` (`--fs-color-primario`, `--fs-color-secundario`, `--fs-color-acento`, `--fs-color-fondo`, `--fs-color-texto`, `--fs-fuente`, `--fs-radio`). Tailwind 4 las usa en su `@theme`; en Angular Material 3 se asignan a los tokens del sistema (`--mat-sys-primary`, …). La configuración se guarda en `localStorage` como respaldo (CA-0b-07). La fuente se carga de Google Fonts según `tipografia` |
-| R5 | **Clientes de API** 🟡 | `openapi-generator` (`typescript-angular`) → `shared/api/<servicio>/`, **versionados en Git**; el CI regenera y falla si hay diferencias (CA-0b-30). Ninguna spec los edita a mano |
+| R5 | **Clientes de API** ✅ | `openapi-generator` (`typescript-angular`) → `shared/api/<servicio>/`, **versionados en Git**; el CI regenera y falla si hay diferencias (CA-0b-30). Ninguna spec los edita a mano |
 | R6 | **Sesión** | `SesionStore` en `shared/auth` (señales: cuenta, rol, tipo; el access token solo en memoria). `iniciarSesion()` y `cerrarSesion()` los llaman las pantallas de la spec 1. Guards `autenticadoGuard`, `rolGuard('ADMIN')` |
 | R7 | **Interceptores** (en este orden) | `requestId` → `autenticacion` (Bearer) → `carritoId` (solo tienda, solo `/carrito`) → `refresco` (401 → un único refresh compartido → reintento) → `errores` (toast, banner 503, errores de campos) |
 | R8 | **Contador del carrito** | `CarritoContador` (señal en `shared/carrito`): la cabecera lo muestra y la spec 4 lo actualiza. Así 0b no depende de la lógica del carrito |
@@ -313,7 +318,8 @@ No aplica (no hay base de datos). En el navegador: `localStorage` solo para la c
 - [ ] Sin tokens en `localStorage`; sin atribución de IA en commits.
 - [ ] Revisado y aprobado por el autor.
 
-## Preguntas abiertas ❓
+## Decisiones ✅
 
-1. **Landing (`/`):** propuesta, que sea de la **spec 3** (settings), porque su contenido es la marca y los textos de la tienda; los "destacados" los obtiene de catalog por contrato. ¿De acuerdo?
-2. **Clientes de API versionados en Git** (R5) en vez de generarlos en cada build: más fácil de revisar y para los agentes, a cambio de archivos generados en el repo. ¿De acuerdo?
+1. **Landing (`/`):** es de la **spec 3** (settings); los destacados los obtiene de catalog por contrato.
+2. **Clientes de API versionados en Git** (R5); el CI regenera y falla si hay diferencias.
+3. **Diseño de alta fidelidad:** cada pantalla lo reserva; se produce en la etapa de diseño (sistema de diseño + pantallas clave en dos marcas) y se enlaza aquí antes de implementar.

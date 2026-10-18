@@ -5,7 +5,7 @@
 | Spec | Dueña de (backend) | Pantallas | Depende de | Paralelo |
 |---|---|---|---|---|
 | [0a](SPEC-0a-plataforma-backend.md) Plataforma backend + esqueletos ✅ | config, Eureka, gateway, `fitstore-common`, infra, **esqueleto de los 7 servicios** | — | — | Sola (los 7 esqueletos entre sí, en paralelo) |
-| [0b](SPEC-0b-fundaciones-frontend.md) Fundaciones del frontend | — | workspace Angular, `shared`, layouts, rutas registradas, tema white-label | 0a (contratos) | Sola |
+| [0b](SPEC-0b-fundaciones-frontend.md) Fundaciones del frontend | — | workspace Angular, `shared`, layouts, rutas registradas, tema white-label | 0a, contratos, sistema de diseño | Sola |
 | 1 Identidad | auth | login, registro, perfil, direcciones, staff | 0a, 0b | Sí |
 | 2 Catálogo e inventario | catalog | backoffice: catálogo e inventario · tienda: listado, filtros, detalle | 0a, 0b | Sí |
 | 3 Tienda y reclamos | settings | configuración de tienda, Libro de Reclamaciones | 0a, 0b | Sí |
@@ -26,4 +26,10 @@
 7. **Una rama / worktree por spec**, merge de uno en uno con CI en verde.
 8. Commits sin atribución de IA; autor `cazabacheg`.
 
-Plantilla: [`_plantilla.md`](_plantilla.md) (v2: criterios de aceptación dentro de cada historia; historias enlazadas a sus pantallas `P-XX-NN` con bocetos en `img/`).
+## Proceso y diseño
+
+Specs (con bocetos de baja fidelidad) → contratos (OpenAPI / AsyncAPI) → **diseño**: sistema de diseño + ~12 pantallas clave de alta fidelidad en **dos marcas** (demuestra el white-label) → se enlazan en cada pantalla de las specs (campo "Diseño de alta fidelidad") → estrategia multiagente → implementación. La 0b no se implementa sin el sistema de diseño.
+
+Pantallas clave previstas: tienda (landing, listado, detalle de producto, carrito, checkout, pago, mis pedidos; escritorio y móvil) y backoffice (dashboard, lista de pedidos, detalle de pedido, formulario de producto, configuración de tienda). El resto deriva del sistema de diseño y su boceto.
+
+Plantilla: [`_plantilla.md`](_plantilla.md) (v3: criterios dentro de cada historia; historias enlazadas a sus pantallas `P-XX-NN`; bocetos en `img/`; cada pantalla reserva su diseño de alta fidelidad).

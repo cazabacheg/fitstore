@@ -1,6 +1,6 @@
 # SPEC-XX — <Título>
 
-<!-- Plantilla v2 (2026-10-18): los CA van dentro de cada HU; las HU citan sus pantallas P-XX-NN. -->
+<!-- Plantilla v3 (2026-10-18): los CA van dentro de cada HU; las HU citan sus pantallas P-XX-NN; cada pantalla reserva su diseño de alta fidelidad. -->
 
 > Versión: **v1 (borrador)** — AAAA-MM-DD · Estados: ✅ decidido · 🟡 propuesto · ❓ abierto
 > **Dueña de:** <servicio(s) backend> · <área(s) de pantallas>
@@ -52,7 +52,8 @@ Una subsección por pantalla, con id `P-XX-NN` (el que citan las historias):
 ### P-XX-01 — <nombre>
 
 - **Ruta / proyecto:** `/…` · storefront o backoffice · rol requerido
-- **Boceto:** `![P-XX-01](img/P-XX-01.png)` (imagen en `docs/specs/img/`)
+- **Boceto (baja fidelidad):** `![P-XX-01](img/P-XX-01.png)` (imagen en `docs/specs/img/`)
+- **Diseño de alta fidelidad:** 🕓 pendiente de la etapa de diseño (o "deriva del sistema de diseño" si la pantalla no está entre las clave)
 - **Componentes:** propios de la funcionalidad y de `shared`
 - **Estados:** cargando · vacío · error · éxito
 - **Validaciones:** …
