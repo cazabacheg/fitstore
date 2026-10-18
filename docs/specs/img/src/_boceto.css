@@ -14,3 +14,10 @@ body{font:14px/1.4 "Segoe UI",system-ui,sans-serif;color:#333;background:#fff}
 .s{font-size:12px;color:#666}
 .note{position:absolute;font:12px/1.3 sans-serif;background:#fffbe6;border:1px solid #e0c96b;padding:4px 6px;border-radius:4px;max-width:220px}
 h1.title{font-size:13px;color:#888;font-weight:600;padding:6px 12px;border-bottom:1px solid #ddd;background:#fafafa}
+.shell{height:56px;border-bottom:2px solid #bbb;background:#f4f4f4;display:flex;align-items:center;padding:0 16px;color:#888;font-size:12px}
+.f{border:2px solid #777;border-radius:6px;padding:9px 10px;color:#999;background:#fff}
+.lbl{font-size:12px;font-weight:600;color:#444;margin-bottom:-6px}
+.btn{border-radius:6px;padding:10px 14px;text-align:center;font-weight:600}
+.err{color:#b91c1c;font-size:12px}
+.card{border:2px solid #555;border-radius:10px;padding:20px}
+.side{width:200px;background:#e9e9e9;align-self:stretch;padding:12px;font-size:12px;color:#777}
