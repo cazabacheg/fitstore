@@ -5,7 +5,7 @@
 | Spec | Dueña de (backend) | Pantallas | Depende de | Paralelo |
 |---|---|---|---|---|
 | [0a](SPEC-0a-plataforma-backend.md) Plataforma backend + esqueletos ✅ | config, Eureka, gateway, `fitstore-common`, infra, **esqueleto de los 7 servicios** | — | — | Sola (los 7 esqueletos entre sí, en paralelo) |
-| [0b](SPEC-0b-fundaciones-frontend.md) Fundaciones del frontend | — | workspace Angular, `shared`, layouts, rutas registradas, tema white-label | 0a, contratos, sistema de diseño | Sola |
+| [0b](SPEC-0b-fundaciones-frontend.md) Fundaciones del frontend ✅ | — | workspace Angular, `shared`, layouts, rutas registradas, tema white-label | 0a, contratos, sistema de diseño | Sola |
 | 1 Identidad | auth | login, registro, perfil, direcciones, staff | 0a, 0b | Sí |
 | 2 Catálogo e inventario | catalog | backoffice: catálogo e inventario · tienda: listado, filtros, detalle | 0a, 0b | Sí |
 | 3 Tienda y reclamos | settings | configuración de tienda, Libro de Reclamaciones | 0a, 0b | Sí |

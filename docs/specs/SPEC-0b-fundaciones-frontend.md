@@ -1,14 +1,15 @@
 # SPEC-0b — Fundaciones del frontend
 
-> Versión: **v2 (borrador)** — 2026-10-18 · Estados: ✅ decidido · 🟡 propuesto · ❓ abierto
+> Versión: **v3 (aprobado)** — 2026-10-18 · Estados: ✅ decidido · 🟡 propuesto · ❓ abierto
 > **Dueña de:** workspace Angular (`frontend/`), librería `shared`, *shells* (layouts) de storefront y backoffice, rutas y menús generales, tema white-label, carpetas `ui/` de cada app, job de frontend en CI.
 > **Depende de:** 0a (gateway y CI), la etapa de contratos (OpenAPI para generar los clientes) y la etapa de diseño (**sistema de diseño**: los componentes de `ui/` se construyen según él). · **Habilita:** pantallas de las specs 1–8.
 
 **Historial:**
+- v3 (2026-10-18): el pie de la tienda va al final del documento y nunca se ve en la pantalla inicial (boceto P-0b-01 y CA-0b-20b). Resto de la spec aprobado → **spec aprobada**.
 - v2 (2026-10-18): bocetos aprobados; cada pantalla reserva su diseño de alta fidelidad (etapa de diseño). Landing → spec 3. Clientes de API versionados en Git (R5).
 - v1 (2026-10-18): borrador inicial.
 
-**Estado de revisión por sección:** 1 ⏳ · 2 ⏳ · 3 ⏳ · 4 ⏳ · 5 ⏳ · 6 ⏳ · 7 ⏳ · 8 ⏳ · 9 ⏳
+**Estado de revisión por sección:** 1 ✅ · 2 ✅ · 3 ✅ · 4 ✅ · 5 ✅ · 6 ✅ · 7 ✅ · 8 ✅ · 9 ✅
 
 ---
 
@@ -151,6 +152,11 @@ CA-0b-20  Cuando abro la tienda en escritorio
           Entonces veo logo, categorías (de GET /categorias), buscador, cuenta y carrito con contador
           Y en el pie, contacto, políticas, redes y el enlace "Libro de Reclamaciones"
 
+CA-0b-20b Cuando abro cualquier página de la tienda (incluso una corta, como un carrito vacío o la 404)
+          Entonces el contenido principal ocupa al menos el alto visible de la ventana
+          Y el pie queda al final del documento: no se ve en la pantalla inicial, solo al hacer scroll hasta el fondo
+          Y el pie nunca es fijo (sin position: fixed ni sticky)
+
 CA-0b-21  Cuando abro la tienda en un celular (390 px)
           Entonces el menú de categorías y la cuenta pasan a un menú lateral (☰), sin scroll horizontal
 
@@ -210,6 +216,7 @@ CA-0b-30  Dado que alguien cambió un contrato sin regenerar
 - **Diseño de alta fidelidad:** 🕓 pendiente de la etapa de diseño (pantalla clave: cabecera y pie de la tienda, en dos marcas)
 - **Componentes:** `TiendaShell`, `Cabecera` (logo, `MenuCategorias`, `Buscador`, `IconoCuenta`, `IconoCarrito`), `MenuMovil`, `Pie`, `BarraAnuncio`.
 - **Estados:** si `/categorias` falla, la cabecera se muestra sin categorías (no bloquea); el contador del carrito empieza en 0.
+- **Pie:** al final del documento, debajo del pliegue; el contenido tiene `min-height` igual al alto visible menos la cabecera, para que el pie no aparezca en la primera pantalla ni en páginas cortas (CA-0b-20b).
 - **Endpoints:** `GET /settings/public`, `GET /categorias`.
 
 ### P-0b-02 — Layout del backoffice
@@ -246,15 +253,15 @@ No modifica el backend. Decisiones de implementación del frontend:
 
 | # | Decisión | Detalle |
 |---|---|---|
-| R1 | **Estructura** 🟡 | `frontend/projects/{storefront,backoffice}/src/app/{core,layout,ui,features}` y `frontend/projects/shared/src/lib/{api,auth,http,theme,i18n,ubigeo,carrito,models,pipes}`. Componentes *standalone*, señales (`signal`, `computed`) para el estado y control de flujo nuevo (`@if`, `@for`). Sin NgRx (KISS) |
+| R1 | **Estructura** ✅ | `frontend/projects/{storefront,backoffice}/src/app/{core,layout,ui,features}` y `frontend/projects/shared/src/lib/{api,auth,http,theme,i18n,ubigeo,carrito,models,pipes}`. Componentes *standalone*, señales (`signal`, `computed`) para el estado y control de flujo nuevo (`@if`, `@for`). Sin NgRx (KISS) |
 | R2 | **Rutas registradas** ✅ | Tabla de abajo; cada ruta carga `features/<carpeta>/<carpeta>.routes.ts`, que 0b crea con una página "Próximamente". La spec dueña solo reemplaza el contenido de su carpeta |
 | R3 | **Menú por rol** | Definido en `layout/menu.ts` del backoffice con el rol mínimo de cada ítem (ver P-0b-02) |
-| R4 | **Tema** 🟡 | `provideAppInitializer` carga `/settings/public` y escribe variables CSS en `:root` (`--fs-color-primario`, `--fs-color-secundario`, `--fs-color-acento`, `--fs-color-fondo`, `--fs-color-texto`, `--fs-fuente`, `--fs-radio`). Tailwind 4 las usa en su `@theme`; en Angular Material 3 se asignan a los tokens del sistema (`--mat-sys-primary`, …). La configuración se guarda en `localStorage` como respaldo (CA-0b-07). La fuente se carga de Google Fonts según `tipografia` |
+| R4 | **Tema** ✅ | `provideAppInitializer` carga `/settings/public` y escribe variables CSS en `:root` (`--fs-color-primario`, `--fs-color-secundario`, `--fs-color-acento`, `--fs-color-fondo`, `--fs-color-texto`, `--fs-fuente`, `--fs-radio`). Tailwind 4 las usa en su `@theme`; en Angular Material 3 se asignan a los tokens del sistema (`--mat-sys-primary`, …). La configuración se guarda en `localStorage` como respaldo (CA-0b-07). La fuente se carga de Google Fonts según `tipografia` |
 | R5 | **Clientes de API** ✅ | `openapi-generator` (`typescript-angular`) → `shared/api/<servicio>/`, **versionados en Git**; el CI regenera y falla si hay diferencias (CA-0b-30). Ninguna spec los edita a mano |
 | R6 | **Sesión** | `SesionStore` en `shared/auth` (señales: cuenta, rol, tipo; el access token solo en memoria). `iniciarSesion()` y `cerrarSesion()` los llaman las pantallas de la spec 1. Guards `autenticadoGuard`, `rolGuard('ADMIN')` |
 | R7 | **Interceptores** (en este orden) | `requestId` → `autenticacion` (Bearer) → `carritoId` (solo tienda, solo `/carrito`) → `refresco` (401 → un único refresh compartido → reintento) → `errores` (toast, banner 503, errores de campos) |
 | R8 | **Contador del carrito** | `CarritoContador` (señal en `shared/carrito`): la cabecera lo muestra y la spec 4 lo actualiza. Así 0b no depende de la lógica del carrito |
-| R9 | **Pruebas unitarias** 🟡 | El *runner* por defecto del CLI de Angular 22 (Vitest) con Angular Testing Library; se verifica al crear el workspace |
+| R9 | **Pruebas unitarias** ✅ | El *runner* por defecto del CLI de Angular 22 (Vitest) con Angular Testing Library; se verifica al crear el workspace |
 | R10 | **Accesibilidad** | Componentes de `ui/` con etiquetas, foco visible y contraste del tema (RNF-19 advierte en settings); objetivo Lighthouse ≥ 85 se mide en la spec 8 |
 
 **Rutas registradas (R2):**
@@ -294,7 +301,7 @@ No aplica (no hay base de datos). En el navegador: `localStorage` solo para la c
 | 05–08 | Unitaria + manual | `shared/theme/*.spec.ts` (variables escritas, respaldo, valores por defecto) |
 | 09–14 | Unitaria | `shared/http/*.spec.ts` con `HttpTestingController` (refresh único con 3 peticiones simultáneas, logout al fallar, mapeo de errores, `X-Carrito-Id`) |
 | 15–19 | Unitaria | pruebas de rutas y guards por app |
-| 20–24 | Componente | pruebas de `TiendaShell` y `BackofficeShell` (incluye ancho 390 px) |
+| 20–24 (incl. 20b) | Componente | pruebas de `TiendaShell` y `BackofficeShell` (incluye ancho 390 px) |
 | 25–28 | Componente | pruebas de cada componente de `ui/` y de los pipes |
 | 29 | Script | `npm run api:generate` en CI |
 
@@ -312,7 +319,7 @@ No aplica (no hay base de datos). En el navegador: `localStorage` solo para la c
 
 ## 9. Definición de terminado
 
-- [ ] CA-0b-01 a CA-0b-30 cumplidos.
+- [ ] CA-0b-01 a CA-0b-30 (y CA-0b-20b) cumplidos.
 - [ ] Las dos apps arrancan contra la plataforma 0a y muestran la marca de settings (con los datos semilla).
 - [ ] `/_ui` muestra todos los componentes de `ui/` en ambas apps.
 - [ ] Sin tokens en `localStorage`; sin atribución de IA en commits.
