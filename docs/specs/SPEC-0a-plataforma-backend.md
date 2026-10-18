@@ -1,15 +1,16 @@
 # SPEC-0a — Plataforma backend y esqueletos de servicios
 
-> Versión: **v2 (borrador)** — 2026-10-18 · Estados: ✅ decidido · 🟡 propuesto · ❓ abierto
+> Versión: **v3 (aprobado)** — 2026-10-18 · Estados: ✅ decidido · 🟡 propuesto · ❓ abierto
 > **Dueña de:** monorepo, `fitstore-common`, `config-server`, `discovery-server`, `api-gateway`, `infra/` (entorno dev), CI, y el **esqueleto** de los 7 servicios de negocio.
 > **Depende de:** — · **Habilita:** todas las demás specs.
 > **Contratos:** los esqueletos exponen solo `actuator` y la documentación base; los endpoints de negocio llegan con cada spec.
 
 **Historial:**
+- v3 (2026-10-18): secciones 2, 3, 4, 6, 7, 8 y 9 aprobadas → **spec aprobada**.
 - v2 (2026-10-18): estructura de la plantilla v2 (CA dentro de cada HU). Aprobados: alcance, orden interno (I1), JWKS de prueba (I2), seguridad base (I3), Garage (I5). El repo en GitHub lo crea el asistente (privado). Azure Blob queda para la decisión de despliegue en la nube.
 - v1 (2026-10-18): borrador inicial.
 
-**Estado de revisión por sección:** 1 ✅ · 2 ⏳ · 3 ⏳ · 4 ⏳ · 5 ✅ · 6 ⏳ · 7 ⏳ · 8 ⏳ · 9 ⏳
+**Estado de revisión por sección:** 1 ✅ · 2 ✅ · 3 ✅ · 4 ✅ · 5 ✅ · 6 ✅ · 7 ✅ · 8 ✅ · 9 ✅
 
 ---
 
