@@ -180,7 +180,7 @@ classDiagram
 | `predeterminada` | `boolean` | NOT NULL; índice único parcial `(cliente_id) WHERE predeterminada` |
 | `creado_en` / `actualizado_en` | `timestamptz` | |
 
-Las direcciones **se eliminan físicamente** (`DELETE`): los pedidos guardan una copia de la dirección al momento de la compra, así que no se pierde historial.
+Las direcciones **se eliminan físicamente** (`DELETE`): los pedidos guardan una copia de la dirección al momento de la compra, así que no se pierde historial. Si se elimina la predeterminada, pasa a serlo la creada más recientemente entre las que quedan (SPEC-1, A2).
 
 **`consentimiento`**: `id`, `cliente_id` (FK), `tipo` (`TERMINOS`, `PRIVACIDAD`), `version_politica`, `aceptado_en`, `ip`.
 

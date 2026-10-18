@@ -1,14 +1,15 @@
 # SPEC-1 — Identidad
 
-> Versión: **v1 (borrador)** — 2026-10-18 · Estados: ✅ decidido · 🟡 propuesto · ❓ abierto
+> Versión: **v2 (aprobado)** — 2026-10-18 · Estados: ✅ decidido · 🟡 propuesto · ❓ abierto
 > **Dueña de:** `backend/auth-service` (lógica, controladores, emisión de JWT) · tienda: `features/acceso`, `features/cuenta` · backoffice: `features/acceso`, `features/perfil`, `features/usuarios`.
 > **Depende de:** 0a, 0b · **Habilita:** todas las pantallas protegidas; spec 4 (datos del destinatario en el checkout).
 > **Contratos:** `contracts/openapi/auth-service.yaml`; eventos `ClienteRegistrado`, `PasswordResetSolicitado`, `PasswordCambiado`.
 
 **Historial:**
+- v2 (2026-10-18): spec aprobada. A2: al borrar la predeterminada pasa a serlo la dirección creada más recientemente. Datos de demostración en dev aprobados.
 - v1 (2026-10-18): borrador inicial.
 
-**Estado de revisión por sección:** 1 ⏳ · 2 ⏳ · 3 ⏳ · 4 ⏳ · 5 ⏳ · 6 ⏳ · 7 ⏳ · 8 ⏳ · 9 ⏳
+**Estado de revisión por sección:** 1 ✅ · 2 ✅ · 3 ✅ · 4 ✅ · 5 ✅ · 6 ✅ · 7 ✅ · 8 ✅ · 9 ✅
 
 ---
 
@@ -148,7 +149,7 @@ CA-1-18  Cuando marco otra dirección como predeterminada
          Entonces la anterior deja de serlo (siempre hay una sola)
 
 CA-1-19  Cuando edito o elimino una dirección
-         Entonces se actualiza o se borra (DELETE físico); si borro la predeterminada, pasa a serlo la más reciente
+         Entonces se actualiza o se borra (DELETE físico); si borro la predeterminada, pasa a serlo la creada más recientemente
 
 CA-1-20  Dado que ya tengo 10 direcciones
          Cuando intento crear otra
@@ -336,7 +337,7 @@ Todo según el micro de auth. Decisiones de implementación de esta spec:
 | # | Decisión | Detalle |
 |---|---|---|
 | A1 | **Propiedad de las direcciones** | La consulta siempre filtra por `cliente_id` del token (`findByIdAndClienteId`); si no existe → `404` (auth 8) |
-| A2 | **Borrar la dirección predeterminada** 🟡 | Pasa a predeterminada la más reciente que quede (CA-1-19). El micro no lo definía |
+| A2 | **Borrar la dirección predeterminada** ✅ | Pasa a predeterminada la **creada más recientemente** entre las que quedan (CA-1-19). El micro no lo definía |
 | A3 | **Enlaces de los correos** | Recuperación de cliente: `{STOREFRONT_URL}/restablecer?token=…` · de staff e invitación: `{BACKOFFICE_URL}/restablecer?token=…` |
 | A4 | **Cookie de refresh** | Una por app (cada app en su subdominio, auth 4.4); `HttpOnly`, `SameSite=Strict`, `Path=/api/v1/auth`. `POST /auth/refresh` y `/auth/logout` solo aceptan la cookie (sin cuerpo) |
 | A5 | **Retiro del JWKS de prueba** | Se borra `infra/dev/jwks-prueba.json` y su clave; el gateway y los servicios apuntan a `http://auth-service/.well-known/jwks.json` (excepción acordada a la regla de "0a congelada") |
@@ -386,7 +387,7 @@ Todo según el micro de auth. Decisiones de implementación de esta spec:
 - [ ] Demostración de la AP1: registro → login → perfil → direcciones → logout, y login de staff, en las pantallas reales.
 - [ ] Revisado y aprobado por el autor.
 
-## Preguntas abiertas ❓
+## Decisiones ✅
 
-1. **A2:** al borrar la dirección predeterminada, ¿pasa a predeterminada la más reciente? (El micro no lo definía.)
-2. **Datos de demostración en dev** (2 clientes y 1 operador con una contraseña de demostración común): ¿de acuerdo? Facilitan las pruebas manuales, Postman y el video.
+1. **A2:** al borrar la dirección predeterminada, pasa a serlo la creada más recientemente entre las que quedan.
+2. **Datos de demostración (solo dev):** 2 clientes (direcciones en Lima y Arequipa) y 1 OPERADOR con contraseña de demostración común; no existen en `cloud`.
