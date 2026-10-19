@@ -8,7 +8,7 @@
 | [0b](SPEC-0b-fundaciones-frontend.md) Fundaciones del frontend ✅ | — | workspace Angular, `shared`, layouts, rutas registradas, tema white-label | 0a, contratos, sistema de diseño | Sola |
 | [1](SPEC-1-identidad.md) Identidad ✅ | auth | login, registro, perfil, direcciones, staff | 0a, 0b | Sí |
 | [2](SPEC-2-catalogo-inventario.md) Catálogo e inventario ✅ | catalog | backoffice: catálogo e inventario · tienda: listado, filtros, detalle | 0a, 0b | Sí |
-| [3](SPEC-3-tienda-reclamos.md) Tienda y reclamos | settings | configuración de tienda, Libro de Reclamaciones | 0a, 0b | Sí |
+| [3](SPEC-3-tienda-reclamos.md) Tienda y reclamos ✅ | settings | configuración de tienda, Libro de Reclamaciones | 0a, 0b | Sí |
 | 4 Pedidos | order | carrito, checkout, mis pedidos, pedidos (backoffice) | 0a, 0b | Sí (contra mocks de 1, 2, 3, 6) |
 | 5 Pagos | payment | página de pago, pagos y reembolsos | 0a, 0b | Sí |
 | 6 Envíos | delivery | entregas, repartidores, tarifas, agencias | 0a, 0b | Sí |
