@@ -79,7 +79,7 @@ Un mensaje con: rama y último commit; tabla **CA → archivo de prueba** comple
 | Necesita cambiar un contrato | Se detiene | **Autor.** Si se aprueba: PR aparte de `contracts/` y de la spec (con barrido de documentos), y luego el agente sigue sobre `dev` actualizado |
 | Necesita tocar una carpeta congelada o ajena | Se detiene | **Autor.** Si se aprueba: PR aparte, uno a la vez (regla 2 de convivencia) |
 | Una prueba no se puede escribir como dice la sección 7 | Propone la alternativa | Lead (si cubre el mismo criterio); autor si cambia el criterio |
-| Una dependencia o versión no está en `stack-versiones` | Se detiene | Autor |
+| Una dependencia o versión no está en [`stack-versiones`](../arquitectura/stack-versiones.md) | Se detiene | Autor |
 | Dos intentos fallidos con el mismo error | Se detiene y reporta lo intentado | Lead |
 
 **P1 ✅ Ningún agente cambia una spec, un contrato o un documento aprobado por su cuenta.**
