@@ -1,11 +1,12 @@
 # FitStore — Análisis técnico macro
 
 > Proyecto final DAW II (4697) + DSW II (4698) — Cibertec, 6.º ciclo.
-> Autor: Carlos Azabache. Versión: **v21 (aprobado)** — 2026-10-19.
+> Autor: Carlos Azabache. Versión: **v22 (aprobado)** — 2026-10-19.
 > Documento base: [`CONSOLIDADO-PROYECTO.md`](../../../CONSOLIDADO-PROYECTO.md).
 > Siguiente etapa: análisis técnico micro (por servicio) → C4 → specs → contratos.
 
 **Historial:**
+- v22 (2026-10-19): por SPEC-8: ADR-013 actualizada (Garage en la VM también en Azure; adaptador Azure Blob diferido); los datos de demostración se cargan también en la nube (perfil `demo`).
 - v21 (2026-10-19): por SPEC-6: **devolución a tienda** cuando un pedido no se puede entregar o nadie lo recoge: estado `DEVUELTA` en delivery y `DEVUELTO` (final) en order, reembolso sin plazo desde un pedido devuelto, nuevo correo al cliente (14): RF-ORD-03, RF-ORD-11, RF-DEL-02, RF-NOT-01.
 - v20 (2026-10-18): por SPEC-5: **reembolso postventa** desde el pedido entregado (total o parcial, solo ADMIN, plazo configurable con 0 = ilimitado): RF-PAY-06, nuevo RF-ORD-11, RF-SET-05.
 - v19 (2026-10-18): ADR-021 aprobada, sin políticas de rama forzadas.
@@ -598,6 +599,7 @@ Formato breve: contexto → decisión → alternativas → consecuencias. Desde 
 - **¿Por qué no AWS S3 directamente?** No es gratis para esta cuenta: el saldo gratuito de S3 (5 GB) era de 12 meses desde la creación de la cuenta, y la cuenta del autor es antigua. El costo sería de centavos (~US$0.023 por GB al mes + solicitudes), pero suma una segunda nube, credenciales y latencia entre Azure y AWS. Garage en la VM cuesta US$0 (usa el disco que ya existe). Pasar a S3 al vender en AWS es solo configuración.
 - **Portabilidad:** en **AWS** se apunta el adaptador S3 a S3 real; en **Azure** se puede (a) seguir con Garage en la VM (cero cambios) o (b) activar el adaptador Blob para usar el almacenamiento administrado de Azure. Ambos casos son solo configuración, así que la migración es igual de fácil en las dos nubes.
 - **Alternativas:** disco de la VM (no portable), Cloudinary (externo; transforma imágenes), compilar MinIO desde el código fuente (mantenimiento propio).
+- **Actualización (2026-10-19, SPEC-8 I6):** la demo en Azure usa la opción (a), **Garage en la VM**. El adaptador `AzureBlobFileStorage` queda **diferido** (no se implementa en el MVP); el puerto `FileStorage` permite agregarlo sin tocar los servicios.
 
 ### ADR-014 — Correo: Mailpit en desarrollo, Amazon SES en la nube ✅
 

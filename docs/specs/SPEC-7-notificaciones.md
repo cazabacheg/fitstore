@@ -1,11 +1,12 @@
 # SPEC-7 — Notificaciones
 
-> Versión: **v2 (aprobado)** — 2026-10-19 · Estados: ✅ decidido · 🟡 propuesto · ❓ abierto
+> Versión: **v3 (aprobado)** — 2026-10-19 · Estados: ✅ decidido · 🟡 propuesto · ❓ abierto
 > **Dueña de:** `backend/notification-service` (enrutamiento de eventos, plantillas, envío, registro) · backoffice: `features/notificaciones`.
 > **Depende de:** 0a, 0b, 1 (sesión de staff) · consume los eventos de auth, order, payment, delivery, catalog y settings (AsyncAPI) y usa `/internal/v1/boletas/{numero}` de payment · **Habilita:** 8 (demo con todos los correos en Mailpit y SES).
 > **Contratos:** `contracts/openapi/notification-service.yaml`; no publica eventos; consume los de la sección 6 del micro.
 
 **Historial:**
+- v3 (2026-10-19): los datos de demostración también se cargan en la nube con el perfil `demo` (SPEC-8 I7), con UUID fijos compartidos entre servicios (`docs/demo/ids-demo.md`).
 - v2 (2026-10-19): N7 ✅ "Enviar prueba a mi correo" (CA-7-30; micro v9) → **spec aprobada**.
 - v1 (2026-10-19): borrador inicial.
 
@@ -239,7 +240,7 @@ Todo según el micro de notification. Decisiones de implementación de esta spec
 
 - **Semilla `V2__plantillas.sql` (todos los entornos):** las 18 plantillas con sus textos predeterminados en español, tono cercano y formal a la vez (tuteo), y `activa = true`.
 - **Fila inicial de `marca_tienda`:** marca FitStore por defecto (se reemplaza con el primer `ConfiguracionActualizada`).
-- **Datos de demostración (solo `dev`):** el registro de los correos de los pedidos de demostración de las specs 4 a 6 (enviados, uno fallido y uno pendiente), para que la pantalla no esté vacía.
+- **Datos de demostración (perfil `dev` y, en la nube, perfil `demo` (SPEC-8 I7)):** el registro de los correos de los pedidos de demostración de las specs 4 a 6 (enviados, uno fallido y uno pendiente), para que la pantalla no esté vacía.
 
 ## 7. Pruebas
 

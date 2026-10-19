@@ -1,11 +1,12 @@
 # SPEC-2 — Catálogo e inventario
 
-> Versión: **v5 (aprobado)** — 2026-10-18 · Estados: ✅ decidido · 🟡 propuesto · ❓ abierto
+> Versión: **v6 (aprobado)** — 2026-10-19 · Estados: ✅ decidido · 🟡 propuesto · ❓ abierto
 > **Dueña de:** `backend/catalog-service` (módulos catálogo e inventario) · tienda: `features/catalogo` · backoffice: `features/catalogo`, `features/inventario`.
 > **Depende de:** 0a, 0b, 1 (sesión de staff) · **Habilita:** 3 (destacados de la landing), 4 (cotización y reserva), 8.
 > **Contratos:** `contracts/openapi/catalog-service.yaml` (incluye `/internal/v1/inventario/reservas`); usa el contrato de order (`POST /carrito/items`); eventos `StockBajo`, `StockNoConfirmado` (publica) y `PedidoPagado`, `PedidoCancelado`, `PedidoExpirado` (consume).
 
 **Historial:**
+- v6 (2026-10-19): los datos de demostración también se cargan en la nube con el perfil `demo` (SPEC-8 I7), con UUID fijos compartidos entre servicios (`docs/demo/ids-demo.md`).
 - v5 (2026-10-18): convención de tablas de la SPEC-0b (R11) aplicada a P-2-03, P-2-07, P-2-08 y P-2-09 (y señalada como no aplicable en P-2-05 y P-2-06); P-2-04 se abre en solo lectura para OPERADOR (antes la ruta era solo ADMIN, aunque P-2-03 le permitía ver los productos). Bocetos actualizados.
 - v4 (2026-10-18): por decisión de la SPEC-3 (S2), el stock mínimo por defecto y el margen de reserva se editan en Configuración de tienda (P-3-04, pestaña Parámetros); se quita `DialogoConfiguracionInventario` de P-2-07. El endpoint sigue siendo de esta spec.
 - v3 (2026-10-18): categorías semilla definidas (Shorts y Faldas dentro de Leggings y pantalones; Vestidos como raíz) → **spec aprobada**.
@@ -24,7 +25,7 @@ Al cerrar esta spec, el admin **arma el catálogo completo** (categorías con gu
 - Toda la lógica de [`catalog-service`](../analisis/micro/catalog-service.md) (secciones 4 y 5): catálogo, búsqueda y filtros, imágenes con redimensionado, maestros, guía de tallas, descuentos, cotización, inventario, kardex, reservas (crear, confirmar, liberar, reingresar, liberar vencidas), alerta de stock bajo, `StockNoConfirmado`, cachés.
 - Pantallas P-2-01 a P-2-08.
 - Botón "Agregar al carrito" del detalle (llama al contrato de order).
-- Datos de demostración del catálogo para `dev`.
+- Datos de demostración del catálogo para `dev` y la nube (perfil `demo`, SPEC-8 I7).
 - Prueba de carga k6 del catálogo (RNF-01).
 - Colección Postman `catalog`.
 
@@ -423,7 +424,7 @@ Todo según el micro de catalog. Decisiones de implementación de esta spec:
 ## 6. Datos
 
 - **Sin migraciones nuevas** (esquema y semillas en `V1`/`V2` de la 0a: tallas, colores, política de descuentos, configuración de inventario).
-- **Datos de demostración (solo `dev`)**, `R__catalogo_demo.sql` en `db/dev/`:
+- **Datos de demostración (perfil `dev` y, en la nube, perfil `demo` (SPEC-8 I7))**, `R__catalogo_demo.sql` en `db/dev/`:
   - árbol ✅: **Polos y tops** (Polos, Tops), **Leggings y pantalones** (Leggings, Joggers, Pantalones, Shorts, Faldas), **Casacas y polerones**, **Vestidos**, **Conjuntos**, **Nueva colección**; guía de tallas en "Polos y tops", "Leggings y pantalones" y "Vestidos";
   - color maestro adicional **"Variado"** (para estampados y surtidos);
   - unos 15 productos ACTIVO con 6–15 variantes cada uno, stock variado (incluye casos agotado y "últimas unidades") y 2 en BORRADOR;

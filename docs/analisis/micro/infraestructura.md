@@ -1,10 +1,11 @@
 # FitStore — Análisis micro: infraestructura (`config-server`, `discovery-server`, `api-gateway`) y piezas comunes
 
-> Versión: **v4 (aprobado)** — 2026-10-16. Fuente: [`01-analisis-macro.md`](../01-analisis-macro.md) v16.
+> Versión: **v5 (aprobado)** — 2026-10-19. Fuente: [`01-analisis-macro.md`](../01-analisis-macro.md) v16.
 > Estados: ✅ decidido · propuesto · ❓ abierto · 🕓 diferido
 > Ficha corta: estos servicios no tienen dominio de negocio, así que la estructura difiere de la plantilla.
 
 **Historial:**
+- v5 (2026-10-19): `AzureBlobFileStorage` diferido (en la nube se usa Garage en la VM, SPEC-8 I6); se quita la ruta `/api/v1/admin/clientes/*/pedidos` del gateway (los pedidos de un cliente usan `GET /admin/pedidos?clienteId=`, SPEC-4 O3); detectado al redactar la SPEC-8.
 - v4 (2026-10-18): sección 10 aprobada → **documento completo aprobado**.
 - v3 (2026-10-18): sección 10 (diseño técnico) redactada: C3, código de las partes críticas, paquetes, dependencias, configuración e infraestructura.
 - v2 (2026-10-16): documento aprobado. Dominio de la demo: subdominio gratuito de **DuckDNS** (`tienda.` y `admin.` debajo). Swagger publicado en la nube **con contraseña**.
@@ -59,7 +60,7 @@ Puertos de los servicios de negocio: auth 8081 · catalog 8082 · order 8083 · 
 |---|---|
 | `/api/v1/auth/**`, `/api/v1/clientes/**`, `/api/v1/staff/**`, `/.well-known/jwks.json` | `lb://auth-service` |
 | `/api/v1/categorias/**`, `/api/v1/productos/**`, `/api/v1/tallas`, `/api/v1/colores`, `/api/v1/precios/**`, `/api/v1/admin/{categorias,productos,variantes,imagenes,tallas,colores,descuentos,inventario}/**` | `lb://catalog-service` |
-| `/api/v1/carrito/**`, `/api/v1/checkout/**`, `/api/v1/pedidos/**`, `/api/v1/admin/pedidos/**`, `/api/v1/admin/clientes/*/pedidos` | `lb://order-service` |
+| `/api/v1/carrito/**`, `/api/v1/checkout/**`, `/api/v1/pedidos/**`, `/api/v1/admin/pedidos/**` | `lb://order-service` |
 | `/api/v1/pagos/**` (incluye webhooks), `/api/v1/admin/{pagos,reembolsos}/**` | `lb://payment-service` |
 | `/api/v1/envios/**`, `/api/v1/agencias`, `/api/v1/admin/{entregas,repartidores,tarifas,agencias}/**` | `lb://delivery-service` |
 | `/api/v1/admin/notificaciones/**` | `lb://notification-service` |
@@ -159,7 +160,7 @@ Para no repetir código entre los 7 servicios de negocio (ADR-018), un módulo M
 | API | `ApiResponse<T>`, `GlobalExceptionHandler` base, excepciones comunes (`RecursoNoEncontrado`, `ConflictoNegocio`, …), paginación (ADR-015) |
 | Seguridad | Configuración de *resource server* JWT (JWKS de auth), `RoleHierarchy` (`ADMIN > OPERADOR`), lectura del `clienteId`/`tipo` del token |
 | Eventos | Sobre común (`eventoId`, `tipo`, `version`, `ocurridoEn`), **outbox** (entidad + publicador programado) y **consumidor idempotente** (`evento_procesado`) (ADR-009) |
-| Archivos | Puerto `FileStorage` + adaptadores `S3FileStorage` y `AzureBlobFileStorage` (ADR-013) |
+| Archivos | Puerto `FileStorage` + adaptador `S3FileStorage` (Garage en local y en la VM; S3 real en AWS). `AzureBlobFileStorage` diferido (ADR-013, SPEC-8 I6) |
 | Feign | Propagación del JWT del usuario y del `X-Request-Id`; configuración base de Resilience4j |
 | Dinero | Utilidades de `BigDecimal` (escala 2, *half-up*) |
 
@@ -225,7 +226,7 @@ com.fitstore.common
 ├── security      FitstoreSecurityAutoConfiguration (resource server + RoleHierarchy), UsuarioActual (lee sub, tipo, rol)
 ├── event         SobreEvento, OutboxEvento (entidad), OutboxPublisher (@Scheduled + publisher confirms),
 │                 EventoProcesado, ConsumidorIdempotente, TopologiaRabbit (exchange, colas, DLQ)
-├── storage       FileStorage, S3FileStorage, AzureBlobFileStorage, StorageProperties
+├── storage       FileStorage, S3FileStorage, StorageProperties   (AzureBlobFileStorage diferido)
 ├── feign         PropagacionJwtInterceptor, PropagacionRequestIdInterceptor
 ├── money         Dinero (escala 2, half-up)
 └── autoconfigure registro de las autoconfiguraciones (cada servicio las activa con propiedades)
@@ -240,7 +241,7 @@ Cada servicio que usa outbox incluye la tabla `outbox_evento` y `evento_procesad
 | config-server | `spring-cloud-config-server`, `spring-boot-starter-security` (Basic), `spring-boot-starter-actuator` |
 | discovery-server | `spring-cloud-starter-netflix-eureka-server`, `spring-boot-starter-actuator` |
 | api-gateway | `spring-cloud-starter-gateway-server-webflux`, `spring-boot-starter-data-redis-reactive`, `spring-boot-starter-oauth2-resource-server`, `spring-cloud-starter-netflix-eureka-client`, `spring-cloud-starter-config`, `springdoc-openapi-starter-webflux-ui`, `spring-boot-starter-actuator`, `spring-boot-starter-opentelemetry` |
-| fitstore-common | `spring-boot-autoconfigure`, `spring-boot-starter-webmvc`, `-security`, `-oauth2-resource-server`, `-amqp`, `-data-jpa`, `spring-cloud-starter-openfeign` (todas `optional`), `software.amazon.awssdk:s3`, `azure-storage-blob` (`optional`) |
+| fitstore-common | `spring-boot-autoconfigure`, `spring-boot-starter-webmvc`, `-security`, `-oauth2-resource-server`, `-amqp`, `-data-jpa`, `spring-cloud-starter-openfeign` (todas `optional`), `software.amazon.awssdk:s3` (`azure-storage-blob` solo si se implementa el adaptador diferido) |
 
 ### 10.5 Configuración
 

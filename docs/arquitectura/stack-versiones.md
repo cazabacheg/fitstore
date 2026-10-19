@@ -1,6 +1,6 @@
 # FitStore — Stack y versiones
 
-> Versión: **v2 (aprobado)** — 2026-10-18. v2: se adopta MapStruct. Versiones consultadas en Maven Central y npm el 2026-10-18.
+> Versión: **v3 (aprobado)** — 2026-10-19. v3: Azure Blob diferido (SPEC-8 I6). v2: se adopta MapStruct. Versiones consultadas en Maven Central y npm el 2026-10-18.
 > Todas las secciones 10.4 de los micros remiten a esta tabla; cada servicio solo lista **qué** usa, no la versión.
 > Regla: las versiones se fijan al crear el repositorio y se actualizan solo con un motivo (seguridad o corrección).
 
@@ -45,7 +45,7 @@ Gestionadas por los BOM de Spring Boot y Spring Cloud salvo que se indique versi
 | Lombok | `org.projectlombok:lombok` | **1.18.48** |
 | Mapeo DTO ↔ entidad | `org.mapstruct:mapstruct` + `mapstruct-processor`, con `org.projectlombok:lombok-mapstruct-binding` | **1.6.3** (binding **0.2.0**) |
 | S3 (Garage / AWS) | `software.amazon.awssdk:s3` (BOM `bom`) | **2.56.x** |
-| Azure Blob (adaptador alternativo) | `com.azure:azure-storage-blob` (BOM `azure-sdk-bom`) | se fija al implementarlo |
+| Azure Blob (adaptador alternativo) | `com.azure:azure-storage-blob` (BOM `azure-sdk-bom`) | **diferido** (la demo usa Garage en la VM, SPEC-8 I6); se fija si se implementa |
 | Imágenes (solo catalog, settings) | `net.coobird:thumbnailator` | **0.4.21** |
 | PDF (solo payment) | `io.github.openhtmltopdf:openhtmltopdf-pdfbox` | **1.1.x** |
 | Carga masiva (solo catalog) | `org.apache.poi:poi-ooxml`, `org.apache.commons:commons-csv` | **5.5.1**, **1.14.1** |
