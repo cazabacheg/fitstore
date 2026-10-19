@@ -1,9 +1,10 @@
 # FitStore — Análisis micro: `notification-service`
 
-> Versión: **v7 (aprobado)** — 2026-10-19. Fuente: [`01-analisis-macro.md`](../01-analisis-macro.md) v15.
+> Versión: **v8 (aprobado)** — 2026-10-19. Fuente: [`01-analisis-macro.md`](../01-analisis-macro.md) v15.
 > Estados: ✅ decidido · 🟡 propuesto · ❓ abierto · 🕓 diferido
 
 **Historial:**
+- v8 (2026-10-19): corrección de la SPEC-7: el catálogo tiene **18** plantillas (10.1 decía 17 antes de agregar C14).
 - v7 (2026-10-19): nuevo correo **C14 "Tu pedido regresó a la tienda"** (`EntregaActualizada` → `DEVUELTA`), decidido en la SPEC-6: 14 al cliente + 4 a la tienda.
 - v6 (2026-10-18): el correo C7 (reembolso realizado) distingue el reembolso parcial postventa (SPEC-5).
 - v5 (2026-10-18): sección 10 aprobada → **documento completo aprobado**.
@@ -321,7 +322,7 @@ Stack y versiones comunes: [`docs/arquitectura/stack-versiones.md`](../../arquit
 |---|---|
 | Controladores | `AdminNotificacionController`, `AdminPlantillaController` |
 | Recepción | `EnrutadorEventos` (`@RabbitListener`): evento → plantillas y destinatarios; guarda la copia de marca y de pedidos |
-| Plantillas | `CatalogoPlantillas` (definición de las 17), `PlantillaService` (editor), `RenderizadorCorreo` (Thymeleaf) |
+| Plantillas | `CatalogoPlantillas` (definición de las 18), `PlantillaService` (editor), `RenderizadorCorreo` (Thymeleaf) |
 | Envío | `DespachadorCorreos` (`@Scheduled`), `SmtpEmailSender` (implementa `EmailSender`), `PaymentClient` (boleta) |
 | Procesos | `TemporizadorConfirmacion` (respaldo de 10 min), `LimpiezaRetencion` (180 días) |
 | Clientes | `PaymentClient`, `SettingsClient` (solo al arrancar sin copia) |

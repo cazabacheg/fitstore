@@ -1,0 +1,16 @@
+<!doctype html><html><head><meta charset="utf-8"><link rel="stylesheet" href="_boceto.css"><style>body{width:1440px}</style></head><body>
+<h1 class="title">P-7-03 · Editor de plantilla (backoffice) — /notificaciones/plantillas/:codigo · ADMIN</h1>
+<div class="row" style="align-items:stretch"><div class="side">menú lateral</div><div class="col sp pad">
+<div class="row"><u class="s">‹ Plantillas</u></div>
+<div class="row"><div class="t" style="font-size:22px">¡Pedido confirmado!</div><span class="tag">Obligatoria</span><span class="sp"></span><u class="s">Restaurar predeterminado</u><div class="btn b">✉ Enviar prueba a mi correo (N7)</div><div class="btn b">Descartar</div><div class="btn p">Guardar</div></div>
+<div class="row" style="align-items:flex-start;gap:18px"><div class="card col" style="width:520px">
+<div class="lbl">Asunto</div><div class="f">¡Gracias por tu compra, {{nombre}}! Pedido {{codigoPedido}}</div>
+<div class="lbl">Título</div><div class="f">¡Tu pedido está confirmado!</div>
+<div class="lbl">Mensaje (saltos de línea y **negrita**)</div><div class="f" style="height:110px">Hola {{nombre}}, recibimos tu pago de **{{total}}**. Te avisaremos cuando tu pedido salga. Adjuntamos tu boleta.</div>
+<div class="lbl">Texto del botón</div><div class="f">Ver mi pedido</div>
+<div class="lbl">Variables (clic para insertar)</div><div class="row s" style="flex-wrap:wrap"><span class="tag">{{nombre}}</span><span class="tag">{{codigoPedido}}</span><span class="tag">{{total}}</span><span class="tag">{{modalidad}}</span><span class="tag">{{nombreTienda}}</span></div>
+<div class="err">400: La variable {{xyz}} no existe en esta plantilla</div>
+<span class="s">El diseño, la tabla de productos y la boleta adjunta no se editan (micro D2)</span></div>
+<div class="card col sp"><div class="row"><b>Vista previa en vivo</b><span class="sp"></span><span class="s">◉ Escritorio ○ Móvil · datos de ejemplo (N3)</span></div>
+<div class="b col" style="width:600px;align-self:center;gap:0"><div class="p pad box" style="height:60px">LOGO · Moda Activa</div><div class="col pad"><b style="font-size:20px">¡Tu pedido está confirmado!</b><span class="s">Hola Ana, recibimos tu pago de <b>S/ 373.36</b>. Te avisaremos cuando tu pedido salga. Adjuntamos tu boleta.</span><div class="g pad s">tabla de productos (bloque fijo)</div><div class="btn p" style="align-self:center">Ver mi pedido</div></div><div class="g pad s box">pie: dirección · horario · redes · políticas</div></div></div></div></div></div>
+</body></html>
