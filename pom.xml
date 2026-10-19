@@ -41,6 +41,8 @@
     <awssdk.version>2.56.0</awssdk.version>
     <wiremock.version>3.13.2</wiremock.version>
     <lombok.version>1.18.48</lombok.version>
+    <mapstruct.version>1.6.3</mapstruct.version>
+    <lombok-mapstruct-binding.version>0.2.0</lombok-mapstruct-binding.version>
     <spring-retry.version>2.0.13</spring-retry.version>
     <!-- Umbral de cobertura de líneas por módulo (SPEC-0a I7, CA-0a-21) -->
     <jacoco.umbral>0.80</jacoco.umbral>
@@ -84,6 +86,22 @@
         <artifactId>wiremock-standalone</artifactId>
         <version>${wiremock.version}</version>
       </dependency>
+      <!-- Mapeo DTO a entidad (stack-versiones, sección 2); Lombok lo gestiona Spring Boot con lombok.version -->
+      <dependency>
+        <groupId>org.mapstruct</groupId>
+        <artifactId>mapstruct</artifactId>
+        <version>${mapstruct.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.mapstruct</groupId>
+        <artifactId>mapstruct-processor</artifactId>
+        <version>${mapstruct.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.projectlombok</groupId>
+        <artifactId>lombok-mapstruct-binding</artifactId>
+        <version>${lombok-mapstruct-binding.version}</version>
+      </dependency>
       <!-- Reintentos del cliente de config (CA-0a-04): ni Boot 4 ni Cloud 2025.1 lo gestionan -->
       <dependency>
         <groupId>org.springframework.retry</groupId>
@@ -101,6 +119,34 @@
   <build>
     <pluginManagement>
       <plugins>
+        <!-- Procesadores de anotaciones en este orden (stack-versiones): cualquier módulo que use Lombok o MapStruct
+             los procesa sin tocar este POM. Un campo sin mapear falla al compilar. -->
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-compiler-plugin</artifactId>
+          <configuration>
+            <annotationProcessorPaths>
+              <path>
+                <groupId>org.projectlombok</groupId>
+                <artifactId>lombok</artifactId>
+                <version>${lombok.version}</version>
+              </path>
+              <path>
+                <groupId>org.projectlombok</groupId>
+                <artifactId>lombok-mapstruct-binding</artifactId>
+                <version>${lombok-mapstruct-binding.version}</version>
+              </path>
+              <path>
+                <groupId>org.mapstruct</groupId>
+                <artifactId>mapstruct-processor</artifactId>
+                <version>${mapstruct.version}</version>
+              </path>
+            </annotationProcessorPaths>
+            <compilerArgs>
+              <arg>-Amapstruct.unmappedTargetPolicy=ERROR</arg>
+            </compilerArgs>
+          </configuration>
+        </plugin>
         <plugin>
           <groupId>org.jacoco</groupId>
           <artifactId>jacoco-maven-plugin</artifactId>
