@@ -1,11 +1,12 @@
 # SPEC-0a — Plataforma backend y esqueletos de servicios
 
-> Versión: **v4 (aprobado)** — 2026-10-18 · Estados: ✅ decidido · 🟡 propuesto · ❓ abierto
+> Versión: **v5 (aprobado)** — 2026-10-19 · Estados: ✅ decidido · 🟡 propuesto · ❓ abierto
 > **Dueña de:** monorepo, `fitstore-common`, `config-server`, `discovery-server`, `api-gateway`, `infra/` (entorno dev), CI, y el **esqueleto** de los 7 servicios de negocio.
 > **Depende de:** — · **Habilita:** todas las demás specs.
 > **Contratos:** los esqueletos exponen solo `actuator` y la documentación base; los endpoints de negocio llegan con cada spec.
 
 **Historial:**
+- v5 (2026-10-19): por la SPEC-8: Flyway incluye `db/dev` con los perfiles `dev` y `demo` (CA-0a-05); el adaptador Azure Blob queda diferido (Garage en la VM, I6).
 - v4 (2026-10-18): CI según la ADR-021 (`ci.yml` + `stage.yml` + plantilla de PR); sin protección de rama.
 - v3 (2026-10-18): secciones 2, 3, 4, 6, 7, 8 y 9 aprobadas → **spec aprobada**.
 - v2 (2026-10-18): estructura de la plantilla v2 (CA dentro de cada HU). Aprobados: alcance, orden interno (I1), JWKS de prueba (I2), seguridad base (I3), Garage (I5). El repo en GitHub lo crea el asistente (privado). Azure Blob queda para la decisión de despliegue en la nube.
@@ -40,7 +41,7 @@ Al cerrar esta spec, en Lyanna se ejecuta `docker compose up` y **toda la plataf
 - Lógica de negocio, controladores y pantallas → specs 1–7.
 - Workspace Angular y librería `shared` → 0b.
 - Emisión de JWT (auth firma) → spec 1. En 0a, el gateway y los servicios **validan** con un JWKS de prueba.
-- `docker-compose.cloud.yml`, Caddy, DuckDNS, SES → spec 8. Adaptador Azure Blob → solo si se decide desplegar en Azure, al momento del despliegue.
+- `docker-compose.cloud.yml`, Caddy, DuckDNS, SES y el perfil `demo` de la nube → spec 8. Adaptador Azure Blob → diferido: en la nube se usa Garage en la VM (SPEC-8 I6).
 
 ## 2. Referencias
 
@@ -94,6 +95,7 @@ CA-0a-05  Esquema migrado y validado
           Cuando arranca cada servicio
           Entonces Flyway aplica V1 en su base
           Y Hibernate valida (ddl-auto=validate) que las entidades coinciden con el esquema
+          Y solo con los perfiles dev o demo Flyway incluye además classpath:db/dev (datos de demostración de cada spec)
 
 CA-0a-06  Pruebas de capa de datos (AP1)
           Dado cada repositorio listado en la sección 9 de su micro
@@ -268,4 +270,4 @@ Total: **29 repositorios** con pruebas de datos.
 ## Decisiones ✅
 
 1. **Repositorio en GitHub:** privado, `cazabacheg/fitstore`, creado por el asistente (2026-10-18) con la documentación como primer commit.
-2. **Adaptador Azure Blob:** fuera de 0a; se implementa solo si se decide desplegar en Azure, cuando se haga el despliegue en la nube.
+2. **Adaptador Azure Blob:** fuera de 0a y diferido: la demo en Azure usa Garage en la VM (SPEC-8 I6).

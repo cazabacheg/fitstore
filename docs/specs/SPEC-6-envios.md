@@ -1,11 +1,12 @@
 # SPEC-6 — Envíos
 
-> Versión: **v3 (aprobado)** — 2026-10-19 · Estados: ✅ decidido · 🟡 propuesto · ❓ abierto
+> Versión: **v4 (aprobado)** — 2026-10-19 · Estados: ✅ decidido · 🟡 propuesto · ❓ abierto
 > **Dueña de:** `backend/delivery-service` (tarifas, cotización, agencias, repartidores, entregas) · backoffice: `features/entregas`, `features/maestros-envio`.
 > **Depende de:** 0a, 0b, 1 (sesión de staff) · usa el evento `PedidoListoDespacho` de order y `/ubigeo` de settings (en el frontend) · **Habilita:** 4 (cotización y opciones de envío en el checkout; el pedido pasa a `ENVIADO` y `ENTREGADO`), 7 (correos de la entrega), 8 (entregas del día en el dashboard).
 > **Contratos:** `contracts/openapi/delivery-service.yaml`; evento que publica `EntregaActualizada`; consume `PedidoListoDespacho`.
 
 **Historial:**
+- v4 (2026-10-19): los datos de demostración también se cargan en la nube con el perfil `demo` (SPEC-8 I7), con UUID fijos compartidos entre servicios (`docs/demo/ids-demo.md`).
 - v3 (2026-10-19): revisada por el autor → **spec aprobada**.
 - v2 (2026-10-19): **devolución a tienda** (estado final `DEVUELTA`, CA-6-33 y 34; order pasa el pedido a `DEVUELTO` y permite reembolsar); E2 ✅ selector de ubigeo con nivel agregado a la SPEC-0b (v5). Cambios propagados: macro v21, micros de delivery v6, order v7, payment v7 y notification v7 (correo C14), SPEC-4 v6, SPEC-5 v5.
 - v1 (2026-10-18): borrador inicial.
@@ -21,7 +22,7 @@ Al cerrar esta spec, el checkout **cotiza el envío** a cualquier distrito con l
 **Incluye:**
 - Toda la lógica de [`delivery-service`](../analisis/micro/delivery-service.md): tarifas por ubigeo con búsqueda jerárquica, opciones y cotización, agencias, repartidores, entregas desde `PedidoListoDespacho`, máquinas de estado local y agencia (con la devolución a tienda), seguimiento, entregas del día y hoja de ruta, resumen para el dashboard.
 - Pantallas P-6-01 a P-6-06.
-- Semilla de agencias y tarifas (`V2`) y datos de demostración para `dev`.
+- Semilla de agencias y tarifas (`V2`) y datos de demostración para `dev` y la nube (perfil `demo`, SPEC-8 I7).
 - Colección Postman `delivery`.
 
 **No incluye (y dónde va):**
@@ -291,7 +292,7 @@ Todo según el micro de delivery. Decisiones de implementación de esta spec:
 ## 6. Datos
 
 - **Semilla (`V2`, todos los entornos):** agencias Shalom, Olva Courier, Marvisur y Cruz del Sur Cargo (con plantilla de rastreo de ejemplo); tarifas de delivery local para `1501` y `07` más Cercado y La Victoria; tarifas de agencia para los 23 departamentos distintos de Lima y Callao y las provincias de Lima fuera de Lima Metropolitana (micro 3.1).
-- **Datos de demostración (solo `dev`):** 3 repartidores (uno inactivo) y las entregas de los pedidos de demostración de la spec 4: una pendiente de asignar, una asignada para hoy, una en ruta, una con un intento fallido, una por agencia enviada con código, una disponible en agencia y una devuelta a la tienda.
+- **Datos de demostración (perfil `dev` y, en la nube, perfil `demo` (SPEC-8 I7)):** 3 repartidores (uno inactivo) y las entregas de los pedidos de demostración de la spec 4: una pendiente de asignar, una asignada para hoy, una en ruta, una con un intento fallido, una por agencia enviada con código, una disponible en agencia y una devuelta a la tienda.
 
 ## 7. Pruebas
 

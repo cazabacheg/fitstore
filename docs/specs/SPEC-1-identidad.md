@@ -1,11 +1,12 @@
 # SPEC-1 — Identidad
 
-> Versión: **v4 (aprobado)** — 2026-10-18 · Estados: ✅ decidido · 🟡 propuesto · ❓ abierto
+> Versión: **v5 (aprobado)** — 2026-10-19 · Estados: ✅ decidido · 🟡 propuesto · ❓ abierto
 > **Dueña de:** `backend/auth-service` (lógica, controladores, emisión de JWT) · tienda: `features/acceso`, `features/cuenta` · backoffice: `features/acceso`, `features/perfil`, `features/usuarios`.
 > **Depende de:** 0a, 0b · **Habilita:** todas las pantallas protegidas; spec 4 (datos del destinatario en el checkout).
 > **Contratos:** `contracts/openapi/auth-service.yaml`; eventos `ClienteRegistrado`, `PasswordResetSolicitado`, `PasswordCambiado`.
 
 **Historial:**
+- v5 (2026-10-19): por la SPEC-8 (I7), los datos de demostración también se cargan en la nube (perfil `demo`) con contraseña secreta (A7, CA-1-39); 4 clientes demo con UUID fijos (antes 2; la spec 4 necesitaba 4).
 - v4 (2026-10-18): P-1-08 y P-1-09 indican qué abre el enlace de cada fila y sus acciones, según la convención de tablas de la SPEC-0b (R11). Bocetos actualizados.
 - v3 (2026-10-18): por la SPEC-4 (O2), `DialogoDireccion` queda **reutilizable** (A6): el checkout lo abre para agregar una dirección sin salir de la página.
 - v2 (2026-10-18): spec aprobada. A2: al borrar la predeterminada pasa a serlo la dirección creada más recientemente. Datos de demostración en dev aprobados.
@@ -24,7 +25,7 @@ Al cerrar esta spec, un cliente puede **registrarse, iniciar sesión, mantener s
 - Publicación de `ClienteRegistrado`, `PasswordResetSolicitado` y `PasswordCambiado` (los correos los envía la spec 7).
 - Pantallas P-1-01 a P-1-10.
 - Retiro del JWKS de prueba de la 0a (I2): desde aquí todos validan con el JWKS real.
-- Datos de demostración para el perfil `dev`.
+- Datos de demostración para el perfil `dev` y la nube (perfil `demo`, SPEC-8 I7).
 - Colección Postman `auth`.
 
 **No incluye (y dónde va):**
@@ -250,6 +251,10 @@ CA-1-37  Dado el cierre de esta spec
 
 CA-1-38  Cuando arranca auth sin ningún ADMIN y con FITSTORE_ADMIN_EMAIL y FITSTORE_ADMIN_PASSWORD definidos
          Entonces crea ese ADMIN; si ya existe uno, no hace nada
+
+CA-1-39  Cuando arranca auth con el perfil demo (nube)
+         Entonces reemplaza la contraseña de las cuentas de demostración por la de DEMO_PASSWORD;
+              si DEMO_PASSWORD no está definida, desactiva esas cuentas (la contraseña de desarrollo nunca sirve en la nube)
 ```
 
 ## 4. Pantallas
@@ -346,13 +351,14 @@ Todo según el micro de auth. Decisiones de implementación de esta spec:
 | A4 | **Cookie de refresh** | Una por app (cada app en su subdominio, auth 4.4); `HttpOnly`, `SameSite=Strict`, `Path=/api/v1/auth`. `POST /auth/refresh` y `/auth/logout` solo aceptan la cookie (sin cuerpo) |
 | A5 | **Retiro del JWKS de prueba** | Se borra `infra/dev/jwks-prueba.json` y su clave; el gateway y los servicios apuntan a `http://auth-service/.well-known/jwks.json` (excepción acordada a la regla de "0a congelada") |
 | A6 | **`DialogoDireccion` reutilizable** ✅ | Componente *standalone* exportado desde `features/cuenta/direcciones/` con el `DialogoDireccionService.abrir(direccion?)`, que devuelve la dirección guardada (o nada si se cancela). Él mismo llama a `POST`/`PUT /clientes/me/direcciones` y respeta el límite de 10. Lo usa el checkout (SPEC-4); como es solo de la tienda, no va a `shared` |
+| A7 | **Cuentas demo en la nube** ✅ | Con el perfil `demo`, `DatosDemoNube` (al arrancar) reemplaza el hash de las cuentas de demostración por BCrypt de `DEMO_PASSWORD`, o las desactiva si falta. Así la nube tiene datos de demo sin exponer una contraseña pública (SPEC-8 I7) |
 
 ## 6. Datos
 
 - **Sin migraciones nuevas:** el esquema completo ya está en `V1` (0a).
-- **Datos de demostración (solo perfil `dev`):** migración repetible `R__datos_demo.sql` en `db/dev/` (Flyway `locations` solo en dev) con:
-  - 2 clientes (con direcciones en Lima y en Arequipa) y 1 OPERADOR;
-  - contraseña común de demostración documentada en el `README` de desarrollo (no es un secreto real; en `cloud` no existe).
+- **Datos de demostración (perfil `dev` y, en la nube, perfil `demo`; SPEC-8 I7):** migración repetible `R__datos_demo.sql` en `db/dev/` (Flyway la incluye solo con esos perfiles) con:
+  - 4 clientes con UUID fijos (`docs/demo/ids-demo.md`), con direcciones en Lima, Callao y Arequipa (son los dueños de los pedidos de demostración de la spec 4), y 1 OPERADOR;
+  - en `dev`, contraseña común de demostración documentada en el `README` de desarrollo (no es un secreto real); en la nube, la de `DEMO_PASSWORD` (A7, CA-1-39).
 - El ADMIN no se siembra: lo crea `AdminInicial` desde variables de entorno (CA-1-38).
 
 ## 7. Pruebas
@@ -369,6 +375,7 @@ Todo según el micro de auth. Decisiones de implementación de esta spec:
 | 32–34 | API | `ClienteAdminControllerTest` (OPERADOR 403 al bloquear) |
 | 36–37 | Integración | Gateway + un servicio validando un token real de auth |
 | 38 | Unitaria | `AdminInicialTest` |
+| 39 | Unitaria | `DatosDemoNubeTest` (hash reemplazado; cuentas desactivadas sin `DEMO_PASSWORD`) |
 | Todas | Postman | `postman/auth.postman_collection.json` (flujo cliente y flujo staff) |
 
 ## 8. Archivos y carpetas que toca
@@ -386,7 +393,7 @@ Todo según el micro de auth. Decisiones de implementación de esta spec:
 
 ## 9. Definición de terminado
 
-- [ ] CA-1-01 a CA-1-38 cumplidos en CI.
+- [ ] CA-1-01 a CA-1-39 cumplidos en CI.
 - [ ] Postman `auth` en verde contra la plataforma levantada.
 - [ ] El OpenAPI de auth coincide con lo implementado.
 - [ ] Demostración de la AP1: registro → login → perfil → direcciones → logout, y login de staff, en las pantallas reales.
@@ -395,4 +402,4 @@ Todo según el micro de auth. Decisiones de implementación de esta spec:
 ## Decisiones ✅
 
 1. **A2:** al borrar la dirección predeterminada, pasa a serlo la creada más recientemente entre las que quedan.
-2. **Datos de demostración (solo dev):** 2 clientes (direcciones en Lima y Arequipa) y 1 OPERADOR con contraseña de demostración común; no existen en `cloud`.
+2. **Datos de demostración (dev y demo en la nube):** 4 clientes y 1 OPERADOR; contraseña común documentada en `dev`, secreta (`DEMO_PASSWORD`) en la nube (A7, decidido en la SPEC-8).

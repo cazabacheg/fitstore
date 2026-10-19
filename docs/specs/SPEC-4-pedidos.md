@@ -1,11 +1,12 @@
 # SPEC-4 — Pedidos
 
-> Versión: **v6 (aprobado)** — 2026-10-19 · Estados: ✅ decidido · 🟡 propuesto · ❓ abierto
+> Versión: **v7 (aprobado)** — 2026-10-19 · Estados: ✅ decidido · 🟡 propuesto · ❓ abierto
 > **Dueña de:** `backend/order-service` (carrito, checkout, pedidos, saga) · tienda: `features/carrito`, `features/checkout`, `features/mis-pedidos` · backoffice: `features/pedidos`.
 > **Depende de:** 0a, 0b, 1 (sesión y direcciones) · usa los contratos de catalog (cotizar, reservar), auth (cliente y dirección), delivery (opciones y cotización de envío) y settings (parámetros y ubigeo) · **Habilita:** 5 (pago del pedido), 6 (entrega desde `PedidoListoDespacho`), 7 (correos del pedido), 8 (dashboard y E2E).
 > **Contratos:** `contracts/openapi/order-service.yaml`; eventos que publica `PedidoCreado`, `PedidoPagado`, `PedidoCancelado`, `PedidoExpirado`, `PagoNoAplicable`, `PedidoListoDespacho`, `PedidoListoRecojo`, `PedidoRecogido`, `ReembolsoSolicitado`; consume `PagoConfirmado`, `PagoRechazado`, `BoletaEmitida`, `PagoReembolsado`, `EntregaActualizada`.
 
 **Historial:**
+- v7 (2026-10-19): los datos de demostración también se cargan en la nube con el perfil `demo` (SPEC-8 I7), con UUID fijos compartidos entre servicios (`docs/demo/ids-demo.md`).
 - v6 (2026-10-19): por la SPEC-6, estado final **DEVUELTO**: desde ENVIADO cuando delivery devuelve la entrega a la tienda (CA-4-45) o desde LISTO_RECOJO cuando nadie recoge el pedido (CA-4-60); el reembolso postventa se permite en DEVUELTO sin plazo (CA-4-54, 57); etapa "Devuelto a la tienda" en el seguimiento (O9). Micro de order v7.
 - v5 (2026-10-18): P-4-05 y P-4-06 indican qué abre el enlace de cada fila y sus acciones, según la convención de tablas de la SPEC-0b (R11). Boceto P-4-05 actualizado.
 - v4 (2026-10-18): nueva **HU-4-12 Reembolso postventa** (CA-4-54 a 59) decidida en la SPEC-5 (también en el alcance, los eventos del encabezado, Postman y la demostración): total o parcial desde un pedido entregado, solo ADMIN, plazo configurable (0 = sin límite); las ventas restan lo reembolsado (CA-4-52). Micro de order v6.
@@ -24,7 +25,7 @@ Al cerrar esta spec, el cliente **arma su carrito** (con o sin sesión), ve sus 
 **Incluye:**
 - Toda la lógica de [`order-service`](../analisis/micro/order-service.md): carrito en Redis (anónimo, de cliente, fusión, última cotización), resumen y confirmación del checkout con idempotencia, copia congelada del pedido, máquina de estados con historial, expiración, consumo de los eventos de pago y de entrega, cancelación con compensaciones, reembolso postventa (micro 4.8), consultas del cliente y del backoffice, y el resumen de ventas para el dashboard.
 - Pantallas P-4-01 a P-4-06.
-- Datos de demostración para `dev`.
+- Datos de demostración para `dev` y la nube (perfil `demo`, SPEC-8 I7).
 - Colección Postman `order` y prueba de carga k6 del checkout.
 
 **No incluye (y dónde va):**
@@ -431,7 +432,7 @@ Todo según el micro de order. Decisiones de implementación de esta spec:
 - **Migración** `VAAAAMMDD_HHMM__indice_historial_estado.sql`: índice `pedido_historial (estado_nuevo, creado_en)` para el resumen de ventas (O6).
 - **Sin datos semilla** en producción (los pedidos los crean los clientes).
 - **Migración** `VAAAAMMDD_HHMM__reembolso_postventa.sql`: tabla `pedido_reembolso` y columna `pedido.monto_reembolsado` (micro de order v6), si la `V1` de la 0a no las incluye ya.
-- **Datos de demostración (solo `dev`):** 10 pedidos del cliente demo de la spec 1 y de 3 clientes más, en todos los estados (uno por expirar en 10 minutos, uno de recojo `LISTO_RECOJO`, uno por agencia `ENVIADO` con código de seguimiento, dos `ENTREGADO` del mes, uno de ellos con un reembolso postventa parcial, y uno `CANCELADO` con reembolso), con sus historiales. Se insertan sin eventos ni reservas (son solo para ver las pantallas).
+- **Datos de demostración (perfil `dev` y, en la nube, perfil `demo` (SPEC-8 I7)):** 10 pedidos de los 4 clientes de demostración de la spec 1, en todos los estados (uno por expirar en 10 minutos, uno de recojo `LISTO_RECOJO`, uno por agencia `ENVIADO` con código de seguimiento, dos `ENTREGADO` del mes, uno de ellos con un reembolso postventa parcial, y uno `CANCELADO` con reembolso), con sus historiales. Se insertan sin eventos ni reservas (son solo para ver las pantallas).
 
 ## 7. Pruebas
 

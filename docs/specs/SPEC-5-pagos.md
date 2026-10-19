@@ -1,11 +1,12 @@
 # SPEC-5 — Pagos
 
-> Versión: **v6 (aprobado)** — 2026-10-19 · Estados: ✅ decidido · 🟡 propuesto · ❓ abierto
+> Versión: **v7 (aprobado)** — 2026-10-19 · Estados: ✅ decidido · 🟡 propuesto · ❓ abierto
 > **Dueña de:** `backend/payment-service` (intención, cobros, webhooks, reembolsos, boleta) · tienda: `features/pago` · backoffice: `features/pagos`.
 > **Depende de:** 0a, 0b, 1 (sesión) · usa el contrato de eventos de order (`PedidoCreado`, `PedidoCancelado`, `PedidoExpirado`, `PagoNoAplicable`, `ReembolsoSolicitado`) y `GET /settings/public` · **Habilita:** 4 (el pedido pasa a `PAGADO`, guarda la boleta y registra lo reembolsado), 7 (correos de pago, reembolso y alerta con la boleta adjunta), 8 (demo de punta a punta).
 > **Contratos:** `contracts/openapi/payment-service.yaml`; eventos que publica `PagoConfirmado`, `PagoRechazado`, `BoletaEmitida`, `PagoReembolsado`, `ReembolsoFallido`.
 
 **Historial:**
+- v7 (2026-10-19): los datos de demostración también se cargan en la nube con el perfil `demo` (SPEC-8 I7), con UUID fijos compartidos entre servicios (`docs/demo/ids-demo.md`).
 - v6 (2026-10-19): el contador de reembolsos fallidos del menú usa `size=1` y lee el total (Spring Data no acepta `size=0`), corregido al redactar la SPEC-8.
 - v5 (2026-10-19): el reembolso postventa también aplica a pedidos devueltos a la tienda (SPEC-6); sin cambios en el flujo de payment.
 - v4 (2026-10-18): P-5-03, P-5-04 y P-5-05 con la convención de tablas de la SPEC-0b (R11) → **spec aprobada**.
@@ -329,7 +330,7 @@ Todo según el micro de payment. Decisiones de implementación de esta spec:
 ## 6. Datos
 
 - **Sin migraciones nuevas:** el esquema completo y la fila de la serie `B001` en `correlativo_boleta` vienen en `V1` (spec 0a). Si la 0a no la sembró, esta spec agrega `VAAAAMMDD_HHMM__serie_boleta.sql`.
-- **Datos de demostración (solo `dev`):** las intenciones, transacciones (un pago aprobado tras un rechazo), un reembolso `COMPLETADO` por cancelación, uno postventa parcial `COMPLETADO` (el de la spec 4), uno `FALLIDO` y las boletas de los pedidos de demostración de la spec 4, con PDF generados al iniciar.
+- **Datos de demostración (perfil `dev` y, en la nube, perfil `demo` (SPEC-8 I7)):** las intenciones, transacciones (un pago aprobado tras un rechazo), un reembolso `COMPLETADO` por cancelación, uno postventa parcial `COMPLETADO` (el de la spec 4), uno `FALLIDO` y las boletas de los pedidos de demostración de la spec 4, con PDF generados al iniciar.
 - **Llaves de prueba:** en `.env` (fuera del repo) y en los *secrets* de GitHub para la nube; `.env.example` documenta los nombres.
 
 ## 7. Pruebas

@@ -1,11 +1,12 @@
 # SPEC-3 — Tienda y reclamos
 
-> Versión: **v5 (aprobado)** — 2026-10-18 · Estados: ✅ decidido · 🟡 propuesto · ❓ abierto
+> Versión: **v6 (aprobado)** — 2026-10-19 · Estados: ✅ decidido · 🟡 propuesto · ❓ abierto
 > **Dueña de:** `backend/settings-service` (configuración, ubigeo, Libro de Reclamaciones) · tienda: `features/inicio`, `features/legal` · backoffice: `features/configuracion`, `features/reclamos`.
 > **Depende de:** 0a, 0b, 1 (sesión de staff) · usa el contrato de catalog (destacados y categorías) · **Habilita:** la marca real en todas las pantallas (0b ya la consume), versiones de políticas para el registro (spec 1), parámetros para order y payment (specs 4 y 5).
 > **Contratos:** `contracts/openapi/settings-service.yaml`; eventos `ConfiguracionActualizada`, `ReclamoRegistrado`, `ReclamoRespondido`.
 
 **Historial:**
+- v6 (2026-10-19): los datos de demostración también se cargan en la nube con el perfil `demo` (SPEC-8 I7), con UUID fijos compartidos entre servicios (`docs/demo/ids-demo.md`).
 - v5 (2026-10-18): P-3-05 y P-3-06 indican qué abre el enlace de cada fila y sus acciones, según la convención de tablas de la SPEC-0b (R11). Boceto P-3-06 actualizado.
 - v4 (2026-10-18): nuevo parámetro "días para reembolso postventa" (0 a 365, 0 = sin límite, por defecto 30), decidido en la SPEC-5; CA-3-17 ampliado.
 - v3 (2026-10-18): revisada por el autor → **spec aprobada**.
@@ -24,7 +25,7 @@ Al cerrar esta spec, el admin **personaliza la tienda desde el backoffice** (ide
 - Toda la lógica de [`settings-service`](../analisis/micro/settings-service.md): configuración por secciones con versión, contraste WCAG, imágenes de tienda, políticas versionadas, ubigeo (consultas y buscador), Libro de Reclamaciones (correlativo, plazo, atención, respuesta), cachés y eventos.
 - Pantallas P-3-01 a P-3-06.
 - Textos modelo de las cuatro políticas (versión 1).
-- Datos de demostración para `dev`.
+- Datos de demostración para `dev` y la nube (perfil `demo`, SPEC-8 I7).
 - Colección Postman `settings`.
 
 **No incluye (y dónde va):**
@@ -295,7 +296,7 @@ Todo según el micro de settings. Decisiones de implementación de esta spec:
 
 - **Sin migraciones nuevas** salvo S1: `VAAAAMMDD_HHMM__beneficios.sql` (columna `beneficios jsonb NOT NULL DEFAULT '[]'`; la franja empieza oculta).
 - **Políticas versión 1:** textos modelo para una tienda en línea peruana (términos, privacidad con Ley 29733, cambios y devoluciones, envíos), claramente marcados como **plantilla a revisar por la tienda** (no son asesoría legal).
-- **Datos de demostración (solo `dev`):** 3 imágenes de landing (licencia libre), beneficios, contacto y tienda física en Gamarra; 3 reclamos (uno vencido, uno por vencer, uno respondido) para mostrar la bandeja.
+- **Datos de demostración (perfil `dev` y, en la nube, perfil `demo` (SPEC-8 I7)):** 3 imágenes de landing (licencia libre), beneficios, contacto y tienda física en Gamarra; 3 reclamos (uno vencido, uno por vencer, uno respondido) para mostrar la bandeja.
 
 ## 7. Pruebas
 

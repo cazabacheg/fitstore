@@ -1,14 +1,15 @@
 # SPEC-8 — Integración, nube y demo
 
-> Versión: **v1 (borrador)** — 2026-10-19 · Estados: ✅ decidido · 🟡 propuesto · ❓ abierto
+> Versión: **v2 (aprobado)** — 2026-10-19 · Estados: ✅ decidido · 🟡 propuesto · ❓ abierto
 > **Dueña de:** dashboard del backoffice (`features/dashboard`), pruebas de punta a punta (`frontend/e2e/`), despliegue en la nube (`infra/docker-compose.cloud.yml`, `infra/caddy/`, `infra/scripts/`, `.github/workflows/deploy.yml`), guion de la demo (`docs/demo/`).
 > **Depende de:** 1 a 7 (todas integradas en `dev`) · usa los endpoints de resumen de order, catalog, delivery y settings · **Habilita:** la entrega final (demo en la nube, video y exposición).
 > **Contratos:** no crea endpoints; consume los ya definidos (sección 4).
 
 **Historial:**
+- v2 (2026-10-19): I6 ✅ Garage en la VM (adaptador Azure Blob diferido); I7 ✅ la nube carga **todos** los datos de demostración, incluidos clientes y pedidos, con la contraseña de las cuentas demo desde un secreto (CA-8-31) → **spec aprobada**. Ajustes propagados: SPEC-0a v5, SPEC-1 v5, SPEC-2 a SPEC-7 (nota del perfil `demo`), micro de infraestructura v5, stack v3, macro v22 y ADR-013.
 - v1 (2026-10-19): borrador inicial.
 
-**Estado de revisión por sección:** 1 ⏳ · 2 ⏳ · 3 ⏳ · 4 ⏳ · 5 ⏳ · 6 ⏳ · 7 ⏳ · 8 ⏳ · 9 ⏳
+**Estado de revisión por sección:** 1 ✅ · 2 ✅ · 3 ✅ · 4 ✅ · 5 ✅ · 6 ✅ · 7 ✅ · 8 ✅ · 9 ✅
 
 ---
 
@@ -26,7 +27,7 @@ Al cerrar esta spec, **FitStore está publicada en la nube** con HTTPS en `tiend
 
 **No incluye (y dónde va):**
 - Lógica de negocio nueva: los resúmenes que usa el dashboard ya los exponen las specs 2, 3, 4 y 6.
-- Adaptador Azure Blob → no se implementa si se mantiene Garage en la VM (I6, pregunta 1).
+- Adaptador Azure Blob → diferido: en la nube se usa Garage en la VM (I6).
 - Alta disponibilidad, varias VMs, Kubernetes, CDN → fuera de alcance (ADR-002).
 
 ## 2. Referencias
@@ -179,6 +180,12 @@ CA-8-29  docs/demo/guion.md lista, con tiempos, el recorrido: landing y catálog
 
 CA-8-30  El guion incluye la lista de verificación previa (VM encendida, certificados, correos verificados, datos de demo,
          saldo de la tarjeta de prueba) y un plan B por cada dependencia externa (sandbox caído → simulado; SES → Mailpit por túnel)
+
+CA-8-31  Dado el perfil demo en la nube
+         Entonces existen los datos de demostración de todos los servicios (clientes, pedidos, pagos, entregas, correos),
+              con los mismos identificadores entre servicios (un pedido de demo se ve igual en order, payment, delivery y notification)
+         Y las cuentas de demostración (clientes y OPERADOR) solo entran con la contraseña de DEMO_PASSWORD;
+              la contraseña de desarrollo documentada en el README no funciona en la nube
 ```
 
 ## 4. Pantallas
@@ -203,8 +210,8 @@ No agrega lógica de negocio. Decisiones de esta spec:
 | I3 | **Playwright con el proveedor simulado y la API de Mailpit** ✅ | Las E2E no dependen de internet: pagan con el simulado y verifican los correos con `GET /api/v1/messages` de Mailpit. Las pasarelas reales se prueban a mano en la nube (CA-8-23) |
 | I4 | **Lighthouse CI en `stage.yml`** ✅ | `@lhci/cli` contra el storefront del compose del runner, perfil móvil, umbral 85 en rendimiento y accesibilidad |
 | I5 | **Imágenes en GHCR con la etiqueta del commit** ✅ | `ghcr.io/cazabacheg/fitstore-<servicio>:<sha>` (paquetes privados). `deploy.yml` escribe la etiqueta en el `.env` de la VM; volver atrás es desplegar la etiqueta anterior |
-| I6 | **Almacenamiento en la nube: Garage en la VM** 🟡 | El mismo Garage de local, en el disco de la VM: cero cambios de código y US$0 (ADR-013, opción a; RNF-16). El adaptador `AzureBlobFileStorage` no se implementa (YAGNI). Ver pregunta 1 |
-| I7 | **Datos de demostración en la nube** 🟡 | Perfil `demo` en la nube que carga el catálogo, la landing, los repartidores y las agencias de demostración, pero **no** clientes ni pedidos (se crean en vivo durante el ensayo y la demo). Ver pregunta 2 |
+| I6 | **Almacenamiento en la nube: Garage en la VM** ✅ | El mismo Garage de local, en el disco de la VM: cero cambios de código y US$0 (ADR-013, opción a; RNF-16). El adaptador `AzureBlobFileStorage` queda **diferido** (no se implementa en el MVP; el puerto `FileStorage` permite agregarlo después sin tocar los servicios) |
+| I7 | **Datos de demostración en la nube** ✅ | Perfil `demo` en la nube que carga **todos** los datos de demostración de las specs 1 a 7 (catálogo, landing, repartidores, clientes, pedidos en todos los estados, pagos, entregas y registro de correos), para que el dashboard y los listados se vean con datos desde el primer minuto; el flujo principal se demuestra en vivo encima. Las cuentas de demostración usan en la nube una contraseña **secreta** (`DEMO_PASSWORD`), no la de desarrollo (CA-8-31) |
 | I8 | **VM** ✅ | Azure for Students, `B2ms` (2 vCPU, 8 GB), Ubuntu 24.04 LTS, Docker con el plugin compose; IP pública dinámica con DuckDNS; desasignada fuera de uso (consolidado, sección 7) |
 | I9 | **Respaldo simple** ✅ | `infra/scripts/respaldo.sh` por cron en la VM (no un contenedor más). Sin respaldo fuera de la VM: es una demo académica (si se pierde, se vuelve a desplegar con datos de demo) |
 | I10 | **Corrección del micro de infraestructura** ✅ | La tabla de rutas del gateway (4.2) todavía enruta `/api/v1/admin/clientes/*/pedidos`, que se quitó en la SPEC-4 (O3). Se corrige (micro v5). También se corrigió el contador del menú de reembolsos de la SPEC-5 (`size=0` → `size=1`, SPEC-5 v6) |
@@ -212,7 +219,8 @@ No agrega lógica de negocio. Decisiones de esta spec:
 ## 6. Datos
 
 - **Sin migraciones nuevas.**
-- **Perfil `demo` (nube, si se aprueba I7):** activa en Flyway las mismas migraciones repetibles de demostración de `dev` (`db/dev/`) **solo** para catalog, settings (landing) y delivery (repartidores); auth, order, payment y notification no cargan datos de demostración en la nube.
+- **Perfil `demo` (nube, I7):** activa en Flyway las mismas migraciones repetibles de demostración de `dev` (`db/dev/`) en **los 7 servicios**. Los datos usan **UUID fijos compartidos** entre servicios (`docs/demo/ids-demo.md`) para que un mismo pedido de demo cuadre en order, payment, delivery y notification. Las fechas se calculan relativas al momento de la carga (p. ej. "hace 3 días").
+- **Contraseñas de las cuentas demo en la nube:** al arrancar con el perfil `demo`, auth reemplaza el hash de las cuentas de demostración por el de `DEMO_PASSWORD` (variable secreta); si falta, las desactiva (SPEC-1 A7).
 - **Respaldos:** `/srv/fitstore/respaldos/AAAA-MM-DD.sql.gz`, rotación de 7.
 
 ## 7. Pruebas
@@ -228,6 +236,7 @@ No agrega lógica de negocio. Decisiones de esta spec:
 | 23–25 | Manual en la nube | Guion de `docs/demo/guion.md` (webhooks, SES, simulado) |
 | 26–28 | Operación | Restaurar un respaldo en una base de prueba; túnel a Jaeger; encender y apagar la VM |
 | 29–30 | Revisión | Ensayo cronometrado de la demo |
+| 31 | Integración + despliegue | `DatosDemoNubeTest` en auth (SPEC-1, CA-1-39) (hash reemplazado o cuentas desactivadas sin `DEMO_PASSWORD`); verificación en la VM con la contraseña de dev (debe fallar) |
 | Todas | Postman | Las 7 colecciones con el entorno `postman/entornos/cloud.json` (Newman en `deploy.yml`) |
 
 ## 8. Archivos y carpetas que toca
@@ -241,19 +250,14 @@ No agrega lógica de negocio. Decisiones de esta spec:
 | `.github/workflows/deploy.yml` | crea |
 | `.github/workflows/stage.yml` | modifica (agrega E2E y Lighthouse; ADR-021) |
 | `postman/entornos/cloud.json` | crea |
-| `docs/despliegue.md`, `docs/demo/guion.md` | crea |
+| `docs/despliegue.md`, `docs/demo/guion.md`, `docs/demo/ids-demo.md` | crea |
 | `docs/analisis/micro/infraestructura.md` (I10) | modifica |
 | Servicios de negocio, `fitstore-common`, gateway, `shared` | solo lectura |
 
 ## 9. Definición de terminado
 
-- [ ] CA-8-01 a CA-8-30 cumplidos (los de nube, verificados en la VM).
+- [ ] CA-8-01 a CA-8-31 cumplidos (los de nube, verificados en la VM).
 - [ ] `stage.yml` en verde con E2E y Lighthouse; `deploy.yml` en verde con smoke y Newman contra la nube.
 - [ ] Tienda y backoffice accesibles por HTTPS durante la evaluación; Swagger con contraseña.
 - [ ] Demo ensayada con el guion y video grabado.
 - [ ] Revisado y aprobado por el autor.
-
-## Preguntas abiertas ❓
-
-1. **I6, almacenamiento de imágenes en la nube:** propongo **seguir con Garage en la VM** (cero cambios, US$0, portable). La alternativa es implementar el adaptador **Azure Blob Storage** para usar un servicio administrado de Azure: podría sumar en la parte de "consumo en la nube" de la rúbrica, pero agrega código, credenciales y un costo pequeño. ¿Garage o Azure Blob?
-2. **I7, datos en la nube:** propongo que la nube arranque con **el catálogo, la landing, los repartidores y las agencias de demostración**, y **sin** clientes ni pedidos (se crean en vivo durante el ensayo). La alternativa es cargar también los clientes y pedidos de demostración, para que el dashboard y los listados se vean llenos desde el primer minuto. ¿Cuál prefieres?
