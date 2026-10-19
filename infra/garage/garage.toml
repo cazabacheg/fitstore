@@ -16,7 +16,7 @@ root_domain = ".s3.garage"
 # Endpoint web: sirve sin credenciales los buckets con acceso web habilitado (bucket público de medios).
 [s3_web]
 bind_addr = "[::]:3902"
-root_domain = ".web.garage"
+root_domain = ".web.localhost"
 index = "index.html"
 
 [admin]

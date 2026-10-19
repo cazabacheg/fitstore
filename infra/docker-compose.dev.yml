@@ -1,0 +1,91 @@
+# FitStore: añadidos de desarrollo (infraestructura 6.3): Mailpit, puertos publicados en localhost para depurar,
+# perfil dev y el JWKS de prueba. Uso:
+#   docker compose -f infra/docker-compose.yml -f infra/docker-compose.dev.yml up -d
+x-java-dev: &java-dev
+  environment:
+    SPRING_PROFILES_ACTIVE: dev
+    # Mientras auth no firma (spec 1), validan con el JWKS de prueba (SPEC-0a I2)
+    FITSTORE_SECURITY_JWKS_ARCHIVO: /dev/jwks-prueba.json
+  volumes:
+    - ./dev/jwks-prueba.json:/dev/jwks-prueba.json:ro
+
+services:
+  mailpit:
+    image: axllent/mailpit:v1.31.1
+    restart: unless-stopped
+    mem_limit: 64m
+    ports:
+      - "127.0.0.1:8025:8025"   # bandeja web
+      - "127.0.0.1:1025:1025"   # SMTP
+
+  postgres:
+    ports:
+      - "127.0.0.1:5432:5432"
+
+  redis:
+    ports:
+      - "127.0.0.1:6379:6379"
+
+  rabbitmq:
+    ports:
+      - "127.0.0.1:5672:5672"
+      - "127.0.0.1:15672:15672"  # consola
+
+  garage:
+    ports:
+      - "127.0.0.1:3900:3900"    # API S3
+      - "127.0.0.1:3902:3902"    # bucket público (acceso web sin credenciales)
+
+  jaeger:
+    ports:
+      - "127.0.0.1:16686:16686"  # consola
+
+  config-server:
+    ports:
+      - "127.0.0.1:8888:8888"
+
+  discovery-server:
+    ports:
+      - "127.0.0.1:8761:8761"    # consola de Eureka
+    environment:
+      SPRING_PROFILES_ACTIVE: dev
+
+  api-gateway:
+    <<: *java-dev
+    ports:
+      - "127.0.0.1:8080:8080"
+
+  auth-service:
+    <<: *java-dev
+    ports:
+      - "127.0.0.1:8081:8081"
+
+  catalog-service:
+    <<: *java-dev
+    ports:
+      - "127.0.0.1:8082:8082"
+
+  order-service:
+    <<: *java-dev
+    ports:
+      - "127.0.0.1:8083:8083"
+
+  payment-service:
+    <<: *java-dev
+    ports:
+      - "127.0.0.1:8084:8084"
+
+  delivery-service:
+    <<: *java-dev
+    ports:
+      - "127.0.0.1:8085:8085"
+
+  notification-service:
+    <<: *java-dev
+    ports:
+      - "127.0.0.1:8086:8086"
+
+  settings-service:
+    <<: *java-dev
+    ports:
+      - "127.0.0.1:8087:8087"

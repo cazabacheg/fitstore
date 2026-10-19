@@ -62,7 +62,7 @@ public final class GarageDePrueba {
 
     /** GET anónimo al endpoint web de Garage (puerto 3902) con el Host del bucket; devuelve el código HTTP y el cuerpo. */
     public static RespuestaWeb obtenerAnonimoPorWeb(String bucket, String clave) throws Exception {
-        return peticionCruda(GARAGE.getMappedPort(3902), bucket + ".web.garage", "/" + clave);
+        return peticionCruda(GARAGE.getMappedPort(3902), bucket + ".web.localhost", "/" + clave);
     }
 
     /** GET anónimo a la API S3 (puerto 3900), sin credenciales. */

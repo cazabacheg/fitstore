@@ -18,7 +18,7 @@ COPY --from=build /extraido/spring-boot-loader/ ./
 COPY --from=build /extraido/snapshot-dependencies/ ./
 COPY --from=build /extraido/application/ ./
 USER fitstore
-ENV JAVA_TOOL_OPTIONS="-Xmx160m -XX:+UseSerialGC"
+ENV JAVA_TOOL_OPTIONS="-Xmx160m -XX:+UseSerialGC -Xss512k -XX:MaxMetaspaceSize=96m -XX:ReservedCodeCacheSize=32m -XX:MaxDirectMemorySize=32m -XX:TieredStopAtLevel=1"
 EXPOSE 8888
 HEALTHCHECK --interval=15s --timeout=5s --start-period=60s --retries=10 \
   CMD curl -fsS http://localhost:8888/actuator/health || exit 1
