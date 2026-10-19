@@ -1,9 +1,10 @@
 # FitStore — Análisis micro: `payment-service`
 
-> Versión: **v5 (aprobado)** — 2026-10-16. Fuente: [`01-analisis-macro.md`](../01-analisis-macro.md) v13.
+> Versión: **v6 (aprobado)** — 2026-10-18. Fuente: [`01-analisis-macro.md`](../01-analisis-macro.md) v13.
 > Estados: ✅ decidido · 🟡 propuesto · ❓ abierto · 🕓 diferido
 
 **Historial:**
+- v6 (2026-10-18): **reembolso postventa** (decidido en la SPEC-5): D4 amplía el origen de los reembolsos (cancelación o postventa, siempre desde el pedido); varios reembolsos por intención, parciales, sin superar lo cobrado; la intención pasa a `REEMBOLSADA_PARCIAL` / `REEMBOLSADA` y el estado en curso o fallido vive en cada reembolso; consume `ReembolsoSolicitado`.
 - v5 (2026-10-18): sección 10 aprobada → **documento completo aprobado**.
 - v4 (2026-10-18): sección 10 (diseño técnico) redactada: C3, código de las partes críticas, paquetes, dependencias, configuración e infraestructura.
 - v3 (2026-10-16): resto del documento aprobado (D1–D7, protección contra doble cobro, reembolsos, eventos nuevos). Si el sandbox exige 3-D Secure, se implementa (es el fix previsto).
@@ -111,7 +112,7 @@ classDiagram
 | D1 | **Una intención por pedido y varias transacciones (intentos)**: cada intento de cobro es una transacción; como máximo **una aprobada** por intención | El cliente puede fallar con una tarjeta y reintentar con otra o con otro proveedor (ADR-009); queda registro de cada intento (RF-PAY-05) | Un solo registro de pago que se sobrescribe |
 | D2 | **Mercado Pago con Payment Brick** (formulario embebido que tokeniza en el navegador), no Checkout Pro (redirección al sitio de MP) | Mismo flujo que Culqi: el navegador da un token y el backend cobra. La Strategy queda uniforme y el cliente no sale de la tienda | Checkout Pro: menos código en el frontend, pero otro flujo (redirección y retorno) |
 | D3 | **El estado real del pago siempre se confirma consultando la API de la pasarela** (`consultarEstado`), aunque llegue un webhook | No se confía en el contenido de un mensaje que llega de internet; la consulta con la clave secreta es la fuente de verdad. Mercado Pago además firma sus webhooks (`x-signature`) y se valida la firma | Confiar en el cuerpo del webhook |
-| D4 | **Los reembolsos solo nacen de una cancelación** (o de `PagoNoAplicable`). Para devolver un pago, el admin **cancela el pedido** en el backoffice y el reembolso es automático. En la pantalla de pagos el admin puede **reintentar** un reembolso fallido o **marcarlo como resuelto manualmente** | Pedido y pago nunca quedan desalineados (un pedido "pagado" con el dinero devuelto) | Botón "Reembolsar" independiente en la pantalla de pagos |
+| D4 | **Los reembolsos siempre nacen del pedido:** de una cancelación de un pedido pagado (total), de `PagoNoAplicable` (total) o de un **reembolso postventa** de un pedido entregado (total o parcial, order 4.8). No hay botón "Reembolsar" suelto en la pantalla de pagos. Ahí el admin puede **reintentar** un reembolso fallido o **marcarlo como resuelto manualmente** | Pedido y pago nunca quedan desalineados (un pedido "pagado" con el dinero devuelto) | Botón "Reembolsar" independiente en la pantalla de pagos |
 | D5 | **Boleta generada con Thymeleaf + OpenHTMLtoPDF** (HTML → PDF) | Misma tecnología de plantillas que los correos (ADR-014); el diseño se hace en HTML/CSS con la marca de la tienda | OpenPDF / iText (se dibuja el PDF por código) |
 | D6 | **La boleta es privada:** se guarda en Garage sin acceso público y se descarga por un endpoint autenticado | Contiene nombre y DNI del cliente | URL pública |
 | D7 | **`SimuladoProvider` solo se habilita por configuración técnica** (config-server), nunca desde el backoffice | Es para la demo; en una tienda real no debe poder activarse por error | Siempre disponible |
@@ -121,7 +122,7 @@ classDiagram
 1. Una intención por pedido (`pedidoId` único).
 2. Como máximo **una transacción aprobada** por intención (índice único parcial). Nunca se cobra dos veces un pedido.
 3. Solo se puede cobrar una intención `PENDIENTE` y no vencida, del cliente dueño del pedido.
-4. El monto cobrado y el reembolsado son **exactamente** el monto de la intención (reembolso total, RF-PAY-06).
+4. El monto cobrado es **exactamente** el monto de la intención; la **suma de todos sus reembolsos** (en curso, fallidos, completados o resueltos manualmente) **nunca supera** ese monto (RF-PAY-06).
 5. Una boleta por intención pagada; numeración `B001-00000001` correlativa, sin huecos.
 6. Pagos, transacciones, reembolsos y boletas **nunca se eliminan**.
 
@@ -135,7 +136,7 @@ classDiagram
 |---|---|---|
 | `intencion_pago` | `id`, `pedido_id`, `codigo_pedido`, `cliente_id`, `monto`, `estado`, `expira_en`, `items` (`jsonb`: snapshot para la boleta), `cliente` (`jsonb`: nombre, DNI, email), `subtotal`, `descuento_total`, `costo_envio`, `creado_en`, `actualizado_en`, `version` | Único `pedido_id`; índice `(cliente_id)`; `CHECK monto > 0` |
 | `transaccion` | `id`, `intencion_id`, `proveedor` (`CULQI`, `MERCADO_PAGO`, `SIMULADO`), `medio` (`TARJETA`, `YAPE`, `SALDO_MP`), `estado`, `monto`, `id_proveedor`, `codigo_respuesta`, `mensaje`, `respuesta` (`jsonb`, sin datos sensibles), `idempotency_key`, `creado_en`, `actualizado_en` | Único parcial `(intencion_id) WHERE estado = 'APROBADA'`; único `(intencion_id, idempotency_key)`; índice parcial `(actualizado_en) WHERE estado = 'PROCESANDO'` |
-| `reembolso` | `id`, `intencion_id`, `transaccion_id`, `monto`, `motivo` (`CANCELACION`, `PAGO_NO_APLICABLE`), `estado`, `intentos`, `proximo_intento_en`, `id_proveedor`, `ultimo_error`, `resuelto_por`, `nota`, `creado_en`, `actualizado_en` | Único `intencion_id` |
+| `reembolso` | `id`, `intencion_id`, `transaccion_id`, `solicitud_id` (de order, solo postventa), `monto`, `motivo` (`CANCELACION`, `PAGO_NO_APLICABLE`, `POSTVENTA`), `estado`, `intentos`, `proximo_intento_en`, `id_proveedor`, `ultimo_error`, `resuelto_por`, `nota`, `creado_en`, `actualizado_en` | Índice `intencion_id`; único `solicitud_id`; único parcial `(intencion_id) WHERE motivo IN ('CANCELACION','PAGO_NO_APLICABLE')`; la suma ≤ monto se valida con la intención bloqueada (`FOR UPDATE`) |
 | `boleta` | `id`, `intencion_id`, `serie`, `correlativo`, `numero`, `clave` (ruta en Garage), `emitida_en` | Único `intencion_id`; único `(serie, correlativo)` |
 | `correlativo_boleta` | `serie` (PK), `ultimo` | `UPDATE … RETURNING` atómico |
 | `webhook_recibido` | `id`, `proveedor`, `evento_id_proveedor`, `payload`, `recibido_en`, `procesado_en` | Único `(proveedor, evento_id_proveedor)` |
@@ -252,10 +253,11 @@ Fuera del MVP. Se usan las tarjetas de prueba del sandbox que no exigen autentic
 |---|---|
 | `PedidoCancelado` con `fuePagado = true` | Crear reembolso `PENDIENTE` (motivo `CANCELACION`) |
 | `PagoNoAplicable` | Crear reembolso `PENDIENTE` (motivo `PAGO_NO_APLICABLE`) |
+| `ReembolsoSolicitado` | Crear reembolso `PENDIENTE` (motivo `POSTVENTA`) por el monto pedido, idempotente por `solicitudId`; si la suma superaría lo cobrado, no se crea y se publica `ReembolsoFallido` (no debería pasar: order ya lo valida) |
 | `PedidoCancelado` sin pago / `PedidoExpirado` | Intención → `ANULADA` (no hay dinero que devolver) |
 
-- Un proceso toma los reembolsos `PENDIENTE` y llama a `reembolsar()`. Éxito → `COMPLETADO`, intención `REEMBOLSADA`, publica `PagoReembolsado`.
-- Error → reintentos con espera creciente: **1, 5, 15 y 60 min**. Tras el 4.º fallo → `FALLIDO`, intención `REEMBOLSO_FALLIDO`, publica `ReembolsoFallido` (alerta al admin).
+- Un proceso toma los reembolsos `PENDIENTE` y llama a `reembolsar()`. Éxito → `COMPLETADO`; la intención pasa a `REEMBOLSADA` si la suma reembolsada iguala el monto, o a `REEMBOLSADA_PARCIAL` si no; publica `PagoReembolsado`.
+- Error → reintentos con espera creciente: **1, 5, 15 y 60 min**. Tras el 4.º fallo → `FALLIDO` y publica `ReembolsoFallido` (alerta al admin). La intención no cambia: el estado en curso o fallido vive en cada reembolso.
 - El admin puede **reintentar** (vuelve a `PENDIENTE`) o **marcar como resuelto manualmente** (por ejemplo, devolvió el dinero por transferencia), con nota obligatoria.
 
 ### 4.6 Boleta simulada (T6, RF-PAY-08)
@@ -281,16 +283,17 @@ stateDiagram-v2
     [*] --> Pendiente: PedidoCreado
     Pendiente --> Pagada: cargo aprobado
     Pendiente --> Anulada: PedidoExpirado / PedidoCancelado sin pago
-    Pagada --> ReembolsoEnCurso: PedidoCancelado / PagoNoAplicable
-    ReembolsoEnCurso --> Reembolsada: reembolso completado
-    ReembolsoEnCurso --> ReembolsoFallido: 4 intentos fallidos
-    ReembolsoFallido --> ReembolsoEnCurso: admin reintenta
-    ReembolsoFallido --> Reembolsada: admin lo resuelve manualmente
+    Pagada --> ReembolsadaParcial: reembolso postventa parcial completado
+    ReembolsadaParcial --> ReembolsadaParcial: otro reembolso parcial
+    Pagada --> Reembolsada: reembolso total completado
+    ReembolsadaParcial --> Reembolsada: la suma alcanza el monto
 ```
+
+Un reembolso en curso o fallido se ve en el propio reembolso (y en la lista de reembolsos del backoffice); la intención solo cambia cuando un reembolso se completa o se resuelve manualmente.
 
 **Transacción:** `PROCESANDO → APROBADA | RECHAZADA | ERROR`.
 
-**Reembolso:** `PENDIENTE → COMPLETADO`, o `PENDIENTE → FALLIDO → PENDIENTE` (reintento) / `RESUELTO_MANUAL`.
+**Reembolso:** `PENDIENTE → COMPLETADO`, o `PENDIENTE → FALLIDO → PENDIENTE` (reintento) / `RESUELTO_MANUAL` (cuenta como completado para la intención).
 
 ---
 
@@ -305,10 +308,10 @@ Exchange `fitstore.eventos` (topic), sobre común, outbox e idempotencia (ADR-00
 | `PagoConfirmado` | `payment.pago.confirmado` | `pedidoId`, `intencionId`, `transaccionId`, `proveedor`, `monto`, `confirmadoEn` | order |
 | `PagoRechazado` | `payment.pago.rechazado` | `pedidoId`, `proveedor`, `motivo` | order (historial) |
 | `BoletaEmitida` | `payment.boleta.emitida` | `pedidoId`, `numero`, `url` (endpoint autenticado de descarga) | order, notification (adjunto) |
-| `PagoReembolsado` ✅ **nuevo** | `payment.reembolso.completado` | `pedidoId`, `codigoPedido`, `monto`, `cliente` (nombre, email) | notification (avisa al cliente) |
+| `PagoReembolsado` ✅ **nuevo** | `payment.reembolso.completado` | `pedidoId`, `codigoPedido`, `solicitudId` (solo postventa), `monto`, `parcial`, `motivo`, `cliente` (nombre, email) | notification (avisa al cliente) |
 | `ReembolsoFallido` ✅ **nuevo** | `payment.reembolso.fallido` | `pedidoId`, `codigoPedido`, `monto`, `ultimoError`, `intentos` | notification (alerta al admin) |
 
-**Consume:** `PedidoCreado`, `PedidoCancelado`, `PedidoExpirado`, `PagoNoAplicable` (order).
+**Consume:** `PedidoCreado`, `PedidoCancelado`, `PedidoExpirado`, `PagoNoAplicable`, `ReembolsoSolicitado` (order).
 
 ---
 
@@ -357,6 +360,7 @@ No hay eliminación (invariante 6).
 - Doble cobro concurrente: 2 hilos cobran la misma intención → 1 aprobado, 1 `409`.
 - Idempotency-Key repetida devuelve el mismo resultado.
 - Reintentos de reembolso con espera creciente hasta `FALLIDO`.
+- Reembolsos parciales: varios por intención, la suma nunca supera lo cobrado, `ReembolsoSolicitado` duplicado crea uno solo, `REEMBOLSADA_PARCIAL` → `REEMBOLSADA`.
 - Webhook duplicado procesado una vez; verificador resuelve `PROCESANDO`.
 
 **Boleta:** el PDF generado contiene número, RUC, DNI, total y la leyenda de simulación.

@@ -1,11 +1,12 @@
 # SPEC-5 — Pagos
 
-> Versión: **v2 (borrador)** — 2026-10-18 · Estados: ✅ decidido · 🟡 propuesto · ❓ abierto
+> Versión: **v3 (borrador)** — 2026-10-18 · Estados: ✅ decidido · 🟡 propuesto · ❓ abierto
 > **Dueña de:** `backend/payment-service` (intención, cobros, webhooks, reembolsos, boleta) · tienda: `features/pago` · backoffice: `features/pagos`.
-> **Depende de:** 0a, 0b, 1 (sesión) · usa el contrato de eventos de order (`PedidoCreado`, `PedidoCancelado`, `PedidoExpirado`, `PagoNoAplicable`) y `GET /settings/public` · **Habilita:** 4 (el pedido pasa a `PAGADO` y guarda la boleta), 7 (correos de pago, reembolso y alerta con la boleta adjunta), 8 (demo de punta a punta).
+> **Depende de:** 0a, 0b, 1 (sesión) · usa el contrato de eventos de order (`PedidoCreado`, `PedidoCancelado`, `PedidoExpirado`, `PagoNoAplicable`, `ReembolsoSolicitado`) y `GET /settings/public` · **Habilita:** 4 (el pedido pasa a `PAGADO` y guarda la boleta), 7 (correos de pago, reembolso y alerta con la boleta adjunta), 8 (demo de punta a punta).
 > **Contratos:** `contracts/openapi/payment-service.yaml`; eventos que publica `PagoConfirmado`, `PagoRechazado`, `BoletaEmitida`, `PagoReembolsado`, `ReembolsoFallido`.
 
 **Historial:**
+- v3 (2026-10-18): **reembolso postventa**: además de la cancelación, un pedido entregado puede reembolsarse total o parcialmente desde el pedido (SPEC-4 HU-4-12); varios reembolsos por pago; la intención pasa a `REEMBOLSADA_PARCIAL` / `REEMBOLSADA` y el estado fallido vive en cada reembolso (P8). Micros de payment v6, order v6, settings v8; macro v20; SPEC-3 v4 y SPEC-4 v4.
 - v2 (2026-10-18): P1 ✅ la prueba de concepto del sandbox es la primera tarea de la implementación; P2 ✅ se mantiene el proveedor simulado (respaldo de la demo y pruebas sin internet).
 - v1 (2026-10-18): borrador inicial.
 
@@ -26,7 +27,7 @@ Al cerrar esta spec, el cliente **paga su pedido** con tarjeta o Yape (Culqi), c
 **No incluye (y dónde va):**
 - Cambiar el estado del pedido → spec 4 (consume los eventos de esta spec).
 - Correos de pago confirmado (con la boleta adjunta), pago rechazado, reembolso y alerta de reembolso fallido → spec 7 (aquí se publican los eventos y se expone `/internal/v1/boletas/{numero}`).
-- Botón "Reembolsar" suelto: no existe (D4 del micro). Para devolver un pago se **cancela el pedido** (spec 4).
+- Botón "Reembolsar" suelto en la pantalla de pagos: no existe (D4 del micro). Para devolver dinero se **cancela el pedido** o se registra un **reembolso postventa** desde el pedido entregado (spec 4, HU-4-12); aquí se ejecuta.
 - 3-D Secure → solo si la prueba de concepto muestra que el sandbox lo exige (micro 4.3.2); entonces se agrega a esta spec.
 - Política de seguridad de contenido (CSP) que permita los scripts de Culqi y Mercado Pago → spec 8 (Caddy); aquí se documentan los dominios necesarios.
 
@@ -197,7 +198,7 @@ CA-5-29  Cuando descargo mi boleta (GET /pagos/{codigo}/boleta)
 
 ### HU-5-10 — Devolver el dinero automáticamente
 
-Como cliente, quiero que me devuelvan el dinero si mi pedido pagado se cancela, sin tener que pedirlo. · Cubre: RF-PAY-06, CU-41 · Pantallas: no aplica (se ve en P-5-04 y P-5-05)
+Como cliente, quiero que me devuelvan el dinero si mi pedido pagado se cancela o si la tienda aprueba un reembolso de mi pedido entregado, sin trámites extra. · Cubre: RF-PAY-06, CU-25, CU-41 · Pantallas: no aplica (se ve en P-5-04 y P-5-05)
 
 ```gherkin
 CA-5-30  Cuando llega PedidoCancelado con fuePagado = true, o PagoNoAplicable
@@ -205,10 +206,19 @@ CA-5-30  Cuando llega PedidoCancelado con fuePagado = true, o PagoNoAplicable
               y, si sale bien, queda COMPLETADO, la intención REEMBOLSADA y se publica PagoReembolsado
 
 CA-5-31  Dado que la pasarela falla al reembolsar
-         Entonces se reintenta a los 1, 5, 15 y 60 minutos; tras el cuarto fallo queda FALLIDO,
-              la intención REEMBOLSO_FALLIDO y se publica ReembolsoFallido
+         Entonces se reintenta a los 1, 5, 15 y 60 minutos; tras el cuarto fallo el reembolso queda FALLIDO
+              y se publica ReembolsoFallido (la intención no cambia)
 
-CA-5-32  El monto reembolsado es exactamente el cobrado, y nunca se crean dos reembolsos para la misma intención
+CA-5-32  Nunca se crean dos reembolsos totales (cancelación o PagoNoAplicable) para la misma intención
+
+CA-5-39  Cuando llega ReembolsoSolicitado (postventa) por S/ 59.90 de un pago de S/ 373.36
+         Entonces se crea un reembolso POSTVENTA PENDIENTE, se ejecuta como reembolso parcial en la pasarela
+              y, al completarse, la intención queda REEMBOLSADA_PARCIAL y PagoReembolsado lleva solicitudId y parcial = true
+         Y si el mismo evento llega dos veces, se crea un solo reembolso
+
+CA-5-40  Dado varios reembolsos de un mismo pago
+         Entonces su suma nunca supera lo cobrado (validado con la intención bloqueada);
+              cuando la suma completada alcanza el monto, la intención pasa a REEMBOLSADA
 ```
 
 ### HU-5-11 — Revisar los pagos en el backoffice
@@ -221,8 +231,8 @@ CA-5-33  Cuando abro /pagos
               y puedo filtrar por estado, proveedor, fechas y código de pedido
 
 CA-5-34  Cuando abro un pago
-         Entonces veo cada intento (proveedor, medio, estado, código y mensaje de la pasarela, fecha), el reembolso
-              si existe, la boleta para descargar y el enlace al pedido; nunca datos de tarjeta
+         Entonces veo cada intento (proveedor, medio, estado, código y mensaje de la pasarela, fecha), los reembolsos
+              (motivo, monto, estado; puede haber varios parciales), lo cobrado, lo reembolsado y lo neto, la boleta para descargar y el enlace al pedido; nunca datos de tarjeta
 
 CA-5-35  Un OPERADOR no ve el menú Pagos y la API le responde 403
 ```
@@ -233,7 +243,7 @@ Como administrador, quiero reintentar o cerrar los reembolsos que fallaron, para
 
 ```gherkin
 CA-5-36  Cuando abro /reembolsos
-         Entonces veo los reembolsos FALLIDO y PENDIENTE con pedido, cliente, monto, intentos y último error,
+         Entonces veo los reembolsos FALLIDO y PENDIENTE con pedido, cliente, motivo (cancelación, pago no aplicable, postventa), monto, intentos y último error,
               y el menú muestra cuántos fallidos hay
 
 CA-5-37  Cuando reintento un reembolso FALLIDO
@@ -276,7 +286,7 @@ CA-5-38  Cuando lo marco como resuelto manualmente (p. ej. devolví por transfer
 - **Ruta / proyecto:** `/pagos/:id` · backoffice · ADMIN.
 - **Boceto:** ![P-5-04](img/P-5-04-detalle-pago.png)
 - **Diseño de alta fidelidad:** 🕓 deriva del sistema de diseño.
-- **Componentes:** `DetallePagoPage`, `TablaIntentos`, `TarjetaReembolso`, `TarjetaBoleta`.
+- **Componentes:** `DetallePagoPage`, `TablaIntentos`, `ListaReembolsos` (cada uno con motivo, monto, estado, intentos y nota), `TarjetaBoleta`.
 - **Endpoints:** `GET /admin/pagos/{id}`, `GET /admin/pagos/{id}/boleta`.
 
 ### P-5-05 — Reembolsos (backoffice)
@@ -306,6 +316,7 @@ Todo según el micro de payment. Decisiones de implementación de esta spec:
 | P5 | **Webhooks en local** ✅ | En local las pasarelas no llegan al servidor y no se usa un túnel: el verificador (CA-5-22) resuelve los pagos. Los webhooks reales se prueban en la nube (spec 8) y con WireMock en CI |
 | P6 | **Tope de Yape configurable** ✅ | `fitstore.pagos.yape.tope-diario` (500.00) se envía en `GET /pagos/{codigo}` para que la página deshabilite Yape; el backend también lo valida |
 | P7 | **Medios en la respuesta** ✅ | `GET /pagos/{codigo}` devuelve cada medio con `{proveedor, medio, clavePublica, disponible, motivoNoDisponible}`; la página no decide nada por su cuenta |
+| P8 | **Reembolsos parciales y postventa** ✅ | Nacen siempre del pedido (D4 ampliada): cancelación y `PagoNoAplicable` (total) o `ReembolsoSolicitado` (postventa, total o parcial). Culqi y Mercado Pago aceptan reembolsos parciales por monto. La intención solo refleja lo completado (`REEMBOLSADA_PARCIAL`, `REEMBOLSADA`); el estado en curso o fallido se ve en cada reembolso. Se confirma en la prueba de concepto (P1) que el sandbox acepte parciales |
 
 ## 6. Datos
 
@@ -324,7 +335,7 @@ Todo según el micro de payment. Decisiones de implementación de esta spec:
 | 20–23 | API + integración | `WebhookControllerTest` (firma válida e inválida, duplicado), `VerificadorPagosTest`, circuito abierto |
 | 24–25 | Unitaria + API | `SimuladoProviderTest`, configuración habilitada y deshabilitada |
 | 26–29 | Datos + integración | `BoletaServiceTest` (contenido del PDF con PDFBox), `CorrelativoBoletaIT` (20 concurrentes), Garage caído (Testcontainers), descarga ajena 404 |
-| 30–32 | Integración | `ReembolsoServiceTest` (esperas 1-5-15-60 con reloj simulado, único por intención) |
+| 30–32, 39–40 | Integración | `ReembolsoServiceTest` (esperas 1-5-15-60 con reloj simulado, total único por intención, parciales con suma ≤ monto y concurrencia, `ReembolsoSolicitado` duplicado), WireMock de reembolso parcial en Culqi y Mercado Pago |
 | 33–38 | API + componente | `AdminPagoControllerTest` (filtros, 403 a OPERADOR), `reembolsos.page.spec.ts` |
 | Manual | Sandbox real | Guion de `docs/pruebas/poc-pagos.md` repetido al cerrar la spec (para el video) |
 | Todas | Postman | `postman/payment.postman_collection.json`: pago simulado aprobado, rechazado y en curso, descarga de boleta, webhook simulado, reembolso tras cancelación |
@@ -345,7 +356,7 @@ Todo según el micro de payment. Decisiones de implementación de esta spec:
 ## 9. Definición de terminado
 
 - [ ] Prueba de concepto documentada y spec ajustada a su resultado.
-- [ ] CA-5-01 a CA-5-38 cumplidos en CI.
+- [ ] CA-5-01 a CA-5-40 cumplidos en CI.
 - [ ] Postman `payment` en verde.
 - [ ] El OpenAPI de payment coincide con lo implementado; los eventos coinciden con el AsyncAPI.
 - [ ] Demostración en sandbox: pago con tarjeta de Culqi, con Yape (o con el simulado si el sandbox no lo permite, documentado), con Mercado Pago, un rechazo con reintento y un reembolso tras cancelar.

@@ -1,11 +1,12 @@
 # FitStore — Análisis técnico macro
 
 > Proyecto final DAW II (4697) + DSW II (4698) — Cibertec, 6.º ciclo.
-> Autor: Carlos Azabache. Versión: **v19 (aprobado)** — 2026-10-16.
+> Autor: Carlos Azabache. Versión: **v20 (aprobado)** — 2026-10-18.
 > Documento base: [`CONSOLIDADO-PROYECTO.md`](../../../CONSOLIDADO-PROYECTO.md).
 > Siguiente etapa: análisis técnico micro (por servicio) → C4 → specs → contratos.
 
 **Historial:**
+- v20 (2026-10-18): por SPEC-5: **reembolso postventa** desde el pedido entregado (total o parcial, solo ADMIN, plazo configurable con 0 = ilimitado): RF-PAY-06, nuevo RF-ORD-11, RF-SET-05.
 - v19 (2026-10-18): ADR-021 aprobada, sin políticas de rama forzadas.
 - v18 (2026-10-18): ADR-021 propuesta (flujo de ramas dev → stage → main). Desde ahora todo entra por PR a `dev`.
 - v17 (2026-10-18): por SPEC-2: imágenes por color (RF-CAT-04), carga masiva de productos (RF-CAT-09), ejemplos de categorías renombrados.
@@ -287,6 +288,7 @@ Formato: `RF-<CONTEXTO>-NN`. Prioridad MoSCoW.
 | RF-ORD-05 | Consulta de pedidos del cliente y seguimiento | M |
 | RF-ORD-06 | Gestión de pedidos en backoffice: filtros por estado, fecha, cliente; cambio de estado validado | M |
 | RF-ORD-07 | Cancelación por cliente (antes de despacho) o staff, con compensaciones (reembolso, liberar stock) | M |
+| RF-ORD-11 | **Reembolso postventa** de un pedido entregado (prenda defectuosa, talla o modelo equivocado, no conforme): total o parcial por prendas, con motivo, solo ADMIN, dentro del plazo configurable de la tienda (0 = sin límite); la suma de reembolsos nunca supera lo cobrado y el stock no se reingresa automáticamente | M |
 | RF-ORD-08 | Expiración de pedidos `PENDIENTE_PAGO` tras N minutos, configurable en la tienda (sugerido 30) | S |
 | RF-ORD-09 | Código de pedido legible (p. ej. `FS-000123`) | M |
 
@@ -300,7 +302,7 @@ Formato: `RF-<CONTEXTO>-NN`. Prioridad MoSCoW.
 | RF-PAY-03 | Proveedores intercambiables (patrón Strategy); habilitación por configuración de tienda | M |
 | RF-PAY-04 | Recepción y validación de webhooks; idempotencia | M |
 | RF-PAY-05 | Registro de transacciones (intentos, estado, respuesta del proveedor) | M |
-| RF-PAY-06 | Reembolso total desde backoffice | M |
+| RF-PAY-06 | Reembolso **siempre originado en el pedido**: total al cancelar un pedido pagado, total o parcial en la postventa (RF-ORD-11); varios reembolsos por pago, sin superar lo cobrado | M |
 | RF-PAY-09 | **Pago con Yape** vía Culqi (celular + código de aprobación → token → cargo); deshabilitado si el total supera el tope diario de Yape | M |
 | RF-PAY-08 | **Boleta simulada en PDF** (sin validez tributaria) emitida al confirmarse el pago, con ítems, descuentos, envío y datos del cliente (nombre, DNI); descargable desde "Mis pedidos" y adjunta al correo de confirmación | S |
 
@@ -335,7 +337,7 @@ Formato: `RF-<CONTEXTO>-NN`. Prioridad MoSCoW.
 | RF-SET-02 | Tema: colores (primario, secundario, acento, fondo, texto), tipografía, radio de bordes | M |
 | RF-SET-03 | Contenido: textos de la landing, contacto, redes, horario, dirección de tienda física | M |
 | RF-SET-04 | Políticas: términos, privacidad, cambios y devoluciones, envíos | M |
-| RF-SET-05 | Parámetros de negocio: moneda, métodos de pago y entrega habilitados, minutos de expiración de pedido, correos para alertas (el stock mínimo por defecto lo guarda catalog, RF-INV-05) | M |
+| RF-SET-05 | Parámetros de negocio: moneda, métodos de pago y entrega habilitados, minutos de expiración de pedido, correos para alertas, días para reembolso postventa (0 = sin límite) (el stock mínimo por defecto lo guarda catalog, RF-INV-05) | M |
 | RF-SET-06 | Endpoint público de configuración (sin datos sensibles) consumido por ambos frontends al iniciar | M |
 | RF-SET-07 | Vista previa del tema antes de publicar | C |
 | RF-SET-08 | **Datos maestros de ubigeo** (INEI): departamentos, provincias y distritos, servidos a los frontends (selects en registro, direcciones, checkout y tarifas) y cacheados en Redis | M |
