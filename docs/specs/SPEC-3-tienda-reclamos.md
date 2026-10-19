@@ -1,11 +1,12 @@
 # SPEC-3 — Tienda y reclamos
 
-> Versión: **v7 (aprobado)** — 2026-10-19 · Estados: ✅ decidido · 🟡 propuesto · ❓ abierto
+> Versión: **v8 (aprobado)** — 2026-10-19 · Estados: ✅ decidido · 🟡 propuesto · ❓ abierto
 > **Dueña de:** `backend/settings-service` (configuración, ubigeo, Libro de Reclamaciones) · tienda: `features/inicio`, `features/legal` · backoffice: `features/configuracion`, `features/reclamos`.
 > **Depende de:** 0a, 0b, 1 (sesión de staff) · usa el contrato de catalog (destacados y categorías) · **Habilita:** la marca real en todas las pantallas (0b ya la consume), versiones de políticas para el registro (spec 1), parámetros para order y payment (specs 4 y 5).
 > **Contratos:** `contracts/openapi/settings-service.yaml`; eventos `ConfiguracionActualizada`, `ReclamoRegistrado`, `ReclamoRespondido`.
 
 **Historial:**
+- v8 (2026-10-19): etapa de diseño cerrada: diseños de alta fidelidad enlazados (P-3-04).
 - v7 (2026-10-19): etapa de diseño: el tema configura solo los cinco colores; tipografía y bordes son fijos del sistema de diseño (HU-3-03, CA-3-09, boceto P-3-04). CA-3-10: el texto sobre el primario se deriva (blanco o el color de texto), así que solo se advierte si ninguno de los dos llega a 4.5:1. Diseño de P-3-01 enlazado.
 - v6 (2026-10-19): los datos de demostración también se cargan en la nube con el perfil `demo` (SPEC-8 I7), con UUID fijos compartidos entre servicios (`docs/demo/ids-demo.md`).
 - v5 (2026-10-18): P-3-05 y P-3-06 indican qué abre el enlace de cada fila y sus acciones, según la convención de tablas de la SPEC-0b (R11). Boceto P-3-06 actualizado.
@@ -259,7 +260,7 @@ CA-3-37  Dado Redis caído
 
 - **Ruta / proyecto:** `/configuracion` · backoffice · ADMIN.
 - **Boceto:** ![P-3-04](img/P-3-04-configuracion.png)
-- **Diseño de alta fidelidad:** 🕓 **pantalla clave**.
+- **Diseño de alta fidelidad:** ✅ [canvas "FitStore Tienda"](https://claude.ai/artifact/1iacKddHAquNYuQcFPBZLg), `Configuracion` (FitStore escritorio) y `ConfiguracionKallpa` (Kallpa escritorio). Copia en [`docs/diseno/`](../diseno/).
 - **Componentes:** `ConfiguracionPage` con pestañas Identidad, Tema (`EditorTema` + `VistaPreviaTema`), Contenido (`EditorHero`, `ImagenesLanding` arrastrables, `EditorBeneficios` de 0 a 3, contacto, redes, tienda física con selector de ubigeo), Parámetros (de settings + bloque Inventario de catalog), Políticas (enlace a P-3-05). Cada pestaña guarda su sección.
 - **Estados:** cambios sin guardar (aviso al salir), conflicto de versión (409), advertencia de contraste.
 - **Endpoints:** `GET /admin/settings`, `PUT /admin/settings/{identidad|tema|contenido|parametros}`, `/admin/settings/imagenes/**` · catalog: `GET/PUT /admin/inventario/configuracion` (contrato de la SPEC-2).

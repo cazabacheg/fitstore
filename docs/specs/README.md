@@ -32,6 +32,8 @@ Specs (con bocetos de baja fidelidad) → contratos (OpenAPI / AsyncAPI) → **d
 
 **Implementación guiada por las specs, con TDD como barrera** (decidido 2026-10-19): cada criterio de aceptación se escribe primero como prueba que falla y luego se implementa lo mínimo para que pase (rojo → verde → refactor). La tabla "CA → prueba" de la sección 7 de cada spec es la lista de pruebas a escribir; los contratos y sus ejemplos alimentan las pruebas de API y los mocks (contracts/README.md, K13).
 
+**Diseño (cerrado 2026-10-19):** [sistema de diseño "FitStore"](https://claude.ai/artifact/Et7tCDyQaEnLzja8GH4zxT) y [canvas "FitStore Tienda"](https://claude.ai/artifact/1iacKddHAquNYuQcFPBZLg), con copia versionada en [`docs/diseno/`](../diseno/). Las pantallas que "derivan del sistema de diseño" se construyen con sus componentes y su boceto.
+
 Pantallas clave (12 grupos, 14 pantallas): tienda (landing, listado, detalle de producto, carrito, checkout, pago y su resultado, mis pedidos y su detalle; escritorio y móvil) y backoffice (dashboard, lista de pedidos, detalle de pedido, formulario de producto, configuración de tienda). El resto deriva del sistema de diseño y su boceto.
 
 Plantilla: [`_plantilla.md`](_plantilla.md) (v3: criterios dentro de cada historia; historias enlazadas a sus pantallas `P-XX-NN`; bocetos en `img/`; cada pantalla reserva su diseño de alta fidelidad).

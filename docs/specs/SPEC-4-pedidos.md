@@ -1,11 +1,12 @@
 # SPEC-4 — Pedidos
 
-> Versión: **v9 (aprobado)** — 2026-10-19 · Estados: ✅ decidido · 🟡 propuesto · ❓ abierto
+> Versión: **v10 (aprobado)** — 2026-10-19 · Estados: ✅ decidido · 🟡 propuesto · ❓ abierto
 > **Dueña de:** `backend/order-service` (carrito, checkout, pedidos, saga) · tienda: `features/carrito`, `features/checkout`, `features/mis-pedidos` · backoffice: `features/pedidos`.
 > **Depende de:** 0a, 0b, 1 (sesión y direcciones) · usa los contratos de catalog (cotizar, reservar), auth (cliente y dirección), delivery (opciones y cotización de envío) y settings (parámetros y ubigeo) · **Habilita:** 5 (pago del pedido), 6 (entrega desde `PedidoListoDespacho`), 7 (correos del pedido), 8 (dashboard y E2E).
 > **Contratos:** `contracts/openapi/order-service.yaml`; eventos que publica `PedidoCreado`, `PedidoPagado`, `PedidoCancelado`, `PedidoExpirado`, `PagoNoAplicable`, `PedidoListoDespacho`, `PedidoListoRecojo`, `PedidoRecogido`, `ReembolsoSolicitado`; consume `PagoConfirmado`, `PagoRechazado`, `BoletaEmitida`, `PagoReembolsado`, `EntregaActualizada`.
 
 **Historial:**
+- v10 (2026-10-19): etapa de diseño cerrada: diseños de alta fidelidad enlazados (P-4-01, P-4-02, P-4-03, P-4-04, P-4-05, P-4-06).
 - v9 (2026-10-19): ajustes de la etapa de contratos: el bloque de pago de P-4-06 sale del propio pedido (order guarda proveedor y medio desde `PagoConfirmado`).
 - v8 (2026-10-19): revisión de coherencia: "No incluye" deja explícito que exportar pedidos a CSV (RF-BO-03, C) es alcance futuro.
 - v7 (2026-10-19): los datos de demostración también se cargan en la nube con el perfil `demo` (SPEC-8 I7), con UUID fijos compartidos entre servicios (`docs/demo/ids-demo.md`).
@@ -346,7 +347,7 @@ CA-4-59  Un OPERADOR no ve el botón y la API le responde 403
 
 - **Ruta / proyecto:** `/carrito` · storefront · público.
 - **Boceto (baja fidelidad):** ![P-4-01](img/P-4-01-carrito.png)
-- **Diseño de alta fidelidad:** 🕓 **pantalla clave** (escritorio y móvil, en dos marcas).
+- **Diseño de alta fidelidad:** ✅ [canvas "FitStore Tienda"](https://claude.ai/artifact/1iacKddHAquNYuQcFPBZLg), `Carrito` (FitStore escritorio) y `CarritoKallpaMovil` (Kallpa móvil). Copia en [`docs/diseno/`](../diseno/).
 - **Componentes:** `CarritoPage`, `LineaCarrito` (selector de cantidad con espera de 400 ms antes de llamar), `AvisoTramo`, `ResumenCarrito` (columna fija en escritorio, barra inferior en móvil), `CarritoService` (señales; actualiza `CarritoContador`).
 - **Estados:** cargando, vacío, precios por confirmar (catalog caído), línea no disponible, error de stock en una línea.
 - **Endpoints:** `GET /carrito`, `PUT|DELETE /carrito/items/{varianteId}`, `DELETE /carrito`, `POST /carrito/fusionar` (al detectar la sesión).
@@ -355,7 +356,7 @@ CA-4-59  Un OPERADOR no ve el botón y la API le responde 403
 
 - **Ruta / proyecto:** `/checkout` · storefront · CLIENTE.
 - **Boceto:** ![P-4-02](img/P-4-02-checkout.png)
-- **Diseño de alta fidelidad:** 🕓 **pantalla clave**.
+- **Diseño de alta fidelidad:** ✅ [canvas "FitStore Tienda"](https://claude.ai/artifact/1iacKddHAquNYuQcFPBZLg), `Checkout` (FitStore escritorio) y `CheckoutKallpaMovil` (Kallpa móvil). Copia en [`docs/diseno/`](../diseno/).
 - **Componentes:** `CheckoutPage` en **una sola página** (O1) con las secciones 1 Dirección (`SelectorDireccion`), 2 Entrega (`SelectorModalidad` con costo y plazo de cada opción, `SelectorAgencia`, datos de la tienda física para recojo), 3 Revisa tu pedido (ítems compactos), y la columna `ResumenPedido` con notas opcionales (hasta 300 caracteres), aceptación implícita de términos y el botón "Confirmar pedido" (deshabilitado mientras envía).
 - **Estados:** sin direcciones, recalculando resumen, envío no disponible, precios cambiados (409), sin stock (409), servicio no disponible (503), demasiados intentos (429).
 - **Validaciones:** dirección obligatoria salvo recojo; agencia obligatoria en agencia.
@@ -366,7 +367,7 @@ CA-4-59  Un OPERADOR no ve el botón y la API le responde 403
 
 - **Ruta / proyecto:** `/cuenta/pedidos` · storefront · CLIENTE (dentro del menú "Mi cuenta" de la spec 1).
 - **Boceto:** ![P-4-03](img/P-4-03-mis-pedidos.png)
-- **Diseño de alta fidelidad:** 🕓 **pantalla clave** (junto con P-4-04).
+- **Diseño de alta fidelidad:** ✅ [canvas "FitStore Tienda"](https://claude.ai/artifact/1iacKddHAquNYuQcFPBZLg), `MisPedidos` (FitStore escritorio) y `MisPedidosKallpaMovil` (Kallpa móvil). Copia en [`docs/diseno/`](../diseno/).
 - **Componentes:** `MisPedidosPage`, `TarjetaPedido`, `EtiquetaEstado` (color y texto por estado, compartida con el backoffice por contrato visual).
 - **Estados:** vacío ("Aún no tienes pedidos" + enlace a la tienda), cargando, error.
 - **Endpoints:** `GET /pedidos?page=`.
@@ -375,7 +376,7 @@ CA-4-59  Un OPERADOR no ve el botón y la API le responde 403
 
 - **Ruta / proyecto:** `/cuenta/pedidos/:codigo` · storefront · CLIENTE.
 - **Boceto:** ![P-4-04](img/P-4-04-detalle-mi-pedido.png)
-- **Diseño de alta fidelidad:** 🕓 **pantalla clave**.
+- **Diseño de alta fidelidad:** ✅ [canvas "FitStore Tienda"](https://claude.ai/artifact/1iacKddHAquNYuQcFPBZLg), `MiPedido` (FitStore escritorio) y `MiPedidoKallpaMovil` (Kallpa móvil). Copia en [`docs/diseno/`](../diseno/).
 - **Componentes:** `DetallePedidoPage`, `LineaTiempo` (nombre, descripción de O9, fecha y hora por etapa), `CuentaRegresiva` (pendiente de pago), `ResumenMontos`, `DialogoCancelar`.
 - **Estados:** pendiente de pago (cuenta regresiva y "Pagar ahora"), en curso, entregado, cancelado, expirado o devuelto (línea de tiempo cortada con el motivo), no encontrado (404).
 - **Endpoints:** `GET /pedidos/{codigo}`, `PATCH /pedidos/{codigo}/cancelar`.
@@ -384,7 +385,7 @@ CA-4-59  Un OPERADOR no ve el botón y la API le responde 403
 
 - **Ruta / proyecto:** `/pedidos` · backoffice · OPERADOR, ADMIN.
 - **Boceto:** ![P-4-05](img/P-4-05-pedidos.png)
-- **Diseño de alta fidelidad:** 🕓 **pantalla clave** (lista de pedidos).
+- **Diseño de alta fidelidad:** ✅ [canvas "FitStore Tienda"](https://claude.ai/artifact/1iacKddHAquNYuQcFPBZLg), `Pedidos` (FitStore escritorio) y `PedidosKallpa` (Kallpa escritorio). Copia en [`docs/diseno/`](../diseno/).
 - **Componentes:** `PedidosPage` con chips de contador por estado, `FiltrosPedidos` (sincronizados con la URL), tabla paginada de 0b.
 - **Tabla (0b R11):** el **código del pedido** abre `/pedidos/:id`; acción "Ver ›". Avanzar, cancelar y reembolsar están en el detalle.
 - **Endpoints:** `GET /admin/pedidos?estado=&modalidad=&desde=&hasta=&codigo=&cliente=&clienteId=&page=` (devuelve también los contadores por estado).
@@ -393,7 +394,7 @@ CA-4-59  Un OPERADOR no ve el botón y la API le responde 403
 
 - **Ruta / proyecto:** `/pedidos/:id` · backoffice · OPERADOR, ADMIN.
 - **Boceto:** ![P-4-06](img/P-4-06-detalle-pedido.png)
-- **Diseño de alta fidelidad:** 🕓 **pantalla clave**.
+- **Diseño de alta fidelidad:** ✅ [canvas "FitStore Tienda"](https://claude.ai/artifact/1iacKddHAquNYuQcFPBZLg), `Pedido` (FitStore escritorio) y `PedidoKallpa` (Kallpa escritorio). Copia en [`docs/diseno/`](../diseno/).
 - **Componentes:** `DetallePedidoAdminPage`, `AccionesEstado` (botones según `transicionesPermitidas` que envía la API), `DialogoComentario`, `DialogoRecogido` (casilla "verifiqué el DNI"), `DialogoNoRecogido` (motivo obligatorio), `DialogoCancelarStaff` (motivo), `DialogoReembolsoPostventa` (solo ADMIN, en pedidos ENTREGADO dentro del plazo o DEVUELTO: prendas y cantidades, monto propuesto editable, motivo, nota, máximo a devolver), `HistorialPedido`, etiqueta "Reembolso parcial" / "Reembolsado".
 - **Tabla (0b R11):** la tabla de productos del pedido no tiene detalle (filas no clicables); el SKU es un enlace a su kardex (`/inventario/:varianteId`).
 - **Estados:** conflicto (409), acción en curso, pedido final (sin acciones).

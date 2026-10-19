@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Carrito</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="ds/fitstore/components/bundle.css">
+<link rel="stylesheet" href="marca.css">
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+body{margin:0;padding:0}
+a{color:inherit}
+.car-linea{display:grid;grid-template-columns:96px minmax(0,1fr) auto;gap:20px;padding-block:24px;border-bottom:1px solid var(--fs-color-linea)}
+.car-linea .fs-miniatura{width:96px}
+.car-fila{display:flex;justify-content:space-between;gap:12px;font-variant-numeric:tabular-nums}
+@media (max-width:720px){.car-linea{grid-template-columns:80px minmax(0,1fr) auto;gap:12px}.car-linea .fs-miniatura{width:80px}}
+</style>
+</helmet>
+<div data-theme="{{marca}}" style="font-family: var(--fs-font-marca); background: var(--fs-color-fondo); color: var(--fs-color-texto); font-size: 15px; line-height: 24px; min-height: 100%;">
+  <dc-import name="TiendaCabecera" actual="ninguna" hint-size="100%,80px"></dc-import>
+
+  <main class="fs-pagina" style="padding-block: 40px 80px; display: grid; gap: 28px;">
+    <div class="fs-entre"><h1 class="fs-titulo-pagina">Tu carrito</h1><span style="color: var(--fs-color-texto-suave);">7 prendas</span></div>
+
+    <div class="fs-dos-columnas" style="gap: 48px;">
+      <section style="display: grid; gap: 0; align-content: start;">
+        <div style="display: flex; gap: 12px; align-items: center; padding: 14px 16px; border-radius: var(--fs-radio-md); background: var(--fs-color-primario-suave);">
+          <span class="fs-icono" style="color: var(--fs-color-primario-texto);" aria-hidden="true">sell</span>
+          <span><b>Legging Pro Compresión:</b> ya ahorras 5 %. Agrega 3 más y ahorra 10 %.</span>
+        </div>
+
+        <sc-for list="{{lineas}}" as="l" hint-placeholder-count="3">
+          <article class="car-linea">
+            <div class="fs-miniatura"><span class="fs-icono" aria-hidden="true">checkroom</span></div>
+            <div style="display: grid; gap: 6px; align-content: start; min-width: 0;">
+              <a href="Producto.dc.html" style="font-weight: 600; text-decoration: none;">{{l.nombre}}</a>
+              <span class="fs-suave">{{l.variante}}</span>
+              <sc-if value="{{l.aviso}}" hint-placeholder-val="{{false}}"><span style="font-size: 13px; color: var(--fs-color-aviso); display: flex; gap: 6px; align-items: center;"><span class="fs-icono" style="font-size: 16px;" aria-hidden="true">warning</span>{{l.aviso}}</span></sc-if>
+              <div class="fs-cantidad" style="justify-self: start; margin-top: 6px;"><button aria-label="Quitar uno"><span class="fs-icono">remove</span></button><span>{{l.cantidad}}</span><button aria-label="Agregar uno"><span class="fs-icono">add</span></button></div>
+            </div>
+            <div class="car-linea__precio" style="display: grid; justify-items: end; align-content: space-between; gap: 8px;">
+              <button class="fs-btn fs-btn--texto fs-btn--sm" style="color: var(--fs-color-texto-suave); padding: 0;"><span class="fs-icono" aria-hidden="true">delete</span>Quitar</button>
+              <div style="display: grid; justify-items: end; gap: 2px;">
+              <span style="font-weight: 700; font-variant-numeric: tabular-nums;">{{l.total}}</span>
+              <sc-if value="{{l.antes}}" hint-placeholder-val="{{true}}"><span class="fs-precio__antes">{{l.antes}}</span></sc-if>
+              </div>
+            </div>
+          </article>
+        </sc-for>
+        <div style="padding-top: 16px;"><a class="fs-btn fs-btn--texto" href="Listado.dc.html"><span class="fs-icono" aria-hidden="true">arrow_back</span>Seguir comprando</a></div>
+      </section>
+
+      <aside class="fs-tarjeta" style="display: grid; gap: 16px; position: sticky; top: 24px;">
+        <h2 class="fs-titulo-seccion">Resumen</h2>
+        <div class="car-fila"><span>Subtotal</span><span>S/ 419.30</span></div>
+        <div class="car-fila" style="color: var(--fs-color-exito);"><span>Descuentos por cantidad</span><span>−S/ 8.98</span></div>
+        <div class="car-fila" style="color: var(--fs-color-texto-suave);"><span>Envío</span><span>Se calcula en el checkout</span></div>
+        <hr class="fs-linea">
+        <div class="car-fila" style="font-size: 18px; font-weight: 700;"><span>Total</span><span>S/ 410.32</span></div>
+        <a class="fs-btn fs-btn--primario fs-btn--lg fs-btn--bloque" href="Checkout.dc.html">Ir al checkout</a>
+        <span class="fs-suave" style="display: flex; gap: 6px; align-items: center; justify-content: center;"><span class="fs-icono" style="font-size: 16px;" aria-hidden="true">lock</span>Pagos seguros con Culqi y Mercado Pago</span>
+      </aside>
+    </div>
+  </main>
+
+  <dc-import name="TiendaPie" hint-size="100%,380px"></dc-import>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"marca":{"editor":"enum","options":["fitstore","kallpa"],"default":"fitstore","section":"Marca"},"$preview":{"width":1280,"height":1250}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {
+      marca: this.props.marca ?? 'fitstore',
+      lineas: [
+        { nombre: 'Legging Pro Compresión', variante: 'Negro · M', sku: 'LEG01-NEG-M', cantidad: 2, total: 'S/ 113.81', antes: 'S/ 119.80', aviso: '' },
+        { nombre: 'Legging Pro Compresión', variante: 'Olivo · S', sku: 'LEG01-OLI-S', cantidad: 1, total: 'S/ 56.91', antes: 'S/ 59.90', aviso: 'Solo quedan 3 unidades' },
+        { nombre: 'Top Flex', variante: 'Arena · M', sku: 'TOP02-ARE-M', cantidad: 2, total: 'S/ 79.80', antes: '', aviso: '' },
+        { nombre: 'Casaca Wind', variante: 'Negro · L', sku: 'CAS01-NEG-L', cantidad: 1, total: 'S/ 89.90', antes: '', aviso: '' },
+        { nombre: 'Jogger Urban', variante: 'Gris · M', sku: 'JOG01-GRI-M', cantidad: 1, total: 'S/ 69.90', antes: '', aviso: '' }
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>

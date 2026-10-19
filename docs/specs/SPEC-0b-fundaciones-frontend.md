@@ -1,10 +1,11 @@
 # SPEC-0b — Fundaciones del frontend
 
-> Versión: **v7 (aprobado)** — 2026-10-19 · Estados: ✅ decidido · 🟡 propuesto · ❓ abierto
+> Versión: **v8 (aprobado)** — 2026-10-19 · Estados: ✅ decidido · 🟡 propuesto · ❓ abierto
 > **Dueña de:** workspace Angular (`frontend/`), librería `shared`, *shells* (layouts) de storefront y backoffice, rutas y menús generales, tema white-label, carpetas `ui/` de cada app, job de frontend en CI.
 > **Depende de:** 0a (gateway y CI), la etapa de contratos (OpenAPI para generar los clientes) y la etapa de diseño (**sistema de diseño**: los componentes de `ui/` se construyen según él). · **Habilita:** pantallas de las specs 1–8.
 
 **Historial:**
+- v8 (2026-10-19): etapa de diseño cerrada: diseños de alta fidelidad enlazados (P-0b-02).
 - v7 (2026-10-19): etapa de diseño: el tema de settings trae solo los cinco colores; la tipografía y los radios son fijos (HU-0b-02, CA-0b-05, R4). Cabecera de la tienda: hasta 4 categorías raíz, atenuación al pasar el mouse (CA-0b-20, nuevo CA-0b-20c, CA-0b-21); diseño de P-0b-01 enlazado.
 - v6 (2026-10-19): revisión de coherencia: HU-0b-06 cita RF-BO-02 (tablas con paginación, filtros y orden); menú del backoffice completo (R3: ítems, subítems, roles) y mecanismo de contadores por funcionalidad (`CONTADOR_MENU`), que necesitaba la SPEC-5 para los reembolsos fallidos (CA-0b-24).
 - v5 (2026-10-19): el selector de ubigeo de `ui/` acepta la opción `hasta` (departamento, provincia o distrito), pedida por la SPEC-6 para las tarifas (CA-0b-26).
@@ -242,7 +243,7 @@ CA-0b-30  Dado que alguien cambió un contrato sin regenerar
 
 - **Proyecto / acceso:** backoffice · OPERADOR y ADMIN.
 - **Boceto:** ![P-0b-02](img/P-0b-02-backoffice.png)
-- **Diseño de alta fidelidad:** 🕓 pendiente de la etapa de diseño (pantalla clave: shell del backoffice)
+- **Diseño de alta fidelidad:** ✅ [canvas "FitStore Tienda"](https://claude.ai/artifact/1iacKddHAquNYuQcFPBZLg), pieza `BoBarra` (menú lateral R3 en `fs-color-secundario`, ítem activo con barra en el primario, contador en Pagos) y barra superior con migas y menú de usuario en cada pantalla del backoffice (FitStore y Kallpa). Copia en [`docs/diseno/`](../diseno/).
 - **Componentes:** `BackofficeShell` (Material `sidenav`), `MenuLateral` (ítems por rol, tabla R3), `BarraSuperior` (migas, menú de usuario), `EncabezadoPagina` (título + acción principal, usado por todas las pantallas).
 - **Estados:** menú colapsable en tablet; ítem activo resaltado.
 - **Endpoints:** `GET /settings/public`, `GET /staff/me`.

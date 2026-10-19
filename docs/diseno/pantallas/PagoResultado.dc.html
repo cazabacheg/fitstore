@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Resultado del pago</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="ds/fitstore/components/bundle.css">
+<link rel="stylesheet" href="marca.css">
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+body{margin:0;padding:0}
+a{color:inherit}
+.res-icono{width:72px;height:72px;border-radius:var(--radio-pill);display:grid;place-items:center}
+.res-variantes{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:24px}
+@media (max-width:720px){.res-variantes{grid-template-columns:minmax(0,1fr)}}
+</style>
+</helmet>
+<div data-theme="{{marca}}" style="font-family: var(--fs-font-marca); background: var(--fs-color-fondo); color: var(--fs-color-texto); font-size: 15px; line-height: 24px; min-height: 100%;">
+  <dc-import name="TiendaCabecera" actual="ninguna" hint-size="100%,80px"></dc-import>
+
+  <main class="fs-pagina" style="padding-block: 64px 96px; display: grid; gap: 48px; justify-items: center;">
+    <section style="display: grid; justify-items: center; gap: 16px; text-align: center; max-width: 520px;">
+      <div class="res-icono" style="background: var(--fs-color-exito-suave); color: var(--fs-color-exito);"><span class="fs-icono" style="font-size: 40px;" aria-hidden="true">check</span></div>
+      <h1 class="fs-titulo-pagina">¡Pago aprobado!</h1>
+      <p style="margin: 0; color: var(--fs-color-texto-suave);">Tu pedido <span class="fs-codigo" style="color: var(--fs-color-texto);">FS-000124</span> está confirmado. Te enviamos la confirmación a <b style="color: var(--fs-color-texto);">lucia.ramos@correo.pe</b>.</p>
+      <div style="display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; padding-top: 8px;">
+        <a class="fs-btn fs-btn--primario fs-btn--lg" href="MiPedido.dc.html">Ver mi pedido</a>
+        <a class="fs-btn fs-btn--contorno fs-btn--lg" href="#"><span class="fs-icono" aria-hidden="true">receipt_long</span>Descargar boleta</a>
+      </div>
+      <span class="fs-suave">Boleta <span class="fs-codigo">B001-00000046</span> · Total pagado S/ 420.32 con Visa ···· 1111</span>
+    </section>
+
+    <div class="res-variantes" style="width: 100%; max-width: 880px;">
+      <section class="fs-tarjeta" style="display: grid; justify-items: center; gap: 12px; text-align: center;">
+        <span class="fs-eyebrow" style="color: var(--fs-color-texto-suave);">Estado: rechazado</span>
+        <div class="res-icono" style="width: 56px; height: 56px; background: var(--fs-color-error-suave); color: var(--fs-color-error);"><span class="fs-icono" style="font-size: 30px;" aria-hidden="true">close</span></div>
+        <h2 class="fs-titulo-seccion">No pudimos cobrar tu pago</h2>
+        <p style="margin: 0; color: var(--fs-color-texto-suave);">El banco rechazó la tarjeta por fondos insuficientes. Tus prendas siguen apartadas.</p>
+        <a class="fs-btn fs-btn--primario" href="Pago.dc.html">Intentar de nuevo</a>
+      </section>
+      <section class="fs-tarjeta" style="display: grid; justify-items: center; gap: 12px; text-align: center;">
+        <span class="fs-eyebrow" style="color: var(--fs-color-texto-suave);">Estado: confirmando</span>
+        <div class="res-icono" style="width: 56px; height: 56px; background: var(--fs-color-info-suave); color: var(--fs-color-info);"><span class="fs-icono" style="font-size: 30px;" aria-hidden="true">hourglass_top</span></div>
+        <h2 class="fs-titulo-seccion">Estamos confirmando tu pago</h2>
+        <p style="margin: 0; color: var(--fs-color-texto-suave);">Puede tardar hasta 2 minutos; no cierres ni vuelvas a pagar.</p>
+        <div class="fs-esqueleto" style="width: 160px; height: 6px;"></div>
+      </section>
+    </div>
+  </main>
+
+  <dc-import name="TiendaPie" hint-size="100%,380px"></dc-import>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"marca":{"editor":"enum","options":["fitstore","kallpa"],"default":"fitstore","section":"Marca"},"$preview":{"width":1280,"height":1100}}'>
+class Component extends DCLogic {
+  renderVals() { return { marca: this.props.marca ?? 'fitstore' }; }
+}
+</script>
+</body>
+</html>

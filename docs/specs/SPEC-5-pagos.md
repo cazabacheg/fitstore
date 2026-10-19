@@ -1,11 +1,12 @@
 # SPEC-5 — Pagos
 
-> Versión: **v8 (aprobado)** — 2026-10-19 · Estados: ✅ decidido · 🟡 propuesto · ❓ abierto
+> Versión: **v9 (aprobado)** — 2026-10-19 · Estados: ✅ decidido · 🟡 propuesto · ❓ abierto
 > **Dueña de:** `backend/payment-service` (intención, cobros, webhooks, reembolsos, boleta) · tienda: `features/pago` · backoffice: `features/pagos`.
 > **Depende de:** 0a, 0b, 1 (sesión) · usa el contrato de eventos de order (`PedidoCreado`, `PedidoCancelado`, `PedidoExpirado`, `PagoNoAplicable`, `ReembolsoSolicitado`) y `GET /settings/public` · **Habilita:** 4 (el pedido pasa a `PAGADO`, guarda la boleta y registra lo reembolsado), 7 (correos de pago, reembolso y alerta con la boleta adjunta), 8 (demo de punta a punta).
 > **Contratos:** `contracts/openapi/payment-service.yaml`; eventos que publica `PagoConfirmado`, `PagoRechazado`, `BoletaEmitida`, `PagoReembolsado`, `ReembolsoFallido`.
 
 **Historial:**
+- v9 (2026-10-19): etapa de diseño cerrada: diseños de alta fidelidad enlazados (P-5-01, P-5-02).
 - v8 (2026-10-19): revisión de coherencia: el contador de reembolsos fallidos se registra con `CONTADOR_MENU` de la SPEC-0b (R3), en lugar de que el *shell* lo consulte por su cuenta.
 - v7 (2026-10-19): los datos de demostración también se cargan en la nube con el perfil `demo` (SPEC-8 I7), con UUID fijos compartidos entre servicios (`docs/demo/ids-demo.md`).
 - v6 (2026-10-19): el contador de reembolsos fallidos del menú usa `size=1` y lee el total (Spring Data no acepta `size=0`), corregido al redactar la SPEC-8.
@@ -266,7 +267,7 @@ CA-5-38  Cuando lo marco como resuelto manualmente (p. ej. devolví por transfer
 
 - **Ruta / proyecto:** `/pago/:codigo` · storefront · CLIENTE.
 - **Boceto (baja fidelidad):** ![P-5-01](img/P-5-01-pago.png)
-- **Diseño de alta fidelidad:** 🕓 **pantalla clave** (escritorio y móvil, en dos marcas).
+- **Diseño de alta fidelidad:** ✅ [canvas "FitStore Tienda"](https://claude.ai/artifact/1iacKddHAquNYuQcFPBZLg), `Pago` (FitStore escritorio) y `PagoKallpaMovil` (Kallpa móvil). Copia en [`docs/diseno/`](../diseno/).
 - **Componentes:** `PagoPage`, `ResumenPago` (código, productos, total, `CuentaRegresiva` de la spec 4 por contrato visual), `SelectorMedio` (Tarjeta, Yape, Mercado Pago, Pago de prueba), `FormularioCulqi` (tarjeta y Yape, con la librería de Culqi cargada solo en esta ruta), `BrickMercadoPago`, `FormularioSimulado`, `BotonPagar` (deshabilitado mientras procesa; genera la `Idempotency-Key` al montar el formulario y la reutiliza en los reintentos de red).
 - **Estados:** preparando (404 con reintentos), listo, procesando, rechazado (mensaje y reintento), confirmando (202 con consulta cada 3 s), vencido, ya pagado, medio no disponible (circuito abierto).
 - **Validaciones:** las de cada librería de pasarela; Yape: celular de 9 dígitos que empieza con 9 y código de 6 dígitos.
@@ -276,7 +277,7 @@ CA-5-38  Cuando lo marco como resuelto manualmente (p. ej. devolví por transfer
 
 - **Ruta / proyecto:** la misma `/pago/:codigo` (estado final de la página, P3) · storefront · CLIENTE.
 - **Boceto:** ![P-5-02](img/P-5-02-resultado.png)
-- **Diseño de alta fidelidad:** 🕓 **pantalla clave** (junto con P-5-01).
+- **Diseño de alta fidelidad:** ✅ [canvas "FitStore Tienda"](https://claude.ai/artifact/1iacKddHAquNYuQcFPBZLg), `PagoResultado` (FitStore escritorio) y `PagoResultadoKallpaMovil` (Kallpa móvil). Copia en [`docs/diseno/`](../diseno/).
 - **Componentes:** `ResultadoPago`: aprobado (código del pedido, "Te enviamos la confirmación a tu correo", botones "Ver mi pedido" y "Descargar boleta" que aparece cuando la boleta está lista), rechazado (motivo y "Intentar de nuevo"), confirmando (indicador y texto "Puede tardar hasta 2 minutos; no cierres ni vuelvas a pagar").
 - **Endpoints:** `GET /pagos/{codigo}` (consulta del estado y de la boleta), `GET /pagos/{codigo}/boleta`.
 

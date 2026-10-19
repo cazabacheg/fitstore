@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Pie de la tienda</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="ds/fitstore/components/bundle.css">
+<link rel="stylesheet" href="marca.css">
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+body{margin:0;padding:0}
+</style>
+</helmet>
+<footer style="font-family: var(--fs-font-marca); background: var(--fs-color-secundario); color: var(--fs-color-en-secundario); font-size: 14px; line-height: 22px;">
+  <div class="fs-pagina fs-rejilla-4 fs-pie__rejilla" style="padding-block: 48px 32px;">
+    <div style="display: flex; flex-direction: column; gap: 10px;">
+      <span style="font-size: 20px; line-height: 24px; font-weight: 700;"><span class="fs-solo-fitstore">FitStore</span><span class="fs-solo-kallpa">Kallpa</span></span>
+      <span style="opacity: 0.8;">Ropa deportiva hecha en Gamarra.</span>
+      <span style="opacity: 0.8;">Galería Gamarra, Jr. Gamarra 700, tienda 210, La Victoria</span>
+    </div>
+    <nav aria-label="Ayuda" style="display: flex; flex-direction: column; gap: 8px;">
+      <span style="font-size: 12px; line-height: 16px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; opacity: 0.7;">Ayuda</span>
+      <a href="#" style="color: var(--fs-color-en-secundario);">Envíos</a>
+      <a href="#" style="color: var(--fs-color-en-secundario);">Cambios y devoluciones</a>
+      <a href="#" style="color: var(--fs-color-en-secundario);">Guía de tallas</a>
+    </nav>
+    <nav aria-label="Legal" style="display: flex; flex-direction: column; gap: 8px;">
+      <span style="font-size: 12px; line-height: 16px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; opacity: 0.7;">Legal</span>
+      <a href="#" style="color: var(--fs-color-en-secundario);">Términos y condiciones</a>
+      <a href="#" style="color: var(--fs-color-en-secundario);">Política de privacidad</a>
+      <a href="#" style="color: var(--fs-color-en-secundario); display: inline-flex; gap: 6px; align-items: center;"><span class="fs-icono" aria-hidden="true">menu_book</span>Libro de Reclamaciones</a>
+    </nav>
+    <div style="display: flex; flex-direction: column; gap: 8px;">
+      <span style="font-size: 12px; line-height: 16px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; opacity: 0.7;">Contacto</span>
+      <span>WhatsApp 987 654 321</span>
+      <span>ventas@tienda.pe</span>
+      <span style="opacity: 0.8;">Lun–Sáb 9:00–19:00</span>
+      <div style="display: flex; flex-wrap: wrap; gap: 16px;"><a href="#" style="color: var(--fs-color-en-secundario);">Instagram</a><a href="#" style="color: var(--fs-color-en-secundario);">Facebook</a><a href="#" style="color: var(--fs-color-en-secundario);">TikTok</a></div>
+    </div>
+  </div>
+  <div class="fs-pagina" style="padding-block: 16px; border-top: 1px solid rgba(255,255,255,0.14); display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; font-size: 13px; opacity: 0.75;">
+    <span><span class="fs-solo-fitstore">Moda Activa S.A.C.</span><span class="fs-solo-kallpa">Kallpa Activewear E.I.R.L.</span> · RUC 20123456789</span>
+    <span>Pagos seguros con Culqi y Mercado Pago</span>
+  </div>
+</footer>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1280,"height":380}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

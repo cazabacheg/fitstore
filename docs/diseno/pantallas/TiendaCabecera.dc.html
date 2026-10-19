@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Cabecera de la tienda</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="ds/fitstore/components/bundle.css">
+<link rel="stylesheet" href="marca.css">
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+body{margin:0;padding:0}
+</style>
+</helmet>
+<header style="font-family: var(--fs-font-marca); background: var(--fs-color-superficie); color: var(--fs-color-texto); border-bottom: 1px solid var(--fs-color-linea);">
+  <div class="fs-pagina fs-cabecera__fila">
+    <button class="fs-solo-movil fs-icono-boton" aria-label="Abrir menú"><span class="fs-icono" style="font-size: 24px;" aria-hidden="true">menu</span></button>
+    <a href="Main.dc.html" style="color: var(--fs-color-texto); text-decoration: none; font-size: 20px; line-height: 24px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; white-space: nowrap;"><span class="fs-solo-fitstore">FitStore</span><span class="fs-solo-kallpa">Kallpa</span></a>
+    <nav class="fs-nav fs-solo-escritorio" aria-label="Categorías">
+      <a href="Listado.dc.html" aria-current="{{nueva}}">Nueva colección</a>
+      <a href="Listado.dc.html" aria-current="{{leggings}}">Leggings</a>
+      <a href="Listado.dc.html" aria-current="{{tops}}">Tops</a>
+      <a href="Listado.dc.html" aria-current="{{casacas}}">Casacas</a>
+    </nav>
+    <div style="flex: 1 1 auto;"></div>
+    <div style="display: flex; gap: 4px; align-items: center;">
+      <button class="fs-icono-boton" aria-label="Buscar"><span class="fs-icono" style="font-size: 22px;" aria-hidden="true">search</span></button>
+      <a class="fs-icono-boton fs-solo-escritorio" href="MisPedidos.dc.html" aria-label="Mi cuenta"><span class="fs-icono" style="font-size: 22px;" aria-hidden="true">person</span></a>
+      <a class="fs-icono-boton" href="Carrito.dc.html" aria-label="Carrito, 7 productos">
+        <span class="fs-icono" style="font-size: 22px;" aria-hidden="true">shopping_bag</span>
+        <span style="position: absolute; top: 4px; right: 2px; min-width: 16px; height: 16px; padding: 0 4px; box-sizing: border-box; border-radius: var(--radio-pill); background: var(--fs-color-texto); color: var(--fs-color-superficie); font-size: 10px; line-height: 16px; font-weight: 700; text-align: center;">7</span>
+      </a>
+    </div>
+  </div>
+</header>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"actual":{"editor":"enum","options":["nueva","leggings","tops","casacas","ninguna"],"default":"leggings"},"$preview":{"width":1280,"height":80}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const actual = this.props.actual ?? 'leggings';
+    const m = (k) => (k === actual ? 'page' : 'false');
+    return { nueva: m('nueva'), leggings: m('leggings'), tops: m('tops'), casacas: m('casacas') };
+  }
+}
+</script>
+</body>
+</html>

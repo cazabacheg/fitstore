@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Pago</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="ds/fitstore/components/bundle.css">
+<link rel="stylesheet" href="marca.css">
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+body{margin:0;padding:0}
+a{color:inherit}
+.pg-medios{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+.pg-medio{display:grid;justify-items:center;gap:6px;padding:14px 8px;border:1px solid var(--fs-color-borde-control);border-radius:var(--fs-radio-md);background:var(--fs-color-superficie);font-size:13px;font-weight:500;text-align:center;cursor:pointer}
+.pg-medio[aria-checked="true"]{border:2px solid var(--fs-color-texto);padding:13px 7px}
+.pg-fila{display:flex;justify-content:space-between;gap:12px;font-variant-numeric:tabular-nums}
+@media (max-width:720px){.pg-medios{grid-template-columns:repeat(2,minmax(0,1fr))}}
+</style>
+</helmet>
+<div data-theme="{{marca}}" style="font-family: var(--fs-font-marca); background: var(--fs-color-fondo); color: var(--fs-color-texto); font-size: 15px; line-height: 24px; min-height: 100%;">
+  <dc-import name="TiendaCabecera" actual="ninguna" hint-size="100%,80px"></dc-import>
+
+  <main class="fs-pagina" style="padding-block: 40px 80px; display: grid; gap: 28px;">
+    <div class="fs-entre" style="flex-wrap: wrap; align-items: flex-end;">
+      <div style="display: grid; gap: 4px;">
+        <span class="fs-eyebrow" style="color: var(--fs-color-texto-suave);">Pedido <span class="fs-codigo" style="letter-spacing: 0;">FS-000124</span></span>
+        <h1 class="fs-titulo-pagina">Paga tu pedido</h1>
+      </div>
+      <div role="timer" style="display: inline-flex; gap: 8px; align-items: center; padding: 8px 14px; border-radius: var(--fs-radio-md); background: var(--fs-color-aviso-suave); color: var(--fs-color-aviso); font-weight: 600;">
+        <span class="fs-icono" aria-hidden="true">schedule</span>Apartamos tus prendas por <span style="font-variant-numeric: tabular-nums;">24:37</span>
+      </div>
+    </div>
+
+    <div class="fs-dos-columnas" style="gap: 48px;">
+      <section class="fs-tarjeta" style="display: grid; gap: 24px;">
+        <div style="display: grid; gap: 12px;">
+          <h2 class="fs-titulo-seccion">Elige cómo pagar</h2>
+          <div class="pg-medios" role="radiogroup">
+            <div class="pg-medio" role="radio" aria-checked="true"><span class="fs-icono" style="font-size: 26px;" aria-hidden="true">credit_card</span>Tarjeta</div>
+            <div class="pg-medio" role="radio" aria-checked="false"><span class="fs-icono" style="font-size: 26px;" aria-hidden="true">smartphone</span>Yape</div>
+            <div class="pg-medio" role="radio" aria-checked="false"><span class="fs-icono" style="font-size: 26px;" aria-hidden="true">account_balance_wallet</span>Mercado Pago</div>
+            <div class="pg-medio" role="radio" aria-checked="false"><span class="fs-icono" style="font-size: 26px;" aria-hidden="true">science</span>Pago de prueba</div>
+          </div>
+        </div>
+        <hr class="fs-linea">
+        <div style="display: grid; gap: 16px;">
+          <div class="fs-campo"><label class="fs-campo__etiqueta">Número de tarjeta</label><div class="fs-input" style="display: flex; align-items: center; gap: 8px; color: var(--fs-color-texto-suave);">4111 1111 1111 1111<span style="flex: 1;"></span><span class="fs-icono" aria-hidden="true">credit_card</span></div></div>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+            <div class="fs-campo"><label class="fs-campo__etiqueta">Vencimiento</label><div class="fs-input" style="display: flex; align-items: center; color: var(--fs-color-texto-suave);">MM / AA</div></div>
+            <div class="fs-campo"><label class="fs-campo__etiqueta">CVV</label><div class="fs-input" style="display: flex; align-items: center; color: var(--fs-color-texto-suave);">123</div></div>
+          </div>
+          <div class="fs-campo"><label class="fs-campo__etiqueta">Correo</label><input class="fs-input" value="lucia.ramos@correo.pe"></div>
+          <span class="fs-suave" style="display: flex; gap: 6px; align-items: center;"><span class="fs-icono" style="font-size: 16px;" aria-hidden="true">lock</span>Culqi procesa tu tarjeta; la tienda nunca ve sus datos.</span>
+        </div>
+        <a class="fs-btn fs-btn--primario fs-btn--lg fs-btn--bloque" href="PagoResultado.dc.html">Pagar S/ 420.32</a>
+      </section>
+
+      <aside class="fs-tarjeta" style="display: grid; gap: 14px; background: var(--fs-color-superficie-alterna); border-color: transparent;">
+        <h2 class="fs-titulo-seccion">Tu pedido</h2>
+        <sc-for list="{{items}}" as="i" hint-placeholder-count="5">
+          <div class="pg-fila"><span>{{i.nombre}} <span class="fs-suave">× {{i.cantidad}}</span></span><span>{{i.total}}</span></div>
+        </sc-for>
+        <hr class="fs-linea">
+        <div class="pg-fila"><span>Delivery a domicilio</span><span>S/ 10.00</span></div>
+        <div class="pg-fila" style="font-size: 18px; font-weight: 700;"><span>Total</span><span>S/ 420.32</span></div>
+        <span class="fs-suave">Envío a Av. Brasil 1250, dpto. 402, Jesús María</span>
+      </aside>
+    </div>
+  </main>
+
+  <dc-import name="TiendaPie" hint-size="100%,380px"></dc-import>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"marca":{"editor":"enum","options":["fitstore","kallpa"],"default":"fitstore","section":"Marca"},"$preview":{"width":1280,"height":1250}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {
+      marca: this.props.marca ?? 'fitstore',
+      items: [
+        { nombre: 'Legging Pro Compresión', cantidad: 3, total: 'S/ 170.72' },
+        { nombre: 'Top Flex', cantidad: 2, total: 'S/ 79.80' },
+        { nombre: 'Casaca Wind', cantidad: 1, total: 'S/ 89.90' },
+        { nombre: 'Jogger Urban', cantidad: 1, total: 'S/ 69.90' }
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>

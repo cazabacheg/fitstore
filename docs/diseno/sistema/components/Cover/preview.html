@@ -1,0 +1,39 @@
+<!-- @dsCard height=288 -->
+<!doctype html>
+<html lang="es">
+<head><meta charset="utf-8"><title>FitStore — portada</title>
+<style>
+  html, body { margin: 0; padding: 0; background: var(--fs-color-fondo); }
+  .portada { position: relative; width: 960px; height: 288px; overflow: hidden; background: var(--fs-color-fondo); }
+  .portada svg { position: absolute; inset: 0; }
+  .secundario { fill: var(--fs-color-secundario); }
+  .primario { fill: var(--fs-color-primario); }
+  .acento { fill: var(--fs-color-acento); }
+  .suave { fill: var(--fs-color-primario-suave); }
+  .bloque { rx: var(--fs-radio-md); }
+  .texto { position: absolute; left: 40px; bottom: 40px; max-width: 440px; }
+  .nombre { margin: 0; font-family: var(--fs-font-marca); font-weight: 700; font-size: 88px; line-height: .92; letter-spacing: -0.02em; color: var(--fs-color-texto); }
+  .lema { margin: 12px 0 0; font-family: var(--fs-font-marca); font-size: 14px; line-height: 20px; color: var(--fs-color-texto-suave); }
+</style></head>
+<body>
+<div class="portada">
+  <svg width="960" height="288" viewBox="0 0 960 288" aria-hidden="true">
+    <!-- Bloques: fs-color-secundario 200×288 (losa), fs-color-primario 244×144, fs-color-acento 120×96, fs-color-primario-suave 108×64.
+         Disposición: una losa alta con satélites que salen por el borde derecho e inferior, todo a la derecha de x = 480.
+         Patrón: tres franjas diagonales (fila "loud, bold → stripes at a spacing pitch"): las franjas de la ropa deportiva, el producto de Gamarra.
+         Escalas: separación espacio-4 (16px), ancho de franja espacio-3 (12px), esquinas radio-md. -->
+    <rect class="secundario" x="500" y="0" width="200" height="288"/>
+    <rect class="primario bloque" x="716" y="32" width="260" height="144"/>
+    <rect class="acento bloque" x="716" y="192" width="120" height="112"/>
+    <rect class="suave bloque" x="852" y="192" width="124" height="64"/>
+    <polygon class="acento" points="548,288 560,288 680,96 668,96"/>
+    <polygon class="acento" points="576,288 588,288 700,108 700,89"/>
+    <polygon class="acento" points="604,288 616,288 700,153 700,134"/>
+  </svg>
+  <div class="texto">
+    <p class="nombre">FitStore</p>
+    <p class="lema">La tienda en línea de cada MYPE de ropa deportiva de Gamarra, con su propia marca.</p>
+  </div>
+</div>
+</body>
+</html>
