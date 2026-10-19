@@ -1,10 +1,11 @@
 # FitStore — Análisis micro: infraestructura (`config-server`, `discovery-server`, `api-gateway`) y piezas comunes
 
-> Versión: **v5 (aprobado)** — 2026-10-19. Fuente: [`01-analisis-macro.md`](../01-analisis-macro.md) v16.
+> Versión: **v6 (aprobado)** — 2026-10-19. Fuente: [`01-analisis-macro.md`](../01-analisis-macro.md) v16.
 > Estados: ✅ decidido · propuesto · ❓ abierto · 🕓 diferido
 > Ficha corta: estos servicios no tienen dominio de negocio, así que la estructura difiere de la plantilla.
 
 **Historial:**
+- v6 (2026-10-19): revisión de coherencia: contenedor `duckdns` y Mailpit como respaldo de SES en `cloud` en la tabla de memoria y en los archivos de compose (SPEC-8).
 - v5 (2026-10-19): `AzureBlobFileStorage` diferido (en la nube se usa Garage en la VM, SPEC-8 I6); se quita la ruta `/api/v1/admin/clientes/*/pedidos` del gateway (los pedidos de un cliente usan `GET /admin/pedidos?clienteId=`, SPEC-4 O3); detectado al redactar la SPEC-8.
 - v4 (2026-10-18): sección 10 aprobada → **documento completo aprobado**.
 - v3 (2026-10-18): sección 10 (diseño técnico) redactada: C3, código de las partes críticas, paquetes, dependencias, configuración e infraestructura.
@@ -127,7 +128,8 @@ Swagger UI en `/swagger-ui` con un selector por servicio (cada servicio expone s
 | rabbitmq | `rabbitmq:4-management` | 384 MB |
 | garage | `dxflrs/garage` | 96 MB |
 | jaeger | `jaegertracing/jaeger` (all-in-one, en memoria) | 256 MB |
-| mailpit | `axllent/mailpit` (solo `dev`) | 64 MB |
+| mailpit | `axllent/mailpit` (bandeja de `dev`; en `cloud` corre sin publicar como respaldo de SES) | 64 MB |
+| duckdns | `lscr.io/linuxserver/duckdns` (solo `cloud`: actualiza la IP pública cada 5 min) | 32 MB |
 | caddy | `caddy:2` | 64 MB |
 | config, discovery, gateway | imágenes propias (Java 21) | 256 MB c/u |
 | 7 servicios de negocio | imágenes propias (Java 21, `-Xmx192m`) | 320 MB c/u |
@@ -143,7 +145,7 @@ Las versiones exactas de las imágenes se fijan al crear el repositorio (no `lat
 
 - `infra/docker-compose.yml`: base común.
 - `infra/docker-compose.dev.yml`: Mailpit, puertos publicados en `localhost` para depurar, perfil `dev`.
-- `infra/docker-compose.cloud.yml`: Caddy con dominios reales, SES, perfil `cloud`, sin puertos internos publicados.
+- `infra/docker-compose.cloud.yml`: Caddy con dominios reales, SES, DuckDNS, perfil `cloud` (y `demo`), sin puertos internos publicados.
 - `infra/.env.example`: todas las variables necesarias, sin valores reales.
 - `infra/postgres/init.sql`: crea las 7 bases y sus usuarios.
 

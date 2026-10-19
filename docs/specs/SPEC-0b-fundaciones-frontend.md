@@ -1,10 +1,11 @@
 # SPEC-0b — Fundaciones del frontend
 
-> Versión: **v5 (aprobado)** — 2026-10-19 · Estados: ✅ decidido · 🟡 propuesto · ❓ abierto
+> Versión: **v6 (aprobado)** — 2026-10-19 · Estados: ✅ decidido · 🟡 propuesto · ❓ abierto
 > **Dueña de:** workspace Angular (`frontend/`), librería `shared`, *shells* (layouts) de storefront y backoffice, rutas y menús generales, tema white-label, carpetas `ui/` de cada app, job de frontend en CI.
 > **Depende de:** 0a (gateway y CI), la etapa de contratos (OpenAPI para generar los clientes) y la etapa de diseño (**sistema de diseño**: los componentes de `ui/` se construyen según él). · **Habilita:** pantallas de las specs 1–8.
 
 **Historial:**
+- v6 (2026-10-19): revisión de coherencia: HU-0b-06 cita RF-BO-02 (tablas con paginación, filtros y orden); menú del backoffice completo (R3: ítems, subítems, roles) y mecanismo de contadores por funcionalidad (`CONTADOR_MENU`), que necesitaba la SPEC-5 para los reembolsos fallidos (CA-0b-24).
 - v5 (2026-10-19): el selector de ubigeo de `ui/` acepta la opción `hasta` (departamento, provincia o distrito), pedida por la SPEC-6 para las tarifas (CA-0b-26).
 - v4 (2026-10-18): **convención de filas de las tablas del backoffice** (R11, CA-0b-28b): el identificador es un enlace real, la fila entera es clicable y la última columna lleva las acciones ("Ver ›", hasta 2 botones o el menú "⋮"). Se aplica a los listados de las specs 1–5 (revisión hecha al cerrar la SPEC-5).
 - v3 (2026-10-18): el pie de la tienda va al final del documento y nunca se ve en la pantalla inicial (boceto P-0b-01 y CA-0b-20b). Resto de la spec aprobado → **spec aprobada**.
@@ -169,12 +170,14 @@ CA-0b-23  Cuando la spec del carrito actualiza el contador compartido
           Entonces el icono del carrito muestra la cantidad sin recargar
 
 CA-0b-24  Cuando abro el backoffice
-          Entonces veo menú lateral por rol, ruta de migas, título de página y menú de usuario (perfil, cambiar contraseña, salir)
+          Entonces veo menú lateral por rol (con los ítems y subítems de la tabla R3), ruta de migas, título de página
+               y menú de usuario (perfil, cambiar contraseña, salir)
+          Y un ítem con contador registrado (p. ej. Reembolsos) muestra su número como insignia
 ```
 
 ### HU-0b-06 — Componentes compartidos documentados
 
-Como desarrollador de una funcionalidad, quiero componentes listos y un catálogo para verlos, para armar pantallas coherentes sin crear los míos. · Cubre: RNF-11, 18, 20 · Pantallas: [P-0b-03](#p-0b-03--estados-comunes), [P-0b-04](#p-0b-04--catálogo-de-componentes)
+Como desarrollador de una funcionalidad, quiero componentes listos y un catálogo para verlos, para armar pantallas coherentes sin crear los míos. · Cubre: RF-BO-02, RNF-11, 18, 20 · Pantallas: [P-0b-03](#p-0b-03--estados-comunes), [P-0b-04](#p-0b-04--catálogo-de-componentes)
 
 ```gherkin
 CA-0b-25  Cuando abro /_ui en desarrollo (en cualquiera de las dos apps)
@@ -266,7 +269,7 @@ No modifica el backend. Decisiones de implementación del frontend:
 |---|---|---|
 | R1 | **Estructura** ✅ | `frontend/projects/{storefront,backoffice}/src/app/{core,layout,ui,features}` y `frontend/projects/shared/src/lib/{api,auth,http,theme,i18n,ubigeo,carrito,models,pipes}`. Componentes *standalone*, señales (`signal`, `computed`) para el estado y control de flujo nuevo (`@if`, `@for`). Sin NgRx (KISS) |
 | R2 | **Rutas registradas** ✅ | Tabla de abajo; cada ruta carga `features/<carpeta>/<carpeta>.routes.ts`, que 0b crea con una página "Próximamente". La spec dueña solo reemplaza el contenido de su carpeta |
-| R3 | **Menú por rol** | Definido en `layout/menu.ts` del backoffice con el rol mínimo de cada ítem (ver P-0b-02) |
+| R3 | **Menú por rol** ✅ | Definido en `layout/menu.ts` del backoffice con el rol mínimo de cada ítem y sus subítems (tabla de abajo y P-0b-02); los ítems pueden mostrar un contador aportado por su funcionalidad |
 | R4 | **Tema** ✅ | `provideAppInitializer` carga `/settings/public` y escribe variables CSS en `:root` (`--fs-color-primario`, `--fs-color-secundario`, `--fs-color-acento`, `--fs-color-fondo`, `--fs-color-texto`, `--fs-fuente`, `--fs-radio`). Tailwind 4 las usa en su `@theme`; en Angular Material 3 se asignan a los tokens del sistema (`--mat-sys-primary`, …). La configuración se guarda en `localStorage` como respaldo (CA-0b-07). La fuente se carga de Google Fonts según `tipografia` |
 | R5 | **Clientes de API** ✅ | `openapi-generator` (`typescript-angular`) → `shared/api/<servicio>/`, **versionados en Git**; el CI regenera y falla si hay diferencias (CA-0b-30). Ninguna spec los edita a mano |
 | R6 | **Sesión** | `SesionStore` en `shared/auth` (señales: cuenta, rol, tipo; el access token solo en memoria). `iniciarSesion()` y `cerrarSesion()` los llaman las pantallas de la spec 1. Guards `autenticadoGuard`, `rolGuard('ADMIN')` |
@@ -275,6 +278,26 @@ No modifica el backend. Decisiones de implementación del frontend:
 | R9 | **Pruebas unitarias** ✅ | El *runner* por defecto del CLI de Angular 22 (Vitest) con Angular Testing Library; se verifica al crear el workspace |
 | R10 | **Accesibilidad** | Componentes de `ui/` con etiquetas, foco visible y contraste del tema (RNF-19 advierte en settings); objetivo Lighthouse ≥ 85 se mide en la spec 8 |
 | R11 | **Filas de las tablas del backoffice** ✅ | Convención única de la tabla paginada de `ui/` (`FsTabla` con `filaEnlace` y `acciones`): (1) el **identificador** de la fila (código, nombre o número) es un `<a routerLink>`; (2) **toda la fila** es clicable, con *hover*, y navega a lo mismo; (3) **última columna de acciones**, alineada a la derecha: "Ver ›" si la fila solo tiene detalle, **1 o 2 botones** si tiene acciones propias, o el menú **"⋮"** (`mat-menu`) si son 3 o más. Los clics en acciones no se propagan a la fila. Si la entidad no tiene página de detalle, el enlace abre su diálogo de edición. Cada spec indica en la pantalla qué abre el enlace y qué acciones lleva la fila |
+
+**Menú del backoffice (R3):**
+
+| Ítem | Subítems (ruta) | Rol mínimo | Contador |
+|---|---|---|---|
+| Dashboard | `/` | OPERADOR | — |
+| Pedidos | `/pedidos` | OPERADOR | — |
+| Entregas | Lista (`/entregas`), Del día (`/entregas/dia`) | OPERADOR | — |
+| Repartidores | `/repartidores` | OPERADOR | — |
+| Catálogo | Productos (`/catalogo/productos`, OPERADOR en lectura), Categorías, Tallas y colores, Descuentos, Carga masiva (ADMIN) | OPERADOR | — |
+| Inventario | `/inventario` | OPERADOR | — |
+| Pagos | Pagos (`/pagos`), Reembolsos (`/reembolsos`) | ADMIN | Reembolsos fallidos (SPEC-5) |
+| Tarifas y agencias | Tarifas (`/tarifas`), Agencias (`/agencias`) | ADMIN | — |
+| Clientes | `/clientes` | OPERADOR | — |
+| Staff | `/staff` | ADMIN | — |
+| Notificaciones | Registro (`/notificaciones`), Plantillas (`/notificaciones/plantillas`) | ADMIN | — |
+| Reclamos | `/reclamos` | OPERADOR | — |
+| Configuración de tienda | Tienda (`/configuracion`), Políticas (`/configuracion/politicas`) | ADMIN | — |
+
+Los contadores los aporta cada funcionalidad sin tocar el *shell*: registra un proveedor `CONTADOR_MENU` (*multi provider*) con la clave del ítem y una función que devuelve el número; el *shell* lo muestra como insignia y lo refresca al navegar.
 
 **Rutas registradas (R2):**
 

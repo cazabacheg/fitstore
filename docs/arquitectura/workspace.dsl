@@ -196,7 +196,7 @@ workspace "FitStore" "Plantilla white-label de e-commerce de ropa y moda para MY
             rabbitmq = container "RabbitMQ" "Exchange topic fitstore.eventos; una cola por servicio consumidor + DLQ." "RabbitMQ 4" "Cola"
             garage = container "Garage" "Almacenamiento compatible con S3: bucket público (imágenes) y privado (boletas)." "Garage (S3 API)" "Almacenamiento"
             jaeger = container "Jaeger" "Trazas distribuidas (OTLP) de punta a punta." "Jaeger all-in-one" "Infra"
-            mailpit = container "Mailpit" "Bandeja SMTP falsa para ver los correos en desarrollo (solo entorno dev)." "Mailpit" "Infra"
+            mailpit = container "Mailpit" "Bandeja SMTP falsa: correos de desarrollo; en la nube corre sin publicar como respaldo de SES." "Mailpit" "Infra"
         }
 
         # ================================================================ Relaciones
@@ -608,6 +608,7 @@ workspace "FitStore" "Plantilla white-label de e-commerce de ropa y moda para MY
                     containerInstance rabbitmq
                     containerInstance garage
                     containerInstance jaeger
+                    containerInstance mailpit
                 }
             }
             deploymentNode "Internet" "Servicios externos (SaaS)" "HTTPS" {

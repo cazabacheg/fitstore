@@ -1,9 +1,10 @@
 # FitStore — Análisis micro: `payment-service`
 
-> Versión: **v7 (aprobado)** — 2026-10-19. Fuente: [`01-analisis-macro.md`](../01-analisis-macro.md) v13.
+> Versión: **v8 (aprobado)** — 2026-10-19. Fuente: [`01-analisis-macro.md`](../01-analisis-macro.md) v13.
 > Estados: ✅ decidido · 🟡 propuesto · ❓ abierto · 🕓 diferido
 
 **Historial:**
+- v8 (2026-10-19): revisión de coherencia: `PagoReembolsado` también lo consume order (actualiza `monto_reembolsado`).
 - v7 (2026-10-19): D4 menciona también los pedidos devueltos a la tienda (SPEC-6); el flujo no cambia.
 - v6 (2026-10-18): **reembolso postventa** (decidido en la SPEC-5): D4 amplía el origen de los reembolsos (cancelación o postventa, siempre desde el pedido); varios reembolsos por intención, parciales, sin superar lo cobrado; la intención pasa a `REEMBOLSADA_PARCIAL` / `REEMBOLSADA` y el estado en curso o fallido vive en cada reembolso; consume `ReembolsoSolicitado`.
 - v5 (2026-10-18): sección 10 aprobada → **documento completo aprobado**.
@@ -309,7 +310,7 @@ Exchange `fitstore.eventos` (topic), sobre común, outbox e idempotencia (ADR-00
 | `PagoConfirmado` | `payment.pago.confirmado` | `pedidoId`, `intencionId`, `transaccionId`, `proveedor`, `monto`, `confirmadoEn` | order |
 | `PagoRechazado` | `payment.pago.rechazado` | `pedidoId`, `proveedor`, `motivo` | order (historial) |
 | `BoletaEmitida` | `payment.boleta.emitida` | `pedidoId`, `numero`, `url` (endpoint autenticado de descarga) | order, notification (adjunto) |
-| `PagoReembolsado` ✅ **nuevo** | `payment.reembolso.completado` | `pedidoId`, `codigoPedido`, `solicitudId` (solo postventa), `monto`, `parcial`, `motivo`, `manual`, `cliente` (nombre, email) | notification (avisa al cliente) |
+| `PagoReembolsado` ✅ **nuevo** | `payment.reembolso.completado` | `pedidoId`, `codigoPedido`, `solicitudId` (solo postventa), `monto`, `parcial`, `motivo`, `manual`, `cliente` (nombre, email) | notification (avisa al cliente), order (registra lo reembolsado) |
 | `ReembolsoFallido` ✅ **nuevo** | `payment.reembolso.fallido` | `pedidoId`, `codigoPedido`, `monto`, `ultimoError`, `intentos` | notification (alerta al admin) |
 
 **Consume:** `PedidoCreado`, `PedidoCancelado`, `PedidoExpirado`, `PagoNoAplicable`, `ReembolsoSolicitado` (order).

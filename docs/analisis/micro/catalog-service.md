@@ -1,9 +1,10 @@
 # FitStore — Análisis micro: `catalog-service`
 
-> Versión: **v6 (aprobado)** — 2026-10-16. Fuente: [`01-analisis-macro.md`](../01-analisis-macro.md) v11.
+> Versión: **v7 (aprobado)** — 2026-10-19. Fuente: [`01-analisis-macro.md`](../01-analisis-macro.md) v11.
 > Estados: ✅ decidido · 🟡 propuesto · ❓ abierto · 🕓 diferido
 
 **Historial:**
+- v7 (2026-10-19): revisión de coherencia: rangos de la configuración de inventario (stock mínimo por defecto 0–999, margen de reserva 0–30 min, como valida la SPEC-3 CA-3-38); se edita en la pestaña Parámetros de la configuración de tienda (SPEC-3 S2). Las dos entradas sin número de versión del 2026-10-18 corresponden a cambios de la SPEC-2 sobre la v6.
 - (2026-10-18, por SPEC-2) Cada imagen pertenece a un color (D3) y publicar exige una imagen por color activo (invariante 4); color maestro "Variado"; carga masiva de productos por CSV/XLSX (4.4.1); ejemplo de categorías renombrado.
 - v6 (2026-10-18): sección 10 aprobada → **documento completo aprobado**.
 - (2026-10-18) `ExpiradorReservas` pasa a llamarse **`LiberadorReservasVencidas`** y se documenta como red de seguridad del evento `PedidoExpirado` (4.7, 10.1, 10.3).
@@ -205,7 +206,7 @@ Extensiones: `unaccent` y `pg_trgm` (búsqueda sin tildes y por similitud).
 
 `movimiento_stock.tipo` ∈ `ENTRADA`, `AJUSTE` (+/−), `VENTA` (al confirmar el pago), `REINGRESO` (cancelación de un pedido pagado). Reservar y liberar no cambian `fisico`, por eso no generan movimiento (quedan en `reserva`).
 
-**Comunes:** `outbox_evento` (igual que auth) y `evento_procesado` (`evento_id` PK, `procesado_en`) para consumidores idempotentes (ADR-009). `configuracion_inventario` (fila única): `stock_minimo_por_defecto` (semilla 5) y `margen_reserva_minutos` (ver 4.6). Se edita desde el backoffice en la pestaña Parámetros de la configuración de la tienda (P-3-04, SPEC-3), pero el dato lo guarda catalog, que es quien lo usa.
+**Comunes:** `outbox_evento` (igual que auth) y `evento_procesado` (`evento_id` PK, `procesado_en`) para consumidores idempotentes (ADR-009). `configuracion_inventario` (fila única): `stock_minimo_por_defecto` (semilla 5, de 0 a 999) y `margen_reserva_minutos` (semilla 5, de 0 a 30; ver 4.6). Se edita desde el backoffice en la pestaña Parámetros de la configuración de la tienda (P-3-04, SPEC-3), pero el dato lo guarda catalog, que es quien lo usa.
 
 ### 3.2 Redis (prefijo `catalog:`)
 

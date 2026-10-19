@@ -1,11 +1,12 @@
 # FitStore — Análisis técnico macro
 
 > Proyecto final DAW II (4697) + DSW II (4698) — Cibertec, 6.º ciclo.
-> Autor: Carlos Azabache. Versión: **v22 (aprobado)** — 2026-10-19.
+> Autor: Carlos Azabache. Versión: **v23 (aprobado)** — 2026-10-19.
 > Documento base: [`CONSOLIDADO-PROYECTO.md`](../../../CONSOLIDADO-PROYECTO.md).
 > Siguiente etapa: análisis técnico micro (por servicio) → C4 → specs → contratos.
 
 **Historial:**
+- v23 (2026-10-19): revisión de coherencia: catálogo de eventos: `PedidoExpirado` separado de `PedidoCancelado` (notification no lo consume); RF-BO-03 marcado como alcance futuro.
 - v22 (2026-10-19): por SPEC-8: ADR-013 actualizada (Garage en la VM también en Azure; adaptador Azure Blob diferido); los datos de demostración se cargan también en la nube (perfil `demo`).
 - v21 (2026-10-19): por SPEC-6: **devolución a tienda** cuando un pedido no se puede entregar o nadie lo recoge: estado `DEVUELTA` en delivery y `DEVUELTO` (final) en order, reembolso sin plazo desde un pedido devuelto, nuevo correo al cliente (14): RF-ORD-03, RF-ORD-11, RF-DEL-02, RF-NOT-01.
 - v20 (2026-10-18): por SPEC-5: **reembolso postventa** desde el pedido entregado (total o parcial, solo ADMIN, plazo configurable con 0 = ilimitado): RF-PAY-06, nuevo RF-ORD-11, RF-SET-05.
@@ -359,7 +360,7 @@ Dueño del Libro de Reclamaciones: **`settings-service`**, cuyo dominio se ampl�
 |---|---|---|
 | RF-BO-01 | Dashboard: ventas del día/semana/mes, pedidos por estado, top productos, stock bajo, entregas del día | M |
 | RF-BO-02 | Tablas con paginación, filtros, orden y búsqueda | M |
-| RF-BO-03 | Exportar pedidos a CSV | C |
+| RF-BO-03 | Exportar pedidos a CSV (alcance futuro: no entra en ninguna spec, ver SPEC-4) | C |
 
 ---
 
@@ -475,7 +476,8 @@ flowchart LR
 | `PagoReembolsado` | payment | notification (aviso al cliente), order (registrar lo reembolsado) |
 | `ReembolsoFallido` | payment | notification (alerta al admin) |
 | `PedidoPagado` | order | catalog (confirmar reserva), notification |
-| `PedidoCancelado` / `PedidoExpirado` | order | catalog (liberar), payment (reembolsar si aplica), notification |
+| `PedidoCancelado` | order | catalog (liberar o reingresar), payment (reembolsar si fue pagado), notification |
+| `PedidoExpirado` | order | catalog (liberar), payment (anular la intención) |
 | `PedidoListoDespacho` | order | delivery |
 | `PedidoListoRecojo` / `PedidoRecogido` | order | notification |
 | `EntregaActualizada` (en ruta / en agencia / entregada / fallida / devuelta) | delivery | order, notification |

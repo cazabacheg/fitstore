@@ -1,11 +1,12 @@
 # SPEC-6 — Envíos
 
-> Versión: **v4 (aprobado)** — 2026-10-19 · Estados: ✅ decidido · 🟡 propuesto · ❓ abierto
+> Versión: **v5 (aprobado)** — 2026-10-19 · Estados: ✅ decidido · 🟡 propuesto · ❓ abierto
 > **Dueña de:** `backend/delivery-service` (tarifas, cotización, agencias, repartidores, entregas) · backoffice: `features/entregas`, `features/maestros-envio`.
 > **Depende de:** 0a, 0b, 1 (sesión de staff) · usa el evento `PedidoListoDespacho` de order y `/ubigeo` de settings (en el frontend) · **Habilita:** 4 (cotización y opciones de envío en el checkout; el pedido pasa a `ENVIADO` y `ENTREGADO`), 7 (correos de la entrega), 8 (entregas del día en el dashboard).
 > **Contratos:** `contracts/openapi/delivery-service.yaml`; evento que publica `EntregaActualizada`; consume `PedidoListoDespacho`.
 
 **Historial:**
+- v5 (2026-10-19): revisión de coherencia: orden de las rutas `/entregas/dia` y `/entregas/:id`.
 - v4 (2026-10-19): los datos de demostración también se cargan en la nube con el perfil `demo` (SPEC-8 I7), con UUID fijos compartidos entre servicios (`docs/demo/ids-demo.md`).
 - v3 (2026-10-19): revisada por el autor → **spec aprobada**.
 - v2 (2026-10-19): **devolución a tienda** (estado final `DEVUELTA`, CA-6-33 y 34; order pasa el pedido a `DEVUELTO` y permite reembolsar); E2 ✅ selector de ubigeo con nivel agregado a la SPEC-0b (v5). Cambios propagados: macro v21, micros de delivery v6, order v7, payment v7 y notification v7 (correo C14), SPEC-4 v6, SPEC-5 v5.
@@ -241,7 +242,7 @@ CA-6-34  Cuando intento devolver una entrega en otro estado (p. ej. ASIGNADA, EN
 
 ### P-6-03 — Entregas del día y hoja de ruta
 
-- **Ruta / proyecto:** `/entregas/dia` · backoffice · OPERADOR, ADMIN.
+- **Ruta / proyecto:** `/entregas/dia` · backoffice · OPERADOR, ADMIN (en `entregas.routes.ts` se declara antes que `/entregas/:id`, para que "dia" no se tome como un id).
 - **Boceto:** ![P-6-03](img/P-6-03-dia-hoja-ruta.png)
 - **Diseño de alta fidelidad:** 🕓 deriva del sistema de diseño.
 - **Componentes:** `EntregasDiaPage` (selector de fecha, una columna por repartidor más "Sin asignar"), `HojaRuta` (vista de impresión con `@media print`, E4).
