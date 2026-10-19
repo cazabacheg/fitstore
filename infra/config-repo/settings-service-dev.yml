@@ -1,0 +1,4 @@
+# settings-service, perfil dev: además de las migraciones, los datos de demostración (CA-0a-05)
+spring:
+  flyway:
+    locations: classpath:db/migration,classpath:db/dev
