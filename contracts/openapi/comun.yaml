@@ -1,4 +1,4 @@
-openapi: 3.1.0
+openapi: 3.0.3
 info:
   title: FitStore — componentes comunes
   version: 1.0.0
@@ -90,22 +90,18 @@ components:
       properties:
         success:
           type: boolean
-          const: true
+          enum: [true]
         mensaje:
           type: string
-          examples: [Operación exitosa]
+          example: Operación exitosa
         data:
           description: Contenido de la respuesta (lo define cada operación).
 
     ApiResponseVacia:
       title: ApiResponseVacia
-      description: Respuesta exitosa sin datos.
+      description: Respuesta exitosa sin datos (`data` es null o no viene).
       allOf:
         - $ref: '#/components/schemas/ApiResponse'
-        - type: object
-          properties:
-            data:
-              type: 'null'
 
     ApiError:
       title: ApiError
@@ -115,7 +111,7 @@ components:
       properties:
         success:
           type: boolean
-          const: false
+          enum: [false]
         mensaje:
           type: string
           description: Texto para mostrar al usuario, en español.
@@ -140,10 +136,10 @@ components:
         campo:
           type: string
           description: Nombre de la propiedad del cuerpo o del parámetro (notación con puntos para objetos anidados).
-          examples: [dni]
+          example: dni
         mensaje:
           type: string
-          examples: [El DNI debe tener 8 dígitos]
+          example: El DNI debe tener 8 dígitos
 
     PaginaMeta:
       title: PaginaMeta
@@ -179,27 +175,27 @@ components:
       multipleOf: 0.01
       minimum: 0
       description: Monto en soles (PEN), IGV incluido, 2 decimales.
-      examples: [59.9]
+      example: 59.9
 
     Ubigeo:
       title: Ubigeo
       type: string
       pattern: '^[0-9]{6}$'
       description: Código de distrito INEI de 6 dígitos.
-      examples: ['150115']
+      example: '150115'
 
     Dni:
       title: Dni
       type: string
       pattern: '^[0-9]{8}$'
-      examples: ['45678912']
+      example: '45678912'
 
     Celular:
       title: Celular
       type: string
       pattern: '^9[0-9]{8}$'
       description: Celular peruano de 9 dígitos que empieza con 9.
-      examples: ['987654321']
+      example: '987654321'
 
   responses:
     Ok:
