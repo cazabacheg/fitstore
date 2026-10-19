@@ -18,3 +18,10 @@ dist/
 # Herramientas de diagramas (archivos temporales)
 .structurizr/
 docs/arquitectura/puml/
+
+# Worktrees de agentes
+.claude/worktrees/
+
+# Entorno: solo existe .env.example
+.env.*
+!.env.example

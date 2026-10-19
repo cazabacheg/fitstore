@@ -1,0 +1,6 @@
+docs/
+.git
+.claude/
+frontend/
+**/target
+**/node_modules
