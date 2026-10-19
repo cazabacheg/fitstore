@@ -1,11 +1,12 @@
 # SPEC-4 — Pedidos
 
-> Versión: **v1 (borrador)** — 2026-10-18 · Estados: ✅ decidido · 🟡 propuesto · ❓ abierto
+> Versión: **v2 (borrador)** — 2026-10-18 · Estados: ✅ decidido · 🟡 propuesto · ❓ abierto
 > **Dueña de:** `backend/order-service` (carrito, checkout, pedidos, saga) · tienda: `features/carrito`, `features/checkout`, `features/mis-pedidos` · backoffice: `features/pedidos`.
 > **Depende de:** 0a, 0b, 1 (sesión y direcciones) · usa los contratos de catalog (cotizar, reservar), auth (cliente y dirección), delivery (opciones y cotización de envío) y settings (parámetros y ubigeo) · **Habilita:** 5 (pago del pedido), 6 (entrega desde `PedidoListoDespacho`), 7 (correos del pedido), 8 (dashboard y E2E).
 > **Contratos:** `contracts/openapi/order-service.yaml`; eventos que publica `PedidoCreado`, `PedidoPagado`, `PedidoCancelado`, `PedidoExpirado`, `PagoNoAplicable`, `PedidoListoDespacho`, `PedidoListoRecojo`, `PedidoRecogido`; consume `PagoConfirmado`, `PagoRechazado`, `BoletaEmitida`, `EntregaActualizada`.
 
 **Historial:**
+- v2 (2026-10-18): O1 ✅ checkout en una sola página; O2 ✅ la nueva dirección se agrega en un diálogo sobre el checkout (reutiliza `DialogoDireccion` de la SPEC-1, A6); cada etapa del seguimiento lleva una breve descripción debajo de su nombre (O9).
 - v1 (2026-10-18): borrador inicial.
 
 **Estado de revisión por sección:** 1 ⏳ · 2 ⏳ · 3 ⏳ · 4 ⏳ · 5 ⏳ · 6 ⏳ · 7 ⏳ · 8 ⏳ · 9 ⏳
@@ -112,8 +113,11 @@ CA-4-15  Cuando elijo agencia
 CA-4-16  Cada vez que cambio dirección, modalidad o agencia
          Entonces POST /checkout/resumen devuelve ítems, descuentos, costo y plazo de envío y total, sin reservar ni guardar nada
 
-CA-4-17  Dado que no tengo direcciones
-         Entonces solo puedo elegir recojo o ir a "Agregar dirección" (P-1-06) y volver al checkout con la nueva dirección elegida
+CA-4-17  Cuando pulso "Agregar dirección" en el checkout
+         Entonces se abre el diálogo de nueva dirección sobre la misma página (sin salir del checkout)
+         Y al guardarla aparece en la lista, queda elegida y el resumen se recalcula; si cancelo, nada cambia
+         Y si ya tengo 10 direcciones, el botón está deshabilitado con el aviso del límite
+         Y sin direcciones, solo puedo elegir recojo hasta que agregue una
 
 CA-4-18  Dado que delivery, auth o settings no responden
          Entonces el resumen muestra "No pudimos calcular el envío, inténtalo en un momento" y no se puede confirmar
@@ -186,8 +190,10 @@ CA-4-33  Cuando abro /cuenta/pedidos
 
 CA-4-34  Cuando abro un pedido
          Entonces veo la línea de tiempo (creado → pagado → en preparación → enviado con agencia y código de
-              seguimiento → entregado) con fecha y hora de cada paso, los intentos fallidos como avisos,
-              los productos, la entrega y los montos
+              seguimiento → entregado; en recojo: … → listo para recoger → recogido) con fecha y hora de cada paso,
+              los intentos fallidos como avisos, los productos, la entrega y los montos
+         Y debajo del nombre de cada etapa, una breve descripción de lo que significa (tabla de O9),
+              según la modalidad; las etapas futuras también la muestran, atenuadas
 
 CA-4-35  Dado un pedido PENDIENTE_PAGO
          Entonces veo cuánto tiempo queda y el botón "Pagar ahora" (a /pago/:codigo)
@@ -307,7 +313,8 @@ CA-4-53  Un OPERADOR recibe 403 en el resumen; solo ADMIN
 - **Componentes:** `CheckoutPage` en **una sola página** (O1) con las secciones 1 Dirección (`SelectorDireccion`), 2 Entrega (`SelectorModalidad` con costo y plazo de cada opción, `SelectorAgencia`, datos de la tienda física para recojo), 3 Revisa tu pedido (ítems compactos), y la columna `ResumenPedido` con notas opcionales (hasta 300 caracteres), aceptación implícita de términos y el botón "Confirmar pedido" (deshabilitado mientras envía).
 - **Estados:** sin direcciones, recalculando resumen, envío no disponible, precios cambiados (409), sin stock (409), servicio no disponible (503), demasiados intentos (429).
 - **Validaciones:** dirección obligatoria salvo recojo; agencia obligatoria en agencia.
-- **Endpoints:** `GET /clientes/me/direcciones` (auth), `GET /envios/opciones?ubigeo=`, `GET /agencias` (delivery), `GET /settings/public`, `POST /checkout/resumen`, `POST /pedidos`.
+- **Diálogo de nueva dirección:** `DialogoDireccion` de la SPEC-1 (A6), abierto sobre el checkout.
+- **Endpoints:** `GET/POST /clientes/me/direcciones` (auth, el POST lo hace el diálogo), `GET /envios/opciones?ubigeo=`, `GET /agencias` (delivery), `GET /settings/public`, `POST /checkout/resumen`, `POST /pedidos`.
 
 ### P-4-03 — Mis pedidos
 
@@ -323,7 +330,7 @@ CA-4-53  Un OPERADOR recibe 403 en el resumen; solo ADMIN
 - **Ruta / proyecto:** `/cuenta/pedidos/:codigo` · storefront · CLIENTE.
 - **Boceto:** ![P-4-04](img/P-4-04-detalle-mi-pedido.png)
 - **Diseño de alta fidelidad:** 🕓 **pantalla clave**.
-- **Componentes:** `DetallePedidoPage`, `LineaTiempo`, `CuentaRegresiva` (pendiente de pago), `ResumenMontos`, `DialogoCancelar`.
+- **Componentes:** `DetallePedidoPage`, `LineaTiempo` (nombre, descripción de O9, fecha y hora por etapa), `CuentaRegresiva` (pendiente de pago), `ResumenMontos`, `DialogoCancelar`.
 - **Estados:** pendiente de pago (cuenta regresiva y "Pagar ahora"), en curso, entregado, cancelado o expirado (línea de tiempo cortada con el motivo), no encontrado (404).
 - **Endpoints:** `GET /pedidos/{codigo}`, `PATCH /pedidos/{codigo}/cancelar`.
 
@@ -350,14 +357,29 @@ Todo según el micro de order. Decisiones de implementación de esta spec:
 
 | # | Decisión | Detalle |
 |---|---|---|
-| O1 | **Checkout en una sola página** 🟡 | Dirección, entrega y revisión en una página con el resumen al costado (abajo en móvil), en lugar de un asistente de pasos. Menos clics y menos estado en el frontend; cada cambio recalcula el resumen. Ver pregunta 1 |
-| O2 | **Agregar una dirección desde el checkout** 🟡 | El checkout enlaza a `/cuenta/direcciones?nueva=1&volver=/checkout`; al guardar, la spec 1 regresa al checkout con la nueva dirección elegida. Así el formulario de direcciones sigue siendo solo de la spec 1. Implica un cambio menor a la SPEC-1 (aceptar `volver`). Ver pregunta 2 |
+| O1 | **Checkout en una sola página** ✅ | Dirección, entrega y revisión en una página con el resumen al costado (abajo en móvil), en lugar de un asistente de pasos. Más compacto, menos clics; cada cambio recalcula el resumen |
+| O2 | **Nueva dirección en un diálogo sobre el checkout** ✅ | El checkout abre `DialogoDireccion` de la SPEC-1 (A6) con `DialogoDireccionService.abrir()`; la dirección devuelta se agrega a la lista y queda elegida. No se toca `shared`: el diálogo es solo de la tienda y sigue siendo de la spec 1; el checkout solo lo importa |
 | O3 | **Pedidos de un cliente con el mismo listado** 🟡 | `GET /admin/pedidos?clienteId=` reemplaza a `GET /admin/clientes/{clienteId}/pedidos` del micro: un endpoint menos y la misma pantalla P-4-05. Cambio menor al micro de order |
 | O4 | **Transiciones permitidas en la respuesta** ✅ | El detalle del backoffice incluye `transicionesPermitidas` (calculadas por `MaquinaEstadosPedido`), y el frontend solo dibuja esos botones. Las reglas viven en un solo lugar |
 | O5 | **Conflictos con `version`** ✅ | `PATCH …/estado` y `…/cancelar` llevan la `version` del pedido que vio el operador → 409 si cambió (CA-4-48). Los eventos internos usan la actualización condicional del micro (4.4) |
 | O6 | **Ventas por fecha de pago** ✅ | El resumen toma la fecha del historial `→ PAGADO` (índice `(estado_nuevo, creado_en)` en `pedido_historial`, por migración) y excluye los pedidos que terminaron `CANCELADO` |
 | O7 | **Contador del carrito = unidades** ✅ | La respuesta del carrito incluye `cantidadTotal`; el frontend actualiza `CarritoContador` (0b R8) tras cada cambio, al iniciar la tienda y después de la fusión |
 | O8 | **Sin actualización en vivo** ✅ | Mis pedidos y el backoffice se actualizan al recargar o al volver a la pestaña (KISS); sin WebSocket ni sondeo |
+| O9 | **Descripción de cada etapa del seguimiento** ✅ | Textos fijos del frontend en `mis-pedidos/etapas.ts` (no editables en settings, KISS), debajo del nombre de cada etapa. Ver la tabla siguiente |
+
+**Etapas del seguimiento (O9)**
+
+| Etapa | Descripción |
+|---|---|
+| Pedido recibido | Apartamos tus prendas mientras completas el pago. |
+| Pago confirmado | Recibimos tu pago y emitimos tu boleta. |
+| En preparación | Estamos alistando y empacando tus prendas. |
+| Enviado (delivery local) | Tu pedido va en camino con nuestro repartidor. |
+| Enviado (agencia) | Lo dejamos en la agencia {agencia}; síguelo con el código {código}. |
+| Listo para recoger (recojo) | Ya puedes recogerlo en la tienda; lleva tu DNI. |
+| Entregado | ¡Lo recibiste! Gracias por tu compra. (Recojo: "Recogiste tu pedido en la tienda.") |
+| Cancelado | Cancelado: {motivo}. Si pagaste, te devolvemos el dinero. |
+| Expirado | No recibimos el pago a tiempo y liberamos las prendas. |
 
 ## 6. Datos
 
@@ -392,7 +414,7 @@ Todo según el micro de order. Decisiones de implementación de esta spec:
 | `frontend/projects/backoffice/src/app/features/pedidos/` | modifica |
 | `postman/order.postman_collection.json`, `k6/checkout.js` | crea |
 | `docs/specs/img/P-4-*`, `docs/analisis/micro/order-service.md` (O3, O6) | crea / modifica |
-| `frontend/projects/storefront/src/app/features/cuenta/` (O2: parámetro `volver`) | lo cambia la SPEC-1 en un PR aparte |
+| `frontend/projects/storefront/src/app/features/cuenta/direcciones/` (`DialogoDireccion`, A6 de la SPEC-1) | solo lectura (lo importa el checkout) |
 | Congelados (`fitstore-common`, gateway, `shared`, `ui/`, `layout/`) | solo lectura |
 
 ## 9. Definición de terminado
@@ -402,8 +424,3 @@ Todo según el micro de order. Decisiones de implementación de esta spec:
 - [ ] El OpenAPI de order coincide con lo implementado; los eventos coinciden con el AsyncAPI.
 - [ ] Demostración: carrito anónimo → login → checkout → pedido en PENDIENTE_PAGO → (pago simulado) → el operador lo prepara y despacha → el cliente ve la línea de tiempo.
 - [ ] Revisado y aprobado por el autor.
-
-## Preguntas abiertas ❓
-
-1. **O1, checkout en una página o en pasos:** propongo **una sola página** (dirección, entrega y revisión, con el resumen al costado). La alternativa es un asistente de 3 pasos (Dirección → Entrega → Confirmar), que se ve más "guiado" pero suma clics y estado. ¿Una página?
-2. **O2, nueva dirección desde el checkout:** propongo **enlazar al formulario de la spec 1 con retorno** (`?volver=/checkout`), que es un cambio de una línea en la SPEC-1. La alternativa es abrir el formulario en un diálogo dentro del checkout, pero entonces habría que mover ese formulario a `shared` (congelado). ¿Enlace con retorno?
