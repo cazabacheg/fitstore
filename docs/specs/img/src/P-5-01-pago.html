@@ -1,0 +1,16 @@
+<!doctype html><html><head><meta charset="utf-8"><link rel="stylesheet" href="_boceto.css"><style>body{width:1440px}</style></head><body>
+<h1 class="title">P-5-01 · Pago — /pago/:codigo · CLIENTE (pantalla clave)</h1><div class="shell">cabecera de la tienda</div>
+<div class="row" style="align-items:flex-start;padding:20px 32px;gap:28px">
+<div class="col sp"><div class="row"><div class="t" style="font-size:24px">Paga tu pedido FS-000124</div><span class="sp"></span><div class="pad" style="background:#fef3c7;border-radius:6px">⏱ Quedan <b>24:13</b> para pagar</div></div>
+<div class="card col"><b>Elige cómo pagar</b>
+<div class="row"><div class="b pad box sp" style="outline:3px solid #0d9488;flex-direction:column"><b>💳 Tarjeta</b><span class="s">Crédito o débito · Culqi</span></div><div class="b pad box sp" style="flex-direction:column"><b>📱 Yape</b><span class="s">Con código de aprobación</span></div><div class="b pad box sp" style="flex-direction:column"><b>Mercado Pago</b><span class="s">Tarjetas y saldo MP</span></div><div class="d pad box sp" style="flex-direction:column"><b>🧪 Pago de prueba</b><span class="s">solo demo · no es un cobro real</span></div></div>
+<span class="tag">medios = habilitados en settings ∩ con credenciales (P7) · Yape deshabilitado si total &gt; S/ 500 · "No disponible por el momento" si el circuito está abierto</span>
+<div class="b col pad" style="background:#fafafa"><b>Tarjeta (formulario de Culqi, en el navegador)</b>
+<div class="f">Número de tarjeta</div><div class="row"><div class="f sp">MM/AA</div><div class="f sp">CVV</div></div><div class="f">Correo</div>
+<span class="s">🔒 Tus datos de tarjeta van directo a Culqi; FitStore nunca los ve.</span></div>
+<div class="b col pad" style="background:#fafafa"><b>Yape (al elegirlo)</b><div class="row"><div class="f sp">Celular: 9XX XXX XXX</div><div class="f sp">Código de aprobación (6 dígitos)</div></div><span class="s">Abre Yape → Menú → Código de aprobación. Vence en 2 minutos.</span></div>
+<div class="b col pad" style="background:#fafafa"><b>Mercado Pago (al elegirlo)</b><div class="g box" style="height:70px">Payment Brick embebido</div></div>
+<div class="btn p">Pagar S/ 373.36</div><span class="s">El monto lo fija el pedido; el navegador solo envía {proveedor, token} + Idempotency-Key</span></div></div>
+<div class="card col" style="width:380px"><b style="font-size:18px">Tu pedido</b><div class="row s"><span class="sp">Legging Pro Compresión × 6</span>S/ 323.46</div><div class="row s"><span class="sp">Top Flex × 1</span>S/ 39.90</div><div class="row s"><span class="sp">Envío (delivery)</span>S/ 10.00</div><div class="row t" style="font-size:20px;border-top:2px solid #ddd;padding-top:10px"><span class="sp">Total</span>S/ 373.36</div>
+<div class="d pad s">Preparando: "Preparando tu pago…" (reintenta cada 1 s, hasta 10)</div><div class="d pad s">Vencido / ya pagado: mensaje + enlace al pedido, sin formulario</div></div></div>
+</body></html>

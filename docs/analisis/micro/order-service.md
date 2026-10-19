@@ -1,9 +1,10 @@
 # FitStore — Análisis micro: `order-service`
 
-> Versión: **v5 (aprobado)** — 2026-10-18. Fuente: [`01-analisis-macro.md`](../01-analisis-macro.md) v12.
+> Versión: **v6 (aprobado)** — 2026-10-18. Fuente: [`01-analisis-macro.md`](../01-analisis-macro.md) v12.
 > Estados: ✅ decidido · 🟡 propuesto · ❓ abierto · 🕓 diferido
 
 **Historial:**
+- v6 (2026-10-18): **reembolso postventa** (4.8): el ADMIN registra un reembolso total o parcial de un pedido `ENTREGADO` dentro del plazo de settings; tabla `pedido_reembolso`, campo `monto_reembolsado`, evento `ReembolsoSolicitado`, consume `PagoReembolsado`. Decidido en la SPEC-5.
 - v5 (2026-10-18): desde la SPEC-4: los pedidos de un cliente usan `GET /admin/pedidos?clienteId=` (se quita `/admin/clientes/{clienteId}/pedidos`, O3); las ventas del resumen se cuentan por la fecha del paso a `PAGADO` y sin los cancelados, con índice `pedido_historial (estado_nuevo, creado_en)` (O6).
 - v4 (2026-10-18): sección 10 aprobada → **documento completo aprobado**.
 - v3 (2026-10-18): sección 10 (diseño técnico) redactada: C3, código de las partes críticas, paquetes, dependencias, configuración e infraestructura.
@@ -20,7 +21,7 @@
 
 **Hace:**
 - **Módulo carrito:** carrito anónimo y de cliente, fusión al iniciar sesión, precios y descuentos siempre actualizados (consultando a catalog).
-- **Módulo pedidos:** checkout (resumen y confirmación), creación del pedido con **copia** (snapshot) de productos, precios, descuentos, destinatario, dirección y envío; máquina de estados; historial; expiración de pedidos sin pago; cancelación; consulta para el cliente (mis pedidos, seguimiento) y gestión en el backoffice.
+- **Módulo pedidos:** checkout (resumen y confirmación), creación del pedido con **copia** (snapshot) de productos, precios, descuentos, destinatario, dirección y envío; máquina de estados; historial; expiración de pedidos sin pago; cancelación; **reembolso postventa** de pedidos entregados (4.8); consulta para el cliente (mis pedidos, seguimiento) y gestión en el backoffice.
 - **Estado de la saga** de checkout y pago (ADR-009): el estado del pedido es el estado de la saga.
 
 **No hace:**
@@ -143,9 +144,10 @@ classDiagram
 
 | Tabla | Columnas principales | Restricciones / índices |
 |---|---|---|
-| `pedido` | `id` (uuid), `codigo`, `cliente_id`, `estado`, `modalidad` (`DELIVERY_LOCAL`, `AGENCIA`, `RECOJO`); destinatario: `dest_nombres`, `dest_apellidos`, `dest_dni`, `dest_telefono`, `dest_email`; dirección: `dir_ubigeo`, `dir_departamento`, `dir_provincia`, `dir_distrito`, `dir_direccion`, `dir_referencia`; envío: `agencia_id`, `agencia_nombre`, `plazo_dias_min`, `plazo_dias_max`, `codigo_seguimiento`; montos: `subtotal`, `descuento_total`, `costo_envio`, `total`; `expira_en`, `boleta_url`, `idempotency_key`, `notas`, `creado_en`, `actualizado_en`, `version` | Único `codigo`; único `(cliente_id, idempotency_key)`; índices `(cliente_id, creado_en DESC)`, `(estado, creado_en)`, parcial `(expira_en) WHERE estado = 'PENDIENTE_PAGO'`; `CHECK` de montos ≥ 0 |
+| `pedido` | `id` (uuid), `codigo`, `cliente_id`, `estado`, `modalidad` (`DELIVERY_LOCAL`, `AGENCIA`, `RECOJO`); destinatario: `dest_nombres`, `dest_apellidos`, `dest_dni`, `dest_telefono`, `dest_email`; dirección: `dir_ubigeo`, `dir_departamento`, `dir_provincia`, `dir_distrito`, `dir_direccion`, `dir_referencia`; envío: `agencia_id`, `agencia_nombre`, `plazo_dias_min`, `plazo_dias_max`, `codigo_seguimiento`; montos: `subtotal`, `descuento_total`, `costo_envio`, `total`; `expira_en`, `boleta_url`, `monto_reembolsado` (por defecto 0), `idempotency_key`, `notas`, `creado_en`, `actualizado_en`, `version` | Único `codigo`; único `(cliente_id, idempotency_key)`; índices `(cliente_id, creado_en DESC)`, `(estado, creado_en)`, parcial `(expira_en) WHERE estado = 'PENDIENTE_PAGO'`; `CHECK` de montos ≥ 0 |
 | `pedido_item` | `id`, `pedido_id`, `variante_id`, `producto_id`, `sku`, `producto_nombre`, `talla`, `color`, `imagen_url`, `precio_unitario`, `cantidad`, `descuento_porcentaje`, `descuento_monto`, `total` | `CHECK cantidad > 0`; índice `producto_id` (top de productos) |
 | `pedido_historial` | `id`, `pedido_id`, `estado_anterior`, `estado_nuevo`, `actor_tipo` (`CLIENTE`, `STAFF`, `SISTEMA`), `actor_id`, `comentario`, `creado_en` | Índices `(pedido_id, creado_en)` y `(estado_nuevo, creado_en)` (ventas por fecha de pago) |
+| `pedido_reembolso` | `id` (uuid), `pedido_id`, `monto`, `motivo` (`DEFECTUOSO`, `TALLA_MODELO_EQUIVOCADO`, `NO_CONFORME`, `OTRO`), `nota`, `items` (`jsonb`: `{varianteId, sku, cantidad}`), `estado` (`SOLICITADO`, `COMPLETADO`), `solicitado_por`, `creado_en`, `completado_en` | Índice `pedido_id`; `CHECK monto > 0` |
 | `pedido_codigo_seq` | secuencia | Genera el número de `FS-000123` |
 
 **Comunes:** `outbox_evento` y `evento_procesado` (ADR-009).
@@ -195,6 +197,7 @@ El TTL de Redis resuelve la expiración de carritos abandonados (RF-CRT-04) sin 
 | GET | `/api/v1/admin/pedidos/{id}` | Detalle completo con historial |
 | PATCH | `/api/v1/admin/pedidos/{id}/estado` | Avanzar estado `{nuevoEstado, comentario?}`: `EN_PREPARACION`, `LISTO_DESPACHO`, `LISTO_RECOJO`, `ENTREGADO` (solo recojo) |
 | PATCH | `/api/v1/admin/pedidos/{id}/cancelar` | Cancelar con motivo obligatorio |
+| POST | `/api/v1/admin/pedidos/{id}/reembolsos` | Reembolso postventa `{items[{varianteId, cantidad}], monto, motivo, nota?}` (ADMIN, 4.8) |
 | GET | `/api/v1/admin/pedidos/resumen?desde=&hasta=` | Datos del dashboard: ventas (día, semana, mes, por fecha de pago y sin cancelados), pedidos por estado, top 5 productos |
 
 El dashboard (RF-BO-01) lo arma el backoffice llamando a order (ventas y pedidos), catalog (stock bajo) y delivery (entregas del día); no hay un servicio agregador (KISS).
@@ -284,7 +287,18 @@ sequenceDiagram
 | Staff | `PENDIENTE_PAGO`, `PAGADO`, `EN_PREPARACION` (motivo obligatorio) | Igual |
 
 - Publica `PedidoCancelado {fuePagado, motivo, actor}`.
-- **Después de `LISTO_DESPACHO` ya no se cancela**: el pedido ya salió o está por salir; un retorno sería una devolución, fuera de alcance. Así delivery no necesita escuchar cancelaciones (KISS).
+- **Después de `LISTO_DESPACHO` ya no se cancela**: el pedido ya salió o está por salir. Así delivery no necesita escuchar cancelaciones (KISS). Si una vez entregado hay un problema, se usa el **reembolso postventa** (4.8).
+
+### 4.8 Reembolso postventa (CU-25, RF-ORD-11)
+
+Para un pedido **entregado** con un problema (prenda defectuosa, talla o modelo equivocado, no conforme), sin cancelarlo.
+
+- **Quién y cuándo:** solo `ADMIN`; el pedido debe estar `ENTREGADO` y dentro de `diasReembolsoPostventa` días desde la entrega (fecha del historial `→ ENTREGADO`; `0` = sin límite).
+- **Monto:** el admin elige prendas y cantidades; order **propone** el monto con el precio pagado de cada unidad (precio unitario menos su descuento). El admin puede cambiarlo (por ejemplo, sumar el envío), pero la suma de **todos** los reembolsos del pedido (solicitados y completados) nunca supera el `total` cobrado → `409`.
+- **Efecto:** guarda `pedido_reembolso` (`SOLICITADO`), anota el historial ("Reembolso postventa solicitado: S/ X, motivo") **sin cambiar el estado** y publica `ReembolsoSolicitado`. payment lo ejecuta con su proceso de reembolsos (reintentos y alerta incluidos).
+- **Al llegar `PagoReembolsado`:** la solicitud pasa a `COMPLETADO`, suma `monto_reembolsado` y anota el historial. El pedido se muestra como "Reembolso parcial" o "Reembolsado" (cuando `monto_reembolsado = total`).
+- **Stock:** no se reingresa automáticamente (una prenda defectuosa no vuelve a la venta); si regresa en buen estado, el operador hace un ajuste de inventario (catalog).
+- **Fuera de alcance:** logística de la devolución física, cambios de prenda (se manejan como reembolso + pedido nuevo) y nota de crédito.
 
 ### 4.7 Mis pedidos y seguimiento (CU-11, CU-12)
 
@@ -334,10 +348,11 @@ Exchange `fitstore.eventos` (topic), sobre común, outbox e idempotencia (ADR-00
 | `PedidoExpirado` | `order.pedido.expirado` | `pedidoId`, `codigo` | catalog, payment (anular intención), notification |
 | `PagoNoAplicable` | `order.pago.no-aplicable` | `pedidoId`, `pagoId`, `motivo` | payment (reembolso automático) |
 | `PedidoListoDespacho` | `order.pedido.listo-despacho` | `pedidoId`, `codigo`, modalidad, destinatario, dirección, agencia, resumen de ítems | delivery (crear entrega) |
+| `ReembolsoSolicitado` ✅ **nuevo** | `order.reembolso.solicitado` | `pedidoId`, `codigo`, `solicitudId` (id de `pedido_reembolso`, clave de idempotencia), `monto`, `motivo` | payment (ejecuta el reembolso) |
 | `PedidoListoRecojo` ✅ **nuevo** | `order.pedido.listo-recojo` | `pedidoId`, `codigo`, destinatario | notification ("ya puedes recoger tu pedido") |
 | `PedidoRecogido` ✅ **nuevo** | `order.pedido.recogido` | `pedidoId`, `codigo`, destinatario | notification (confirmación de entrega) |
 
-**Consume:** `PagoConfirmado`, `PagoRechazado` (payment), `BoletaEmitida` (payment), `EntregaActualizada` (delivery).
+**Consume:** `PagoConfirmado`, `PagoRechazado`, `BoletaEmitida`, `PagoReembolsado` (payment; este último actualiza `monto_reembolsado` si trae `solicitudId`), `EntregaActualizada` (delivery).
 
 ---
 
@@ -364,7 +379,7 @@ Todas con OpenFeign + Resilience4j (ADR-010).
 
 - Carrito: público con `X-Carrito-Id` (anónimo) o JWT de cliente; la fusión exige JWT.
 - Checkout y "mis pedidos": `CLIENTE`. El `clienteId` sale **siempre del token**; un pedido ajeno responde `404`.
-- Backoffice: `OPERADOR` y `ADMIN` (ver, avanzar estados, cancelar). El resumen de ventas: `ADMIN` (información de negocio).
+- Backoffice: `OPERADOR` y `ADMIN` (ver, avanzar estados, cancelar). El resumen de ventas y el reembolso postventa: solo `ADMIN` (dinero e información de negocio).
 - El monto **nunca** viene del navegador: `totalEsperado` solo se compara, no se usa para cobrar (RF-PAY-00).
 - El DNI y el teléfono del destinatario se muestran completos solo al dueño y al staff; nunca en logs.
 - Rate limiting del checkout en el gateway (ADR-020) para evitar reservas masivas.
@@ -383,6 +398,7 @@ Todas con OpenFeign + Resilience4j (ADR-010).
 **Servicio (unitarias con clientes Feign simulados):**
 - Checkout: camino feliz; cada dependencia caída; sin stock; precio cambiado (`409`); idempotencia (dos llamadas = un pedido); modalidad deshabilitada; delivery local fuera de Lima/Callao.
 - Máquina de estados: tabla de todas las transiciones permitidas y prohibidas.
+- Reembolso postventa: plazo (dentro, fuera, 0 = sin límite), suma de reembolsos ≤ total, monto propuesto por prendas, solo ADMIN.
 - Carrera pago vs. expiración: gana una sola, la otra publica `PagoNoAplicable`.
 - Fusión de carritos con límites.
 
@@ -407,7 +423,7 @@ Stack y versiones comunes: [`docs/arquitectura/stack-versiones.md`](../../arquit
 | Capa | Componentes |
 |---|---|
 | Controladores | `CarritoController`, `CheckoutController`, `PedidoController`, `AdminPedidoController` |
-| Servicios | `CarritoService`, `CheckoutService`, `PedidoService`, `MaquinaEstadosPedido` (pura), `ResumenVentasService` |
+| Servicios | `CarritoService`, `CheckoutService`, `PedidoService`, `MaquinaEstadosPedido` (pura), `ResumenVentasService`, `ReembolsoPostventaService` |
 | Procesos | `ExpiradorPedidos` (`@Scheduled`), `ConsumidorEventos` (`@RabbitListener`) |
 | Clientes Feign | `CatalogClient`, `AuthClient`, `DeliveryClient`, `SettingsClient` (todos con Resilience4j) |
 | Repositorios | `PedidoRepository` (JPA), `CarritoRepository` (Redis) |
@@ -466,12 +482,12 @@ com.fitstore.order
 │   ├── dto, mapper   PedidoMapper, PedidoItemMapper
 │   ├── model         Pedido (+ @Embeddable Destinatario, DireccionEnvio, Envio), PedidoItem, HistorialEstado, enums
 │   ├── repository    PedidoRepository, PedidoSpecifications, ResumenVentasQueries
-│   ├── service       CheckoutService, PedidoService, ResumenVentasService
+│   ├── service       CheckoutService, PedidoService, ResumenVentasService, ReembolsoPostventaService
 │   │   └── dominio   MaquinaEstadosPedido
 │   └── messaging     ConsumidorEventos, ExpiradorPedidos
 ├── client            CatalogClient, AuthClient, DeliveryClient, SettingsClient (+ DTOs de cada API)
 └── event             PedidoCreado, PedidoPagado, PedidoCancelado, PedidoExpirado, PagoNoAplicable,
-                      PedidoListoDespacho, PedidoListoRecojo, PedidoRecogido
+                      PedidoListoDespacho, PedidoListoRecojo, PedidoRecogido, ReembolsoSolicitado
 ```
 
 ### 10.4 Dependencias
@@ -532,7 +548,7 @@ fitstore:
 |---|---|
 | PostgreSQL `order_db` | Tablas de 3.1 y secuencia `pedido_codigo_seq` |
 | Redis (prefijo `order:`) | Carritos, última cotización, caché de settings |
-| RabbitMQ | Publica `order.*` (8 eventos). Cola `order.eventos` enlazada a `payment.pago.confirmado`, `payment.pago.rechazado`, `payment.boleta.emitida`, `delivery.entrega.actualizada`; DLQ |
+| RabbitMQ | Publica `order.*` (9 eventos). Cola `order.eventos` enlazada a `payment.pago.confirmado`, `payment.pago.rechazado`, `payment.boleta.emitida`, `payment.reembolso.completado`, `delivery.entrega.actualizada`; DLQ |
 | Servicios | catalog, auth, delivery, settings vía Feign + Eureka |
 
 ---

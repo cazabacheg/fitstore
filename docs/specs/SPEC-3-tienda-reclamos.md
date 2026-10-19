@@ -1,11 +1,13 @@
 # SPEC-3 — Tienda y reclamos
 
-> Versión: **v3 (aprobado)** — 2026-10-18 · Estados: ✅ decidido · 🟡 propuesto · ❓ abierto
+> Versión: **v5 (aprobado)** — 2026-10-18 · Estados: ✅ decidido · 🟡 propuesto · ❓ abierto
 > **Dueña de:** `backend/settings-service` (configuración, ubigeo, Libro de Reclamaciones) · tienda: `features/inicio`, `features/legal` · backoffice: `features/configuracion`, `features/reclamos`.
 > **Depende de:** 0a, 0b, 1 (sesión de staff) · usa el contrato de catalog (destacados y categorías) · **Habilita:** la marca real en todas las pantallas (0b ya la consume), versiones de políticas para el registro (spec 1), parámetros para order y payment (specs 4 y 5).
 > **Contratos:** `contracts/openapi/settings-service.yaml`; eventos `ConfiguracionActualizada`, `ReclamoRegistrado`, `ReclamoRespondido`.
 
 **Historial:**
+- v5 (2026-10-18): P-3-05 y P-3-06 indican qué abre el enlace de cada fila y sus acciones, según la convención de tablas de la SPEC-0b (R11). Boceto P-3-06 actualizado.
+- v4 (2026-10-18): nuevo parámetro "días para reembolso postventa" (0 a 365, 0 = sin límite, por defecto 30), decidido en la SPEC-5; CA-3-17 ampliado.
 - v3 (2026-10-18): revisada por el autor → **spec aprobada**.
 - v2 (2026-10-18): S1 ✅ franja de beneficios **opcional** (sin beneficios, la franja no se muestra); S2 ✅ el stock mínimo por defecto y el margen de reserva se editan en la pestaña Parámetros (API de catalog), y se quita el diálogo de P-2-07 (SPEC-2 v4). Nuevo CA-3-38.
 - v1 (2026-10-18): borrador inicial.
@@ -125,7 +127,8 @@ Los parámetros de inventario los guarda catalog, que es quien los usa (micro de
 CA-3-17  Cuando guardo los parámetros
          Entonces debe haber al menos un medio de pago (Culqi, Yape, Mercado Pago) y una modalidad de entrega
               (delivery local, agencia, recojo); la expiración del pedido debe estar entre 10 y 120 minutos;
-              los correos para alertas, entre 1 y 5 y válidos
+              los correos para alertas, entre 1 y 5 y válidos;
+              los días para reembolso postventa, entre 0 y 365 (0 = sin límite, con ese texto de ayuda)
          Y la moneda se muestra como PEN, sin poder cambiarla
 
 CA-3-18  Dado que el admin deshabilita un medio de pago o una modalidad
@@ -265,11 +268,13 @@ CA-3-37  Dado Redis caído
 - **Boceto:** ![P-3-05](img/P-3-05-politicas-editor.png)
 - **Diseño de alta fidelidad:** 🕓 deriva del sistema de diseño.
 - **Componentes:** `PoliticasPage`, `EditorMarkdown` con vista previa, `HistorialVersiones`.
+- **Historial de versiones:** cada versión tiene un enlace "ver" que abre `/politicas/:tipo?version=N` de la tienda en otra pestaña (es una lista, no una tabla R11).
 - **Endpoints:** `GET /admin/settings/politicas/{tipo}/versiones`, `POST /admin/settings/politicas/{tipo}`.
 
 ### P-3-06 — Reclamos (backoffice)
 
 - **Ruta / proyecto:** `/reclamos` y `/reclamos/:id` · backoffice · OPERADOR (ver), ADMIN (atender).
+- **Tabla (0b R11):** el **número del reclamo** abre `/reclamos/:id`; acción "Ver ›". "Tomar" y "Responder" están en el detalle.
 - **Boceto:** ![P-3-06](img/P-3-06-reclamos.png)
 - **Diseño de alta fidelidad:** 🕓 deriva del sistema de diseño (patrón "tabla").
 - **Endpoints:** `GET /admin/reclamos`, `GET /admin/reclamos/{id}`, `PATCH /admin/reclamos/{id}/en-atencion`, `POST /admin/reclamos/{id}/respuesta`.

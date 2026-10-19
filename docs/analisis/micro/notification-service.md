@@ -1,9 +1,10 @@
 # FitStore — Análisis micro: `notification-service`
 
-> Versión: **v5 (aprobado)** — 2026-10-16. Fuente: [`01-analisis-macro.md`](../01-analisis-macro.md) v15.
+> Versión: **v6 (aprobado)** — 2026-10-18. Fuente: [`01-analisis-macro.md`](../01-analisis-macro.md) v15.
 > Estados: ✅ decidido · 🟡 propuesto · ❓ abierto · 🕓 diferido
 
 **Historial:**
+- v6 (2026-10-18): el correo C7 (reembolso realizado) distingue el reembolso parcial postventa (SPEC-5).
 - v5 (2026-10-18): sección 10 aprobada → **documento completo aprobado**.
 - v4 (2026-10-18): sección 10 (diseño técnico) redactada: C3, código de las partes críticas, paquetes, dependencias, configuración e infraestructura.
 - v3 (2026-10-16): catálogo reducido a **13 correos al cliente + 4 alertas a la tienda** (se quitan vencido y fecha asignada; se unen "en camino" y "listo para recoger"; se mantiene "entregado" como confirmación) → **documento aprobado**.
@@ -140,7 +141,7 @@ classDiagram
 | C4 | `PasswordCambiado` | Tu contraseña cambió | Aviso de seguridad, "si no fuiste tú…" | |
 | C5 | `BoletaEmitida` | ¡Pedido confirmado! | Resumen, modalidad de entrega, **boleta PDF adjunta** (4.3). **Primer correo del pedido**: antes del pago no se envía nada | ✔ |
 | C6 | `PedidoCancelado` | Pedido cancelado | Motivo; si estaba pagado: "procesaremos tu reembolso" | |
-| C7 | `PagoReembolsado` | Reembolso realizado | Monto y medio de pago | |
+| C7 | `PagoReembolsado` | Reembolso realizado | Monto, medio de pago y, si es parcial (postventa), "reembolso parcial de tu pedido" con el motivo | |
 | C8 | `EntregaActualizada` → `EN_RUTA` o `ENVIADO_AGENCIA` | Tu pedido va en camino | Delivery local: fecha y repartidor. Agencia: agencia, código de seguimiento y enlace de rastreo | |
 | C9 | `EntregaActualizada` → `FALLIDA` | No pudimos entregar tu pedido | Observación, "te contactaremos para reprogramar" | |
 | C10 | `EntregaActualizada` → `DISPONIBLE_EN_AGENCIA` o `PedidoListoRecojo` | Tu pedido está listo para recoger | Agencia y clave de recojo, o dirección y horario de la tienda; "lleva tu DNI" | |

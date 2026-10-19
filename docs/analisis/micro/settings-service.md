@@ -1,9 +1,10 @@
 # FitStore — Análisis micro: `settings-service`
 
-> Versión: **v7 (aprobado)** — 2026-10-18. Fuente: [`01-analisis-macro.md`](../01-analisis-macro.md) v12.
+> Versión: **v8 (aprobado)** — 2026-10-18. Fuente: [`01-analisis-macro.md`](../01-analisis-macro.md) v12.
 > Estados: ✅ decidido · 🟡 propuesto · ❓ abierto · 🕓 diferido
 
 **Historial:**
+- v8 (2026-10-18): nuevo parámetro público **`diasReembolsoPostventa`** (0 a 365, 0 = sin límite, por defecto 30), decidido en la SPEC-5. Lo usa order.
 - v7 (2026-10-18): nuevo campo opcional **`beneficios`** en el contenido (de 0 a 3 `{icono, texto}`; vacío = la landing oculta la franja), decidido en la SPEC-3 (S1).
 - v6 (2026-10-18): sección 10 aprobada → **documento completo aprobado**.
 - v5 (2026-10-18): sección 10 (diseño técnico) redactada: C3, código de las partes críticas, paquetes, dependencias, configuración e infraestructura.
@@ -91,6 +92,7 @@ classDiagram
         Set~MetodoPago~ metodosPago
         Set~ModalidadEntrega~ modalidadesEntrega
         int expiracionPedidoMinutos
+        int diasReembolsoPostventa
     }
     class ImagenTienda {
         TipoImagen tipo
@@ -156,7 +158,7 @@ classDiagram
 1. Existe **exactamente una** fila de configuración (se crea en la migración inicial con valores de FitStore por defecto).
 2. Colores en formato `#RRGGBB`; radio de bordes entre 0 y 24 px; RUC de 11 dígitos.
 3. Al menos **un método de pago** y **una modalidad de entrega** habilitados.
-4. `expiracionPedidoMinutos` entre **10 y 120** (por defecto 30).
+4. `expiracionPedidoMinutos` entre **10 y 120** (por defecto 30); `diasReembolsoPostventa` entre **0 y 365** (0 = sin límite, por defecto 30).
 5. Siempre existe una versión vigente de cada política (`TERMINOS`, `PRIVACIDAD`, `CAMBIOS_DEVOLUCIONES`, `ENVIOS`).
 6. Una sola imagen por tipo para `LOGO_CLARO`, `LOGO_OSCURO` y `FAVICON`; hasta **5** imágenes `LANDING` (carrusel).
 7. El número de reclamo es **correlativo por año, sin huecos ni repetidos**.
@@ -172,7 +174,7 @@ classDiagram
 
 | Tabla | Columnas principales | Restricciones |
 |---|---|---|
-| `configuracion_tienda` | `id` (siempre 1); identidad: `nombre`, `eslogan`, `razon_social`, `ruc`, `direccion_fiscal`; tema: `color_primario`, `color_secundario`, `color_acento`, `color_fondo`, `color_texto`, `tipografia`, `radio_bordes`; contenido: `hero_titulo`, `hero_subtitulo`, `hero_cta_texto`, `hero_cta_enlace`, `beneficios` (`jsonb`, de 0 a 3 `{icono, texto ≤ 60}`, por defecto `[]`), `email`, `telefono`, `whatsapp`, `instagram_url`, `facebook_url`, `tiktok_url`, `horario`, `tienda_direccion`, `tienda_ubigeo`, `tienda_referencia`; parámetros: `metodos_pago` (`text[]`: `CULQI`, `YAPE`, `MERCADO_PAGO`), `modalidades_entrega` (`text[]`), `expiracion_pedido_minutos`, `correos_alertas` (`text[]`, 1 a 5 correos); `version`, `actualizado_en`, `actualizado_por` | `CHECK (id = 1)`; `CHECK` de formato en colores, RUC y rangos |
+| `configuracion_tienda` | `id` (siempre 1); identidad: `nombre`, `eslogan`, `razon_social`, `ruc`, `direccion_fiscal`; tema: `color_primario`, `color_secundario`, `color_acento`, `color_fondo`, `color_texto`, `tipografia`, `radio_bordes`; contenido: `hero_titulo`, `hero_subtitulo`, `hero_cta_texto`, `hero_cta_enlace`, `beneficios` (`jsonb`, de 0 a 3 `{icono, texto ≤ 60}`, por defecto `[]`), `email`, `telefono`, `whatsapp`, `instagram_url`, `facebook_url`, `tiktok_url`, `horario`, `tienda_direccion`, `tienda_ubigeo`, `tienda_referencia`; parámetros: `metodos_pago` (`text[]`: `CULQI`, `YAPE`, `MERCADO_PAGO`), `modalidades_entrega` (`text[]`), `expiracion_pedido_minutos`, `dias_reembolso_postventa` (por defecto 30), `correos_alertas` (`text[]`, 1 a 5 correos); `version`, `actualizado_en`, `actualizado_por` | `CHECK (id = 1)`; `CHECK` de formato en colores, RUC y rangos |
 | `imagen_tienda` | `id`, `tipo`, `clave`, `orden`, `texto_alternativo`, `enlace`, `creado_en` | Único parcial `(tipo) WHERE tipo <> 'LANDING'` |
 | `politica` | `id`, `tipo`, `version`, `contenido` (`text`, Markdown), `publicada_en`, `publicada_por` | Único `(tipo, version)` |
 

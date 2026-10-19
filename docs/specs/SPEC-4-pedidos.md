@@ -1,11 +1,13 @@
 # SPEC-4 — Pedidos
 
-> Versión: **v3 (aprobado)** — 2026-10-18 · Estados: ✅ decidido · 🟡 propuesto · ❓ abierto
+> Versión: **v5 (aprobado)** — 2026-10-18 · Estados: ✅ decidido · 🟡 propuesto · ❓ abierto
 > **Dueña de:** `backend/order-service` (carrito, checkout, pedidos, saga) · tienda: `features/carrito`, `features/checkout`, `features/mis-pedidos` · backoffice: `features/pedidos`.
 > **Depende de:** 0a, 0b, 1 (sesión y direcciones) · usa los contratos de catalog (cotizar, reservar), auth (cliente y dirección), delivery (opciones y cotización de envío) y settings (parámetros y ubigeo) · **Habilita:** 5 (pago del pedido), 6 (entrega desde `PedidoListoDespacho`), 7 (correos del pedido), 8 (dashboard y E2E).
-> **Contratos:** `contracts/openapi/order-service.yaml`; eventos que publica `PedidoCreado`, `PedidoPagado`, `PedidoCancelado`, `PedidoExpirado`, `PagoNoAplicable`, `PedidoListoDespacho`, `PedidoListoRecojo`, `PedidoRecogido`; consume `PagoConfirmado`, `PagoRechazado`, `BoletaEmitida`, `EntregaActualizada`.
+> **Contratos:** `contracts/openapi/order-service.yaml`; eventos que publica `PedidoCreado`, `PedidoPagado`, `PedidoCancelado`, `PedidoExpirado`, `PagoNoAplicable`, `PedidoListoDespacho`, `PedidoListoRecojo`, `PedidoRecogido`, `ReembolsoSolicitado`; consume `PagoConfirmado`, `PagoRechazado`, `BoletaEmitida`, `PagoReembolsado`, `EntregaActualizada`.
 
 **Historial:**
+- v5 (2026-10-18): P-4-05 y P-4-06 indican qué abre el enlace de cada fila y sus acciones, según la convención de tablas de la SPEC-0b (R11). Boceto P-4-05 actualizado.
+- v4 (2026-10-18): nueva **HU-4-12 Reembolso postventa** (CA-4-54 a 59) decidida en la SPEC-5 (también en el alcance, los eventos del encabezado, Postman y la demostración): total o parcial desde un pedido entregado, solo ADMIN, plazo configurable (0 = sin límite); las ventas restan lo reembolsado (CA-4-52). Micro de order v6.
 - v3 (2026-10-18): O3 y O6 aprobados (micro de order v5) → **spec aprobada**.
 - v2 (2026-10-18): O1 ✅ checkout en una sola página; O2 ✅ la nueva dirección se agrega en un diálogo sobre el checkout (reutiliza `DialogoDireccion` de la SPEC-1, A6); cada etapa del seguimiento lleva una breve descripción debajo de su nombre (O9).
 - v1 (2026-10-18): borrador inicial.
@@ -16,10 +18,10 @@
 
 ## 1. Objetivo y alcance
 
-Al cerrar esta spec, el cliente **arma su carrito** (con o sin sesión), ve sus descuentos por volumen, **elige cómo recibir su compra** y **confirma el pedido** con stock reservado y montos congelados; luego **sigue su pedido** hasta la entrega o lo cancela si aún puede. El operador **gestiona los pedidos** en el backoffice y los avanza hasta el despacho o el recojo. Es el **corazón de la saga** (ADR-009): el estado del pedido es el estado de la saga.
+Al cerrar esta spec, el cliente **arma su carrito** (con o sin sesión), ve sus descuentos por volumen, **elige cómo recibir su compra** y **confirma el pedido** con stock reservado y montos congelados; luego **sigue su pedido** hasta la entrega o lo cancela si aún puede. El operador **gestiona los pedidos** en el backoffice y los avanza hasta el despacho o el recojo; el administrador puede **reembolsar total o parcialmente** un pedido ya entregado. Es el **corazón de la saga** (ADR-009): el estado del pedido es el estado de la saga.
 
 **Incluye:**
-- Toda la lógica de [`order-service`](../analisis/micro/order-service.md): carrito en Redis (anónimo, de cliente, fusión, última cotización), resumen y confirmación del checkout con idempotencia, copia congelada del pedido, máquina de estados con historial, expiración, consumo de los eventos de pago y de entrega, cancelación con compensaciones, consultas del cliente y del backoffice, y el resumen de ventas para el dashboard.
+- Toda la lógica de [`order-service`](../analisis/micro/order-service.md): carrito en Redis (anónimo, de cliente, fusión, última cotización), resumen y confirmación del checkout con idempotencia, copia congelada del pedido, máquina de estados con historial, expiración, consumo de los eventos de pago y de entrega, cancelación con compensaciones, reembolso postventa (micro 4.8), consultas del cliente y del backoffice, y el resumen de ventas para el dashboard.
 - Pantallas P-4-01 a P-4-06.
 - Datos de demostración para `dev`.
 - Colección Postman `order` y prueba de carga k6 del checkout.
@@ -290,9 +292,40 @@ CA-4-51  Cuando llamo GET /admin/pedidos/resumen?desde=&hasta=
               y el top 5 de productos por unidades
 
 CA-4-52  Las ventas cuentan los pedidos pagados según la fecha en que pasaron a PAGADO,
-         sin los cancelados después del pago (fueron reembolsados) ni los expirados
+         sin los cancelados después del pago (fueron reembolsados) ni los expirados,
+         y restando lo devuelto en reembolsos postventa completados (monto neto)
 
 CA-4-53  Un OPERADOR recibe 403 en el resumen; solo ADMIN
+```
+
+### HU-4-12 — Reembolsar un pedido entregado
+
+Como administrador, quiero devolver todo o parte de lo pagado por un pedido ya entregado, para resolver una prenda defectuosa, una talla o modelo equivocado o una clienta no conforme. · Cubre: CU-25, RF-ORD-11, RF-PAY-06 · Pantallas: [P-4-06](#p-4-06--detalle-de-pedido-backoffice), [P-4-04](#p-4-04--detalle-de-mi-pedido)
+
+```gherkin
+CA-4-54  Dado un pedido ENTREGADO hace 10 días y un plazo de reembolso de 30 días
+         Cuando pulso "Registrar reembolso"
+         Entonces elijo prendas y cantidades, el sistema propone el monto (precio pagado por unidad, con su descuento),
+              puedo ajustarlo, y debo elegir el motivo (defectuoso, talla o modelo equivocado, no conforme, otro)
+              y puedo escribir una nota
+
+CA-4-55  Cuando lo confirmo
+         Entonces se guarda la solicitud, el historial anota "Reembolso postventa solicitado: S/ X, motivo",
+              el estado sigue ENTREGADO y se publica ReembolsoSolicitado
+
+CA-4-56  Dado reembolsos previos del pedido (solicitados o completados)
+         Cuando el nuevo monto haría que la suma supere el total cobrado
+         Entonces recibo 409 "Supera lo cobrado: puedes devolver hasta S/ Y" y no se registra nada
+
+CA-4-57  Dado un pedido entregado hace 40 días con plazo 30, o un pedido que no está ENTREGADO
+         Entonces el botón no aparece y la API responde 409; con plazo 0 no hay límite de días
+
+CA-4-58  Cuando llega PagoReembolsado de esa solicitud
+         Entonces la solicitud queda COMPLETADA, el pedido suma el monto reembolsado y muestra
+              "Reembolso parcial: S/ X" o "Reembolsado", tanto en el backoffice como en el detalle del cliente
+
+CA-4-59  Un OPERADOR no ve el botón y la API le responde 403
+         Y el stock no se reingresa automáticamente (si la prenda vuelve en buen estado, se hace un ajuste de inventario)
 ```
 
 ## 4. Pantallas
@@ -341,6 +374,7 @@ CA-4-53  Un OPERADOR recibe 403 en el resumen; solo ADMIN
 - **Boceto:** ![P-4-05](img/P-4-05-pedidos.png)
 - **Diseño de alta fidelidad:** 🕓 **pantalla clave** (lista de pedidos).
 - **Componentes:** `PedidosPage` con chips de contador por estado, `FiltrosPedidos` (sincronizados con la URL), tabla paginada de 0b.
+- **Tabla (0b R11):** el **código del pedido** abre `/pedidos/:id`; acción "Ver ›". Avanzar, cancelar y reembolsar están en el detalle.
 - **Endpoints:** `GET /admin/pedidos?estado=&modalidad=&desde=&hasta=&codigo=&cliente=&clienteId=&page=` (devuelve también los contadores por estado).
 
 ### P-4-06 — Detalle de pedido (backoffice)
@@ -348,9 +382,10 @@ CA-4-53  Un OPERADOR recibe 403 en el resumen; solo ADMIN
 - **Ruta / proyecto:** `/pedidos/:id` · backoffice · OPERADOR, ADMIN.
 - **Boceto:** ![P-4-06](img/P-4-06-detalle-pedido.png)
 - **Diseño de alta fidelidad:** 🕓 **pantalla clave**.
-- **Componentes:** `DetallePedidoAdminPage`, `AccionesEstado` (botones según `transicionesPermitidas` que envía la API), `DialogoComentario`, `DialogoRecogido` (casilla "verifiqué el DNI"), `DialogoCancelarStaff` (motivo), `HistorialPedido`.
+- **Componentes:** `DetallePedidoAdminPage`, `AccionesEstado` (botones según `transicionesPermitidas` que envía la API), `DialogoComentario`, `DialogoRecogido` (casilla "verifiqué el DNI"), `DialogoCancelarStaff` (motivo), `DialogoReembolsoPostventa` (solo ADMIN y pedidos ENTREGADO dentro del plazo: prendas y cantidades, monto propuesto editable, motivo, nota, máximo a devolver), `HistorialPedido`, etiqueta "Reembolso parcial" / "Reembolsado".
+- **Tabla (0b R11):** la tabla de productos del pedido no tiene detalle (filas no clicables); el SKU es un enlace a su kardex (`/inventario/:varianteId`).
 - **Estados:** conflicto (409), acción en curso, pedido final (sin acciones).
-- **Endpoints:** `GET /admin/pedidos/{id}`, `PATCH /admin/pedidos/{id}/estado`, `PATCH /admin/pedidos/{id}/cancelar`.
+- **Endpoints:** `GET /admin/pedidos/{id}` (incluye `reembolsoPostventa: {permitido, maximo, venceEl}`), `PATCH /admin/pedidos/{id}/estado`, `PATCH /admin/pedidos/{id}/cancelar`, `POST /admin/pedidos/{id}/reembolsos`.
 
 ## 5. Backend
 
@@ -363,7 +398,7 @@ Todo según el micro de order. Decisiones de implementación de esta spec:
 | O3 | **Pedidos de un cliente con el mismo listado** ✅ | `GET /admin/pedidos?clienteId=` reemplaza a `GET /admin/clientes/{clienteId}/pedidos` del micro: un endpoint menos y la misma pantalla P-4-05. Cambio menor al micro de order |
 | O4 | **Transiciones permitidas en la respuesta** ✅ | El detalle del backoffice incluye `transicionesPermitidas` (calculadas por `MaquinaEstadosPedido`), y el frontend solo dibuja esos botones. Las reglas viven en un solo lugar |
 | O5 | **Conflictos con `version`** ✅ | `PATCH …/estado` y `…/cancelar` llevan la `version` del pedido que vio el operador → 409 si cambió (CA-4-48). Los eventos internos usan la actualización condicional del micro (4.4) |
-| O6 | **Ventas por fecha de pago** ✅ | El resumen toma la fecha del historial `→ PAGADO` (índice `(estado_nuevo, creado_en)` en `pedido_historial`, por migración) y excluye los pedidos que terminaron `CANCELADO` |
+| O6 | **Ventas por fecha de pago** ✅ | El resumen toma la fecha del historial `→ PAGADO` (índice `(estado_nuevo, creado_en)` en `pedido_historial`, por migración) y excluye los pedidos que terminaron `CANCELADO`; resta `monto_reembolsado` (postventa) |
 | O7 | **Contador del carrito = unidades** ✅ | La respuesta del carrito incluye `cantidadTotal`; el frontend actualiza `CarritoContador` (0b R8) tras cada cambio, al iniciar la tienda y después de la fusión |
 | O8 | **Sin actualización en vivo** ✅ | Mis pedidos y el backoffice se actualizan al recargar o al volver a la pestaña (KISS); sin WebSocket ni sondeo |
 | O9 | **Descripción de cada etapa del seguimiento** ✅ | Textos fijos del frontend en `mis-pedidos/etapas.ts` (no editables en settings, KISS), debajo del nombre de cada etapa. Ver la tabla siguiente |
@@ -386,7 +421,8 @@ Todo según el micro de order. Decisiones de implementación de esta spec:
 
 - **Migración** `VAAAAMMDD_HHMM__indice_historial_estado.sql`: índice `pedido_historial (estado_nuevo, creado_en)` para el resumen de ventas (O6).
 - **Sin datos semilla** en producción (los pedidos los crean los clientes).
-- **Datos de demostración (solo `dev`):** 10 pedidos del cliente demo de la spec 1 y de 3 clientes más, en todos los estados (uno por expirar en 10 minutos, uno de recojo `LISTO_RECOJO`, uno por agencia `ENVIADO` con código de seguimiento, dos `ENTREGADO` del mes y uno `CANCELADO` con reembolso), con sus historiales. Se insertan sin eventos ni reservas (son solo para ver las pantallas).
+- **Migración** `VAAAAMMDD_HHMM__reembolso_postventa.sql`: tabla `pedido_reembolso` y columna `pedido.monto_reembolsado` (micro de order v6), si la `V1` de la 0a no las incluye ya.
+- **Datos de demostración (solo `dev`):** 10 pedidos del cliente demo de la spec 1 y de 3 clientes más, en todos los estados (uno por expirar en 10 minutos, uno de recojo `LISTO_RECOJO`, uno por agencia `ENVIADO` con código de seguimiento, dos `ENTREGADO` del mes, uno de ellos con un reembolso postventa parcial, y uno `CANCELADO` con reembolso), con sus historiales. Se insertan sin eventos ni reservas (son solo para ver las pantallas).
 
 ## 7. Pruebas
 
@@ -402,8 +438,9 @@ Todo según el micro de order. Decisiones de implementación de esta spec:
 | 38–39, 49–50 | Unitaria + API | `MaquinaEstadosPedidoTest` (tabla parametrizada de todas las transiciones y actores), `CancelacionTest` |
 | 40–42 | Datos + API | `PedidoSpecificationsTest` (cada filtro y combinados), contadores por estado |
 | 43–48 | API + integración | `AdminPedidoControllerTest` (permisos, transiciones, 409 por versión), `SagaPedidoIT` (`EntregaActualizada`) |
-| 51–53 | Datos + API | `ResumenVentasQueriesTest` (fecha de pago, sin cancelados), 403 a OPERADOR |
-| Todas | Postman | `postman/order.postman_collection.json`: carrito anónimo → login y fusión → resumen → confirmar → pago simulado (evento publicado a mano) → seguimiento; flujo del operador hasta entregado y recojo |
+| 51–53 | Datos + API | `ResumenVentasQueriesTest` (fecha de pago, sin cancelados, neto de reembolsos), 403 a OPERADOR |
+| 54–59 | Unitaria + API + integración | `ReembolsoPostventaServiceTest` (plazo dentro, fuera y 0, suma ≤ total, monto propuesto), `AdminPedidoControllerTest` (403 a OPERADOR), `SagaPedidoIT` (`PagoReembolsado` actualiza el pedido), `dialogo-reembolso.spec.ts` |
+| Todas | Postman | `postman/order.postman_collection.json`: carrito anónimo → login y fusión → resumen → confirmar → pago simulado (evento publicado a mano) → seguimiento; flujo del operador hasta entregado y recojo; reembolso postventa parcial con `PagoReembolsado` publicado a mano |
 
 ## 8. Archivos y carpetas que toca
 
@@ -420,8 +457,8 @@ Todo según el micro de order. Decisiones de implementación de esta spec:
 
 ## 9. Definición de terminado
 
-- [ ] CA-4-01 a CA-4-53 cumplidos en CI (el 26 en `stage`).
+- [ ] CA-4-01 a CA-4-59 cumplidos en CI (el 26 en `stage`).
 - [ ] Postman `order` en verde y k6 con p95 < 2 s.
 - [ ] El OpenAPI de order coincide con lo implementado; los eventos coinciden con el AsyncAPI.
-- [ ] Demostración: carrito anónimo → login → checkout → pedido en PENDIENTE_PAGO → (pago simulado) → el operador lo prepara y despacha → el cliente ve la línea de tiempo.
+- [ ] Demostración: carrito anónimo → login → checkout → pedido en PENDIENTE_PAGO → (pago simulado) → el operador lo prepara y despacha → el cliente ve la línea de tiempo → el admin registra un reembolso postventa parcial.
 - [ ] Revisado y aprobado por el autor.
