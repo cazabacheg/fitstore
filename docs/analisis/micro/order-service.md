@@ -21,7 +21,7 @@
 
 **Hace:**
 - **Módulo carrito:** carrito anónimo y de cliente, fusión al iniciar sesión, precios y descuentos siempre actualizados (consultando a catalog).
-- **Módulo pedidos:** checkout (resumen y confirmación), creación del pedido con **copia** (snapshot) de productos, precios, descuentos, destinatario, dirección y envío; máquina de estados; historial; expiración de pedidos sin pago; cancelación; consulta para el cliente (mis pedidos, seguimiento) y gestión en el backoffice.
+- **Módulo pedidos:** checkout (resumen y confirmación), creación del pedido con **copia** (snapshot) de productos, precios, descuentos, destinatario, dirección y envío; máquina de estados; historial; expiración de pedidos sin pago; cancelación; **reembolso postventa** de pedidos entregados (4.8); consulta para el cliente (mis pedidos, seguimiento) y gestión en el backoffice.
 - **Estado de la saga** de checkout y pago (ADR-009): el estado del pedido es el estado de la saga.
 
 **No hace:**
@@ -287,7 +287,7 @@ sequenceDiagram
 | Staff | `PENDIENTE_PAGO`, `PAGADO`, `EN_PREPARACION` (motivo obligatorio) | Igual |
 
 - Publica `PedidoCancelado {fuePagado, motivo, actor}`.
-- **Después de `LISTO_DESPACHO` ya no se cancela**: el pedido ya salió o está por salir; un retorno sería una devolución, fuera de alcance. Así delivery no necesita escuchar cancelaciones (KISS).
+- **Después de `LISTO_DESPACHO` ya no se cancela**: el pedido ya salió o está por salir. Así delivery no necesita escuchar cancelaciones (KISS). Si una vez entregado hay un problema, se usa el **reembolso postventa** (4.8).
 
 ### 4.8 Reembolso postventa (CU-25, RF-ORD-11)
 
@@ -423,7 +423,7 @@ Stack y versiones comunes: [`docs/arquitectura/stack-versiones.md`](../../arquit
 | Capa | Componentes |
 |---|---|
 | Controladores | `CarritoController`, `CheckoutController`, `PedidoController`, `AdminPedidoController` |
-| Servicios | `CarritoService`, `CheckoutService`, `PedidoService`, `MaquinaEstadosPedido` (pura), `ResumenVentasService` |
+| Servicios | `CarritoService`, `CheckoutService`, `PedidoService`, `MaquinaEstadosPedido` (pura), `ResumenVentasService`, `ReembolsoPostventaService` |
 | Procesos | `ExpiradorPedidos` (`@Scheduled`), `ConsumidorEventos` (`@RabbitListener`) |
 | Clientes Feign | `CatalogClient`, `AuthClient`, `DeliveryClient`, `SettingsClient` (todos con Resilience4j) |
 | Repositorios | `PedidoRepository` (JPA), `CarritoRepository` (Redis) |
@@ -482,12 +482,12 @@ com.fitstore.order
 │   ├── dto, mapper   PedidoMapper, PedidoItemMapper
 │   ├── model         Pedido (+ @Embeddable Destinatario, DireccionEnvio, Envio), PedidoItem, HistorialEstado, enums
 │   ├── repository    PedidoRepository, PedidoSpecifications, ResumenVentasQueries
-│   ├── service       CheckoutService, PedidoService, ResumenVentasService
+│   ├── service       CheckoutService, PedidoService, ResumenVentasService, ReembolsoPostventaService
 │   │   └── dominio   MaquinaEstadosPedido
 │   └── messaging     ConsumidorEventos, ExpiradorPedidos
 ├── client            CatalogClient, AuthClient, DeliveryClient, SettingsClient (+ DTOs de cada API)
 └── event             PedidoCreado, PedidoPagado, PedidoCancelado, PedidoExpirado, PagoNoAplicable,
-                      PedidoListoDespacho, PedidoListoRecojo, PedidoRecogido
+                      PedidoListoDespacho, PedidoListoRecojo, PedidoRecogido, ReembolsoSolicitado
 ```
 
 ### 10.4 Dependencias
@@ -548,7 +548,7 @@ fitstore:
 |---|---|
 | PostgreSQL `order_db` | Tablas de 3.1 y secuencia `pedido_codigo_seq` |
 | Redis (prefijo `order:`) | Carritos, última cotización, caché de settings |
-| RabbitMQ | Publica `order.*` (8 eventos). Cola `order.eventos` enlazada a `payment.pago.confirmado`, `payment.pago.rechazado`, `payment.boleta.emitida`, `delivery.entrega.actualizada`; DLQ |
+| RabbitMQ | Publica `order.*` (9 eventos). Cola `order.eventos` enlazada a `payment.pago.confirmado`, `payment.pago.rechazado`, `payment.boleta.emitida`, `payment.reembolso.completado`, `delivery.entrega.actualizada`; DLQ |
 | Servicios | catalog, auth, delivery, settings vía Feign + Eureka |
 
 ---

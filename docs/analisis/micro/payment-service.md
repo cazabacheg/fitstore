@@ -23,7 +23,7 @@
 - Crea una **intención de pago** por pedido al recibir `PedidoCreado`, con el monto, los ítems y los datos del cliente (RF-PAY-00).
 - Procesa **cargos** con Culqi (**tarjeta y Yape**), Mercado Pago o el proveedor simulado, detrás de la interfaz `PaymentProvider` (Strategy + capa anticorrupción, ADR-016).
 - Recibe y verifica **webhooks** de las pasarelas, de forma idempotente.
-- Ejecuta **reembolsos** automáticos (cancelación de un pedido pagado, `PagoNoAplicable`) con reintentos y alerta si fallan.
+- Ejecuta **reembolsos** automáticos, siempre originados en el pedido: totales (cancelación de un pedido pagado, `PagoNoAplicable`) y postventa totales o parciales (`ReembolsoSolicitado`), con reintentos y alerta si fallan.
 - Emite la **boleta simulada** en PDF (RF-PAY-08) y la sirve solo al dueño y al staff.
 - Muestra pagos, transacciones y reembolsos en el backoffice (CU-25).
 
@@ -258,7 +258,7 @@ Fuera del MVP. Se usan las tarjetas de prueba del sandbox que no exigen autentic
 
 - Un proceso toma los reembolsos `PENDIENTE` y llama a `reembolsar()`. Éxito → `COMPLETADO`; la intención pasa a `REEMBOLSADA` si la suma reembolsada iguala el monto, o a `REEMBOLSADA_PARCIAL` si no; publica `PagoReembolsado`.
 - Error → reintentos con espera creciente: **1, 5, 15 y 60 min**. Tras el 4.º fallo → `FALLIDO` y publica `ReembolsoFallido` (alerta al admin). La intención no cambia: el estado en curso o fallido vive en cada reembolso.
-- El admin puede **reintentar** (vuelve a `PENDIENTE`) o **marcar como resuelto manualmente** (por ejemplo, devolvió el dinero por transferencia), con nota obligatoria.
+- El admin puede **reintentar** (vuelve a `PENDIENTE`) o **marcar como resuelto manualmente** (por ejemplo, devolvió el dinero por transferencia), con nota obligatoria. Resuelto manualmente cuenta como completado: actualiza la intención y publica `PagoReembolsado` con `manual = true`.
 
 ### 4.6 Boleta simulada (T6, RF-PAY-08)
 
@@ -308,7 +308,7 @@ Exchange `fitstore.eventos` (topic), sobre común, outbox e idempotencia (ADR-00
 | `PagoConfirmado` | `payment.pago.confirmado` | `pedidoId`, `intencionId`, `transaccionId`, `proveedor`, `monto`, `confirmadoEn` | order |
 | `PagoRechazado` | `payment.pago.rechazado` | `pedidoId`, `proveedor`, `motivo` | order (historial) |
 | `BoletaEmitida` | `payment.boleta.emitida` | `pedidoId`, `numero`, `url` (endpoint autenticado de descarga) | order, notification (adjunto) |
-| `PagoReembolsado` ✅ **nuevo** | `payment.reembolso.completado` | `pedidoId`, `codigoPedido`, `solicitudId` (solo postventa), `monto`, `parcial`, `motivo`, `cliente` (nombre, email) | notification (avisa al cliente) |
+| `PagoReembolsado` ✅ **nuevo** | `payment.reembolso.completado` | `pedidoId`, `codigoPedido`, `solicitudId` (solo postventa), `monto`, `parcial`, `motivo`, `manual`, `cliente` (nombre, email) | notification (avisa al cliente) |
 | `ReembolsoFallido` ✅ **nuevo** | `payment.reembolso.fallido` | `pedidoId`, `codigoPedido`, `monto`, `ultimoError`, `intentos` | notification (alerta al admin) |
 
 **Consume:** `PedidoCreado`, `PedidoCancelado`, `PedidoExpirado`, `PagoNoAplicable`, `ReembolsoSolicitado` (order).
@@ -522,7 +522,7 @@ Un proveedor sin credenciales no se ofrece en la página de pago (3.3).
 |---|---|
 | PostgreSQL `payment_db` | Tablas de 3.1 |
 | Redis (prefijo `payment:`) | Caché de settings |
-| RabbitMQ | Publica `payment.*` (5 eventos). Cola `payment.eventos` enlazada a `order.pedido.creado`, `order.pedido.cancelado`, `order.pedido.expirado`, `order.pago.no-aplicable`; DLQ |
+| RabbitMQ | Publica `payment.*` (5 eventos). Cola `payment.eventos` enlazada a `order.pedido.creado`, `order.pedido.cancelado`, `order.pedido.expirado`, `order.pago.no-aplicable`, `order.reembolso.solicitado`; DLQ |
 | Garage | Bucket **privado** `fitstore-privado`, prefijo `boletas/` |
 | Externos | Culqi y Mercado Pago (sandbox); sus webhooks entran por Caddy → gateway |
 

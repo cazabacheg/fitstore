@@ -2,11 +2,11 @@
 
 > Versión: **v3 (borrador)** — 2026-10-18 · Estados: ✅ decidido · 🟡 propuesto · ❓ abierto
 > **Dueña de:** `backend/payment-service` (intención, cobros, webhooks, reembolsos, boleta) · tienda: `features/pago` · backoffice: `features/pagos`.
-> **Depende de:** 0a, 0b, 1 (sesión) · usa el contrato de eventos de order (`PedidoCreado`, `PedidoCancelado`, `PedidoExpirado`, `PagoNoAplicable`, `ReembolsoSolicitado`) y `GET /settings/public` · **Habilita:** 4 (el pedido pasa a `PAGADO` y guarda la boleta), 7 (correos de pago, reembolso y alerta con la boleta adjunta), 8 (demo de punta a punta).
+> **Depende de:** 0a, 0b, 1 (sesión) · usa el contrato de eventos de order (`PedidoCreado`, `PedidoCancelado`, `PedidoExpirado`, `PagoNoAplicable`, `ReembolsoSolicitado`) y `GET /settings/public` · **Habilita:** 4 (el pedido pasa a `PAGADO`, guarda la boleta y registra lo reembolsado), 7 (correos de pago, reembolso y alerta con la boleta adjunta), 8 (demo de punta a punta).
 > **Contratos:** `contracts/openapi/payment-service.yaml`; eventos que publica `PagoConfirmado`, `PagoRechazado`, `BoletaEmitida`, `PagoReembolsado`, `ReembolsoFallido`.
 
 **Historial:**
-- v3 (2026-10-18): **reembolso postventa**: además de la cancelación, un pedido entregado puede reembolsarse total o parcialmente desde el pedido (SPEC-4 HU-4-12); varios reembolsos por pago; la intención pasa a `REEMBOLSADA_PARCIAL` / `REEMBOLSADA` y el estado fallido vive en cada reembolso (P8). Micros de payment v6, order v6, settings v8; macro v20; SPEC-3 v4 y SPEC-4 v4.
+- v3 (2026-10-18): **reembolso postventa**: además de la cancelación, un pedido entregado puede reembolsarse total o parcialmente desde el pedido (SPEC-4 HU-4-12); varios reembolsos por pago; la intención pasa a `REEMBOLSADA_PARCIAL` / `REEMBOLSADA` y el estado fallido vive en cada reembolso (P8). Micros de payment v6, order v6, settings v8, notification v6; macro v20; SPEC-3 v4 y SPEC-4 v4. Revisión completa de las menciones de reembolso (alcance, resolución manual con `PagoReembolsado`, datos, Postman, demo).
 - v2 (2026-10-18): P1 ✅ la prueba de concepto del sandbox es la primera tarea de la implementación; P2 ✅ se mantiene el proveedor simulado (respaldo de la demo y pruebas sin internet).
 - v1 (2026-10-18): borrador inicial.
 
@@ -16,24 +16,24 @@
 
 ## 1. Objetivo y alcance
 
-Al cerrar esta spec, el cliente **paga su pedido** con tarjeta o Yape (Culqi), con Mercado Pago o, en la demo, con el proveedor simulado, **sin que el backend vea nunca su tarjeta** y **sin que se le cobre dos veces**. Recibe su **boleta simulada** en PDF. Si el pedido se cancela después del pago, el **reembolso es automático**, y el admin ve todos los pagos y atiende los reembolsos que fallen.
+Al cerrar esta spec, el cliente **paga su pedido** con tarjeta o Yape (Culqi), con Mercado Pago o, en la demo, con el proveedor simulado, **sin que el backend vea nunca su tarjeta** y **sin que se le cobre dos veces**. Recibe su **boleta simulada** en PDF. Si el pedido se cancela después del pago, o si la tienda registra un **reembolso postventa** (total o parcial) de un pedido entregado, el **reembolso se ejecuta automáticamente**; el admin ve todos los pagos y atiende los reembolsos que fallen.
 
 **Incluye:**
 - **Primero, la prueba de concepto del sandbox** (R16, P1): Culqi con tarjeta y Yape, Mercado Pago con Payment Brick y si alguno exige 3-D Secure.
-- Toda la lógica de [`payment-service`](../analisis/micro/payment-service.md): intención por pedido, cobro con bloqueo e idempotencia, adaptadores `CulqiProvider`, `MercadoPagoProvider` y `SimuladoProvider`, webhooks verificados, verificador de pagos en curso, reembolsos con reintentos, boleta en PDF privada, backoffice de pagos y reembolsos.
+- Toda la lógica de [`payment-service`](../analisis/micro/payment-service.md): intención por pedido, cobro con bloqueo e idempotencia, adaptadores `CulqiProvider`, `MercadoPagoProvider` y `SimuladoProvider`, webhooks verificados, verificador de pagos en curso, ejecución de reembolsos totales (cancelación, `PagoNoAplicable`) y postventa totales o parciales con reintentos, boleta en PDF privada, backoffice de pagos y reembolsos.
 - Pantallas P-5-01 a P-5-05 y el diseño de la boleta (P-5-06).
 - Colección Postman `payment`.
 
 **No incluye (y dónde va):**
 - Cambiar el estado del pedido → spec 4 (consume los eventos de esta spec).
 - Correos de pago confirmado (con la boleta adjunta), pago rechazado, reembolso y alerta de reembolso fallido → spec 7 (aquí se publican los eventos y se expone `/internal/v1/boletas/{numero}`).
-- Botón "Reembolsar" suelto en la pantalla de pagos: no existe (D4 del micro). Para devolver dinero se **cancela el pedido** o se registra un **reembolso postventa** desde el pedido entregado (spec 4, HU-4-12); aquí se ejecuta.
+- **Registrar** un reembolso postventa (elegir prendas, monto, motivo y validar el plazo) → spec 4 (HU-4-12, desde el detalle del pedido). Esta spec solo lo **ejecuta** al recibir `ReembolsoSolicitado`.
 - 3-D Secure → solo si la prueba de concepto muestra que el sandbox lo exige (micro 4.3.2); entonces se agrega a esta spec.
 - Política de seguridad de contenido (CSP) que permita los scripts de Culqi y Mercado Pago → spec 8 (Caddy); aquí se documentan los dominios necesarios.
 
 ## 2. Referencias
 
-- Micro [`payment-service.md`](../analisis/micro/payment-service.md): todo (D1–D7, invariantes, datos, endpoints 4.1, intención 4.2, cobro 4.3, Yape 4.3.1, 3-D Secure 4.3.2, webhooks 4.4, reembolsos 4.5, boleta 4.6, estados, eventos, dependencias, seguridad, pruebas, diseño técnico).
+- Micro [`payment-service.md`](../analisis/micro/payment-service.md) v6: todo (D1–D7, con D4 ampliada al reembolso postventa, invariantes, datos, endpoints 4.1, intención 4.2, cobro 4.3, Yape 4.3.1, 3-D Secure 4.3.2, webhooks 4.4, reembolsos 4.5, boleta 4.6, estados, eventos, dependencias, seguridad, pruebas, diseño técnico).
 - Micro de infraestructura 4.4 (rate limiting: `POST /pagos/*/cargos`, 10 por minuto por usuario).
 - Macro: CU-10, 25, 41 · RF-PAY-00 a 09 · RNF-06 · ADR-009, 016 · riesgo R16.
 - SPEC-0b: ruta `/pago/:codigo` (storefront) y `/pagos/**`, `/reembolsos` (backoffice, solo ADMIN), badge de estado de pago, tabla paginada, diálogo. SPEC-4: P-4-02 lleva a `/pago/:codigo`; P-4-04 y P-4-06 muestran la boleta.
@@ -250,7 +250,9 @@ CA-5-37  Cuando reintento un reembolso FALLIDO
          Entonces vuelve a PENDIENTE y se ejecuta de inmediato
 
 CA-5-38  Cuando lo marco como resuelto manualmente (p. ej. devolví por transferencia) con una nota obligatoria
-         Entonces queda RESUELTO_MANUAL con mi usuario y la nota, y la intención pasa a REEMBOLSADA
+         Entonces queda RESUELTO_MANUAL con mi usuario y la nota, cuenta como reembolsado (la intención pasa a
+              REEMBOLSADA o REEMBOLSADA_PARCIAL según la suma) y se publica PagoReembolsado con manual = true,
+              para que el pedido se actualice y la clienta reciba el aviso
 ```
 
 ## 4. Pantallas
@@ -321,7 +323,7 @@ Todo según el micro de payment. Decisiones de implementación de esta spec:
 ## 6. Datos
 
 - **Sin migraciones nuevas:** el esquema completo y la fila de la serie `B001` en `correlativo_boleta` vienen en `V1` (spec 0a). Si la 0a no la sembró, esta spec agrega `VAAAAMMDD_HHMM__serie_boleta.sql`.
-- **Datos de demostración (solo `dev`):** las intenciones, transacciones (un pago aprobado tras un rechazo), un reembolso `COMPLETADO`, uno `FALLIDO` y las boletas de los pedidos de demostración de la spec 4, con PDF generados al iniciar.
+- **Datos de demostración (solo `dev`):** las intenciones, transacciones (un pago aprobado tras un rechazo), un reembolso `COMPLETADO` por cancelación, uno postventa parcial `COMPLETADO` (el de la spec 4), uno `FALLIDO` y las boletas de los pedidos de demostración de la spec 4, con PDF generados al iniciar.
 - **Llaves de prueba:** en `.env` (fuera del repo) y en los *secrets* de GitHub para la nube; `.env.example` documenta los nombres.
 
 ## 7. Pruebas
@@ -338,7 +340,7 @@ Todo según el micro de payment. Decisiones de implementación de esta spec:
 | 30–32, 39–40 | Integración | `ReembolsoServiceTest` (esperas 1-5-15-60 con reloj simulado, total único por intención, parciales con suma ≤ monto y concurrencia, `ReembolsoSolicitado` duplicado), WireMock de reembolso parcial en Culqi y Mercado Pago |
 | 33–38 | API + componente | `AdminPagoControllerTest` (filtros, 403 a OPERADOR), `reembolsos.page.spec.ts` |
 | Manual | Sandbox real | Guion de `docs/pruebas/poc-pagos.md` repetido al cerrar la spec (para el video) |
-| Todas | Postman | `postman/payment.postman_collection.json`: pago simulado aprobado, rechazado y en curso, descarga de boleta, webhook simulado, reembolso tras cancelación |
+| Todas | Postman | `postman/payment.postman_collection.json`: pago simulado aprobado, rechazado y en curso, descarga de boleta, webhook simulado, reembolso tras cancelación, reembolso postventa parcial (evento publicado a mano) y resolución manual |
 
 ## 8. Archivos y carpetas que toca
 
@@ -359,5 +361,5 @@ Todo según el micro de payment. Decisiones de implementación de esta spec:
 - [ ] CA-5-01 a CA-5-40 cumplidos en CI.
 - [ ] Postman `payment` en verde.
 - [ ] El OpenAPI de payment coincide con lo implementado; los eventos coinciden con el AsyncAPI.
-- [ ] Demostración en sandbox: pago con tarjeta de Culqi, con Yape (o con el simulado si el sandbox no lo permite, documentado), con Mercado Pago, un rechazo con reintento y un reembolso tras cancelar.
+- [ ] Demostración en sandbox: pago con tarjeta de Culqi, con Yape (o con el simulado si el sandbox no lo permite, documentado), con Mercado Pago, un rechazo con reintento, un reembolso tras cancelar y un reembolso postventa parcial.
 - [ ] Revisado y aprobado por el autor.

@@ -469,7 +469,8 @@ flowchart LR
 | `PagoConfirmado` / `PagoRechazado` | payment | order |
 | `PagoNoAplicable` (pago llegó con el pedido ya expirado/cancelado) | order | payment (reembolso automático) |
 | `BoletaEmitida` (URL del PDF) | payment | notification (adjuntar al correo), order (enlace en "Mis pedidos") |
-| `PagoReembolsado` | payment | notification (aviso al cliente) |
+| `ReembolsoSolicitado` (reembolso postventa, total o parcial) | order | payment (ejecutar el reembolso) |
+| `PagoReembolsado` | payment | notification (aviso al cliente), order (registrar lo reembolsado) |
 | `ReembolsoFallido` | payment | notification (alerta al admin) |
 | `PedidoPagado` | order | catalog (confirmar reserva), notification |
 | `PedidoCancelado` / `PedidoExpirado` | order | catalog (liberar), payment (reembolsar si aplica), notification |
