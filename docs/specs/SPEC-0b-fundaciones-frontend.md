@@ -1,10 +1,11 @@
 # SPEC-0b — Fundaciones del frontend
 
-> Versión: **v8 (aprobado)** — 2026-10-19 · Estados: ✅ decidido · 🟡 propuesto · ❓ abierto
+> Versión: **v9 (aprobado)** — 2026-10-19 · Estados: ✅ decidido · 🟡 propuesto · ❓ abierto
 > **Dueña de:** workspace Angular (`frontend/`), librería `shared`, *shells* (layouts) de storefront y backoffice, rutas y menús generales, tema white-label, carpetas `ui/` de cada app, job de frontend en CI.
 > **Depende de:** 0a (gateway y CI), la etapa de contratos (OpenAPI para generar los clientes) y la etapa de diseño (**sistema de diseño**: los componentes de `ui/` se construyen según él). · **Habilita:** pantallas de las specs 1–8.
 
 **Historial:**
+- v9 (2026-10-19): por la estrategia multiagente: cobertura mínima de 80 % con Vitest en el job `frontend` (R9).
 - v8 (2026-10-19): etapa de diseño cerrada: diseños de alta fidelidad enlazados (P-0b-02).
 - v7 (2026-10-19): etapa de diseño: el tema de settings trae solo los cinco colores; la tipografía y los radios son fijos (HU-0b-02, CA-0b-05, R4). Cabecera de la tienda: hasta 4 categorías raíz, atenuación al pasar el mouse (CA-0b-20, nuevo CA-0b-20c, CA-0b-21); diseño de P-0b-01 enlazado.
 - v6 (2026-10-19): revisión de coherencia: HU-0b-06 cita RF-BO-02 (tablas con paginación, filtros y orden); menú del backoffice completo (R3: ítems, subítems, roles) y mecanismo de contadores por funcionalidad (`CONTADOR_MENU`), que necesitaba la SPEC-5 para los reembolsos fallidos (CA-0b-24).
@@ -281,7 +282,7 @@ No modifica el backend. Decisiones de implementación del frontend:
 | R6 | **Sesión** | `SesionStore` en `shared/auth` (señales: cuenta, rol, tipo; el access token solo en memoria). `iniciarSesion()` y `cerrarSesion()` los llaman las pantallas de la spec 1. Guards `autenticadoGuard`, `rolGuard('ADMIN')` |
 | R7 | **Interceptores** (en este orden) | `requestId` → `autenticacion` (Bearer) → `carritoId` (solo tienda, solo `/carrito`) → `refresco` (401 → un único refresh compartido → reintento) → `errores` (toast, banner 503, errores de campos) |
 | R8 | **Contador del carrito** | `CarritoContador` (señal en `shared/carrito`): la cabecera lo muestra y la spec 4 lo actualiza. Así 0b no depende de la lógica del carrito |
-| R9 | **Pruebas unitarias** ✅ | El *runner* por defecto del CLI de Angular 22 (Vitest) con Angular Testing Library; se verifica al crear el workspace |
+| R9 | **Pruebas unitarias** ✅ | El *runner* por defecto del CLI de Angular 22 (Vitest) con Angular Testing Library; se verifica al crear el workspace. Cobertura con `@vitest/coverage-v8`: mínimo **80 % de líneas** por proyecto (`shared`, `storefront`, `backoffice`; sin contar código generado de `shared/api`), aplicado en el job `frontend` de `ci.yml` (estrategia multiagente V0) |
 | R10 | **Accesibilidad** | Componentes de `ui/` con etiquetas, foco visible y contraste del tema (RNF-19 advierte en settings); objetivo Lighthouse ≥ 85 se mide en la spec 8 |
 | R11 | **Filas de las tablas del backoffice** ✅ | Convención única de la tabla paginada de `ui/` (`FsTabla` con `filaEnlace` y `acciones`): (1) el **identificador** de la fila (código, nombre o número) es un `<a routerLink>`; (2) **toda la fila** es clicable, con *hover*, y navega a lo mismo; (3) **última columna de acciones**, alineada a la derecha: "Ver ›" si la fila solo tiene detalle, **1 o 2 botones** si tiene acciones propias, o el menú **"⋮"** (`mat-menu`) si son 3 o más. Los clics en acciones no se propagan a la fila. Si la entidad no tiene página de detalle, el enlace abre su diálogo de edición. Cada spec indica en la pantalla qué abre el enlace y qué acciones lleva la fila |
 

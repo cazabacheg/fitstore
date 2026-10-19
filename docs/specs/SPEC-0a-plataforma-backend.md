@@ -1,11 +1,12 @@
 # SPEC-0a — Plataforma backend y esqueletos de servicios
 
-> Versión: **v5 (aprobado)** — 2026-10-19 · Estados: ✅ decidido · 🟡 propuesto · ❓ abierto
+> Versión: **v6 (aprobado)** — 2026-10-19 · Estados: ✅ decidido · 🟡 propuesto · ❓ abierto
 > **Dueña de:** monorepo, `fitstore-common`, `config-server`, `discovery-server`, `api-gateway`, `infra/` (entorno dev), CI, y el **esqueleto** de los 7 servicios de negocio.
 > **Depende de:** — · **Habilita:** todas las demás specs.
 > **Contratos:** los esqueletos exponen solo `actuator` y la documentación base; los endpoints de negocio llegan con cada spec.
 
 **Historial:**
+- v6 (2026-10-19): por la estrategia multiagente: cobertura mínima con JaCoCo (CA-0a-21), validación de contratos en CI con Redocly, AsyncAPI CLI y `oasdiff` v1.33.0 (CA-0a-22, K2), I1 con integración en `dev` y los esqueletos de 3 en 3, núcleo a cubrir en la sección 7.
 - v5 (2026-10-19): por la SPEC-8: Flyway incluye `db/dev` con los perfiles `dev` y `demo` (CA-0a-05); el adaptador Azure Blob queda diferido (Garage en la VM, I6).
 - v4 (2026-10-18): CI según la ADR-021 (`ci.yml` + `stage.yml` + plantilla de PR); sin protección de rama.
 - v3 (2026-10-18): secciones 2, 3, 4, 6, 7, 8 y 9 aprobadas → **spec aprobada**.
@@ -34,7 +35,7 @@ Al cerrar esta spec, en Lyanna se ejecuta `docker compose up` y **toda la plataf
   - clases de los eventos que publica y consume (sección 6) como `record`;
   - seguridad base (*resource server* de `fitstore-common`), `actuator/health`, OpenAPI base.
 - Imagen Docker de cada servicio (Dockerfile común de infraestructura 10.6).
-- CI en GitHub Actions según la ADR-021: `ci.yml` (PR y push a `dev`: compilación y pruebas con filtros por ruta y caché, gitleaks) y `stage.yml` (PR y push a `stage`/PR a `main`: imágenes, compose en el runner, `smoke.sh`, Postman con Newman). Plantilla de PR con la lista de verificación.
+- CI en GitHub Actions según la ADR-021: `ci.yml` (PR y push a `dev`: compilación y pruebas con filtros por ruta y caché, cobertura con JaCoCo, gitleaks, validación de contratos) y `stage.yml` (PR y push a `stage`/PR a `main`: imágenes, compose en el runner, `smoke.sh`, Postman con Newman). Plantilla de PR con la lista de verificación.
 - Colección Postman base: *health* de todos los servicios a través del gateway.
 
 **No incluye (y dónde va):**
@@ -192,6 +193,19 @@ CA-0a-20  CI
           Dado un pull request que solo modifica backend/catalog-service
           Cuando se ejecuta GitHub Actions
           Entonces compila y prueba fitstore-common y catalog-service, usando caché de Maven
+
+CA-0a-21  Cobertura mínima
+          Dado un módulo con menos de 80 % de líneas cubiertas (sin contar configuración, DTOs,
+               clases Application ni código generado)
+          Cuando se ejecuta ./mvnw verify
+          Entonces la verificación de JaCoCo falla e indica el módulo y su cobertura
+
+CA-0a-22  Contratos en CI
+          Dado un pull request
+          Cuando se ejecuta ci.yml
+          Entonces Redocly valida los OpenAPI de contracts/ y AsyncAPI CLI valida fitstore-eventos.yaml
+          Y para cada servicio listado en contracts/implementados.txt, oasdiff breaking compara su contrato
+               con el OpenAPI que genera el servicio y falla si hay un cambio incompatible
 ```
 
 ## 4. Pantallas
@@ -204,11 +218,13 @@ Todo está definido en [`infraestructura.md`](../analisis/micro/infraestructura.
 
 | # | Decisión | Detalle |
 |---|---|---|
-| I1 | **Orden de construcción interno** ✅ | **0a.1** monorepo, `fitstore-common`, infraestructura (compose, config, Eureka, gateway) → **0a.2** los 7 esqueletos, **en paralelo** (no comparten archivos) → **0a.3** CI, smoke y Postman. 0a.2 empieza cuando 0a.1 está en `main` |
+| I1 | **Orden de construcción interno** ✅ | **0a.1** monorepo, `fitstore-common`, infraestructura (compose, config, Eureka, gateway) → **0a.2** los 7 esqueletos, **de 3 en 3** (no comparten archivos; estrategia multiagente O1) → **0a.3** CI, smoke y Postman. 0a.1 deja una base mínima de los 7 servicios (módulo Maven, clase `Application`, `Dockerfile`, entrada en el POM padre y en el compose) para que en 0a.2 cada agente solo toque su carpeta y su YAML. 0a.2 empieza cuando 0a.1 está en `dev`; cada paso entra por su PR |
 | I2 | **JWKS de prueba** ✅ | Mientras auth no firma (spec 1), `infra/dev/jwks-prueba.json` y su clave privada de prueba (solo dev, marcada como tal) permiten probar la validación del gateway y de los servicios. Se elimina al cerrar la spec 1 |
 | I3 | **Seguridad base de los esqueletos** ✅ | Todo cerrado salvo `/actuator/health` y la documentación OpenAPI; cada spec abre sus endpoints con `@PreAuthorize` |
 | I4 | **Topología de RabbitMQ** | La declara cada servicio al arrancar (`TopologiaRabbit` de `fitstore-common`): el exchange `fitstore.eventos`, su cola, sus enlaces y su DLQ, según su sección 10.6 |
 | I5 | **Buckets de Garage** ✅ | Un contenedor de inicialización (`garage-init`) crea la clave de acceso y los dos buckets la primera vez, y deja el público con lectura anónima |
+| I7 | **Cobertura** ✅ | `jacoco-maven-plugin` 0.8.15 en el POM padre: `report` y `check` en `verify`, mínimo **0,80 de líneas** por módulo; excluye `**/config/**`, `**/dto/**`, `**/*Application.class` y código generado |
+| I8 | **OpenAPI generado para `oasdiff`** ✅ | Cada esqueleto trae `ContratoOpenApiTest` (`@SpringBootTest` + MockMvc) que guarda `GET /v3/api-docs` en `target/openapi.json` (springdoc en `openapi_3_0`, K2). `scripts/contrato.sh <servicio>` corre `oasdiff breaking` (v1.33.0, imagen `tufin/oasdiff`) entre `contracts/openapi/<servicio>.yaml` y ese archivo. En CI solo se aplica a los servicios de `contracts/implementados.txt` (vacío al cerrar 0a; cada spec agrega el suyo al terminar), porque antes el contrato tiene endpoints que el código aún no expone |
 | I6 | **Semillas en `V1`** | Las tablas maestras aprobadas se siembran en la misma migración o en `V2__semilla.sql` del servicio dueño: ubigeo INEI (settings), plantillas (notification), agencias y tarifas (delivery), tallas, colores y política de descuentos (catalog), configuración inicial de tienda (settings) |
 
 ## 6. Datos
@@ -229,6 +245,12 @@ Todo está definido en [`infraestructura.md`](../analisis/micro/infraestructura.
 | 14, 15 | Integración | `fitstore-common/src/test` (PostgreSQL + RabbitMQ Testcontainers) |
 | 16 | Integración | `fitstore-common/src/test` (Garage en Testcontainers) |
 | 18 | CI | `.gitignore` + paso **gitleaks** en `ci.yml` (el *secret scanning* nativo de GitHub no está disponible en repos privados del plan gratuito) |
+| 21 | Build | `jacoco:check` en `./mvnw verify` (probar con un módulo por debajo del umbral) |
+| 22 | CI | pasos de contratos en `ci.yml` y `scripts/contrato.sh`; `ContratoOpenApiTest` en cada esqueleto |
+
+**Núcleo a cubrir por completo (estrategia multiagente V0):** `fitstore-common` (outbox y su publicador, consumidor idempotente y DLQ, `FileStorage` y sus adaptadores, manejo de errores `ApiResponse`, *resource server*), filtros del gateway (JWT, rate limiting, bloqueo de `/internal`, fallback 503, `X-Request-Id`) y los repositorios con reglas (reserva atómica de stock, correlativo de reclamos, búsqueda jerárquica de tarifas).
+
+**Convención de nombres:** cada prueba o verificación lleva el id del criterio (`@DisplayName("CA-0a-14 …")`; en `smoke.sh` y en los workflows, un comentario `# CA-0a-02`), para que `scripts/ca-cobertura.sh` lo encuentre.
 
 **Pruebas de capa de datos por servicio (CA-0a-06):**
 
@@ -256,13 +278,14 @@ Total: **29 repositorios** con pruebas de datos.
 | `infra/config-repo/application.yml` | crea | **congelado** |
 | `infra/config-repo/<servicio>*.yml` | crea | pasa a su spec dueña |
 | `infra/docker-compose.yml`, `docker-compose.dev.yml`, `.env.example`, `postgres/`, `garage/`, `smoke.sh`, `dev/` | crea | congelados (spec 8 agrega `docker-compose.cloud.yml` y `caddy/`) |
+| `scripts/contrato.sh`, `contracts/implementados.txt` | crea | `contrato.sh` congelado; `implementados.txt` lo amplía cada spec al cerrar |
 | `.github/workflows/ci.yml`, `.github/workflows/stage.yml`, `.github/pull_request_template.md` | crea | congelados (0b agrega el job de frontend; la spec 8 crea `deploy.yml`) |
 | `postman/fitstore-base.postman_collection.json`, `postman/local.postman_environment.json` | crea | cada spec agrega su colección |
 | `docs/` | solo lectura | |
 
 ## 9. Definición de terminado
 
-- [ ] CA-0a-01 a CA-0a-20 cumplidos (pruebas en CI y `smoke.sh` en Lyanna).
+- [ ] CA-0a-01 a CA-0a-22 cumplidos (pruebas en CI y `smoke.sh` en Lyanna).
 - [ ] Repositorio privado `cazabacheg/fitstore` con `dev` como rama por defecto y el flujo de la ADR-021 (sin reglas forzadas).
 - [ ] `README.md` con cómo levantar el entorno dev (sin atribución de IA).
 - [ ] Revisado y aprobado por el autor.

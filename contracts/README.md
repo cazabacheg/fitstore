@@ -55,7 +55,7 @@ Versiones fijadas (con más de dos semanas de publicadas):
 | Redocly CLI | `@redocly/cli@2.57.0` | `npx @redocly/cli@2.57.0 lint --config contracts/redocly.yaml contracts/openapi/*-service.yaml` en `ci.yml` (SPEC-0a) |
 | AsyncAPI CLI | `@asyncapi/cli@6.2.0` | `npx @asyncapi/cli@6.2.0 validate contracts/asyncapi/fitstore-eventos.yaml` |
 | OpenAPI Generator | `openapitools/openapi-generator-cli:v7.10.0` | Clientes `typescript-angular` (SPEC-0b R5). Con OpenAPI 3.0.3 no hay avisos; se verificó con auth que genera bien el envoltorio `allOf`, los nulos (`string \| null`), los enums, las páginas con nombre y las referencias a `comun.yaml` |
-| oasdiff | se fija en la SPEC-0a | `oasdiff breaking` entre el contrato y el OpenAPI generado por cada servicio (K2) |
+| oasdiff | `tufin/oasdiff:v1.33.0` (SPEC-0a I8) | `oasdiff breaking` entre el contrato y el OpenAPI generado por cada servicio de `contracts/implementados.txt` (K2) |
 
 ## 5. Estado
 
