@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Detalle de mi pedido</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="ds/fitstore/components/bundle.css">
+<link rel="stylesheet" href="marca.css">
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+body{margin:0;padding:0}
+a{color:inherit}
+.mp-fila{display:flex;justify-content:space-between;gap:12px;font-variant-numeric:tabular-nums}
+.mp-etapa{display:grid;gap:2px;padding-top:2px}
+.mp-etapa b{font-weight:600}
+.pendiente .mp-etapa b{color:var(--fs-color-texto-suave);font-weight:500}
+</style>
+</helmet>
+<div data-theme="{{marca}}" style="font-family: var(--fs-font-marca); background: var(--fs-color-fondo); color: var(--fs-color-texto); font-size: 15px; line-height: 24px; min-height: 100%;">
+  <dc-import name="TiendaCabecera" actual="ninguna" hint-size="100%,80px"></dc-import>
+
+  <main class="fs-pagina" style="padding-block: 32px 80px; display: grid; gap: 28px;">
+    <div style="display: grid; gap: 8px;">
+      <nav class="fs-migas" aria-label="Migas"><a href="MisPedidos.dc.html">Mis pedidos</a><span aria-hidden="true">/</span><span>FS-000124</span></nav>
+      <div style="display: flex; flex-wrap: wrap; gap: 12px; align-items: center;">
+        <h1 class="fs-titulo-pagina">Pedido <span class="fs-codigo" style="font-size: inherit; font-weight: 700;">FS-000124</span></h1>
+        <span class="fs-insignia fs-insignia--info"><span class="fs-icono" aria-hidden="true">local_shipping</span>Enviado</span>
+      </div>
+      <span style="color: var(--fs-color-texto-suave);">Hecho el jueves 22 de octubre a las 10:14</span>
+    </div>
+
+    <div class="fs-dos-columnas" style="gap: 48px;">
+      <section class="fs-tarjeta" style="display: grid; gap: 20px;">
+        <h2 class="fs-titulo-seccion">Seguimiento</h2>
+        <ol class="fs-linea-tiempo">
+          <sc-for list="{{etapas}}" as="e" hint-placeholder-count="6">
+            <li class="{{e.clase}}">
+              <span class="fs-linea-tiempo__punto"><span class="fs-icono" style="font-size: 16px;" aria-hidden="true">{{e.icono}}</span></span>
+              <div class="mp-etapa">
+                <div class="fs-entre" style="align-items: baseline; flex-wrap: wrap;"><b>{{e.nombre}}</b><span class="fs-suave">{{e.fecha}}</span></div>
+                <span style="font-size: 14px; color: var(--fs-color-texto-suave);">{{e.descripcion}}</span>
+              </div>
+            </li>
+          </sc-for>
+        </ol>
+      </section>
+
+      <aside style="display: grid; gap: 20px; align-content: start;">
+        <section class="fs-tarjeta" style="display: grid; gap: 12px;">
+          <h2 class="fs-titulo-seccion">Productos</h2>
+          <sc-for list="{{items}}" as="i" hint-placeholder-count="4">
+            <div style="display: flex; gap: 12px; align-items: center;">
+              <div class="fs-miniatura" style="width: 44px;"><span class="fs-icono" style="font-size: 16px;" aria-hidden="true">checkroom</span></div>
+              <div style="flex: 1; min-width: 0; display: grid;"><span style="font-weight: 500; font-size: 14px;">{{i.nombre}}</span><span class="fs-suave">{{i.variante}}</span></div>
+              <span style="font-size: 14px; font-variant-numeric: tabular-nums;">{{i.total}}</span>
+            </div>
+          </sc-for>
+          <hr class="fs-linea">
+          <div class="mp-fila"><span>Subtotal</span><span>S/ 419.30</span></div>
+          <div class="mp-fila" style="color: var(--fs-color-exito);"><span>Descuentos</span><span>−S/ 8.98</span></div>
+          <div class="mp-fila"><span>Delivery</span><span>S/ 10.00</span></div>
+          <div class="mp-fila" style="font-weight: 700; font-size: 17px;"><span>Total</span><span>S/ 420.32</span></div>
+          <a class="fs-btn fs-btn--contorno fs-btn--bloque" href="#"><span class="fs-icono" aria-hidden="true">receipt_long</span>Descargar boleta</a>
+        </section>
+        <section class="fs-tarjeta" style="display: grid; gap: 6px;">
+          <h2 class="fs-titulo-seccion">Entrega</h2>
+          <span>Delivery a domicilio</span>
+          <span class="fs-suave">Av. Brasil 1250, dpto. 402, Jesús María, Lima · Lucía Ramos · 987 654 321</span>
+        </section>
+      </aside>
+    </div>
+  </main>
+
+  <dc-import name="TiendaPie" hint-size="100%,380px"></dc-import>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"marca":{"editor":"enum","options":["fitstore","kallpa"],"default":"fitstore","section":"Marca"},"$preview":{"width":1280,"height":1400}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {
+      marca: this.props.marca ?? 'fitstore',
+      etapas: [
+        { clase: 'hecho', icono: 'check', nombre: 'Pedido recibido', fecha: 'jue 22 oct · 10:14', descripcion: 'Apartamos tus prendas mientras completas el pago.' },
+        { clase: 'hecho', icono: 'check', nombre: 'Pago confirmado', fecha: 'jue 22 oct · 10:16', descripcion: 'Recibimos tu pago y emitimos tu boleta.' },
+        { clase: 'hecho', icono: 'check', nombre: 'En preparación', fecha: 'jue 22 oct · 15:40', descripcion: 'Estamos alistando y empacando tus prendas.' },
+        { clase: 'actual', icono: 'local_shipping', nombre: 'Enviado', fecha: 'vie 23 oct · 09:05', descripcion: 'Tu pedido va en camino con nuestro repartidor.' },
+        { clase: 'pendiente', icono: 'home', nombre: 'Entregado', fecha: '', descripcion: '¡Lo recibiste! Gracias por tu compra.' }
+      ],
+      items: [
+        { nombre: 'Legging Pro Compresión', variante: 'Negro · M · 2 un.', total: 'S/ 113.81' },
+        { nombre: 'Legging Pro Compresión', variante: 'Olivo · S · 1 un.', total: 'S/ 56.91' },
+        { nombre: 'Top Flex', variante: 'Arena · M · 2 un.', total: 'S/ 79.80' },
+        { nombre: 'Casaca Wind', variante: 'Negro · L · 1 un.', total: 'S/ 89.90' },
+        { nombre: 'Jogger Urban', variante: 'Gris · M · 1 un.', total: 'S/ 69.90' }
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>

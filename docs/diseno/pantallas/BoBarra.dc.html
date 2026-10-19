@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Barra lateral del backoffice</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="ds/fitstore/components/bundle.css">
+<link rel="stylesheet" href="marca.css">
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+body{margin:0;padding:0}
+.bo-menu{display:grid;gap:2px;padding:8px 12px}
+.bo-menu a{display:flex;gap:12px;align-items:center;height:40px;padding:0 12px;border-radius:var(--fs-radio-md);color:var(--fs-color-en-secundario);text-decoration:none;font-size:14px;font-weight:500;opacity:.72;position:relative}
+.bo-menu a:hover{opacity:1;background:rgba(255,255,255,.06)}
+.bo-menu a[aria-current="page"]{opacity:1;background:rgba(255,255,255,.12);font-weight:600}
+.bo-menu a[aria-current="page"]::before{content:"";position:absolute;left:0;top:10px;bottom:10px;width:3px;border-radius:2px;background:var(--fs-color-primario)}
+.bo-contador{margin-left:auto;min-width:20px;height:20px;padding:0 6px;box-sizing:border-box;border-radius:var(--radio-pill);background:var(--fs-color-error);color:#fff;font-size:11px;line-height:20px;font-weight:700;text-align:center}
+</style>
+</helmet>
+<nav aria-label="Menú del backoffice" style="font-family: var(--fs-font-marca); background: var(--fs-color-secundario); color: var(--fs-color-en-secundario); width: 240px; min-height: 900px; height: 100%; box-sizing: border-box; display: flex; flex-direction: column;">
+  <div style="height: 64px; display: flex; align-items: center; padding: 0 24px; gap: 10px; border-bottom: 1px solid rgba(255,255,255,0.1);">
+    <span style="font-size: 17px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase;"><span class="fs-solo-fitstore">FitStore</span><span class="fs-solo-kallpa">Kallpa</span></span>
+    <span style="font-size: 11px; opacity: 0.6; letter-spacing: 0.06em; text-transform: uppercase;">Admin</span>
+  </div>
+  <div class="bo-menu">
+    <a href="Dashboard.dc.html" aria-current="{{dashboard}}"><span class="fs-icono" aria-hidden="true">space_dashboard</span>Dashboard</a>
+    <a href="Pedidos.dc.html" aria-current="{{pedidos}}"><span class="fs-icono" aria-hidden="true">receipt_long</span>Pedidos</a>
+    <a href="#"><span class="fs-icono" aria-hidden="true">local_shipping</span>Entregas</a>
+    <a href="#"><span class="fs-icono" aria-hidden="true">two_wheeler</span>Repartidores</a>
+    <a href="ProductoForm.dc.html" aria-current="{{catalogo}}"><span class="fs-icono" aria-hidden="true">checkroom</span>Catálogo</a>
+    <a href="#"><span class="fs-icono" aria-hidden="true">inventory_2</span>Inventario</a>
+    <a href="#"><span class="fs-icono" aria-hidden="true">payments</span>Pagos<span class="bo-contador" aria-label="2 reembolsos fallidos">2</span></a>
+    <a href="#"><span class="fs-icono" aria-hidden="true">map</span>Tarifas y agencias</a>
+    <a href="#"><span class="fs-icono" aria-hidden="true">group</span>Clientes</a>
+    <a href="#"><span class="fs-icono" aria-hidden="true">badge</span>Staff</a>
+    <a href="#"><span class="fs-icono" aria-hidden="true">mail</span>Notificaciones</a>
+    <a href="#"><span class="fs-icono" aria-hidden="true">menu_book</span>Reclamos</a>
+    <a href="Configuracion.dc.html" aria-current="{{configuracion}}"><span class="fs-icono" aria-hidden="true">storefront</span>Configuración de tienda</a>
+  </div>
+  <div style="flex: 1;"></div>
+  <a href="Main.dc.html" style="display: flex; gap: 10px; align-items: center; margin: 12px; padding: 0 12px; height: 40px; color: var(--fs-color-en-secundario); text-decoration: none; font-size: 13px; opacity: 0.72;"><span class="fs-icono" aria-hidden="true">open_in_new</span>Ver la tienda</a>
+</nav>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"actual":{"editor":"enum","options":["dashboard","pedidos","catalogo","configuracion"],"default":"dashboard"},"$preview":{"width":240,"height":900}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const actual = this.props.actual ?? 'dashboard';
+    const m = (k) => (k === actual ? 'page' : 'false');
+    return { dashboard: m('dashboard'), pedidos: m('pedidos'), catalogo: m('catalogo'), configuracion: m('configuracion') };
+  }
+}
+</script>
+</body>
+</html>

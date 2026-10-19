@@ -1,11 +1,12 @@
 # SPEC-2 — Catálogo e inventario
 
-> Versión: **v7 (aprobado)** — 2026-10-19 · Estados: ✅ decidido · 🟡 propuesto · ❓ abierto
+> Versión: **v8 (aprobado)** — 2026-10-19 · Estados: ✅ decidido · 🟡 propuesto · ❓ abierto
 > **Dueña de:** `backend/catalog-service` (módulos catálogo e inventario) · tienda: `features/catalogo` · backoffice: `features/catalogo`, `features/inventario`.
 > **Depende de:** 0a, 0b, 1 (sesión de staff) · **Habilita:** 3 (destacados de la landing), 4 (cotización y reserva), 8.
 > **Contratos:** `contracts/openapi/catalog-service.yaml` (incluye `/internal/v1/inventario/reservas`); usa el contrato de order (`POST /carrito/items`); eventos `StockBajo`, `StockNoConfirmado` (publica) y `PedidoPagado`, `PedidoCancelado`, `PedidoExpirado` (consume).
 
 **Historial:**
+- v8 (2026-10-19): etapa de diseño cerrada: diseños de alta fidelidad enlazados (P-2-01, P-2-02, P-2-04).
 - v7 (2026-10-19): revisión de coherencia: P-2-07 ya no menciona la configuración de inventario (se movió a P-3-04 en la v4).
 - v6 (2026-10-19): los datos de demostración también se cargan en la nube con el perfil `demo` (SPEC-8 I7), con UUID fijos compartidos entre servicios (`docs/demo/ids-demo.md`).
 - v5 (2026-10-18): convención de tablas de la SPEC-0b (R11) aplicada a P-2-03, P-2-07, P-2-08 y P-2-09 (y señalada como no aplicable en P-2-05 y P-2-06); P-2-04 se abre en solo lectura para OPERADOR (antes la ruta era solo ADMIN, aunque P-2-03 le permitía ver los productos). Bocetos actualizados.
@@ -334,7 +335,7 @@ CA-2-57  Dado Redis caído
 
 - **Ruta / proyecto:** `/productos?q=&talla=&color=&min=&max=&disponible=&orden=&pagina=` y `/categoria/:slug` · storefront · público.
 - **Boceto (baja fidelidad):** ![P-2-01](img/P-2-01-listado.png)
-- **Diseño de alta fidelidad:** 🕓 **pantalla clave** (escritorio y móvil; en móvil los filtros van en un panel deslizable).
+- **Diseño de alta fidelidad:** ✅ [canvas "FitStore Tienda"](https://claude.ai/artifact/1iacKddHAquNYuQcFPBZLg), `Listado` (FitStore escritorio) y `ListadoKallpaMovil` (Kallpa móvil). Copia en [`docs/diseno/`](../diseno/).
 - **Componentes:** `ListadoPage`, `PanelFiltros`, `ChipsFiltrosActivos`, `TarjetaProducto`, `Orden`, paginador de `ui/`.
 - **Estados:** cargando (tarjetas esqueleto), vacío, error con reintentar.
 - **Endpoints:** `GET /productos`, `GET /categorias`, `GET /tallas`, `GET /colores`.
@@ -343,7 +344,7 @@ CA-2-57  Dado Redis caído
 
 - **Ruta / proyecto:** `/producto/:slug` · storefront · público.
 - **Boceto:** ![P-2-02](img/P-2-02-detalle.png)
-- **Diseño de alta fidelidad:** 🕓 **pantalla clave** (escritorio y móvil).
+- **Diseño de alta fidelidad:** ✅ [canvas "FitStore Tienda"](https://claude.ai/artifact/1iacKddHAquNYuQcFPBZLg), `Producto` (FitStore escritorio) y `ProductoKallpaMovil` (Kallpa móvil). Copia en [`docs/diseno/`](../diseno/).
 - **Componentes:** `DetallePage`, `Galeria`, `SelectorColor`, `SelectorTalla`, `IndicadorStock`, `TramosDescuento`, `GuiaTallasModal`, `SelectorCantidad`, `BotonAgregarCarrito`.
 - **Estados:** cargando, 404 (producto inexistente o no activo), agotado.
 - **Endpoints:** `GET /productos/{slug}`, `GET /categorias/{slug}/guia-tallas`, `POST /carrito/items` (contrato de order).
@@ -360,7 +361,7 @@ CA-2-57  Dado Redis caído
 
 - **Ruta / proyecto:** `/catalogo/productos/nuevo` y `/catalogo/productos/:id` · backoffice · ADMIN (OPERADOR: `/:id` en solo lectura, sin botones de guardar ni publicar, como en P-2-03).
 - **Boceto:** ![P-2-04](img/P-2-04-producto-form.png)
-- **Diseño de alta fidelidad:** 🕓 **pantalla clave** (patrón "formulario").
+- **Diseño de alta fidelidad:** ✅ [canvas "FitStore Tienda"](https://claude.ai/artifact/1iacKddHAquNYuQcFPBZLg), `ProductoForm` (FitStore escritorio) y `ProductoFormKallpa` (Kallpa escritorio). Copia en [`docs/diseno/`](../diseno/).
 - **Componentes:** `ProductoFormPage` con pestañas Datos, Variantes (`GeneradorMatriz`, `TablaVariantes`), Imágenes (subida de `ui/` + orden arrastrable + color + principal), Descuento (`EditorTramos` en modo personalizado); `AvisoPublicacion` con la lista de faltantes.
 - **Endpoints:** `/admin/productos/**`, `/admin/variantes/**`, `/admin/imagenes/**`, `PUT /admin/productos/{id}/descuento`, `PUT /admin/productos/{id}/categorias`, `PATCH …/publicar|desactivar|destacado`.
 

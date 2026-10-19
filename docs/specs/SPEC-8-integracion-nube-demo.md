@@ -1,11 +1,12 @@
 # SPEC-8 — Integración, nube y demo
 
-> Versión: **v3 (aprobado)** — 2026-10-19 · Estados: ✅ decidido · 🟡 propuesto · ❓ abierto
+> Versión: **v4 (aprobado)** — 2026-10-19 · Estados: ✅ decidido · 🟡 propuesto · ❓ abierto
 > **Dueña de:** dashboard del backoffice (`features/dashboard`), pruebas de punta a punta (`frontend/e2e/`), despliegue en la nube (`infra/docker-compose.cloud.yml`, `infra/caddy/`, `infra/scripts/`, `.github/workflows/deploy.yml`), guion de la demo (`docs/demo/`).
 > **Depende de:** 1 a 7 (todas integradas en `dev`) · usa los endpoints de resumen de order, catalog, delivery y settings · **Habilita:** la entrega final (demo en la nube, video y exposición).
 > **Contratos:** no crea endpoints; consume los ya definidos (sección 4).
 
 **Historial:**
+- v4 (2026-10-19): etapa de diseño cerrada: diseños de alta fidelidad enlazados (P-8-01).
 - v3 (2026-10-19): revisión de coherencia: Mailpit corre en la nube sin publicar como respaldo de SES (CA-8-15, CA-8-30; micro de infraestructura v6 con `duckdns` y Mailpit en la tabla de memoria).
 - v2 (2026-10-19): I6 ✅ Garage en la VM (adaptador Azure Blob diferido); I7 ✅ la nube carga **todos** los datos de demostración, incluidos clientes y pedidos, con la contraseña de las cuentas demo desde un secreto (CA-8-31) → **spec aprobada**. Ajustes propagados: SPEC-0a v5, SPEC-1 v5, SPEC-2 a SPEC-7 (nota del perfil `demo`), micro de infraestructura v5, stack v3, macro v22 y ADR-013.
 - v1 (2026-10-19): borrador inicial.
@@ -195,7 +196,7 @@ CA-8-31  Dado el perfil demo en la nube
 
 - **Ruta / proyecto:** `/` · backoffice · OPERADOR, ADMIN (ventas y top solo ADMIN).
 - **Boceto (baja fidelidad):** ![P-8-01](img/P-8-01-dashboard.png)
-- **Diseño de alta fidelidad:** 🕓 **pantalla clave** (escritorio y tablet, en dos marcas).
+- **Diseño de alta fidelidad:** ✅ [canvas "FitStore Tienda"](https://claude.ai/artifact/1iacKddHAquNYuQcFPBZLg), `Dashboard` (FitStore escritorio) y `DashboardKallpa` (Kallpa escritorio). Copia en [`docs/diseno/`](../diseno/).
 - **Componentes:** `DashboardPage` con tarjetas independientes (I1): `TarjetaVentas` y `TopProductos` (solo ADMIN), `PedidosPorEstado`, `StockBajo` (5 SKU más críticos), `EntregasHoy`, `ReclamosPorVencer`; botón "Actualizar".
 - **Estados:** cargando por tarjeta, "No disponible" por tarjeta con "Reintentar", sin datos (p. ej. "Sin stock bajo 🎉").
 - **Endpoints:** `GET /admin/pedidos/resumen` (order, ADMIN), `GET /admin/pedidos?size=1` (contadores por estado, order), `GET /admin/inventario?soloStockBajo=true&size=5` (catalog), `GET /admin/entregas/resumen?fecha=hoy` (delivery), `GET /admin/reclamos?porVencer=true&size=1` y `?vencidos=true&size=1` (settings).

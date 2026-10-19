@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Detalle de producto</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="ds/fitstore/components/bundle.css">
+<link rel="stylesheet" href="marca.css">
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+body{margin:0;padding:0}
+a{color:inherit}
+.pd-galeria{display:grid;grid-template-columns:80px minmax(0,1fr);gap:16px}
+.pd-galeria .fs-galeria__principal{max-width:none;border-radius:var(--fs-radio-md)}
+.pd-galeria .fs-galeria__principal .fs-icono{font-size:72px}
+.pd-tramos{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));border:1px solid var(--fs-color-linea);border-radius:var(--fs-radio-md);overflow:hidden}
+.pd-tramos div{display:grid;justify-items:center;gap:2px;padding:12px 8px;text-align:center}
+.pd-tramos div+div{border-left:1px solid var(--fs-color-linea)}
+.pd-tramos .alcanzado{background:var(--fs-color-primario-suave)}
+.pd-acordeon{border-top:1px solid var(--fs-color-linea)}
+.pd-acordeon div{display:flex;justify-content:space-between;align-items:center;padding-block:16px;border-bottom:1px solid var(--fs-color-linea);font-weight:500}
+@media (max-width:720px){.pd-galeria{grid-template-columns:minmax(0,1fr)}.pd-galeria .fs-galeria__miniaturas{grid-auto-flow:column;grid-template-columns:repeat(4,64px);order:2}}
+</style>
+</helmet>
+<div data-theme="{{marca}}" style="font-family: var(--fs-font-marca); background: var(--fs-color-fondo); color: var(--fs-color-texto); font-size: 15px; line-height: 24px; min-height: 100%;">
+  <dc-import name="TiendaCabecera" actual="leggings" hint-size="100%,80px"></dc-import>
+
+  <main class="fs-pagina" style="padding-block: 24px 80px; display: grid; gap: 24px;">
+    <nav class="fs-migas" aria-label="Migas"><a href="Main.dc.html">Inicio</a><span aria-hidden="true">/</span><a href="Listado.dc.html">Leggings</a><span aria-hidden="true">/</span><span>Legging Pro Compresión</span></nav>
+
+    <div class="fs-dos-columnas" style="grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); gap: 56px;">
+      <div class="pd-galeria">
+        <div class="fs-galeria__miniaturas">
+          <div class="fs-galeria__miniatura" aria-current="true"></div>
+          <div class="fs-galeria__miniatura"></div>
+          <div class="fs-galeria__miniatura"></div>
+          <div class="fs-galeria__miniatura"></div>
+        </div>
+        <div class="fs-galeria__principal"><span class="fs-icono" aria-hidden="true">checkroom</span></div>
+      </div>
+
+      <div style="display: grid; gap: 24px; align-content: start;">
+        <div style="display: grid; gap: 8px;">
+          <span class="fs-eyebrow" style="color: var(--fs-color-texto-suave);">Leggings</span>
+          <h1 class="fs-titulo-pagina">Legging Pro Compresión</h1>
+          <div class="fs-precio"><span class="fs-precio__actual" style="font-size: 24px; line-height: 30px;">S/ 59.90</span><span class="fs-precio__nota">IGV incluido</span></div>
+        </div>
+
+        <div style="display: grid; gap: 12px;">
+          <div class="fs-entre"><span style="font-weight: 600;">Color: <span style="font-weight: 400;">Negro</span></span></div>
+          <div style="display: flex; gap: 12px;">
+            <button class="fs-color-opcion" aria-pressed="true" aria-label="Negro" style="background:#1d1d1f"></button>
+            <button class="fs-color-opcion" aria-label="Arena" style="background:#d8c7a8"></button>
+            <button class="fs-color-opcion" aria-label="Olivo" style="background:#5d6b4f"></button>
+          </div>
+        </div>
+
+        <div style="display: grid; gap: 12px;">
+          <div class="fs-entre"><span style="font-weight: 600;">Talla: <span style="font-weight: 400;">M</span></span><a class="fs-btn fs-btn--texto fs-btn--sm" href="#"><span class="fs-icono" aria-hidden="true">straighten</span>Guía de tallas</a></div>
+          <div style="display: flex; flex-wrap: wrap; gap: 8px;">
+            <button class="fs-talla">XS</button><button class="fs-talla">S</button><button class="fs-talla" aria-pressed="true">M</button><button class="fs-talla">L</button><button class="fs-talla" disabled aria-label="XL, agotada">XL</button>
+          </div>
+          <span style="display: inline-flex; gap: 6px; align-items: center; font-size: 13px; color: var(--fs-color-aviso);"><span class="fs-icono" style="font-size: 18px;" aria-hidden="true">inventory_2</span>Quedan 4 unidades en esta talla</span>
+        </div>
+
+        <div style="display: grid; gap: 10px;">
+          <span style="font-weight: 600;">Compra por cantidad y ahorra</span>
+          <div class="pd-tramos">
+            <div class="alcanzado"><span style="font-weight: 700;">3 un.</span><span style="font-size: 13px; color: var(--fs-color-primario-texto); font-weight: 600;">−5 %</span></div>
+            <div><span style="font-weight: 700;">6 un.</span><span style="font-size: 13px; color: var(--fs-color-texto-suave);">−10 %</span></div>
+            <div><span style="font-weight: 700;">12 un.</span><span style="font-size: 13px; color: var(--fs-color-texto-suave);">−15 %</span></div>
+          </div>
+          <span class="fs-suave">Se combinan tallas y colores del mismo producto.</span>
+        </div>
+
+        <div style="display: flex; gap: 12px; align-items: center;">
+          <div class="fs-cantidad"><button aria-label="Quitar uno"><span class="fs-icono">remove</span></button><span>3</span><button aria-label="Agregar uno"><span class="fs-icono">add</span></button></div>
+          <a class="fs-btn fs-btn--primario fs-btn--lg" href="Carrito.dc.html" style="flex: 1; min-width: 0; padding-inline: 16px;"><span class="fs-icono" aria-hidden="true">shopping_bag</span>Agregar al carrito</a>
+        </div>
+
+        <div style="display: grid; gap: 8px; font-size: 14px;">
+          <span style="display: flex; gap: 10px; align-items: center;"><span class="fs-icono" style="color: var(--fs-color-primario-texto);" aria-hidden="true">local_shipping</span>Envíos a todo el Perú; en Lima, de 1 a 2 días hábiles</span>
+          <span style="display: flex; gap: 10px; align-items: center;"><span class="fs-icono" style="color: var(--fs-color-primario-texto);" aria-hidden="true">storefront</span>Recojo gratis en la tienda de Gamarra</span>
+        </div>
+
+        <div class="pd-acordeon">
+          <div>Descripción<span class="fs-icono" aria-hidden="true">remove</span></div>
+          <p style="margin: 12px 0 16px; color: var(--fs-color-texto-suave);">Tela de compresión con tiro alto y secado rápido. Costuras planas que no rozan y cintura ancha que no se enrolla.</p>
+          <div>Composición y cuidado<span class="fs-icono" aria-hidden="true">add</span></div>
+        </div>
+      </div>
+    </div>
+
+    <section style="display: grid; gap: 24px; padding-top: 48px;">
+      <h2 style="margin: 0; font-size: 26px; line-height: 32px; font-weight: 600; letter-spacing: -0.01em;">También te puede gustar</h2>
+      <div class="fs-rejilla-4">
+        <sc-for list="{{relacionados}}" as="p" hint-placeholder-count="4">
+          <a class="fs-tarjeta-producto" href="Producto.dc.html">
+            <div class="fs-tarjeta-producto__imagen"><span class="fs-icono" aria-hidden="true">checkroom</span></div>
+            <span class="fs-tarjeta-producto__nombre">{{p.nombre}}</span>
+            <div class="fs-precio"><span class="fs-precio__actual">{{p.precio}}</span></div>
+          </a>
+        </sc-for>
+      </div>
+    </section>
+  </main>
+
+  <dc-import name="TiendaPie" hint-size="100%,380px"></dc-import>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"marca":{"editor":"enum","options":["fitstore","kallpa"],"default":"fitstore","section":"Marca"},"$preview":{"width":1280,"height":1900}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {
+      marca: this.props.marca ?? 'fitstore',
+      relacionados: [
+        { nombre: 'Top Flex', precio: 'S/ 39.90' },
+        { nombre: 'Legging Seamless', precio: 'S/ 64.90' },
+        { nombre: 'Casaca Wind', precio: 'S/ 89.90' },
+        { nombre: 'Top Deportivo Cruzado', precio: 'S/ 42.90' }
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Checkout</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="ds/fitstore/components/bundle.css">
+<link rel="stylesheet" href="marca.css">
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+body{margin:0;padding:0}
+a{color:inherit}
+.ck-paso{display:grid;gap:16px;padding-bottom:32px;border-bottom:1px solid var(--fs-color-linea)}
+.ck-paso__titulo{display:flex;gap:12px;align-items:center;margin:0;font-size:17px;line-height:24px;font-weight:600}
+.ck-num{width:28px;height:28px;border-radius:var(--radio-pill);background:var(--fs-color-texto);color:var(--fs-color-superficie);display:grid;place-items:center;font-size:13px;font-weight:700}
+.ck-opciones{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.ck-fila{display:flex;justify-content:space-between;gap:12px;font-variant-numeric:tabular-nums}
+@media (max-width:720px){.ck-opciones{grid-template-columns:minmax(0,1fr)}}
+</style>
+</helmet>
+<div data-theme="{{marca}}" style="font-family: var(--fs-font-marca); background: var(--fs-color-fondo); color: var(--fs-color-texto); font-size: 15px; line-height: 24px; min-height: 100%;">
+  <dc-import name="TiendaCabecera" actual="ninguna" hint-size="100%,80px"></dc-import>
+
+  <main class="fs-pagina" style="padding-block: 40px 80px; display: grid; gap: 28px;">
+    <div style="display: grid; gap: 8px;">
+      <a class="fs-btn fs-btn--texto fs-btn--sm" href="Carrito.dc.html" style="justify-self: start; padding: 0;"><span class="fs-icono" aria-hidden="true">arrow_back</span>Volver al carrito</a>
+      <h1 class="fs-titulo-pagina">Checkout</h1>
+    </div>
+
+    <div class="fs-dos-columnas" style="gap: 48px;">
+      <div style="display: grid; gap: 32px; align-content: start;">
+        <section class="ck-paso">
+          <h2 class="ck-paso__titulo"><span class="ck-num">1</span>¿A dónde lo enviamos?</h2>
+          <div class="ck-opciones">
+            <div class="fs-opcion fs-opcion--activa" role="radio" aria-checked="true">
+              <span class="fs-radio"></span>
+              <div style="display: grid; gap: 2px;"><b>Casa</b><span>Av. Brasil 1250, dpto. 402</span><span class="fs-suave">Jesús María, Lima · Lucía Ramos · 987 654 321</span></div>
+            </div>
+            <div class="fs-opcion" role="radio" aria-checked="false">
+              <span class="fs-radio"></span>
+              <div style="display: grid; gap: 2px;"><b>Trabajo</b><span>Jr. Huallaga 320, of. 5</span><span class="fs-suave">Cercado de Lima, Lima · Lucía Ramos</span></div>
+            </div>
+          </div>
+          <button class="fs-btn fs-btn--contorno" style="justify-self: start;"><span class="fs-icono" aria-hidden="true">add</span>Agregar dirección</button>
+        </section>
+
+        <section class="ck-paso">
+          <h2 class="ck-paso__titulo"><span class="ck-num">2</span>¿Cómo lo recibes?</h2>
+          <div style="display: grid; gap: 12px;">
+            <div class="fs-opcion fs-opcion--activa" role="radio" aria-checked="true">
+              <span class="fs-radio"></span>
+              <span class="fs-icono" aria-hidden="true">local_shipping</span>
+              <div style="display: grid; gap: 2px; flex: 1;"><b>Delivery a domicilio</b><span class="fs-suave">Llega en 1 a 2 días hábiles</span></div>
+              <b style="font-variant-numeric: tabular-nums;">S/ 10.00</b>
+            </div>
+            <div class="fs-opcion" role="radio" aria-checked="false">
+              <span class="fs-radio"></span>
+              <span class="fs-icono" aria-hidden="true">package_2</span>
+              <div style="display: grid; gap: 2px; flex: 1;"><b>Envío por agencia</b><span class="fs-suave">Shalom u Olva · 2 a 4 días hábiles; eliges la agencia después</span></div>
+              <b style="font-variant-numeric: tabular-nums;">S/ 8.00</b>
+            </div>
+            <div class="fs-opcion" role="radio" aria-checked="false">
+              <span class="fs-radio"></span>
+              <span class="fs-icono" aria-hidden="true">storefront</span>
+              <div style="display: grid; gap: 2px; flex: 1;"><b>Recojo en tienda</b><span class="fs-suave">Galería Gamarra, tienda 210 · Lun–Sáb 9:00–19:00</span></div>
+              <b>Gratis</b>
+            </div>
+          </div>
+        </section>
+
+        <section class="ck-paso" style="border-bottom: 0;">
+          <h2 class="ck-paso__titulo"><span class="ck-num">3</span>Revisa tu pedido</h2>
+          <sc-for list="{{items}}" as="i" hint-placeholder-count="5">
+            <div style="display: flex; gap: 14px; align-items: center;">
+              <div class="fs-miniatura" style="width: 48px;"><span class="fs-icono" style="font-size: 18px;" aria-hidden="true">checkroom</span></div>
+              <div style="flex: 1; min-width: 0; display: grid;"><span style="font-weight: 500;">{{i.nombre}}</span><span class="fs-suave">{{i.variante}} · {{i.cantidad}} un.</span></div>
+              <span style="font-variant-numeric: tabular-nums;">{{i.total}}</span>
+            </div>
+          </sc-for>
+        </section>
+      </div>
+
+      <aside class="fs-tarjeta" style="display: grid; gap: 16px; position: sticky; top: 24px;">
+        <h2 class="fs-titulo-seccion">Resumen del pedido</h2>
+        <div class="ck-fila"><span>Subtotal (7 prendas)</span><span>S/ 419.30</span></div>
+        <div class="ck-fila" style="color: var(--fs-color-exito);"><span>Descuentos por cantidad</span><span>−S/ 8.98</span></div>
+        <div class="ck-fila"><span>Delivery a domicilio</span><span>S/ 10.00</span></div>
+        <hr class="fs-linea">
+        <div class="ck-fila" style="font-size: 18px; font-weight: 700;"><span>Total</span><span>S/ 420.32</span></div>
+        <div class="fs-campo">
+          <label class="fs-campo__etiqueta" for="notas">Notas para la tienda (opcional)</label>
+          <textarea id="notas" class="fs-input" placeholder="Ej.: tocar el timbre del 402" style="min-height: 72px;"></textarea>
+          <span class="fs-campo__ayuda">Hasta 300 caracteres</span>
+        </div>
+        <a class="fs-btn fs-btn--primario fs-btn--lg fs-btn--bloque" href="Pago.dc.html">Confirmar pedido</a>
+        <span class="fs-suave" style="text-align: center;">Al confirmar aceptas los <a href="#" style="color: var(--fs-color-primario-texto);">Términos y condiciones</a>. Apartamos tus prendas por 30 minutos mientras pagas.</span>
+      </aside>
+    </div>
+  </main>
+
+  <dc-import name="TiendaPie" hint-size="100%,380px"></dc-import>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"marca":{"editor":"enum","options":["fitstore","kallpa"],"default":"fitstore","section":"Marca"},"$preview":{"width":1280,"height":1450}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {
+      marca: this.props.marca ?? 'fitstore',
+      items: [
+        { nombre: 'Legging Pro Compresión', variante: 'Negro · M', cantidad: 2, total: 'S/ 113.81' },
+        { nombre: 'Legging Pro Compresión', variante: 'Olivo · S', cantidad: 1, total: 'S/ 56.91' },
+        { nombre: 'Top Flex', variante: 'Arena · M', cantidad: 2, total: 'S/ 79.80' },
+        { nombre: 'Casaca Wind', variante: 'Negro · L', cantidad: 1, total: 'S/ 89.90' },
+        { nombre: 'Jogger Urban', variante: 'Gris · M', cantidad: 1, total: 'S/ 69.90' }
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>

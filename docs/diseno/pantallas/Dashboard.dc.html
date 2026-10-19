@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Dashboard</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="ds/fitstore/components/bundle.css">
+<link rel="stylesheet" href="marca.css">
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+body{margin:0;padding:0}
+a{color:inherit}
+.db-rejilla{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:20px}
+.db-tarjeta{display:grid;gap:16px;align-content:start}
+.db-barras{display:flex;align-items:flex-end;gap:10px;height:120px;padding-top:8px}
+.db-barras div{flex:1;display:grid;justify-items:center;gap:6px;font-size:11px;color:var(--fs-color-texto-suave)}
+.db-barras span{display:block;width:100%;border-radius:4px 4px 0 0;background:var(--fs-color-primario)}
+.db-lista{display:grid;gap:0}
+.db-lista>div{display:flex;justify-content:space-between;align-items:center;gap:12px;padding-block:10px;border-top:1px solid var(--fs-color-linea);font-size:14px}
+.db-lista>div:first-child{border-top:0;padding-top:0}
+.db-estados{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.db-estados a{display:grid;gap:2px;padding:12px;border-radius:var(--fs-radio-md);background:var(--fs-color-superficie-alterna);text-decoration:none}
+.db-estados b{font-size:22px;line-height:28px;font-variant-numeric:tabular-nums}
+</style>
+</helmet>
+<div data-theme="{{marca}}" style="font-family: var(--fs-font-marca); background: var(--fs-color-fondo); color: var(--fs-color-texto); font-size: 15px; line-height: 24px; min-height: 100%;">
+  <div class="fs-bo">
+    <div style="background: var(--fs-color-secundario);"><dc-import name="BoBarra" actual="dashboard" hint-size="240px,900px"></dc-import></div>
+    <div class="fs-bo__principal">
+      <header class="fs-bo__barra">
+        <nav class="fs-migas" aria-label="Migas"><span>Inicio</span></nav>
+        <span style="flex: 1;"></span>
+        <span style="display: flex; gap: 10px; align-items: center; font-size: 14px;"><span style="width: 32px; height: 32px; border-radius: var(--radio-pill); background: var(--fs-color-primario-suave); color: var(--fs-color-primario-texto); display: grid; place-items: center; font-weight: 700; font-size: 13px;">CA</span>Carla Admin<span class="fs-icono" aria-hidden="true">expand_more</span></span>
+      </header>
+      <main class="fs-bo__contenido">
+        <div class="fs-entre">
+          <div style="display: grid; gap: 2px;"><h1 class="fs-titulo-pagina">Buenos días, Carla</h1><span style="color: var(--fs-color-texto-suave);">Viernes 23 de octubre · así va la tienda</span></div>
+          <button class="fs-btn fs-btn--contorno"><span class="fs-icono" aria-hidden="true">refresh</span>Actualizar</button>
+        </div>
+
+        <div class="db-rejilla">
+          <section class="fs-tarjeta db-tarjeta" style="grid-column: span 2;">
+            <div class="fs-entre"><h2 class="fs-titulo-seccion">Ventas</h2><div style="display: flex; gap: 6px;"><span class="fs-chip">Hoy</span><span class="fs-chip">Semana</span><span class="fs-chip" aria-pressed="true">Mes</span></div></div>
+            <div style="display: flex; gap: 40px; flex-wrap: wrap;">
+              <div class="fs-kpi"><span class="fs-suave">Ventas netas de octubre</span><span class="fs-kpi__valor">S/ 18 426.50</span><span style="font-size: 13px; color: var(--fs-color-exito);">+12 % frente a septiembre</span></div>
+              <div class="fs-kpi"><span class="fs-suave">Pedidos pagados</span><span class="fs-kpi__valor">86</span></div>
+              <div class="fs-kpi"><span class="fs-suave">Ticket promedio</span><span class="fs-kpi__valor">S/ 214.26</span></div>
+            </div>
+            <div class="db-barras" aria-label="Ventas por semana">
+              <div><span style="height: 52px;"></span>S1</div><div><span style="height: 78px;"></span>S2</div><div><span style="height: 64px;"></span>S3</div><div><span style="height: 100px;"></span>S4</div>
+            </div>
+          </section>
+
+          <section class="fs-tarjeta db-tarjeta">
+            <h2 class="fs-titulo-seccion">Pedidos por estado</h2>
+            <div class="db-estados">
+              <a href="Pedidos.dc.html"><span class="fs-suave">Pendiente de pago</span><b>4</b></a>
+              <a href="Pedidos.dc.html"><span class="fs-suave">Pagados</span><b>7</b></a>
+              <a href="Pedidos.dc.html"><span class="fs-suave">En preparación</span><b>5</b></a>
+              <a href="Pedidos.dc.html"><span class="fs-suave">Listos para despacho</span><b>3</b></a>
+              <a href="Pedidos.dc.html"><span class="fs-suave">Enviados</span><b>9</b></a>
+              <a href="Pedidos.dc.html"><span class="fs-suave">Listos para recoger</span><b>2</b></a>
+            </div>
+          </section>
+
+          <section class="fs-tarjeta db-tarjeta">
+            <div class="fs-entre"><h2 class="fs-titulo-seccion">Más vendidos del mes</h2></div>
+            <div class="db-lista">
+              <div><span>Legging Pro Compresión</span><b>124 un.</b></div>
+              <div><span>Top Flex</span><b>88 un.</b></div>
+              <div><span>Jogger Urban</span><b>61 un.</b></div>
+              <div><span>Casaca Wind</span><b>37 un.</b></div>
+              <div><span>Legging Seamless</span><b>33 un.</b></div>
+            </div>
+          </section>
+
+          <section class="fs-tarjeta db-tarjeta">
+            <div class="fs-entre"><h2 class="fs-titulo-seccion">Stock bajo</h2><a class="fs-btn fs-btn--texto fs-btn--sm" href="#">Ver inventario ›</a></div>
+            <div class="db-lista">
+              <div><span class="fs-codigo">LEG01-NEG-XL</span><span class="fs-insignia fs-insignia--error">Agotado</span></div>
+              <div><span class="fs-codigo">TOP02-ARE-S</span><span class="fs-insignia fs-insignia--aviso">2 un.</span></div>
+              <div><span class="fs-codigo">LEG01-OLI-S</span><span class="fs-insignia fs-insignia--aviso">3 un.</span></div>
+              <div><span class="fs-codigo">CAS01-NEG-M</span><span class="fs-insignia fs-insignia--aviso">4 un.</span></div>
+              <div><span class="fs-codigo">JOG01-GRI-L</span><span class="fs-insignia fs-insignia--aviso">4 un.</span></div>
+            </div>
+          </section>
+
+          <section class="fs-tarjeta db-tarjeta">
+            <div class="fs-entre"><h2 class="fs-titulo-seccion">Entregas de hoy</h2><a class="fs-btn fs-btn--texto fs-btn--sm" href="#">Del día ›</a></div>
+            <div style="display: flex; gap: 32px;">
+              <div class="fs-kpi"><span class="fs-suave">Programadas</span><span class="fs-kpi__valor">12</span></div>
+              <div class="fs-kpi"><span class="fs-suave">Entregadas</span><span class="fs-kpi__valor" style="color: var(--fs-color-exito);">7</span></div>
+              <div class="fs-kpi"><span class="fs-suave">Fallidas</span><span class="fs-kpi__valor" style="color: var(--fs-color-error);">1</span></div>
+            </div>
+          </section>
+
+          <section class="fs-tarjeta db-tarjeta">
+            <div class="fs-entre"><h2 class="fs-titulo-seccion">Reclamos</h2><a class="fs-btn fs-btn--texto fs-btn--sm" href="#">Bandeja ›</a></div>
+            <div style="display: flex; gap: 32px;">
+              <div class="fs-kpi"><span class="fs-suave">Por vencer</span><span class="fs-kpi__valor" style="color: var(--fs-color-aviso);">2</span></div>
+              <div class="fs-kpi"><span class="fs-suave">Vencidos</span><span class="fs-kpi__valor" style="color: var(--fs-color-error);">0</span></div>
+            </div>
+            <span class="fs-suave">Plazo legal: 15 días hábiles</span>
+          </section>
+
+          <section class="fs-tarjeta db-tarjeta">
+            <h2 class="fs-titulo-seccion">Estado de una tarjeta caída</h2>
+            <div class="fs-estado fs-estado--error" style="padding: 16px; border: 0;">
+              <span class="fs-icono" aria-hidden="true">cloud_off</span>
+              <span class="fs-estado__titulo">No disponible</span>
+              <span class="fs-suave">No pudimos cargar estos datos.</span>
+              <button class="fs-btn fs-btn--contorno fs-btn--sm">Reintentar</button>
+            </div>
+          </section>
+        </div>
+      </main>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"marca":{"editor":"enum","options":["fitstore","kallpa"],"default":"fitstore","section":"Marca"},"$preview":{"width":1440,"height":1150}}'>
+class Component extends DCLogic {
+  renderVals() { return { marca: this.props.marca ?? 'fitstore' }; }
+}
+</script>
+</body>
+</html>

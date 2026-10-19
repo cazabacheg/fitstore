@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Configuración de tienda</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="ds/fitstore/components/bundle.css">
+<link rel="stylesheet" href="marca.css">
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+body{margin:0;padding:0}
+a{color:inherit}
+.cf-color{display:grid;grid-template-columns:44px minmax(0,1fr) 128px;gap:14px;align-items:center}
+.cf-muestra{width:44px;height:44px;border-radius:var(--fs-radio-md);border:1px solid var(--fs-color-linea);box-sizing:border-box}
+.cf-vista{border:1px solid var(--fs-color-linea);border-radius:var(--fs-radio-md);overflow:hidden;background:var(--fs-color-fondo)}
+.cf-segmento{display:inline-flex;border:1px solid var(--fs-color-borde-control);border-radius:var(--fs-radio-md);overflow:hidden}
+.cf-segmento button{border:0;background:var(--fs-color-superficie);color:var(--fs-color-texto);font:500 13px var(--fs-font-marca);height:32px;padding:0 12px;cursor:pointer}
+.cf-segmento button[aria-pressed="true"]{background:var(--fs-color-texto);color:var(--fs-color-superficie)}
+</style>
+</helmet>
+<div data-theme="{{marca}}" style="font-family: var(--fs-font-marca); background: var(--fs-color-fondo); color: var(--fs-color-texto); font-size: 15px; line-height: 24px; min-height: 100%;">
+  <div class="fs-bo">
+    <div style="background: var(--fs-color-secundario);"><dc-import name="BoBarra" actual="configuracion" hint-size="240px,900px"></dc-import></div>
+    <div class="fs-bo__principal">
+      <header class="fs-bo__barra">
+        <nav class="fs-migas" aria-label="Migas"><a href="Dashboard.dc.html">Inicio</a><span aria-hidden="true">/</span><span>Configuración de tienda</span></nav>
+        <span style="flex: 1;"></span>
+        <span style="display: flex; gap: 10px; align-items: center; font-size: 14px;"><span style="width: 32px; height: 32px; border-radius: var(--radio-pill); background: var(--fs-color-primario-suave); color: var(--fs-color-primario-texto); display: grid; place-items: center; font-weight: 700; font-size: 13px;">CA</span>Carla Admin<span class="fs-icono" aria-hidden="true">expand_more</span></span>
+      </header>
+      <main class="fs-bo__contenido">
+        <div class="fs-entre">
+          <h1 class="fs-titulo-pagina">Configuración de tienda</h1>
+          <div style="display: flex; gap: 8px;"><button class="fs-btn fs-btn--contorno">Descartar cambios</button><button class="fs-btn fs-btn--primario">Guardar tema</button></div>
+        </div>
+
+        <nav class="fs-pestanas" role="tablist">
+          <a href="#" role="tab" aria-selected="false">Identidad</a>
+          <a href="#" role="tab" aria-selected="true">Tema</a>
+          <a href="#" role="tab" aria-selected="false">Contenido</a>
+          <a href="#" role="tab" aria-selected="false">Parámetros</a>
+          <a href="#" role="tab" aria-selected="false">Políticas</a>
+        </nav>
+
+        <div class="fs-dos-columnas" style="grid-template-columns: 420px minmax(0, 1fr); gap: 24px;">
+          <section class="fs-tarjeta" style="display: grid; gap: 18px;">
+            <div style="display: grid; gap: 2px;"><h2 class="fs-titulo-seccion">Colores de la marca</h2><span class="fs-suave">La tipografía y los bordes son los mismos en todas las tiendas.</span></div>
+            <sc-for list="{{colores}}" as="c" hint-placeholder-count="5">
+              <div class="cf-color">
+                <span class="cf-muestra" style="{{c.estilo}}"></span>
+                <div style="display: grid;"><b style="font-weight: 600; font-size: 14px;">{{c.nombre}}</b><span class="fs-suave">{{c.uso}}</span></div>
+                <input class="fs-input fs-codigo" value="{{c.valor}}" aria-label="{{c.nombre}}">
+              </div>
+            </sc-for>
+            <div style="display: flex; gap: 10px; padding: 12px 14px; border-radius: var(--fs-radio-md); background: var(--fs-color-exito-suave); color: var(--fs-color-exito); font-size: 14px;">
+              <span class="fs-icono" aria-hidden="true">check_circle</span><span>{{contraste}}</span>
+            </div>
+            <a class="fs-btn fs-btn--texto" href="#" style="justify-self: start; padding: 0;"><span class="fs-icono" aria-hidden="true">restart_alt</span>Restaurar tema por defecto</a>
+          </section>
+
+          <section class="fs-tarjeta" style="display: grid; gap: 16px; align-content: start;">
+            <div class="fs-entre" style="flex-wrap: wrap;">
+              <h2 class="fs-titulo-seccion">Vista previa en vivo</h2>
+              <div style="display: flex; gap: 8px;">
+                <div class="cf-segmento"><button aria-pressed="true">Tienda</button><button>Backoffice</button></div>
+                <div class="cf-segmento"><button aria-pressed="true">Escritorio</button><button>Móvil</button></div>
+              </div>
+            </div>
+            <div class="cf-vista">
+              <div style="display: flex; align-items: center; gap: 24px; height: 48px; padding: 0 20px; background: var(--fs-color-superficie); border-bottom: 1px solid var(--fs-color-linea); font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; font-weight: 500;">
+                <b style="font-size: 13px; letter-spacing: 0.14em;"><span class="fs-solo-fitstore">FitStore</span><span class="fs-solo-kallpa">Kallpa</span></b>
+                <span style="border-bottom: 2px solid var(--fs-color-texto); padding-block: 4px;">Leggings</span><span>Tops</span><span>Casacas</span>
+                <span style="flex: 1;"></span><span class="fs-icono" style="font-size: 18px;" aria-hidden="true">shopping_bag</span>
+              </div>
+              <div style="background: var(--fs-color-secundario); color: var(--fs-color-en-secundario); padding: 40px 28px; display: grid; gap: 12px;">
+                <span class="fs-eyebrow" style="font-size: 10px; color: var(--fs-color-primario);">Nueva colección</span>
+                <b style="font-size: 30px; line-height: 32px;">Muévete con estilo</b>
+                <span class="fs-btn fs-btn--primario fs-btn--sm" style="justify-self: start;">Ver novedades</span>
+              </div>
+              <div style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; padding: 20px;">
+                <div style="display: grid; gap: 6px;"><div style="aspect-ratio: 4/5; border-radius: var(--fs-radio-sm); background: var(--fs-color-superficie-alterna);"></div><span style="font-size: 11px;">Legging Pro</span><b style="font-size: 12px;">S/ 59.90</b></div>
+                <div style="display: grid; gap: 6px;"><div style="aspect-ratio: 4/5; border-radius: var(--fs-radio-sm); background: var(--fs-color-superficie-alterna); position: relative;"><span class="fs-insignia fs-insignia--acento" style="position: absolute; top: 6px; left: 6px; font-size: 10px; padding: 0 6px;">Nuevo</span></div><span style="font-size: 11px;">Top Flex</span><b style="font-size: 12px;">S/ 39.90</b></div>
+                <div style="display: grid; gap: 6px;"><div style="aspect-ratio: 4/5; border-radius: var(--fs-radio-sm); background: var(--fs-color-superficie-alterna);"></div><span style="font-size: 11px;">Casaca Wind</span><b style="font-size: 12px;">S/ 89.90</b></div>
+                <div style="display: grid; gap: 6px;"><div style="aspect-ratio: 4/5; border-radius: var(--fs-radio-sm); background: var(--fs-color-superficie-alterna);"></div><span style="font-size: 11px;">Jogger Urban</span><b style="font-size: 12px;">S/ 69.90</b></div>
+              </div>
+            </div>
+            <span class="fs-suave">Así se verá la tienda al guardar. Los cambios no se publican hasta que pulses "Guardar tema".</span>
+          </section>
+        </div>
+      </main>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"marca":{"editor":"enum","options":["fitstore","kallpa"],"default":"fitstore","section":"Marca"},"$preview":{"width":1440,"height":1050}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const marca = this.props.marca ?? 'fitstore';
+    const valores = marca === 'kallpa'
+      ? ['#B3245C', '#22182E', '#A3E635', '#F8F6FB', '#22182E']
+      : ['#C9B28C', '#2B2621', '#4E5B45', '#FAF9F7', '#26221D'];
+    const nombres = [['Primario', 'Botón principal y marcas activas'], ['Secundario', 'Pie, hero y barra lateral'], ['Acento', 'Insignias de descuento y novedades'], ['Fondo', 'Fondo de las páginas'], ['Texto', 'Texto principal']];
+    const contraste = marca === 'kallpa'
+      ? 'Buen contraste: texto sobre fondo 15.8:1; blanco sobre el primario 6.3:1.'
+      : 'Buen contraste: texto sobre fondo 15.0:1; texto sobre el primario 7.7:1.';
+    return { marca, contraste, colores: nombres.map(([nombre, uso], i) => ({ nombre, uso, valor: valores[i], estilo: 'background: ' + valores[i] })) };
+  }
+}
+</script>
+</body>
+</html>

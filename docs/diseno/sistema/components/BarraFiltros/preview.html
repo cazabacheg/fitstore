@@ -1,0 +1,16 @@
+<!-- @dsCard group="Backoffice" height=170 subtitle="Búsqueda, filtros y contadores por estado" -->
+<!doctype html>
+<html lang="es">
+<head><meta charset="utf-8"><title>Búsqueda, filtros y contadores por estado</title></head>
+<body>
+<div class="fs-filtros">
+  <div class="fs-fila" role="group" aria-label="Estado"><button class="fs-chip" aria-pressed="false">Todos <b>64</b></button><button class="fs-chip" aria-pressed="true">Pagado <b>5</b></button><button class="fs-chip" aria-pressed="false">En preparación <b>2</b></button><button class="fs-chip" aria-pressed="false">Enviado <b>4</b></button><button class="fs-chip" aria-pressed="false">Devuelto <b>1</b></button></div>
+  <div class="fs-filtros__controles">
+    <div class="fs-buscador"><span class="fs-icono" aria-hidden="true">search</span><input class="fs-input" aria-label="Buscar" placeholder="Código, cliente, correo o DNI"></div>
+    <select class="fs-select" aria-label="Modalidad" style="width:180px"><option>Todas las modalidades</option></select>
+    <input class="fs-input" type="date" aria-label="Desde" style="width:160px">
+    <button class="fs-btn fs-btn--texto fs-btn--sm">Limpiar filtros</button>
+  </div>
+</div>
+</body>
+</html>

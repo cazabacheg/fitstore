@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Landing de la tienda</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="ds/fitstore/components/bundle.css">
+<link rel="stylesheet" href="marca.css">
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+body{margin:0;padding:0}
+a{color:inherit}
+</style>
+</helmet>
+<div data-theme="{{marca}}" style="font-family: var(--fs-font-marca); background: var(--fs-color-fondo); color: var(--fs-color-texto); font-size: 15px; line-height: 24px; min-height: 100%;">
+  <dc-import name="TiendaCabecera" actual="ninguna" hint-size="100%,80px"></dc-import>
+
+  <section class="fs-hero" style="background: var(--fs-color-secundario); color: var(--fs-color-en-secundario);">
+    <div style="position: absolute; inset: 0; display: grid; place-items: center; color: var(--fs-color-en-secundario); opacity: 0.35;">
+      <div style="display: grid; justify-items: center; gap: 8px;">
+        <span class="fs-icono" style="font-size: 96px;" aria-hidden="true">sprint</span>
+        <span style="font-size: 13px;">[Foto de campaña a todo el ancho · 1600 px]</span>
+      </div>
+    </div>
+    <div class="fs-pagina fs-hero__contenido" style="position: relative; width: 100%; display: flex; flex-direction: column; gap: 20px;">
+      <span class="fs-eyebrow" style="color: var(--fs-color-primario);">Nueva colección · Verano 2026</span>
+      <h1 class="fs-titulo-hero" style="margin: 0; max-width: 640px; font-size: 64px; line-height: 64px; font-weight: 700; letter-spacing: -0.02em; text-wrap: balance;">Muévete con estilo</h1>
+      <p style="margin: 0; max-width: 460px; font-size: 17px; line-height: 26px; opacity: 0.88;">Leggings, tops y casacas hechos en Gamarra, con tela de compresión y secado rápido.</p>
+      <div style="display: flex; gap: 12px; flex-wrap: wrap; align-items: center;">
+        <a class="fs-btn fs-btn--primario fs-btn--lg" href="Listado.dc.html">Ver novedades</a>
+        <div style="display: flex; gap: 8px; align-items: center; margin-left: 16px;">
+          <button class="fs-icono-boton" aria-label="Imagen anterior" style="color: var(--fs-color-en-secundario); border: 1px solid rgba(255,255,255,0.4);"><span class="fs-icono" aria-hidden="true">chevron_left</span></button>
+          <button class="fs-icono-boton" aria-label="Imagen siguiente" style="color: var(--fs-color-en-secundario); border: 1px solid rgba(255,255,255,0.4);"><span class="fs-icono" aria-hidden="true">chevron_right</span></button>
+        </div>
+        <div style="display: flex; gap: 8px; align-items: center;" aria-label="Imagen 1 de 3 del carrusel">
+          <span style="width: 28px; height: 3px; background: var(--fs-color-en-secundario);"></span>
+          <span style="width: 28px; height: 3px; background: var(--fs-color-en-secundario); opacity: 0.35;"></span>
+          <span style="width: 28px; height: 3px; background: var(--fs-color-en-secundario); opacity: 0.35;"></span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="fs-pagina" style="padding-block: 40px 16px;">
+    <div class="fs-rejilla-3" style="background: var(--fs-color-primario-suave); border-radius: var(--fs-radio-md); padding: 16px 24px; gap: 16px;">
+      <div style="display: flex; gap: 12px; align-items: center;"><span class="fs-icono" style="color: var(--fs-color-primario-texto);" aria-hidden="true">local_shipping</span><span style="font-weight: 500;">Envíos a todo el Perú</span></div>
+      <div style="display: flex; gap: 12px; align-items: center;"><span class="fs-icono" style="color: var(--fs-color-primario-texto);" aria-hidden="true">sell</span><span style="font-weight: 500;">Lleva 3 y ahorra 5 %</span></div>
+      <div style="display: flex; gap: 12px; align-items: center;"><span class="fs-icono" style="color: var(--fs-color-primario-texto);" aria-hidden="true">credit_card</span><span style="font-weight: 500;">Paga con tarjeta o Yape</span></div>
+    </div>
+  </section>
+
+  <section class="fs-pagina" style="padding-block: 64px 32px;">
+    <div style="display: flex; justify-content: space-between; align-items: baseline; gap: 16px; margin-bottom: 28px;">
+      <h2 style="margin: 0; font-size: 26px; line-height: 32px; font-weight: 600; letter-spacing: -0.01em;">Compra por categoría</h2>
+    </div>
+    <div class="fs-rejilla-3">
+      <sc-for list="{{categorias}}" as="cat" hint-placeholder-count="6">
+        <a href="Listado.dc.html" style="display: flex; justify-content: space-between; align-items: flex-end; min-height: 140px; padding: 20px; border-radius: var(--fs-radio-md); background: var(--fs-color-superficie-alterna); border: 1px solid var(--fs-color-linea); text-decoration: none; color: var(--fs-color-texto);">
+          <span style="font-size: 17px; line-height: 24px; font-weight: 600;">{{cat.nombre}}</span>
+          <span class="fs-icono" style="color: var(--fs-color-primario-texto);" aria-hidden="true">arrow_forward</span>
+        </a>
+      </sc-for>
+    </div>
+  </section>
+
+  <section class="fs-pagina" style="padding-block: 64px;">
+    <div style="display: flex; justify-content: space-between; align-items: baseline; gap: 16px; margin-bottom: 28px;">
+      <h2 style="margin: 0; font-size: 26px; line-height: 32px; font-weight: 600; letter-spacing: -0.01em;">Destacados</h2>
+      <a class="fs-btn fs-btn--texto" href="Listado.dc.html">Ver todo ›</a>
+    </div>
+    <div class="fs-rejilla-4">
+      <sc-for list="{{destacados}}" as="p" hint-placeholder-count="4">
+        <a class="fs-tarjeta-producto" href="Producto.dc.html">
+          <div class="fs-tarjeta-producto__imagen"><span class="fs-icono" aria-hidden="true">checkroom</span>
+            <sc-if value="{{p.etiqueta}}" hint-placeholder-val="{{true}}"><span class="fs-tarjeta-producto__insignia fs-insignia fs-insignia--acento">{{p.etiqueta}}</span></sc-if>
+          </div>
+          <span class="fs-tarjeta-producto__nombre">{{p.nombre}}</span>
+          <div class="fs-precio"><span class="fs-suave">Desde</span><span class="fs-precio__actual">{{p.precio}}</span></div>
+        </a>
+      </sc-for>
+    </div>
+  </section>
+
+  <section class="fs-pagina" style="padding-block: 32px 96px;">
+    <div class="fs-tienda-fisica" style="background: var(--fs-color-superficie); border: 1px solid var(--fs-color-linea); border-radius: var(--fs-radio-lg); overflow: hidden; gap: 0;">
+      <div style="padding: 32px; display: flex; flex-direction: column; gap: 12px;">
+        <span style="font-size: 12px; line-height: 16px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--fs-color-texto-suave);">Tienda física</span>
+        <h2 style="margin: 0; font-size: 22px; line-height: 28px; font-weight: 600;">Visítanos en Gamarra</h2>
+        <p style="margin: 0;">Galería Gamarra, Jr. Gamarra 700, tienda 210, La Victoria, Lima</p>
+        <p style="margin: 0; color: var(--fs-color-texto-suave);">Lunes a sábado de 9:00 a 19:00</p>
+        <div style="display: flex; gap: 12px; flex-wrap: wrap;"><a class="fs-btn fs-btn--contorno" href="#">Cómo llegar</a><a class="fs-btn fs-btn--texto" href="#">Escríbenos por WhatsApp</a></div>
+      </div>
+      <div class="fs-solo-escritorio" style="min-height: 220px; background: var(--fs-color-superficie-alterna); display: grid; place-items: center; color: var(--fs-color-texto-suave);">
+        <div style="display: grid; justify-items: center; gap: 6px;"><span class="fs-icono" style="font-size: 40px;" aria-hidden="true">storefront</span><span style="font-size: 13px;">[Foto de la tienda]</span></div>
+      </div>
+    </div>
+  </section>
+
+  <dc-import name="TiendaPie" hint-size="100%,380px"></dc-import>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"marca":{"editor":"enum","options":["fitstore","kallpa"],"default":"fitstore","section":"Marca"},"$preview":{"width":1280,"height":2800}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {
+      marca: this.props.marca ?? 'fitstore',
+      categorias: [
+        { nombre: 'Polos y tops' }, { nombre: 'Leggings y pantalones' }, { nombre: 'Casacas y polerones' },
+        { nombre: 'Vestidos' }, { nombre: 'Conjuntos' }, { nombre: 'Nueva colección' }
+      ],
+      destacados: [
+        { nombre: 'Legging Pro Compresión', precio: 'S/ 59.90', etiqueta: 'Desde 3 un. −5 %' },
+        { nombre: 'Top Flex', precio: 'S/ 39.90', etiqueta: '' },
+        { nombre: 'Casaca Wind', precio: 'S/ 89.90', etiqueta: 'Nuevo' },
+        { nombre: 'Jogger Urban', precio: 'S/ 69.90', etiqueta: '' }
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Detalle de pedido</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="ds/fitstore/components/bundle.css">
+<link rel="stylesheet" href="marca.css">
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+body{margin:0;padding:0}
+a{color:inherit}
+.fs-tabla td.num,.fs-tabla th.num{text-align:right}
+.fs-tabla tbody tr.sin-detalle{cursor:default}
+.fs-tabla tbody tr.sin-detalle:hover{background:transparent}
+.pa-datos{display:grid;grid-template-columns:120px minmax(0,1fr);gap:8px 12px;font-size:14px}
+.pa-datos dt{color:var(--fs-color-texto-suave)}
+.pa-datos dd{margin:0}
+.pa-fila{display:flex;justify-content:space-between;gap:12px;font-size:14px;font-variant-numeric:tabular-nums}
+.pa-hist{display:grid;gap:14px;font-size:14px}
+.pa-hist div{display:grid;gap:2px;padding-left:16px;border-left:2px solid var(--fs-color-linea)}
+</style>
+</helmet>
+<div data-theme="{{marca}}" style="font-family: var(--fs-font-marca); background: var(--fs-color-fondo); color: var(--fs-color-texto); font-size: 15px; line-height: 24px; min-height: 100%;">
+  <div class="fs-bo">
+    <div style="background: var(--fs-color-secundario);"><dc-import name="BoBarra" actual="pedidos" hint-size="240px,900px"></dc-import></div>
+    <div class="fs-bo__principal">
+      <header class="fs-bo__barra">
+        <nav class="fs-migas" aria-label="Migas"><a href="Dashboard.dc.html">Inicio</a><span aria-hidden="true">/</span><a href="Pedidos.dc.html">Pedidos</a><span aria-hidden="true">/</span><span>FS-000128</span></nav>
+        <span style="flex: 1;"></span>
+        <span style="display: flex; gap: 10px; align-items: center; font-size: 14px;"><span style="width: 32px; height: 32px; border-radius: var(--radio-pill); background: var(--fs-color-primario-suave); color: var(--fs-color-primario-texto); display: grid; place-items: center; font-weight: 700; font-size: 13px;">CA</span>Carla Admin<span class="fs-icono" aria-hidden="true">expand_more</span></span>
+      </header>
+      <main class="fs-bo__contenido">
+        <div class="fs-entre" style="flex-wrap: wrap; align-items: flex-end;">
+          <div style="display: grid; gap: 4px;">
+            <div style="display: flex; gap: 12px; align-items: center;">
+              <h1 class="fs-titulo-pagina">Pedido <span class="fs-codigo" style="font-size: inherit; font-weight: 700;">FS-000128</span></h1>
+              <span class="fs-insignia fs-insignia--info">En preparación</span>
+            </div>
+            <span style="color: var(--fs-color-texto-suave);">Diego Salazar · jueves 22 de octubre, 16:47 · Delivery</span>
+          </div>
+          <div style="display: flex; gap: 8px;">
+            <button class="fs-btn fs-btn--peligro">Cancelar pedido</button>
+            <button class="fs-btn fs-btn--contorno"><span class="fs-icono" aria-hidden="true">chat</span>Agregar comentario</button>
+            <button class="fs-btn fs-btn--primario"><span class="fs-icono" aria-hidden="true">package_2</span>Marcar listo para despacho</button>
+          </div>
+        </div>
+
+        <div class="fs-dos-columnas" style="grid-template-columns: minmax(0, 1fr) 400px; gap: 24px;">
+          <div style="display: grid; gap: 24px;">
+            <section style="display: grid; gap: 12px;">
+              <h2 class="fs-titulo-seccion">Productos</h2>
+              <div class="fs-tabla-contenedor">
+                <table class="fs-tabla">
+                  <thead><tr><th>Producto</th><th>SKU</th><th class="num">Cant.</th><th class="num">Precio</th><th class="num">Descuento</th><th class="num">Total</th></tr></thead>
+                  <tbody>
+                    <tr class="sin-detalle"><td>Legging Pro Compresión · Negro · L</td><td><a href="#" class="fs-codigo">LEG01-NEG-L</a></td><td class="num">2</td><td class="num">S/ 59.90</td><td class="num">−S/ 5.99</td><td class="num">S/ 113.81</td></tr>
+                    <tr class="sin-detalle"><td>Legging Pro Compresión · Vino · M</td><td><a href="#" class="fs-codigo">LEG01-VIN-M</a></td><td class="num">1</td><td class="num">S/ 59.90</td><td class="num">−S/ 2.99</td><td class="num">S/ 56.91</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </section>
+
+            <section class="fs-tarjeta" style="display: grid; gap: 12px;">
+              <h2 class="fs-titulo-seccion">Historial</h2>
+              <div class="pa-hist">
+                <div><b>En preparación</b><span class="fs-suave">22/10 17:20 · Mario Operador</span><span>Empacando; falta etiqueta.</span></div>
+                <div><b>Pagado</b><span class="fs-suave">22/10 16:49 · Sistema (pago confirmado)</span></div>
+                <div><b>Pendiente de pago</b><span class="fs-suave">22/10 16:47 · Cliente</span></div>
+              </div>
+            </section>
+          </div>
+
+          <aside style="display: grid; gap: 20px; align-content: start;">
+            <section class="fs-tarjeta" style="display: grid; gap: 10px;">
+              <h2 class="fs-titulo-seccion">Montos</h2>
+              <div class="pa-fila"><span>Subtotal</span><span>S/ 179.70</span></div>
+              <div class="pa-fila" style="color: var(--fs-color-exito);"><span>Descuentos</span><span>−S/ 8.98</span></div>
+              <div class="pa-fila"><span>Envío</span><span>S/ 10.00</span></div>
+              <hr class="fs-linea">
+              <div class="pa-fila" style="font-size: 17px; font-weight: 700;"><span>Total</span><span>S/ 180.72</span></div>
+            </section>
+            <section class="fs-tarjeta" style="display: grid; gap: 12px;">
+              <h2 class="fs-titulo-seccion">Pago</h2>
+              <dl class="pa-datos" style="margin: 0;">
+                <dt>Proveedor</dt><dd>Culqi</dd>
+                <dt>Medio</dt><dd>Tarjeta Visa ···· 4242</dd>
+                <dt>Fecha</dt><dd>22/10 16:49</dd>
+                <dt>Boleta</dt><dd><a href="#" class="fs-codigo" style="color: var(--fs-color-primario-texto);">B001-00000051</a></dd>
+              </dl>
+            </section>
+            <section class="fs-tarjeta" style="display: grid; gap: 12px;">
+              <h2 class="fs-titulo-seccion">Cliente y entrega</h2>
+              <dl class="pa-datos" style="margin: 0;">
+                <dt>Cliente</dt><dd>Diego Salazar<br><span class="fs-suave">diego.salazar@correo.pe · 912 345 678</span></dd>
+                <dt>Dirección</dt><dd>Av. Los Próceres 455, Santiago de Surco, Lima</dd>
+                <dt>Notas</dt><dd>Dejar en portería.</dd>
+              </dl>
+            </section>
+          </aside>
+        </div>
+      </main>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"marca":{"editor":"enum","options":["fitstore","kallpa"],"default":"fitstore","section":"Marca"},"$preview":{"width":1440,"height":1100}}'>
+class Component extends DCLogic {
+  renderVals() { return { marca: this.props.marca ?? 'fitstore' }; }
+}
+</script>
+</body>
+</html>

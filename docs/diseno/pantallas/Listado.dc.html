@@ -1,0 +1,138 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Listado de productos</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="ds/fitstore/components/bundle.css">
+<link rel="stylesheet" href="marca.css">
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+body{margin:0;padding:0}
+a{color:inherit}
+.lst-filtro{display:grid;gap:12px;padding-block:20px;border-bottom:1px solid var(--fs-color-linea)}
+.lst-filtro:first-child{padding-top:0}
+.lst-filtro__titulo{display:flex;justify-content:space-between;align-items:center;font-size:12px;line-height:16px;font-weight:600;letter-spacing:.12em;text-transform:uppercase}
+.lst-tallas{display:flex;flex-wrap:wrap;gap:8px}
+.lst-tallas .fs-talla{min-width:44px;height:36px;font-size:13px}
+.lst-colores{display:flex;flex-wrap:wrap;gap:10px}
+.lst-colores .fs-color-opcion{width:26px;height:26px}
+</style>
+</helmet>
+<div data-theme="{{marca}}" style="font-family: var(--fs-font-marca); background: var(--fs-color-fondo); color: var(--fs-color-texto); font-size: 15px; line-height: 24px; min-height: 100%;">
+  <dc-import name="TiendaCabecera" actual="leggings" hint-size="100%,80px"></dc-import>
+
+  <main class="fs-pagina" style="padding-block: 32px 80px; display: grid; gap: 24px;">
+    <div style="display: grid; gap: 8px;">
+      <nav class="fs-migas" aria-label="Migas"><a href="Main.dc.html">Inicio</a><span aria-hidden="true">/</span><span>Leggings</span></nav>
+      <div class="fs-entre" style="align-items: flex-end; flex-wrap: wrap;">
+        <div style="display: grid; gap: 4px;">
+          <h1 class="fs-titulo-pagina">Leggings</h1>
+          <span style="color: var(--fs-color-texto-suave);">24 productos</span>
+        </div>
+        <div style="display: flex; gap: 8px; align-items: center;">
+          <button class="fs-btn fs-btn--contorno fs-solo-movil"><span class="fs-icono" aria-hidden="true">tune</span>Filtros (2)</button>
+          <label class="fs-solo-escritorio" for="orden" style="font-size: 13px; color: var(--fs-color-texto-suave);">Ordenar por</label>
+          <select id="orden" class="fs-select" style="width: auto; min-width: 180px;"><option>Más nuevos</option><option>Precio: menor a mayor</option><option>Precio: mayor a menor</option></select>
+        </div>
+      </div>
+    </div>
+
+    <div class="fs-lateral-izq" style="grid-template-columns: 220px minmax(0, 1fr); gap: 40px;">
+      <aside class="fs-solo-escritorio" aria-label="Filtros">
+        <div class="lst-filtro">
+          <div class="lst-filtro__titulo">Categoría</div>
+          <label class="fs-check"><input type="radio" name="cat" checked> Leggings</label>
+          <label class="fs-check"><input type="radio" name="cat"> Leggings cortos</label>
+          <label class="fs-check"><input type="radio" name="cat"> Joggers</label>
+        </div>
+        <div class="lst-filtro">
+          <div class="lst-filtro__titulo">Talla</div>
+          <div class="lst-tallas">
+            <button class="fs-talla">XS</button><button class="fs-talla">S</button><button class="fs-talla" aria-pressed="true">M</button><button class="fs-talla">L</button><button class="fs-talla">XL</button>
+          </div>
+        </div>
+        <div class="lst-filtro">
+          <div class="lst-filtro__titulo">Color</div>
+          <div class="lst-colores">
+            <button class="fs-color-opcion" aria-pressed="true" aria-label="Negro" style="background:#1d1d1f"></button>
+            <button class="fs-color-opcion" aria-label="Arena" style="background:#d8c7a8"></button>
+            <button class="fs-color-opcion" aria-label="Olivo" style="background:#5d6b4f"></button>
+            <button class="fs-color-opcion" aria-label="Vino" style="background:#6e2639"></button>
+            <button class="fs-color-opcion" aria-label="Gris" style="background:#9a9a9a"></button>
+            <button class="fs-color-opcion" aria-label="Blanco" style="background:#ffffff"></button>
+          </div>
+        </div>
+        <div class="lst-filtro">
+          <div class="lst-filtro__titulo">Precio</div>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+            <input class="fs-input" placeholder="Mín." aria-label="Precio mínimo">
+            <input class="fs-input" placeholder="Máx." aria-label="Precio máximo">
+          </div>
+        </div>
+        <div class="lst-filtro" style="border-bottom: 0;">
+          <label class="fs-check"><input type="checkbox" checked> Solo disponibles</label>
+        </div>
+      </aside>
+
+      <section style="display: grid; gap: 24px; align-content: start;">
+        <div style="display: flex; flex-wrap: wrap; gap: 8px; align-items: center;">
+          <span class="fs-chip">Talla M <span class="fs-icono" style="font-size: 16px;" aria-label="Quitar">close</span></span>
+          <span class="fs-chip">Negro <span class="fs-icono" style="font-size: 16px;" aria-label="Quitar">close</span></span>
+          <a class="fs-btn fs-btn--texto fs-btn--sm" href="#">Limpiar filtros</a>
+        </div>
+
+        <div class="fs-rejilla-3" style="gap: 32px 24px;">
+          <sc-for list="{{productos}}" as="p" hint-placeholder-count="9">
+            <a class="fs-tarjeta-producto" href="Producto.dc.html">
+              <div class="fs-tarjeta-producto__imagen"><span class="fs-icono" aria-hidden="true">checkroom</span>
+                <sc-if value="{{p.etiqueta}}" hint-placeholder-val="{{true}}"><span class="fs-tarjeta-producto__insignia fs-insignia fs-insignia--acento">{{p.etiqueta}}</span></sc-if>
+              </div>
+              <div style="display: grid; gap: 6px;">
+                <span class="fs-tarjeta-producto__nombre">{{p.nombre}}</span>
+                <div class="fs-muestras" aria-label="Colores disponibles"><span class="fs-muestra" style="background:#1d1d1f"></span><span class="fs-muestra" style="background:#d8c7a8"></span><span class="fs-muestra" style="background:#5d6b4f"></span></div>
+                <div class="fs-precio"><span class="fs-precio__actual">{{p.precio}}</span></div>
+              </div>
+            </a>
+          </sc-for>
+        </div>
+
+        <div style="display: flex; justify-content: center; padding-top: 16px;">
+          <nav class="fs-paginador" aria-label="Páginas">
+            <button aria-label="Anterior"><span class="fs-icono">chevron_left</span></button>
+            <button aria-current="page">1</button><button>2</button><button>3</button>
+            <button aria-label="Siguiente"><span class="fs-icono">chevron_right</span></button>
+          </nav>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <dc-import name="TiendaPie" hint-size="100%,380px"></dc-import>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"marca":{"editor":"enum","options":["fitstore","kallpa"],"default":"fitstore","section":"Marca"},"$preview":{"width":1280,"height":2000}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {
+      marca: this.props.marca ?? 'fitstore',
+      productos: [
+        { nombre: 'Legging Pro Compresión', precio: 'S/ 59.90', etiqueta: 'Desde 3 un. −5 %' },
+        { nombre: 'Legging Seamless', precio: 'S/ 64.90', etiqueta: 'Nuevo' },
+        { nombre: 'Legging Básico Tiro Alto', precio: 'S/ 45.90', etiqueta: '' },
+        { nombre: 'Legging con Bolsillos', precio: 'S/ 62.90', etiqueta: '' },
+        { nombre: 'Legging Rib', precio: 'S/ 54.90', etiqueta: 'Nuevo' },
+        { nombre: 'Legging Corto Biker', precio: 'S/ 39.90', etiqueta: '' },
+        { nombre: 'Legging Flare', precio: 'S/ 69.90', etiqueta: '' },
+        { nombre: 'Legging Térmico', precio: 'S/ 72.90', etiqueta: '' },
+        { nombre: 'Legging Estampado', precio: 'S/ 57.90', etiqueta: 'Desde 3 un. −5 %' }
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>

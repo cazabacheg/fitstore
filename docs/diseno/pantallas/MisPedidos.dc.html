@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Mis pedidos</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="ds/fitstore/components/bundle.css">
+<link rel="stylesheet" href="marca.css">
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+body{margin:0;padding:0}
+a{color:inherit}
+.cta-menu{display:grid;gap:2px}
+.cta-menu a{display:flex;gap:12px;align-items:center;padding:10px 12px;border-radius:var(--fs-radio-md);text-decoration:none;color:var(--fs-color-texto-suave);font-weight:500}
+.cta-menu a[aria-current="page"]{background:var(--fs-color-superficie-alterna);color:var(--fs-color-texto);font-weight:600}
+.ped-tarjeta{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:16px;align-items:center;text-decoration:none}
+.ped-fotos{display:flex;gap:6px}
+.ped-fotos .fs-miniatura{width:44px}
+</style>
+</helmet>
+<div data-theme="{{marca}}" style="font-family: var(--fs-font-marca); background: var(--fs-color-fondo); color: var(--fs-color-texto); font-size: 15px; line-height: 24px; min-height: 100%;">
+  <dc-import name="TiendaCabecera" actual="ninguna" hint-size="100%,80px"></dc-import>
+
+  <main class="fs-pagina" style="padding-block: 40px 80px;">
+    <div class="fs-lateral-izq" style="gap: 48px;">
+      <nav class="cta-menu fs-solo-escritorio" aria-label="Mi cuenta">
+        <span class="fs-eyebrow" style="color: var(--fs-color-texto-suave); padding: 0 12px 8px;">Mi cuenta</span>
+        <a href="MisPedidos.dc.html" aria-current="page"><span class="fs-icono" aria-hidden="true">receipt_long</span>Mis pedidos</a>
+        <a href="#"><span class="fs-icono" aria-hidden="true">person</span>Mis datos</a>
+        <a href="#"><span class="fs-icono" aria-hidden="true">home_pin</span>Direcciones</a>
+        <a href="#"><span class="fs-icono" aria-hidden="true">logout</span>Cerrar sesión</a>
+      </nav>
+
+      <section style="display: grid; gap: 20px; align-content: start;">
+        <div style="display: grid; gap: 4px;">
+          <h1 class="fs-titulo-pagina">Mis pedidos</h1>
+          <span style="color: var(--fs-color-texto-suave);">Hola, Lucía. Aquí ves el estado de cada compra.</span>
+        </div>
+
+        <sc-for list="{{pedidos}}" as="p" hint-placeholder-count="5">
+          <a class="fs-tarjeta ped-tarjeta" href="MiPedido.dc.html">
+            <div style="display: grid; gap: 10px; min-width: 0;">
+              <div style="display: flex; flex-wrap: wrap; gap: 10px; align-items: center;">
+                <span class="fs-codigo" style="font-size: 14px;">{{p.codigo}}</span>
+                <span class="{{p.tono}}"><span class="fs-icono" aria-hidden="true">{{p.icono}}</span>{{p.estado}}</span>
+              </div>
+              <span class="fs-suave">{{p.fecha}} · {{p.prendas}} · {{p.entrega}}</span>
+              <div class="ped-fotos" aria-hidden="true"><span class="fs-miniatura"></span><span class="fs-miniatura"></span><span class="fs-miniatura"></span></div>
+            </div>
+            <div style="display: grid; justify-items: end; gap: 8px;">
+              <span style="font-weight: 700; font-variant-numeric: tabular-nums;">{{p.total}}</span>
+              <span class="fs-icono" style="color: var(--fs-color-texto-suave);" aria-hidden="true">chevron_right</span>
+            </div>
+          </a>
+        </sc-for>
+
+        <nav class="fs-paginador" aria-label="Páginas" style="justify-self: center;"><button aria-current="page">1</button><button>2</button></nav>
+      </section>
+    </div>
+  </main>
+
+  <dc-import name="TiendaPie" hint-size="100%,380px"></dc-import>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"marca":{"editor":"enum","options":["fitstore","kallpa"],"default":"fitstore","section":"Marca"},"$preview":{"width":1280,"height":1300}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {
+      marca: this.props.marca ?? 'fitstore',
+      pedidos: [
+        { codigo: 'FS-000124', estado: 'Enviado', tono: 'fs-insignia fs-insignia--info', icono: 'local_shipping', fecha: 'jueves 22 de octubre', prendas: '7 prendas', entrega: 'Delivery', total: 'S/ 420.32' },
+        { codigo: 'FS-000119', estado: 'Pendiente de pago', tono: 'fs-insignia fs-insignia--aviso', icono: 'schedule', fecha: 'miércoles 21 de octubre', prendas: '2 prendas', entrega: 'Recojo en tienda', total: 'S/ 99.80' },
+        { codigo: 'FS-000098', estado: 'Entregado', tono: 'fs-insignia fs-insignia--exito', icono: 'check_circle', fecha: 'lunes 5 de octubre', prendas: '4 prendas', entrega: 'Agencia', total: 'S/ 236.60' },
+        { codigo: 'FS-000087', estado: 'Cancelado', tono: 'fs-insignia fs-insignia--error', icono: 'cancel', fecha: 'domingo 27 de septiembre', prendas: '1 prenda', entrega: 'Delivery', total: 'S/ 69.90' },
+        { codigo: 'FS-000071', estado: 'Entregado', tono: 'fs-insignia fs-insignia--exito', icono: 'check_circle', fecha: 'sábado 12 de septiembre', prendas: '3 prendas', entrega: 'Delivery', total: 'S/ 184.70' }
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>

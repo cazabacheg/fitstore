@@ -1,7 +1,7 @@
 # FitStore — Contratos de API y de eventos
 
 > Versión: **v5 (aprobado)** — 2026-10-19 · Estados: ✅ decidido · 🟡 propuesto · ❓ abierto
-> Etapa: specs ✅ → **contratos ✅** → diseño → estrategia multiagente → implementación.
+> Etapa: specs ✅ → contratos ✅ → diseño ✅ ([`docs/diseno/`](../docs/diseno/)) → estrategia multiagente → implementación.
 
 **Historial:**
 - v5 (2026-10-19): etapa de diseño: el `Tema` de settings tiene solo los cinco colores (se quitan `tipografia`, `radioBordes` y el enum `Tipografia`).

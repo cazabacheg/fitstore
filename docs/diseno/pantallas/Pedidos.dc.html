@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Pedidos</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="ds/fitstore/components/bundle.css">
+<link rel="stylesheet" href="marca.css">
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+body{margin:0;padding:0}
+a{color:inherit}
+.fs-tabla td.num,.fs-tabla th.num{text-align:right}
+</style>
+</helmet>
+<div data-theme="{{marca}}" style="font-family: var(--fs-font-marca); background: var(--fs-color-fondo); color: var(--fs-color-texto); font-size: 15px; line-height: 24px; min-height: 100%;">
+  <div class="fs-bo">
+    <div style="background: var(--fs-color-secundario);"><dc-import name="BoBarra" actual="pedidos" hint-size="240px,900px"></dc-import></div>
+    <div class="fs-bo__principal">
+      <header class="fs-bo__barra">
+        <nav class="fs-migas" aria-label="Migas"><a href="Dashboard.dc.html">Inicio</a><span aria-hidden="true">/</span><span>Pedidos</span></nav>
+        <span style="flex: 1;"></span>
+        <span style="display: flex; gap: 10px; align-items: center; font-size: 14px;"><span style="width: 32px; height: 32px; border-radius: var(--radio-pill); background: var(--fs-color-primario-suave); color: var(--fs-color-primario-texto); display: grid; place-items: center; font-weight: 700; font-size: 13px;">CA</span>Carla Admin<span class="fs-icono" aria-hidden="true">expand_more</span></span>
+      </header>
+      <main class="fs-bo__contenido">
+        <h1 class="fs-titulo-pagina">Pedidos</h1>
+
+        <div class="fs-filtros">
+          <div class="fs-filtros__controles">
+            <button class="fs-chip" aria-pressed="true">Todos <b>41</b></button>
+            <button class="fs-chip">Pendiente de pago <b>4</b></button>
+            <button class="fs-chip">Pagado <b>7</b></button>
+            <button class="fs-chip">En preparación <b>5</b></button>
+            <button class="fs-chip">Listo para despacho <b>3</b></button>
+            <button class="fs-chip">Enviado <b>9</b></button>
+            <button class="fs-chip">Listo para recoger <b>2</b></button>
+            <button class="fs-chip">Entregado <b>8</b></button>
+            <button class="fs-chip">Cancelado <b>2</b></button>
+            <button class="fs-chip">Devuelto <b>1</b></button>
+          </div>
+          <div class="fs-filtros__controles">
+            <div class="fs-buscador"><span class="fs-icono" aria-hidden="true">search</span><input class="fs-input" placeholder="Código, nombre o correo del cliente" aria-label="Buscar"></div>
+            <select class="fs-select" style="width: 200px;" aria-label="Entrega"><option>Todas las entregas</option><option>Delivery</option><option>Agencia</option><option>Recojo</option></select>
+            <input class="fs-input" style="width: 160px;" value="01/10/2026" aria-label="Desde">
+            <input class="fs-input" style="width: 160px;" value="23/10/2026" aria-label="Hasta">
+          </div>
+        </div>
+
+        <div class="fs-tabla-contenedor">
+          <table class="fs-tabla">
+            <thead><tr><th>Código</th><th>Fecha</th><th>Cliente</th><th>Entrega</th><th>Estado</th><th class="num">Total</th><th class="fs-acciones"><span class="fs-solo-lector" style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0);">Acciones</span></th></tr></thead>
+            <tbody>
+              <sc-for list="{{pedidos}}" as="p" hint-placeholder-count="10">
+                <tr>
+                  <td><a href="Pedido.dc.html" class="fs-codigo">{{p.codigo}}</a></td>
+                  <td>{{p.fecha}}</td>
+                  <td>{{p.cliente}}</td>
+                  <td>{{p.entrega}}</td>
+                  <td><span class="{{p.insignia}}">{{p.estado}}</span></td>
+                  <td class="num">{{p.total}}</td>
+                  <td class="fs-acciones"><a href="Pedido.dc.html" style="text-decoration: none; font-weight: 600;">Ver ›</a></td>
+                </tr>
+              </sc-for>
+            </tbody>
+          </table>
+          <div class="fs-tabla__pie">
+            <span class="fs-suave">1–10 de 41 pedidos</span>
+            <nav class="fs-paginador" aria-label="Páginas"><button aria-label="Anterior"><span class="fs-icono">chevron_left</span></button><button aria-current="page">1</button><button>2</button><button>3</button><button>4</button><button>5</button><button aria-label="Siguiente"><span class="fs-icono">chevron_right</span></button></nav>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"marca":{"editor":"enum","options":["fitstore","kallpa"],"default":"fitstore","section":"Marca"},"$preview":{"width":1440,"height":1050}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const i = (t) => 'fs-insignia fs-insignia--' + t;
+    return {
+      marca: this.props.marca ?? 'fitstore',
+      pedidos: [
+        { codigo: 'FS-000131', fecha: '23/10 10:42', cliente: 'Rosa Quispe', entrega: 'Delivery', estado: 'Pendiente de pago', insignia: i('aviso'), total: 'S/ 129.80' },
+        { codigo: 'FS-000130', fecha: '23/10 09:15', cliente: 'Jorge Huamán', entrega: 'Agencia', estado: 'Pagado', insignia: i('exito'), total: 'S/ 342.60' },
+        { codigo: 'FS-000129', fecha: '22/10 18:03', cliente: 'Lucía Ramos', entrega: 'Recojo', estado: 'Listo para recoger', insignia: i('info'), total: 'S/ 99.80' },
+        { codigo: 'FS-000128', fecha: '22/10 16:47', cliente: 'Diego Salazar', entrega: 'Delivery', estado: 'En preparación', insignia: i('info'), total: 'S/ 180.72' },
+        { codigo: 'FS-000127', fecha: '22/10 12:30', cliente: 'Valeria Torres', entrega: 'Delivery', estado: 'Listo para despacho', insignia: i('info'), total: 'S/ 76.90' },
+        { codigo: 'FS-000126', fecha: '22/10 11:05', cliente: 'Rosa Quispe', entrega: 'Agencia', estado: 'Enviado', insignia: i('info'), total: 'S/ 512.40' },
+        { codigo: 'FS-000124', fecha: '22/10 10:14', cliente: 'Lucía Ramos', entrega: 'Delivery', estado: 'Enviado', insignia: i('info'), total: 'S/ 420.32' },
+        { codigo: 'FS-000121', fecha: '21/10 19:22', cliente: 'Jorge Huamán', entrega: 'Delivery', estado: 'Entregado', insignia: i('exito'), total: 'S/ 159.80' },
+        { codigo: 'FS-000118', fecha: '21/10 08:50', cliente: 'Diego Salazar', entrega: 'Delivery', estado: 'Cancelado', insignia: i('error'), total: 'S/ 69.90' },
+        { codigo: 'FS-000112', fecha: '19/10 15:31', cliente: 'Valeria Torres', entrega: 'Recojo', estado: 'Devuelto', insignia: i('error'), total: 'S/ 119.80' }
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>

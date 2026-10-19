@@ -1,0 +1,12 @@
+<!-- @dsCard group="Estados y avisos" height=290 subtitle="Cargando, vacío y error" -->
+<!doctype html>
+<html lang="es">
+<head><meta charset="utf-8"><title>Cargando, vacío y error</title></head>
+<body>
+<div class="fs-col" style="grid-template-columns:repeat(auto-fit,minmax(220px,1fr))">
+  <div class="fs-col" aria-label="Cargando"><div class="fs-esqueleto" style="aspect-ratio:4/5"></div><div class="fs-esqueleto" style="height:14px;width:70%"></div><div class="fs-esqueleto" style="height:14px;width:40%"></div></div>
+  <div class="fs-estado"><span class="fs-icono" aria-hidden="true">shopping_bag</span><span class="fs-estado__titulo">Tu carrito está vacío</span><span class="fs-suave">Explora la tienda y agrega lo que te guste.</span><a class="fs-btn fs-btn--primario fs-btn--sm" href="#">Ir a la tienda</a></div>
+  <div class="fs-estado fs-estado--error"><span class="fs-icono" aria-hidden="true">cloud_off</span><span class="fs-estado__titulo">No pudimos cargar tus pedidos</span><span class="fs-suave">Revisa tu conexión e inténtalo de nuevo.</span><button class="fs-btn fs-btn--contorno fs-btn--sm">Reintentar</button></div>
+</div>
+</body>
+</html>

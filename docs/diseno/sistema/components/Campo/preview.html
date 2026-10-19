@@ -1,0 +1,13 @@
+<!-- @dsCard group="Formularios" height=300 subtitle="Entrada, select, área de texto y casilla" -->
+<!doctype html>
+<html lang="es">
+<head><meta charset="utf-8"><title>Entrada, select, área de texto y casilla</title></head>
+<body>
+<div class="fs-col" style="max-width:520px">
+  <div class="fs-campo"><label class="fs-campo__etiqueta" for="c1">Correo</label><input id="c1" class="fs-input" value="ana.quispe@correo.com"></div>
+  <div class="fs-campo fs-campo--error"><label class="fs-campo__etiqueta" for="c2">DNI</label><input id="c2" class="fs-input" value="456789" aria-invalid="true" aria-describedby="e2"><span id="e2" class="fs-campo__error"><span class="fs-icono" aria-hidden="true">error</span> El DNI debe tener 8 dígitos</span></div>
+  <div class="fs-campo"><label class="fs-campo__etiqueta" for="c3">Agencia</label><select id="c3" class="fs-select"><option>Shalom</option><option>Olva Courier</option></select><span class="fs-campo__ayuda">Recoges en la agencia de tu ciudad · 2–4 días</span></div>
+  <label class="fs-check"><input type="checkbox" checked> Acepto los términos y condiciones</label>
+</div>
+</body>
+</html>

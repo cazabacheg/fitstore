@@ -1,0 +1,157 @@
+/* FitStore — variables de las dos marcas, copiadas de los tokens del sistema de diseño FitStore. */
+:root, [data-theme="fitstore"] {
+  --fs-color-primario: #c9b28c;
+  --fs-color-secundario: #2b2621;
+  --fs-color-acento: #4e5b45;
+  --fs-color-fondo: #faf9f7;
+  --fs-color-texto: #26221d;
+  --fs-color-en-primario: #26221d;
+  --fs-color-en-secundario: #ffffff;
+  --fs-color-en-acento: #ffffff;
+  --fs-color-primario-texto: #7a6343;
+  --fs-color-primario-suave: #f3ede3;
+  --fs-color-superficie: #ffffff;
+  --fs-color-superficie-alterna: #f2f0ec;
+  --fs-color-texto-suave: #6a6259;
+  --fs-color-linea: #e6e1d9;
+  --fs-color-borde-control: #8a8277;
+  --fs-color-foco: var(--fs-color-primario-texto);
+  --fs-color-exito: #166534;
+  --fs-color-exito-suave: #dcfce7;
+  --fs-color-aviso: #92400e;
+  --fs-color-aviso-suave: #fef3c7;
+  --fs-color-error: #b91c1c;
+  --fs-color-error-suave: #fee2e2;
+  --fs-color-info: #1d4ed8;
+  --fs-color-info-suave: #dbeafe;
+  --sombra-1: 0 1px 2px rgba(43,38,33,0.06), 0 1px 3px rgba(43,38,33,0.10);
+  --sombra-2: 0 12px 32px rgba(43,38,33,0.18);
+}
+[data-theme="kallpa"] {
+  --fs-color-primario: #b3245c;
+  --fs-color-secundario: #22182e;
+  --fs-color-acento: #a3e635;
+  --fs-color-fondo: #f8f6fb;
+  --fs-color-texto: #22182e;
+  --fs-color-en-primario: #ffffff;
+  --fs-color-en-secundario: #ffffff;
+  --fs-color-en-acento: #22182e;
+  --fs-color-primario-texto: #b3245c;
+  --fs-color-primario-suave: #fbe7ef;
+  --fs-color-superficie: #ffffff;
+  --fs-color-superficie-alterna: #f1edf6;
+  --fs-color-texto-suave: #625a6e;
+  --fs-color-linea: #e6e0ee;
+  --fs-color-borde-control: #857b92;
+  --fs-color-foco: #b3245c;
+  --sombra-1: 0 1px 2px rgba(34,24,46,0.06), 0 1px 3px rgba(34,24,46,0.10);
+  --sombra-2: 0 12px 32px rgba(34,24,46,0.20);
+}
+:root {
+  --espacio-1: 4px;
+  --espacio-2: 8px;
+  --espacio-3: 12px;
+  --espacio-4: 16px;
+  --espacio-6: 24px;
+  --espacio-8: 32px;
+  --espacio-12: 48px;
+  --espacio-16: 64px;
+  --radio-sm: 4px;
+  --radio-md: 8px;
+  --radio-lg: 16px;
+  --radio-pill: 999px;
+  --font-poppins: Poppins, "Segoe UI", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, Menlo, Consolas, monospace;
+}
+
+/* Nombre de la tienda según la marca (en la app sale de /settings/public). */
+.fs-solo-kallpa { display: none; }
+[data-theme="kallpa"] .fs-solo-fitstore { display: none; }
+[data-theme="kallpa"] .fs-solo-kallpa { display: inline; }
+
+/* Menú principal de la tienda: al pasar el mouse (o con foco) por una opción, las demás se atenúan. */
+.fs-nav { display: flex; gap: 40px; align-items: center; }
+.fs-nav a { font-size: 13px; line-height: 16px; font-weight: 500; letter-spacing: 0.08em; text-transform: uppercase; color: var(--fs-color-texto); text-decoration: none; padding-block: 8px; border-bottom: 2px solid transparent; transition: opacity .2s ease, border-color .2s ease; }
+.fs-nav a[aria-current="page"] { border-bottom-color: var(--fs-color-texto); }
+.fs-nav:hover a, .fs-nav:focus-within a { opacity: 0.4; }
+.fs-nav a:hover, .fs-nav a:focus-visible { opacity: 1; }
+.fs-icono-boton { display: inline-grid; place-items: center; width: 40px; height: 40px; border: 0; border-radius: var(--radio-pill); background: transparent; color: var(--fs-color-texto); text-decoration: none; position: relative; cursor: pointer; }
+.fs-icono-boton:hover { background: var(--fs-color-superficie-alterna); }
+.fs-cabecera__fila { display: flex; align-items: center; gap: 48px; height: 80px; }
+.fs-hero { position: relative; min-height: 600px; display: flex; align-items: flex-end; overflow: hidden; }
+.fs-hero__contenido { padding-block: 72px 64px; }
+.fs-eyebrow { font-size: 12px; line-height: 16px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; }
+
+/* Bloques comunes de las pantallas. */
+.fs-tarjeta { background: var(--fs-color-superficie); border: 1px solid var(--fs-color-linea); border-radius: var(--fs-radio-lg); padding: 24px; box-sizing: border-box; min-width: 0; }
+.fs-titulo-pagina { margin: 0; font-size: 28px; line-height: 34px; font-weight: 700; letter-spacing: -0.01em; }
+.fs-titulo-seccion { margin: 0; font-size: 17px; line-height: 24px; font-weight: 600; }
+.fs-migas { display: flex; flex-wrap: wrap; gap: 8px; font-size: 13px; line-height: 20px; color: var(--fs-color-texto-suave); }
+.fs-migas a { color: var(--fs-color-texto-suave); text-decoration: none; }
+.fs-entre { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+.fs-linea { border: 0; border-top: 1px solid var(--fs-color-linea); margin: 0; }
+.fs-miniatura { width: 72px; flex: none; aspect-ratio: 4 / 5; border-radius: var(--fs-radio-sm); background: var(--fs-color-superficie-alterna); display: grid; place-items: center; color: var(--fs-color-texto-suave); }
+
+/* Selectores de producto. */
+.fs-talla { min-width: 52px; height: 44px; padding: 0 12px; border: 1px solid var(--fs-color-borde-control); border-radius: var(--fs-radio-md); background: var(--fs-color-superficie); color: var(--fs-color-texto); font: 500 14px var(--fs-font-marca); cursor: pointer; }
+.fs-talla[aria-pressed="true"] { background: var(--fs-color-texto); color: var(--fs-color-superficie); border-color: var(--fs-color-texto); }
+.fs-talla:disabled { opacity: .4; text-decoration: line-through; cursor: default; }
+.fs-color-opcion { width: 32px; height: 32px; border-radius: var(--radio-pill); border: 3px solid var(--fs-color-superficie); box-shadow: 0 0 0 1px var(--fs-color-borde-control); cursor: pointer; padding: 0; }
+.fs-color-opcion[aria-pressed="true"] { box-shadow: 0 0 0 2px var(--fs-color-texto); }
+.fs-cantidad { display: inline-flex; align-items: center; height: 40px; border: 1px solid var(--fs-color-borde-control); border-radius: var(--fs-radio-md); background: var(--fs-color-superficie); }
+.fs-cantidad button { width: 40px; height: 38px; border: 0; background: transparent; color: var(--fs-color-texto); cursor: pointer; display: grid; place-items: center; }
+.fs-cantidad span { min-width: 32px; text-align: center; font-weight: 600; font-variant-numeric: tabular-nums; }
+.fs-opcion { display: flex; gap: 12px; align-items: flex-start; padding: 16px; border: 1px solid var(--fs-color-borde-control); border-radius: var(--fs-radio-md); background: var(--fs-color-superficie); cursor: pointer; }
+.fs-opcion--activa { border: 2px solid var(--fs-color-texto); padding: 15px; }
+.fs-radio { width: 18px; height: 18px; flex: none; margin-top: 3px; border-radius: var(--radio-pill); border: 2px solid var(--fs-color-borde-control); box-sizing: border-box; }
+.fs-opcion--activa .fs-radio { border: 6px solid var(--fs-color-texto); }
+
+/* Línea de tiempo del pedido. */
+.fs-linea-tiempo { list-style: none; margin: 0; padding: 0; }
+.fs-linea-tiempo li { display: grid; grid-template-columns: 28px minmax(0, 1fr); gap: 14px; position: relative; padding-bottom: 22px; }
+.fs-linea-tiempo li::before { content: ""; position: absolute; left: 13px; top: 30px; bottom: 2px; width: 2px; background: var(--fs-color-linea); }
+.fs-linea-tiempo li.hecho::before { background: var(--fs-color-texto); }
+.fs-linea-tiempo li:last-child { padding-bottom: 0; }
+.fs-linea-tiempo li:last-child::before { display: none; }
+.fs-linea-tiempo__punto { width: 28px; height: 28px; border-radius: var(--radio-pill); box-sizing: border-box; border: 2px solid var(--fs-color-linea); background: var(--fs-color-superficie); color: var(--fs-color-texto-suave); display: grid; place-items: center; }
+.hecho .fs-linea-tiempo__punto { background: var(--fs-color-texto); border-color: var(--fs-color-texto); color: var(--fs-color-superficie); }
+.actual .fs-linea-tiempo__punto { border-color: var(--fs-color-primario-texto); background: var(--fs-color-primario-suave); color: var(--fs-color-primario-texto); }
+
+/* Pestañas. */
+.fs-pestanas { display: flex; gap: 28px; border-bottom: 1px solid var(--fs-color-linea); overflow-x: auto; }
+.fs-pestanas a { padding-block: 12px; border-bottom: 2px solid transparent; margin-bottom: -1px; color: var(--fs-color-texto-suave); text-decoration: none; font-size: 14px; font-weight: 500; white-space: nowrap; }
+.fs-pestanas a[aria-selected="true"] { color: var(--fs-color-texto); border-bottom-color: var(--fs-color-texto); font-weight: 600; }
+
+/* Backoffice. */
+.fs-bo { display: grid; grid-template-columns: 240px minmax(0, 1fr); min-height: 100%; }
+.fs-bo__principal { display: flex; flex-direction: column; min-width: 0; }
+.fs-bo__barra { height: 64px; display: flex; align-items: center; gap: 16px; padding-inline: 32px; background: var(--fs-color-superficie); border-bottom: 1px solid var(--fs-color-linea); }
+.fs-bo__contenido { padding: 28px 32px 48px; display: grid; gap: 24px; align-content: start; }
+.fs-kpi { display: grid; gap: 4px; }
+.fs-kpi__valor { font-size: 28px; line-height: 34px; font-weight: 700; font-variant-numeric: tabular-nums; }
+
+/* Rejillas de las pantallas (responsivas: escritorio → móvil). */
+.fs-pagina { max-width: 1280px; margin: 0 auto; padding-inline: 32px; box-sizing: border-box; }
+.fs-rejilla-4 { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 24px; }
+.fs-rejilla-3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 24px; }
+.fs-dos-columnas { display: grid; grid-template-columns: minmax(0, 1fr) 380px; gap: 32px; align-items: start; }
+.fs-lateral-izq { display: grid; grid-template-columns: 240px minmax(0, 1fr); gap: 32px; align-items: start; }
+.fs-tienda-fisica { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+.fs-solo-movil { display: none; }
+.fs-tarjeta-producto { width: auto; min-width: 0; }
+@media (max-width: 720px) {
+  .fs-pagina { padding-inline: 16px; }
+  .fs-rejilla-4, .fs-rejilla-3 { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+  .fs-tienda-fisica { grid-template-columns: minmax(0, 1fr); }
+  /* !important: las pantallas pueden ajustar las columnas de escritorio en línea; en móvil siempre es una. */
+  .fs-dos-columnas, .fs-lateral-izq { grid-template-columns: minmax(0, 1fr) !important; gap: 24px !important; }
+  .fs-pie__rejilla { grid-template-columns: minmax(0, 1fr) !important; gap: 28px !important; }
+  .fs-solo-escritorio { display: none !important; }
+  .fs-solo-movil { display: block; }
+  .fs-cabecera__fila { gap: 4px; height: 64px; }
+  .fs-hero { min-height: 400px; }
+  .fs-hero__contenido { padding-block: 40px 32px; gap: 14px !important; }
+  .fs-titulo-pagina { font-size: 24px; line-height: 30px; }
+  .fs-tarjeta { padding: 16px; }
+  .fs-titulo-hero { font-size: 32px !important; line-height: 36px !important; }
+}
