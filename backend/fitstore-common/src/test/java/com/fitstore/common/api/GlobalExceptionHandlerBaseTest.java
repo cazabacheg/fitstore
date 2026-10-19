@@ -5,7 +5,12 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import jakarta.validation.ConstraintViolation;
+import jakarta.validation.ConstraintViolationException;
+import jakarta.validation.Path;
 import jakarta.validation.Valid;
+import java.util.Set;
+import org.mockito.Mockito;
 import jakarta.validation.constraints.Pattern;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -44,8 +49,24 @@ class GlobalExceptionHandlerBaseTest {
         @GetMapping("/error")
         void error() { throw new IllegalStateException("detalle interno que no se debe exponer"); }
 
+        @GetMapping("/restricciones")
+        void restricciones() {
+            ConstraintViolation<?> sobreElDni = violacion("crear.cuerpo.dni", "El DNI debe tener 8 dígitos");
+            ConstraintViolation<?> sinPunto = violacion("celular", "El celular debe empezar con 9");
+            throw new ConstraintViolationException(Set.of(sobreElDni, sinPunto));
+        }
+
         @PostMapping("/validar")
         void validar(@Valid @RequestBody Cuerpo cuerpo) { }
+    }
+
+    private static ConstraintViolation<?> violacion(String ruta, String mensaje) {
+        ConstraintViolation<?> v = Mockito.mock(ConstraintViolation.class);
+        Path path = Mockito.mock(Path.class);
+        Mockito.when(path.toString()).thenReturn(ruta);
+        Mockito.when(v.getPropertyPath()).thenReturn(path);
+        Mockito.when(v.getMessage()).thenReturn(mensaje);
+        return v;
     }
 
     @RestControllerAdvice
@@ -131,5 +152,17 @@ class GlobalExceptionHandlerBaseTest {
         mvc.perform(get("/no-existe"))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.codigo").value("NO_ENCONTRADO"));
+    }
+
+    @Test
+    @DisplayName("K5 ConstraintViolationException responde 400 VALIDACION con un error por campo, recortado al último nodo")
+    void violacionDeRestricciones() throws Exception {
+        mvc.perform(get("/restricciones"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.success").value(false))
+                .andExpect(jsonPath("$.codigo").value("VALIDACION"))
+                .andExpect(jsonPath("$.errores.length()").value(2))
+                .andExpect(jsonPath("$.errores[?(@.campo=='dni')].mensaje").value("El DNI debe tener 8 dígitos"))
+                .andExpect(jsonPath("$.errores[?(@.campo=='celular')].mensaje").value("El celular debe empezar con 9"));
     }
 }
