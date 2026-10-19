@@ -1,11 +1,12 @@
 # SPEC-2 — Catálogo e inventario
 
-> Versión: **v3 (aprobado)** — 2026-10-18 · Estados: ✅ decidido · 🟡 propuesto · ❓ abierto
+> Versión: **v4 (aprobado)** — 2026-10-18 · Estados: ✅ decidido · 🟡 propuesto · ❓ abierto
 > **Dueña de:** `backend/catalog-service` (módulos catálogo e inventario) · tienda: `features/catalogo` · backoffice: `features/catalogo`, `features/inventario`.
 > **Depende de:** 0a, 0b, 1 (sesión de staff) · **Habilita:** 3 (destacados de la landing), 4 (cotización y reserva), 8.
 > **Contratos:** `contracts/openapi/catalog-service.yaml` (incluye `/internal/v1/inventario/reservas`); usa el contrato de order (`POST /carrito/items`); eventos `StockBajo`, `StockNoConfirmado` (publica) y `PedidoPagado`, `PedidoCancelado`, `PedidoExpirado` (consume).
 
 **Historial:**
+- v4 (2026-10-18): por decisión de la SPEC-3 (S2), el stock mínimo por defecto y el margen de reserva se editan en Configuración de tienda (P-3-04, pestaña Parámetros); se quita `DialogoConfiguracionInventario` de P-2-07. El endpoint sigue siendo de esta spec.
 - v3 (2026-10-18): categorías semilla definidas (Shorts y Faldas dentro de Leggings y pantalones; Vestidos como raíz) → **spec aprobada**.
 - v2 (2026-10-18): galería solo del color elegido y colores sin stock no seleccionables; publicar exige foto por color; nueva HU-2-12 de carga masiva (P-2-09); filtros de categoría en lista vertical; nombres de categorías propuestos; fotos de demo libres con variantes de color generadas; SKU aprobado.
 - v1 (2026-10-18): borrador inicial.
@@ -238,8 +239,9 @@ CA-2-42  Dado un SKU con mínimo 5 (propio o el de la tienda)
          Cuando su disponible baja de 6 a 4
          Entonces se publica StockBajo una vez; si sigue bajando, no se repite hasta que vuelva a superar el mínimo
 
-CA-2-43  Cuando cambio el mínimo de un SKU o el mínimo por defecto y el margen de reserva de la tienda (ADMIN)
+CA-2-43  Cuando cambio el mínimo de un SKU, o el mínimo por defecto y el margen de reserva de la tienda (ADMIN, vía API)
          Entonces se guardan y se usan desde ese momento
+         (el mínimo de un SKU se edita en P-2-07; los valores de la tienda, en P-3-04 de la SPEC-3)
 
 CA-2-44  Cuando filtro por "solo stock bajo" o "solo agotados"
          Entonces veo solo esos SKU
@@ -379,7 +381,7 @@ CA-2-57  Dado Redis caído
 - **Ruta / proyecto:** `/inventario` · backoffice · OPERADOR y ADMIN (configuración: solo ADMIN).
 - **Boceto:** ![P-2-07](img/P-2-07-inventario.png)
 - **Diseño de alta fidelidad:** 🕓 deriva del sistema de diseño (patrón "tabla").
-- **Componentes:** `InventarioPage` (tabla con filas resaltadas por stock bajo y agotado), `DialogoEntrada` (varias líneas), `DialogoAjuste`, `DialogoConfiguracionInventario`.
+- **Componentes:** `InventarioPage` (tabla con filas resaltadas por stock bajo y agotado), `DialogoEntrada` (varias líneas), `DialogoAjuste`. La configuración de inventario de la tienda se edita en P-3-04 (SPEC-3).
 - **Endpoints:** `GET /admin/inventario`, `POST /admin/inventario/entradas|ajustes`, `PATCH /admin/inventario/{varianteId}/minimo`, `GET/PUT /admin/inventario/configuracion`.
 
 ### P-2-09 — Carga masiva

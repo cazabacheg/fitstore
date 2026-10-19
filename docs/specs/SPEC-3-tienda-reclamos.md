@@ -1,11 +1,12 @@
 # SPEC-3 — Tienda y reclamos
 
-> Versión: **v1 (borrador)** — 2026-10-18 · Estados: ✅ decidido · 🟡 propuesto · ❓ abierto
+> Versión: **v2 (borrador)** — 2026-10-18 · Estados: ✅ decidido · 🟡 propuesto · ❓ abierto
 > **Dueña de:** `backend/settings-service` (configuración, ubigeo, Libro de Reclamaciones) · tienda: `features/inicio`, `features/legal` · backoffice: `features/configuracion`, `features/reclamos`.
 > **Depende de:** 0a, 0b, 1 (sesión de staff) · usa el contrato de catalog (destacados y categorías) · **Habilita:** la marca real en todas las pantallas (0b ya la consume), versiones de políticas para el registro (spec 1), parámetros para order y payment (specs 4 y 5).
 > **Contratos:** `contracts/openapi/settings-service.yaml`; eventos `ConfiguracionActualizada`, `ReclamoRegistrado`, `ReclamoRespondido`.
 
 **Historial:**
+- v2 (2026-10-18): S1 ✅ franja de beneficios **opcional** (sin beneficios, la franja no se muestra); S2 ✅ el stock mínimo por defecto y el margen de reserva se editan en la pestaña Parámetros (API de catalog), y se quita el diálogo de P-2-07 (SPEC-2 v4). Nuevo CA-3-38.
 - v1 (2026-10-18): borrador inicial.
 
 **Estado de revisión por sección:** 1 ⏳ · 2 ⏳ · 3 ⏳ · 4 ⏳ · 5 ⏳ · 6 ⏳ · 7 ⏳ · 8 ⏳ · 9 ⏳
@@ -43,7 +44,7 @@ Como visitante, quiero una página de inicio atractiva con la marca de la tienda
 ```gherkin
 CA-3-01  Cuando abro la tienda en "/"
          Entonces veo el carrusel con las imágenes de la landing (1 a 5, en su orden, con su texto alternativo y enlace),
-              el título, el subtítulo y el botón del hero, la franja de beneficios, las categorías raíz, los destacados y la tienda física
+              el título, el subtítulo y el botón del hero, la franja de beneficios (si hay), las categorías raíz, los destacados y la tienda física
 
 CA-3-02  El carrusel avanza solo cada 6 s, se pausa al pasar el mouse o al enfocarlo, y se maneja con flechas y puntos (accesible por teclado)
 
@@ -104,8 +105,9 @@ CA-3-13  Cuando edito el hero (título, subtítulo, texto y enlace del botón)
 CA-3-14  Cuando subo hasta 5 imágenes de landing (JPG o WebP, hasta 5 MB) con texto alternativo y enlace opcional
          Entonces se redimensionan a 1600 px y puedo reordenarlas o eliminarlas; la sexta se rechaza
 
-CA-3-15  Cuando edito los beneficios (hasta 3: icono y texto corto)
-         Entonces aparecen en la franja de la landing
+CA-3-15  Cuando edito los beneficios (opcionales, de 0 a 3: icono y texto corto de hasta 60 caracteres)
+         Entonces aparecen en la franja de la landing en su orden
+         Y si no hay ninguno, la franja no se muestra (sin espacio vacío)
 
 CA-3-16  Cuando edito contacto (correo, teléfono, WhatsApp), redes (URLs de Instagram, Facebook, TikTok), horario
               y la tienda física (dirección con departamento, provincia y distrito)
@@ -115,6 +117,8 @@ CA-3-16  Cuando edito contacto (correo, teléfono, WhatsApp), redes (URLs de Ins
 ### HU-3-05 — Configurar los parámetros del negocio
 
 Como administrador, quiero elegir los medios de pago y de entrega y otros parámetros, para que la tienda funcione como mi negocio. · Cubre: CU-32, RF-SET-05 · Pantallas: [P-3-04](#p-3-04--configuración-de-tienda)
+
+Los parámetros de inventario los guarda catalog, que es quien los usa (micro de catalog, sección 3); esta pantalla solo los edita, para que toda la configuración esté en un lugar.
 
 ```gherkin
 CA-3-17  Cuando guardo los parámetros
@@ -127,6 +131,10 @@ CA-3-18  Dado que el admin deshabilita un medio de pago o una modalidad
          Entonces se refleja en /settings/public y lo toman order y payment (en a lo más 5 minutos, por su caché)
 
 CA-3-19  Los correos para alertas viajan en ConfiguracionActualizada pero nunca aparecen en /settings/public
+
+CA-3-38  Cuando edito en Parámetros el stock mínimo por defecto (0 a 999) y el margen de reserva (0 a 30 minutos)
+         Entonces se guardan en catalog (PUT /admin/inventario/configuracion) y se usan desde ese momento
+         Y si catalog no responde, esa parte muestra el error y los parámetros de settings sí se guardan
 ```
 
 ### HU-3-06 — Publicar políticas con versiones
@@ -222,7 +230,7 @@ CA-3-37  Dado Redis caído
 - **Boceto (baja fidelidad):** ![P-3-01](img/P-3-01-landing.png)
 - **Diseño de alta fidelidad:** 🕓 **pantalla clave** (escritorio y móvil, en dos marcas).
 - **Componentes:** `InicioPage`, `CarruselHero`, `FranjaBeneficios`, `CategoriasRaiz`, `Destacados` (usa la tarjeta de producto de la spec 2 por contrato visual: misma estructura, componente propio en `inicio/`), `TiendaFisica`.
-- **Estados:** sin imágenes (hero de color), sin destacados (sección oculta), catálogo caído (destacados ocultos; el resto se ve).
+- **Estados:** sin imágenes (hero de color), sin beneficios (franja oculta), sin destacados (sección oculta), catálogo caído (destacados ocultos; el resto se ve).
 - **Endpoints:** `GET /settings/public`, `GET /categorias`, `GET /productos/destacados`.
 
 ### P-3-02 — Política
@@ -246,9 +254,9 @@ CA-3-37  Dado Redis caído
 - **Ruta / proyecto:** `/configuracion` · backoffice · ADMIN.
 - **Boceto:** ![P-3-04](img/P-3-04-configuracion.png)
 - **Diseño de alta fidelidad:** 🕓 **pantalla clave**.
-- **Componentes:** `ConfiguracionPage` con pestañas Identidad, Tema (`EditorTema` + `VistaPreviaTema`), Contenido (`EditorHero`, `ImagenesLanding` arrastrables, `EditorBeneficios`, contacto, redes, tienda física con selector de ubigeo), Parámetros, Políticas (enlace a P-3-05). Cada pestaña guarda su sección.
+- **Componentes:** `ConfiguracionPage` con pestañas Identidad, Tema (`EditorTema` + `VistaPreviaTema`), Contenido (`EditorHero`, `ImagenesLanding` arrastrables, `EditorBeneficios` de 0 a 3, contacto, redes, tienda física con selector de ubigeo), Parámetros (de settings + bloque Inventario de catalog), Políticas (enlace a P-3-05). Cada pestaña guarda su sección.
 - **Estados:** cambios sin guardar (aviso al salir), conflicto de versión (409), advertencia de contraste.
-- **Endpoints:** `GET /admin/settings`, `PUT /admin/settings/{identidad|tema|contenido|parametros}`, `/admin/settings/imagenes/**`.
+- **Endpoints:** `GET /admin/settings`, `PUT /admin/settings/{identidad|tema|contenido|parametros}`, `/admin/settings/imagenes/**` · catalog: `GET/PUT /admin/inventario/configuracion` (contrato de la SPEC-2).
 
 ### P-3-05 — Políticas (backoffice)
 
@@ -271,15 +279,15 @@ Todo según el micro de settings. Decisiones de implementación de esta spec:
 
 | # | Decisión | Detalle |
 |---|---|---|
-| S1 | **Beneficios en el contenido** 🟡 | Nuevo campo `beneficios` (`jsonb`, máximo 3 `{icono, texto}`) en la sección contenido, para la franja de la landing. Cambio menor al micro de settings |
-| S2 | **Configuración de inventario en esta pantalla** ❓ | El micro de catalog dice que el stock mínimo por defecto y el margen de reserva "se editan desde la misma pantalla de configuración de la tienda", pero la SPEC-2 los puso en un diálogo del inventario (P-2-07). Ver pregunta 1 |
+| S1 | **Beneficios opcionales en el contenido** ✅ | Nuevo campo `beneficios` (`jsonb`, de 0 a 3 `{icono, texto}`) en la sección contenido. Lista vacía = la landing oculta la franja. Micro de settings v7 |
+| S2 | **Configuración de inventario en la pestaña Parámetros** ✅ | El stock mínimo por defecto y el margen de reserva se editan aquí, como dice el micro de catalog; el dato y el endpoint siguen en catalog (SPEC-2). Se quita el diálogo de P-2-07. El frontend guarda las dos partes por separado |
 | S3 | **Markdown seguro** | En el frontend con `marked` + `DOMPurify`; el backend guarda el texto tal cual y nunca lo renderiza |
 | S4 | **Carrusel accesible** | Pausa al pasar el mouse o al enfocar; respeta `prefers-reduced-motion` (sin autoavance) |
 | S5 | **Enlaces del hero** | Rutas internas que empiezan con `/` o URLs `https://`; nada de `javascript:` |
 
 ## 6. Datos
 
-- **Sin migraciones nuevas** salvo S1: `VAAAAMMDD_HHMM__beneficios.sql` (columna `beneficios jsonb` con los 3 beneficios por defecto).
+- **Sin migraciones nuevas** salvo S1: `VAAAAMMDD_HHMM__beneficios.sql` (columna `beneficios jsonb NOT NULL DEFAULT '[]'`; la franja empieza oculta).
 - **Políticas versión 1:** textos modelo para una tienda en línea peruana (términos, privacidad con Ley 29733, cambios y devoluciones, envíos), claramente marcados como **plantilla a revisar por la tienda** (no son asesoría legal).
 - **Datos de demostración (solo `dev`):** 3 imágenes de landing (licencia libre), beneficios, contacto y tienda física en Gamarra; 3 reclamos (uno vencido, uno por vencer, uno respondido) para mostrar la bandeja.
 
@@ -292,6 +300,7 @@ Todo según el micro de settings. Decisiones de implementación de esta spec:
 | 09–12 | Unitaria + componente | `ContrasteWcagTest`, `editor-tema.spec.ts` (vista previa sin guardar) |
 | 13–16 | API + componente | validaciones de contenido, landing (máx. 5) |
 | 17–19 | API | parámetros (rangos, al menos uno), `correosAlertas` fuera de `/settings/public` |
+| 38 | Componente | `parametros.spec.ts` (guarda en catalog con WireMock/HTTP de prueba; catalog caído no bloquea settings) |
 | 20–22 | Datos + API | `PoliticaRepositoryTest`, inmutabilidad, `?version` |
 | 23–27 | Datos + API + integración | `ReclamoServiceTest`, `CalculadoraDiasHabilesTest`, concurrencia de 20, gateway 429 |
 | 28–31 | API | bandeja, transiciones, permisos OPERADOR |
@@ -309,17 +318,13 @@ Todo según el micro de settings. Decisiones de implementación de esta spec:
 | `frontend/projects/backoffice/src/app/features/{configuracion,reclamos}/` | modifica |
 | `postman/settings.postman_collection.json` | crea |
 | `docs/specs/img/P-3-*`, `docs/analisis/micro/settings-service.md` (S1) | crea / modifica |
+| `backend/catalog-service/**` (`/admin/inventario/configuracion`) | solo lectura: lo implementa la SPEC-2 |
 | Congelados (`fitstore-common`, gateway, `shared`, `ui/`, `layout/`) | solo lectura |
 
 ## 9. Definición de terminado
 
-- [ ] CA-3-01 a CA-3-37 cumplidos en CI.
+- [ ] CA-3-01 a CA-3-38 cumplidos en CI.
 - [ ] Postman `settings` en verde.
 - [ ] El OpenAPI de settings coincide con lo implementado.
 - [ ] Demostración white-label: cambiar logo, colores y textos en el backoffice y ver la tienda con otra marca al recargar.
 - [ ] Revisado y aprobado por el autor.
-
-## Preguntas abiertas ❓
-
-1. **S2, configuración de inventario:** ¿el stock mínimo por defecto y el margen de reserva se editan **en la pestaña Parámetros de esta pantalla** (como dice el micro de catalog; la pantalla llama a la API de catalog y se quita el diálogo de P-2-07) o **solo en el inventario** (como quedó en la SPEC-2; se corrige el micro)? Propuesta: **en Parámetros**, para que el admin encuentre toda la configuración en un solo lugar.
-2. **S1, franja de beneficios** (hasta 3 mensajes como "Envíos a todo el Perú", "Lleva 3 y ahorra 5 %", "Paga con tarjeta o Yape"): ¿la incluimos?
