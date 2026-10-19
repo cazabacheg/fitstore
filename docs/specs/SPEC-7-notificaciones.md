@@ -1,14 +1,15 @@
 # SPEC-7 — Notificaciones
 
-> Versión: **v1 (borrador)** — 2026-10-19 · Estados: ✅ decidido · 🟡 propuesto · ❓ abierto
+> Versión: **v2 (aprobado)** — 2026-10-19 · Estados: ✅ decidido · 🟡 propuesto · ❓ abierto
 > **Dueña de:** `backend/notification-service` (enrutamiento de eventos, plantillas, envío, registro) · backoffice: `features/notificaciones`.
 > **Depende de:** 0a, 0b, 1 (sesión de staff) · consume los eventos de auth, order, payment, delivery, catalog y settings (AsyncAPI) y usa `/internal/v1/boletas/{numero}` de payment · **Habilita:** 8 (demo con todos los correos en Mailpit y SES).
 > **Contratos:** `contracts/openapi/notification-service.yaml`; no publica eventos; consume los de la sección 6 del micro.
 
 **Historial:**
+- v2 (2026-10-19): N7 ✅ "Enviar prueba a mi correo" (CA-7-30; micro v9) → **spec aprobada**.
 - v1 (2026-10-19): borrador inicial.
 
-**Estado de revisión por sección:** 1 ⏳ · 2 ⏳ · 3 ⏳ · 4 ⏳ · 5 ⏳ · 6 ⏳ · 7 ⏳ · 8 ⏳ · 9 ⏳
+**Estado de revisión por sección:** 1 ✅ · 2 ✅ · 3 ✅ · 4 ✅ · 5 ✅ · 6 ✅ · 7 ✅ · 8 ✅ · 9 ✅
 
 ---
 
@@ -157,6 +158,11 @@ CA-7-26  Dado que escribo HTML o expresiones de plantilla en un texto (p. ej. <s
 CA-7-27  Cuando desactivo una plantilla opcional, la activo o uso "Restaurar predeterminado"
          Entonces se guarda; las obligatorias (recuperación, invitación, pedido confirmado y las del Libro de Reclamaciones)
               no se pueden desactivar (interruptor bloqueado y 409 en la API)
+
+CA-7-30  Cuando uso "Enviar prueba a mi correo"
+         Entonces se envía el correo con los textos del editor (aunque no estén guardados), la marca actual y datos de ejemplo
+              al correo del admin conectado, con "[Prueba]" al inicio del asunto, respetando el ritmo de envío
+         Y queda en el registro con referencia PRUEBA; como máximo 5 pruebas por minuto por admin
 ```
 
 ### HU-7-07 — No guardar datos personales más de lo necesario
@@ -204,9 +210,9 @@ CA-7-29  Dado el compose de desarrollo
 - **Ruta / proyecto:** `/notificaciones/plantillas/:codigo` · backoffice · ADMIN.
 - **Boceto:** ![P-7-03](img/P-7-03-editor.png)
 - **Diseño de alta fidelidad:** 🕓 deriva del sistema de diseño (reutiliza el patrón "edición con vista previa" de la configuración de tienda, P-3-04).
-- **Componentes:** `EditorPlantillaPage` con campos asunto, título, mensaje y texto del botón, `ChipsVariables` (insertar con un clic), `VistaPreviaCorreo` (iframe aislado con `sandbox`, escritorio o móvil, N3), botones Guardar, Descartar y Restaurar predeterminado.
+- **Componentes:** `EditorPlantillaPage` con campos asunto, título, mensaje y texto del botón, `ChipsVariables` (insertar con un clic), `VistaPreviaCorreo` (iframe aislado con `sandbox`, escritorio o móvil, N3), botones Guardar, Descartar, Restaurar predeterminado y Enviar prueba a mi correo (N7).
 - **Estados:** cambios sin guardar (aviso al salir), variable inválida (400), plantilla obligatoria (interruptor bloqueado).
-- **Endpoints:** `GET/PUT /admin/notificaciones/plantillas/{codigo}`, `POST …/{codigo}/vista-previa`, `POST …/{codigo}/restaurar`.
+- **Endpoints:** `GET/PUT /admin/notificaciones/plantillas/{codigo}`, `POST …/{codigo}/vista-previa`, `POST …/{codigo}/restaurar`, `POST …/{codigo}/prueba`.
 
 ### P-7-04 — Diseño de los correos
 
@@ -226,7 +232,7 @@ Todo según el micro de notification. Decisiones de implementación de esta spec
 | N4 | **Formato del mensaje** ✅ | Solo saltos de línea y `**negrita**` (micro 4.6); el resto se escapa. Se convierte a HTML en el servidor después de escapar |
 | N5 | **Reenvío con textos actuales** ✅ | Reenviar vuelve a renderizar con la marca y los textos vigentes (no se guarda el HTML enviado, para no almacenar datos personales de más) |
 | N6 | **Ritmo por entorno** ✅ | `ritmo-por-segundo`: 1 en `cloud` (límite de SES en sandbox) y 10 en `dev` (Mailpit no tiene límite), para que la demo local sea ágil |
-| N7 | **Enviar prueba a mi correo** 🟡 | Botón en el editor que envía el correo con los textos actuales y datos de ejemplo al correo del admin conectado (respeta el ritmo; queda en el registro con referencia `PRUEBA`). Útil para revisar cómo se ve en Gmail o Outlook. Ver pregunta 1 |
+| N7 | **Enviar prueba a mi correo** ✅ | Botón en el editor que envía el correo con los textos actuales y datos de ejemplo al correo del admin conectado (lo toma del token), con "[Prueba]" en el asunto; respeta el ritmo y queda en el registro con referencia `PRUEBA`. Endpoint `POST /admin/notificaciones/plantillas/{codigo}/prueba` (micro v9). En la nube, con SES en sandbox, el correo del admin debe estar verificado (R14) |
 | N8 | **Corrección del micro** ✅ | El micro dice "definición de las 17" plantillas en 10.1; con C14 son **18**. Se corrige en esta spec (micro v8) |
 
 ## 6. Datos
@@ -244,10 +250,10 @@ Todo según el micro de notification. Decisiones de implementación de esta spec
 | 12–14 | Integración | `ConfirmacionConBoletaIT` (adjunto PDF con GreenMail, payment caído con WireMock, respaldo de 10 min sin segunda confirmación) |
 | 15–18 | Unitaria | `RenderizadorCorreoTest`: las 18 plantillas renderizan con sus ejemplos, con logo y color primario, versión texto, formato es-PE y sin DNI; `MarcaTiendaTest` (actualización y arranque sin copia) |
 | 19–22 | Datos + API | `EnvioCorreoRepositoryTest` (filtros), `AdminNotificacionControllerTest` (reenvío, 403 a OPERADOR) |
-| 23–27 | API + componente | `PlantillaServiceTest` (variables, escape, SSTI, obligatorias, restaurar), `editor-plantilla.spec.ts` (vista previa en vivo, chips) |
+| 23–27, 30 | API + componente | `PlantillaServiceTest` (variables, escape, SSTI, obligatorias, restaurar), `editor-plantilla.spec.ts` (vista previa en vivo, chips); `PruebaPlantillaTest` (destinatario del token, asunto con [Prueba], límite de 5 por minuto) |
 | 28 | Datos | `LimpiezaRetencionTest` |
 | 29 | Manual | Guion de demo en Mailpit |
-| Todas | Postman | `postman/notification.postman_collection.json`: registro, filtros, reenvío, editar, vista previa, restaurar |
+| Todas | Postman | `postman/notification.postman_collection.json`: registro, filtros, reenvío, editar, vista previa, restaurar, enviar prueba |
 
 ## 8. Archivos y carpetas que toca
 
@@ -262,12 +268,8 @@ Todo según el micro de notification. Decisiones de implementación de esta spec
 
 ## 9. Definición de terminado
 
-- [ ] CA-7-01 a CA-7-29 cumplidos en CI.
+- [ ] CA-7-01 a CA-7-30 cumplidos en CI.
 - [ ] Postman `notification` en verde.
 - [ ] El OpenAPI de notification coincide con lo implementado; los eventos consumidos coinciden con el AsyncAPI.
 - [ ] Demostración: una compra completa con todos sus correos en Mailpit, un correo fallido reenviado y un texto editado con vista previa.
 - [ ] Revisado y aprobado por el autor.
-
-## Preguntas abiertas ❓
-
-1. **N7, "Enviar prueba a mi correo":** propongo agregar en el editor un botón que envíe el correo editado al admin conectado, para ver cómo se ve en un buzón real (Gmail, Outlook, el celular). Es poco código y ayuda en la exposición. La alternativa es quedarse solo con la vista previa del navegador (YAGNI). ¿Lo incluimos?
