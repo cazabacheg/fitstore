@@ -1,5 +1,6 @@
-package com.fitstore.gateway.config;
+package com.fitstore.gateway.seguridad;
 
+import com.fitstore.gateway.config.GatewayProperties;
 import com.fitstore.gateway.web.RespuestasError;
 import com.nimbusds.jose.JOSEException;
 import com.nimbusds.jose.jwk.JWKSet;

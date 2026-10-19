@@ -28,7 +28,9 @@ import reactor.core.publisher.Mono;
 import tools.jackson.databind.json.JsonMapper;
 
 /**
- * Rate limiting con Redis (ADR-020, infraestructura 4.4): contador por ventana fija con clave de IP o de usuario.
+ * Rate limiting con Redis (ADR-020, infraestructura 4.4): ventana fija (contador con expiración) para las reglas de N
+ * por minuto, con clave de IP o de usuario, y token bucket por IP (reposición continua y capacidad = ráfaga) para el
+ * resto de las rutas.
  * Al superar el límite responde 429 con {@code Retry-After}. Si Redis no está disponible, deja pasar la petición y
  * registra una advertencia: la tienda no se bloquea.
  */
