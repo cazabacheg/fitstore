@@ -4,16 +4,10 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import com.fitstore.common.api.RecursoNoEncontradoException;
-import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
-import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
-import software.amazon.awssdk.regions.Region;
-import software.amazon.awssdk.services.s3.S3Client;
-import software.amazon.awssdk.services.s3.S3Configuration;
 
 /** CA-0a-16: FileStorage guarda, lee y elimina en los dos buckets de Garage; solo el público es anónimo. */
 class S3FileStorageTest {
@@ -22,18 +16,14 @@ class S3FileStorageTest {
 
     @BeforeAll
     static void preparar() {
-        S3Client cliente = S3Client.builder()
-                .endpointOverride(URI.create(GarageDePrueba.endpointS3()))
-                .region(Region.of("garage"))
-                .credentialsProvider(StaticCredentialsProvider.create(
-                        AwsBasicCredentials.create(GarageDePrueba.ACCESS_KEY, GarageDePrueba.SECRET_KEY)))
-                .serviceConfiguration(S3Configuration.builder().pathStyleAccessEnabled(true).build())
-                .build();
         var propiedades = new StorageProperties();
+        propiedades.setEndpoint(GarageDePrueba.endpointS3());
+        propiedades.setAccessKey(GarageDePrueba.ACCESS_KEY);
+        propiedades.setSecretKey(GarageDePrueba.SECRET_KEY);
         propiedades.setBucketPublico(GarageDePrueba.BUCKET_PUBLICO);
         propiedades.setBucketPrivado(GarageDePrueba.BUCKET_PRIVADO);
         propiedades.setMediaBaseUrl("https://tienda.ejemplo.duckdns.org/media");
-        almacenamiento = new S3FileStorage(cliente, propiedades);
+        almacenamiento = new S3FileStorage(S3FileStorage.crearCliente(propiedades), propiedades);
     }
 
     private static byte[] bytes(String texto) {

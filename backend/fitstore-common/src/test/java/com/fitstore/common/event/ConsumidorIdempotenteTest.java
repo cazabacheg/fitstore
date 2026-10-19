@@ -33,6 +33,7 @@ import tools.jackson.databind.json.JsonMapper;
             "spring.sql.init.mode=always",
             "spring.sql.init.schema-locations=classpath:esquema-eventos-prueba.sql",
             "spring.jpa.hibernate.ddl-auto=validate",
+            "fitstore.security.habilitado=false",
             "fitstore.eventos.servicio=consumo",
             "fitstore.eventos.enlaces[0]=consumo.cosa.creada",
             "fitstore.eventos.reintentos=3",
@@ -43,7 +44,8 @@ class ConsumidorIdempotenteTest {
 
     static final Map<UUID, AtomicInteger> INTENTOS = new ConcurrentHashMap<>();
     static final Map<UUID, AtomicInteger> EXITOS = new ConcurrentHashMap<>();
-    static final Map<UUID, Boolean> SIEMPRE_FALLA = new ConcurrentHashMap<>();
+    /** Cuántos intentos fallan antes de que el manejador funcione, por evento. */
+    static final Map<UUID, Integer> FALLAS = new ConcurrentHashMap<>();
 
     @Configuration
     static class Oyente {
@@ -52,8 +54,8 @@ class ConsumidorIdempotenteTest {
         @RabbitListener(queues = "consumo.eventos")
         void alRecibir(SobreEvento sobre) {
             consumidor.procesar(sobre, evento -> {
-                INTENTOS.computeIfAbsent(evento.eventoId(), k -> new AtomicInteger()).incrementAndGet();
-                if (SIEMPRE_FALLA.containsKey(evento.eventoId())) {
+                int intento = INTENTOS.computeIfAbsent(evento.eventoId(), k -> new AtomicInteger()).incrementAndGet();
+                if (intento <= FALLAS.getOrDefault(evento.eventoId(), 0)) {
                     throw new IllegalStateException("falla simulada");
                 }
                 EXITOS.computeIfAbsent(evento.eventoId(), k -> new AtomicInteger()).incrementAndGet();
@@ -106,7 +108,7 @@ class ConsumidorIdempotenteTest {
     @DisplayName("CA-0a-15 un mensaje que falla 3 veces termina en la cola .dlq de su servicio")
     void tresFallosVanALaDlq() {
         UUID id = UUID.randomUUID();
-        SIEMPRE_FALLA.put(id, true);
+        FALLAS.put(id, 99);
 
         enviar(id);
 
@@ -123,12 +125,7 @@ class ConsumidorIdempotenteTest {
     @DisplayName("CA-0a-15 un fallo transitorio se reintenta y el evento se procesa una sola vez")
     void falloTransitorioSeReintenta() {
         UUID id = UUID.randomUUID();
-        SIEMPRE_FALLA.put(id, true);
-        // el primer intento falla y se quita la falla antes del segundo
-        new Thread(() -> {
-            await().atMost(Duration.ofSeconds(10)).until(() -> INTENTOS.containsKey(id));
-            SIEMPRE_FALLA.remove(id);
-        }).start();
+        FALLAS.put(id, 1); // el primer intento falla y el segundo funciona
 
         enviar(id);
 

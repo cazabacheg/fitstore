@@ -27,6 +27,7 @@ import org.springframework.transaction.support.TransactionTemplate;
             "spring.sql.init.schema-locations=classpath:esquema-eventos-prueba.sql",
             "spring.jpa.hibernate.ddl-auto=validate",
             "spring.rabbitmq.publisher-confirm-type=correlated",
+            "fitstore.security.habilitado=false",
             "fitstore.eventos.servicio=programado",
             "fitstore.eventos.enlaces[0]=programado.cosa.creada",
             "fitstore.outbox.habilitado=true",

@@ -38,6 +38,7 @@ import tools.jackson.databind.json.JsonMapper;
             "spring.sql.init.schema-locations=classpath:esquema-eventos-prueba.sql",
             "spring.jpa.hibernate.ddl-auto=validate",
             "spring.rabbitmq.publisher-confirm-type=correlated",
+            "fitstore.security.habilitado=false",
             "fitstore.eventos.servicio=pruebas",
             "fitstore.eventos.enlaces[0]=pruebas.cosa.creada",
             "fitstore.outbox.habilitado=true",
@@ -105,7 +106,7 @@ class OutboxPublisherTest {
         assertThat(sobre.get("ocurridoEn").asString()).isNotBlank();
         assertThat(sobre.get("datos").get("nombre").asString()).isEqualTo("Polo");
         assertThat(mensaje.getMessageProperties().getReceivedRoutingKey()).isEqualTo("pruebas.cosa.creada");
-        assertThat(mensaje.getMessageProperties().getDeliveryMode().name()).isEqualTo("PERSISTENT");
+        assertThat(mensaje.getMessageProperties().getReceivedDeliveryMode().name()).isEqualTo("PERSISTENT");
     }
 
     @Test
