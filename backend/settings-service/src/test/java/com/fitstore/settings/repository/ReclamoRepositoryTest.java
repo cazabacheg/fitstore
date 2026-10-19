@@ -103,13 +103,18 @@ class ReclamoRepositoryTest extends PruebaDatos {
         Reclamo r = Datos.reclamo(2026, 1);
         r.getConsumidor().setEsMenor(true);
         r.getConsumidor().setApoderadoNombre(null);
-        assertThatThrownBy(() -> repositorio.saveAndFlush(r)).isInstanceOf(DataIntegrityViolationException.class);
-        em.clear();
 
-        Reclamo ok = Datos.reclamo(2026, 2);
-        ok.getConsumidor().setEsMenor(true);
-        ok.getConsumidor().setApoderadoNombre("Rosa Huamán");
-        assertThat(repositorio.saveAndFlush(ok).getId()).isNotNull();
+        assertThatThrownBy(() -> repositorio.saveAndFlush(r)).isInstanceOf(DataIntegrityViolationException.class);
+    }
+
+    @Test
+    @DisplayName("CA-0a-06 un menor de edad con apoderado se registra")
+    void menorConApoderado() {
+        Reclamo r = Datos.reclamo(2026, 2);
+        r.getConsumidor().setEsMenor(true);
+        r.getConsumidor().setApoderadoNombre("Rosa Huamán");
+
+        assertThat(repositorio.saveAndFlush(r).getId()).isNotNull();
     }
 
     @Test

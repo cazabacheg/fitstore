@@ -16,6 +16,8 @@ import java.util.Set;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -120,16 +122,14 @@ class ConfiguracionTiendaRepositoryTest extends PruebaDatos {
         assertThatThrownBy(() -> repositorio.saveAndFlush(c)).isInstanceOf(DataIntegrityViolationException.class);
     }
 
-    @Test
+    @ParameterizedTest
+    @ValueSource(ints = {9, 121})
     @DisplayName("CA-0a-06 CHECK de expiración del pedido: de 10 a 120 minutos")
-    void expiracionFueraDeRango() {
-        for (int minutos : new int[] {9, 121}) {
-            jdbc.update("DELETE FROM configuracion_tienda");
-            ConfiguracionTienda c = Datos.configuracion();
-            c.getParametros().setExpiracionPedidoMinutos(minutos);
-            assertThatThrownBy(() -> repositorio.saveAndFlush(c)).isInstanceOf(DataIntegrityViolationException.class);
-            em.clear();
-        }
+    void expiracionFueraDeRango(int minutos) {
+        ConfiguracionTienda c = Datos.configuracion();
+        c.getParametros().setExpiracionPedidoMinutos(minutos);
+
+        assertThatThrownBy(() -> repositorio.saveAndFlush(c)).isInstanceOf(DataIntegrityViolationException.class);
     }
 
     @Test
@@ -142,29 +142,39 @@ class ConfiguracionTiendaRepositoryTest extends PruebaDatos {
     }
 
     @Test
-    @DisplayName("CA-0a-06 CHECK: al menos un método de pago y una modalidad de entrega")
-    void sinMetodosOModalidades() {
-        ConfiguracionTienda sinPago = Datos.configuracion();
-        sinPago.getParametros().setMetodosPago(Set.of());
-        assertThatThrownBy(() -> repositorio.saveAndFlush(sinPago)).isInstanceOf(DataIntegrityViolationException.class);
-        em.clear();
+    @DisplayName("CA-0a-06 CHECK: al menos un método de pago")
+    void sinMetodosDePago() {
+        ConfiguracionTienda c = Datos.configuracion();
+        c.getParametros().setMetodosPago(Set.of());
 
-        ConfiguracionTienda sinEntrega = Datos.configuracion();
-        sinEntrega.getParametros().setModalidadesEntrega(Set.of());
-        assertThatThrownBy(() -> repositorio.saveAndFlush(sinEntrega)).isInstanceOf(DataIntegrityViolationException.class);
+        assertThatThrownBy(() -> repositorio.saveAndFlush(c)).isInstanceOf(DataIntegrityViolationException.class);
     }
 
     @Test
-    @DisplayName("CA-0a-06 CHECK de correos de alertas: de 1 a 5")
-    void correosDeAlertasFueraDeRango() {
-        ConfiguracionTienda ninguno = Datos.configuracion();
-        ninguno.getParametros().setCorreosAlertas(List.of());
-        assertThatThrownBy(() -> repositorio.saveAndFlush(ninguno)).isInstanceOf(DataIntegrityViolationException.class);
-        em.clear();
+    @DisplayName("CA-0a-06 CHECK: al menos una modalidad de entrega")
+    void sinModalidadesDeEntrega() {
+        ConfiguracionTienda c = Datos.configuracion();
+        c.getParametros().setModalidadesEntrega(Set.of());
 
-        ConfiguracionTienda seis = Datos.configuracion();
-        seis.getParametros().setCorreosAlertas(List.of("a@x.pe", "b@x.pe", "c@x.pe", "d@x.pe", "e@x.pe", "f@x.pe"));
-        assertThatThrownBy(() -> repositorio.saveAndFlush(seis)).isInstanceOf(DataIntegrityViolationException.class);
+        assertThatThrownBy(() -> repositorio.saveAndFlush(c)).isInstanceOf(DataIntegrityViolationException.class);
+    }
+
+    @Test
+    @DisplayName("CA-0a-06 CHECK de correos de alertas: al menos uno")
+    void sinCorreosDeAlertas() {
+        ConfiguracionTienda c = Datos.configuracion();
+        c.getParametros().setCorreosAlertas(List.of());
+
+        assertThatThrownBy(() -> repositorio.saveAndFlush(c)).isInstanceOf(DataIntegrityViolationException.class);
+    }
+
+    @Test
+    @DisplayName("CA-0a-06 CHECK de correos de alertas: como máximo cinco")
+    void masDeCincoCorreosDeAlertas() {
+        ConfiguracionTienda c = Datos.configuracion();
+        c.getParametros().setCorreosAlertas(List.of("a@x.pe", "b@x.pe", "c@x.pe", "d@x.pe", "e@x.pe", "f@x.pe"));
+
+        assertThatThrownBy(() -> repositorio.saveAndFlush(c)).isInstanceOf(DataIntegrityViolationException.class);
     }
 
     @Test

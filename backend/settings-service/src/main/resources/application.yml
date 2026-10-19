@@ -1,9 +1,14 @@
-# Arranque mínimo del servicio: lo demás viene de config-server (infra/config-repo/settings-service*.yml).
-# Si config-server no responde, reintenta y no arranca con valores por defecto (CA-0a-04).
 spring:
   application:
     name: settings-service
+---
+# Arranque mínimo del servicio: lo demás viene de config-server (infra/config-repo/settings-service*.yml).
+# Si config-server no responde, reintenta y no arranca con valores por defecto (CA-0a-04).
+# Las pruebas activan el perfil "pruebas" para no depender de config-server.
+spring:
   config:
+    activate:
+      on-profile: "!pruebas"
     import: "configserver:http://${CONFIG_HOST:config-server}:8888"
   cloud:
     config:

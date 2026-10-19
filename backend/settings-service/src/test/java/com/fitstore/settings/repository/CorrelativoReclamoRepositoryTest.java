@@ -57,9 +57,9 @@ class CorrelativoReclamoRepositoryTest extends PruebaDatos {
     void secuencialPorAnio() {
         TransactionTemplate tx = transaccionNueva();
 
-        assertThat(tx.execute(s -> correlativos.siguiente(2026))).isEqualTo(1);
-        assertThat(tx.execute(s -> correlativos.siguiente(2026))).isEqualTo(2);
-        assertThat(tx.execute(s -> correlativos.siguiente(2026))).isEqualTo(3);
+        assertThat(siguienteEnTransaccion(tx, 2026)).isEqualTo(1);
+        assertThat(siguienteEnTransaccion(tx, 2026)).isEqualTo(2);
+        assertThat(siguienteEnTransaccion(tx, 2026)).isEqualTo(3);
     }
 
     @Test
@@ -70,22 +70,22 @@ class CorrelativoReclamoRepositoryTest extends PruebaDatos {
         tx.execute(s -> correlativos.siguiente(2026));
         tx.execute(s -> correlativos.siguiente(2026));
 
-        assertThat(tx.execute(s -> correlativos.siguiente(2027))).isEqualTo(1);
-        assertThat(tx.execute(s -> correlativos.siguiente(2026))).isEqualTo(3);
+        assertThat(siguienteEnTransaccion(tx, 2027)).isEqualTo(1);
+        assertThat(siguienteEnTransaccion(tx, 2026)).isEqualTo(3);
     }
 
     @Test
     @DisplayName("CA-0a-06 si la transacción del reclamo se revierte, el número no se pierde (sin huecos)")
     void sinHuecosSiSeRevierte() {
         TransactionTemplate tx = transaccionNueva();
-        assertThat(tx.execute(s -> correlativos.siguiente(2026))).isEqualTo(1);
+        assertThat(siguienteEnTransaccion(tx, 2026)).isEqualTo(1);
 
         assertThatThrownBy(() -> tx.execute(s -> {
             correlativos.siguiente(2026); // tomaría el 2
             throw new IllegalStateException("falla el registro del reclamo");
         })).isInstanceOf(IllegalStateException.class);
 
-        assertThat(tx.execute(s -> correlativos.siguiente(2026))).isEqualTo(2);
+        assertThat(siguienteEnTransaccion(tx, 2026)).isEqualTo(2);
     }
 
     @Test
@@ -114,6 +114,11 @@ class CorrelativoReclamoRepositoryTest extends PruebaDatos {
         assertThat(numeros.getFirst()).isEqualTo("RC-2026-000001");
         assertThat(numeros.getLast()).isEqualTo("RC-2026-000020");
         assertThat(new TreeSet<>(numeros)).hasSize(HILOS);
+    }
+
+    private int siguienteEnTransaccion(TransactionTemplate tx, int anio) {
+        Integer n = tx.execute(s -> correlativos.siguiente(anio));
+        return n;
     }
 
     private List<Integer> rango(int desde, int hasta) {
