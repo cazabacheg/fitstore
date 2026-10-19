@@ -1,0 +1,289 @@
+openapi: 3.1.0
+info:
+  title: FitStore — componentes comunes
+  version: 1.0.0
+  description: |
+    Componentes compartidos por los contratos de los 7 servicios (contracts/README.md, K4 a K9).
+    No es un servicio: se referencia con `$ref: './comun.yaml#/components/...'`.
+paths: {}
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Access token RS256 emitido por auth-service (15 min). Va en memoria en el navegador.
+    refreshCookie:
+      type: apiKey
+      in: cookie
+      name: fs_refresh
+      description: Refresh token en cookie HttpOnly, Secure, SameSite=Strict, Path=/api/v1/auth (7 días, rota en cada uso).
+
+  headers:
+    XRequestId:
+      description: Id de correlación de la petición (lo agrega el gateway; también se ve en Jaeger).
+      schema:
+        type: string
+        format: uuid
+    Location:
+      description: URL del recurso creado.
+      schema:
+        type: string
+    RetryAfter:
+      description: Segundos que hay que esperar antes de reintentar.
+      schema:
+        type: integer
+        minimum: 1
+
+  parameters:
+    page:
+      name: page
+      in: query
+      description: Número de página, desde 0.
+      schema:
+        type: integer
+        minimum: 0
+        default: 0
+    size:
+      name: size
+      in: query
+      description: Tamaño de la página.
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 100
+        default: 20
+    sort:
+      name: sort
+      in: query
+      description: Orden `campo,asc` o `campo,desc`. Se puede repetir.
+      schema:
+        type: array
+        items:
+          type: string
+          pattern: '^[a-zA-Z]+(,(asc|desc))?$'
+      style: form
+      explode: true
+    IdempotencyKey:
+      name: Idempotency-Key
+      in: header
+      required: true
+      description: Clave única por intento lógico (UUID generado por el navegador). Repetirla devuelve el mismo resultado.
+      schema:
+        type: string
+        format: uuid
+    XCarritoId:
+      name: X-Carrito-Id
+      in: header
+      required: false
+      description: Id del carrito anónimo (UUID guardado en el navegador). Se ignora si viene un token de cliente.
+      schema:
+        type: string
+        format: uuid
+
+  schemas:
+    ApiResponse:
+      title: ApiResponse
+      type: object
+      description: Envoltorio de toda respuesta exitosa (ADR-015). Cada operación precisa `data` con `allOf`.
+      required: [success, mensaje]
+      properties:
+        success:
+          type: boolean
+          const: true
+        mensaje:
+          type: string
+          examples: [Operación exitosa]
+        data:
+          description: Contenido de la respuesta (lo define cada operación).
+
+    ApiResponseVacia:
+      title: ApiResponseVacia
+      description: Respuesta exitosa sin datos.
+      allOf:
+        - $ref: '#/components/schemas/ApiResponse'
+        - type: object
+          properties:
+            data:
+              type: 'null'
+
+    ApiError:
+      title: ApiError
+      type: object
+      description: Respuesta de error (K5).
+      required: [success, mensaje, codigo]
+      properties:
+        success:
+          type: boolean
+          const: false
+        mensaje:
+          type: string
+          description: Texto para mostrar al usuario, en español.
+        codigo:
+          type: string
+          pattern: '^[A-Z][A-Z0-9_]*$'
+          description: Código estable para que el frontend decida (p. ej. CORREO_DUPLICADO).
+        errores:
+          type: array
+          description: Solo en 400 de validación, un elemento por campo inválido.
+          items:
+            $ref: '#/components/schemas/ErrorCampo'
+        requestId:
+          type: string
+          format: uuid
+
+    ErrorCampo:
+      title: ErrorCampo
+      type: object
+      required: [campo, mensaje]
+      properties:
+        campo:
+          type: string
+          description: Nombre de la propiedad del cuerpo o del parámetro (notación con puntos para objetos anidados).
+          examples: [dni]
+        mensaje:
+          type: string
+          examples: [El DNI debe tener 8 dígitos]
+
+    PaginaMeta:
+      title: PaginaMeta
+      type: object
+      description: Datos de paginación (K6). Cada listado agrega `contenido` con su tipo.
+      required: [pagina, tamano, totalElementos, totalPaginas]
+      properties:
+        pagina:
+          type: integer
+          minimum: 0
+        tamano:
+          type: integer
+          minimum: 1
+        totalElementos:
+          type: integer
+          format: int64
+          minimum: 0
+        totalPaginas:
+          type: integer
+          minimum: 0
+
+    Contadores:
+      title: Contadores
+      type: object
+      description: Número de elementos por estado (sin aplicar el filtro de estado), para los chips de los listados.
+      additionalProperties:
+        type: integer
+        minimum: 0
+
+    Monto:
+      title: Monto
+      type: number
+      multipleOf: 0.01
+      minimum: 0
+      description: Monto en soles (PEN), IGV incluido, 2 decimales.
+      examples: [59.9]
+
+    Ubigeo:
+      title: Ubigeo
+      type: string
+      pattern: '^[0-9]{6}$'
+      description: Código de distrito INEI de 6 dígitos.
+      examples: ['150115']
+
+    Dni:
+      title: Dni
+      type: string
+      pattern: '^[0-9]{8}$'
+      examples: ['45678912']
+
+    Celular:
+      title: Celular
+      type: string
+      pattern: '^9[0-9]{8}$'
+      description: Celular peruano de 9 dígitos que empieza con 9.
+      examples: ['987654321']
+
+  responses:
+    Ok:
+      description: Operación exitosa sin datos.
+      headers:
+        X-Request-Id:
+          $ref: '#/components/headers/XRequestId'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ApiResponseVacia'
+    ErrorValidacion:
+      description: Datos inválidos.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ApiError'
+          example:
+            success: false
+            mensaje: Revisa los datos ingresados
+            codigo: VALIDACION
+            errores:
+              - campo: dni
+                mensaje: El DNI debe tener 8 dígitos
+    NoAutenticado:
+      description: Falta el token, es inválido o venció.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ApiError'
+          example:
+            success: false
+            mensaje: Tu sesión venció, vuelve a ingresar
+            codigo: NO_AUTENTICADO
+    SinPermiso:
+      description: El rol no permite la operación.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ApiError'
+          example:
+            success: false
+            mensaje: No tienes permiso para esta acción
+            codigo: SIN_PERMISO
+    NoEncontrado:
+      description: El recurso no existe o no es del usuario.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ApiError'
+          example:
+            success: false
+            mensaje: No encontramos lo que buscas
+            codigo: NO_ENCONTRADO
+    Conflicto:
+      description: Duplicado, conflicto de versión o regla de negocio.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ApiError'
+          example:
+            success: false
+            mensaje: Otro usuario modificó este registro; recarga la página
+            codigo: CONFLICTO_VERSION
+    DemasiadosIntentos:
+      description: Límite de peticiones superado (gateway, ADR-020).
+      headers:
+        Retry-After:
+          $ref: '#/components/headers/RetryAfter'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ApiError'
+          example:
+            success: false
+            mensaje: Demasiados intentos, espera un momento
+            codigo: DEMASIADOS_INTENTOS
+    NoDisponible:
+      description: Un servicio necesario no responde (circuito abierto o caído).
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ApiError'
+          example:
+            success: false
+            mensaje: Servicio no disponible, inténtalo en un momento
+            codigo: SERVICIO_NO_DISPONIBLE

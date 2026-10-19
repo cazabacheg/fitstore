@@ -1,0 +1,15 @@
+# Reglas de validación de los contratos OpenAPI (contracts/README.md, sección 4).
+# Uso: npx @redocly/cli@2.57.0 lint --config contracts/redocly.yaml contracts/openapi/*-service.yaml
+extends:
+  - recommended
+rules:
+  operation-operationId-unique: error
+  operation-operationId-url-safe: error
+  operation-summary: error
+  operation-4xx-response: error
+  no-unused-components: warn
+  security-defined: error
+  tag-description: error
+  info-license-strict: off
+  no-server-example.com: off   # se permite http://localhost:8080 (gateway en local)
+  path-parameters-defined: error
