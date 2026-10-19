@@ -5,7 +5,7 @@
 > **Depende de:** 0a (gateway y CI), la etapa de contratos (OpenAPI para generar los clientes) y la etapa de diseño (**sistema de diseño**: los componentes de `ui/` se construyen según él). · **Habilita:** pantallas de las specs 1–8.
 
 **Historial:**
-- v7 (2026-10-19): etapa de diseño: el tema de settings trae solo los cinco colores; la tipografía y los radios son fijos (HU-0b-02, CA-0b-05, R4).
+- v7 (2026-10-19): etapa de diseño: el tema de settings trae solo los cinco colores; la tipografía y los radios son fijos (HU-0b-02, CA-0b-05, R4). Cabecera de la tienda: hasta 4 categorías raíz, atenuación al pasar el mouse (CA-0b-20, nuevo CA-0b-20c, CA-0b-21); diseño de P-0b-01 enlazado.
 - v6 (2026-10-19): revisión de coherencia: HU-0b-06 cita RF-BO-02 (tablas con paginación, filtros y orden); menú del backoffice completo (R3: ítems, subítems, roles) y mecanismo de contadores por funcionalidad (`CONTADOR_MENU`), que necesitaba la SPEC-5 para los reembolsos fallidos (CA-0b-24).
 - v5 (2026-10-19): el selector de ubigeo de `ui/` acepta la opción `hasta` (departamento, provincia o distrito), pedida por la SPEC-6 para las tarifas (CA-0b-26).
 - v4 (2026-10-18): **convención de filas de las tablas del backoffice** (R11, CA-0b-28b): el identificador es un enlace real, la fila entera es clicable y la última columna lleva las acciones ("Ver ›", hasta 2 botones o el menú "⋮"). Se aplica a los listados de las specs 1–5 (revisión hecha al cerrar la SPEC-5).
@@ -153,7 +153,7 @@ Como visitante, quiero una cabecera y un pie claros en cualquier dispositivo; co
 
 ```gherkin
 CA-0b-20  Cuando abro la tienda en escritorio
-          Entonces veo logo, categorías (de GET /categorias), buscador, cuenta y carrito con contador
+          Entonces veo logo, hasta 4 categorías raíz (de GET /categorias, en su orden), buscador, cuenta y carrito con contador
           Y en el pie, contacto, políticas, redes y el enlace "Libro de Reclamaciones"
 
 CA-0b-20b Cuando abro cualquier página de la tienda (incluso una corta, como un carrito vacío o la 404)
@@ -161,8 +161,12 @@ CA-0b-20b Cuando abro cualquier página de la tienda (incluso una corta, como un
           Y el pie queda al final del documento: no se ve en la pantalla inicial, solo al hacer scroll hasta el fondo
           Y el pie nunca es fijo (sin position: fixed ni sticky)
 
+CA-0b-20c Cuando paso el mouse o el foco del teclado por una categoría del menú
+          Entonces las demás se atenúan y la categoría de la página actual sigue subrayada
+          Y si hay más de 4 categorías raíz, las demás se ven en "Compra por categoría" de la landing y en los filtros de /productos
+
 CA-0b-21  Cuando abro la tienda en un celular (390 px)
-          Entonces el menú de categorías y la cuenta pasan a un menú lateral (☰), sin scroll horizontal
+          Entonces todas las categorías y la cuenta pasan a un menú lateral (☰) junto al logo, sin scroll horizontal
 
 CA-0b-22  Cuando escribo en el buscador y presiono Enter
           Entonces navego a /productos?q=<texto>
@@ -228,7 +232,7 @@ CA-0b-30  Dado que alguien cambió un contrato sin regenerar
 - **Proyecto / acceso:** storefront · público.
 - **Boceto (escritorio):** ![P-0b-01](img/P-0b-01-tienda.png)
 - **Boceto (móvil):** ![P-0b-01 móvil](img/P-0b-01-tienda-movil.png)
-- **Diseño de alta fidelidad:** 🕓 pendiente de la etapa de diseño (pantalla clave: cabecera y pie de la tienda, en dos marcas)
+- **Diseño de alta fidelidad:** ✅ [canvas "FitStore Tienda"](https://claude.ai/artifact/1iacKddHAquNYuQcFPBZLg), piezas `TiendaCabecera` y `TiendaPie` (FitStore y Kallpa). Cabecera clara (`fs-color-superficie` con línea inferior), menú en mayúsculas con letra espaciada; el pie va en `fs-color-secundario`.
 - **Componentes:** `TiendaShell`, `Cabecera` (logo, `MenuCategorias`, `Buscador`, `IconoCuenta`, `IconoCarrito`), `MenuMovil`, `Pie`, `BarraAnuncio`.
 - **Estados:** si `/categorias` falla, la cabecera se muestra sin categorías (no bloquea); el contador del carrito empieza en 0.
 - **Pie:** al final del documento, debajo del pliegue; el contenido tiene `min-height` igual al alto visible menos la cabecera, para que el pie no aparezca en la primera pantalla ni en páginas cortas (CA-0b-20b).
@@ -337,7 +341,7 @@ No aplica (no hay base de datos). En el navegador: `localStorage` solo para la c
 | 05–08 | Unitaria + manual | `shared/theme/*.spec.ts` (variables escritas, respaldo, valores por defecto) |
 | 09–14 | Unitaria | `shared/http/*.spec.ts` con `HttpTestingController` (refresh único con 3 peticiones simultáneas, logout al fallar, mapeo de errores, `X-Carrito-Id`) |
 | 15–19 | Unitaria | pruebas de rutas y guards por app |
-| 20–24 (incl. 20b) | Componente | pruebas de `TiendaShell` y `BackofficeShell` (incluye ancho 390 px) |
+| 20–24 (incl. 20b, 20c) | Componente | pruebas de `TiendaShell` y `BackofficeShell` (incluye ancho 390 px y el límite de 4 categorías) |
 | 25–28, 28b | Componente | pruebas de cada componente de `ui/` y de los pipes; `fs-tabla.spec.ts` (enlace, clic en fila, acciones sin propagar, tabla sin detalle) |
 | 29 | Script | `npm run api:generate` en CI |
 
@@ -355,7 +359,7 @@ No aplica (no hay base de datos). En el navegador: `localStorage` solo para la c
 
 ## 9. Definición de terminado
 
-- [ ] CA-0b-01 a CA-0b-30 (y CA-0b-20b, CA-0b-28b) cumplidos.
+- [ ] CA-0b-01 a CA-0b-30 (y CA-0b-20b, CA-0b-20c, CA-0b-28b) cumplidos.
 - [ ] Las dos apps arrancan contra la plataforma 0a y muestran la marca de settings (con los datos semilla).
 - [ ] `/_ui` muestra todos los componentes de `ui/` en ambas apps.
 - [ ] Sin tokens en `localStorage`; sin atribución de IA en commits.

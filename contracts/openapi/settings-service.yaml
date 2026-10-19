@@ -704,7 +704,7 @@ components:
     ColorHex:
       type: string
       pattern: '^#[0-9A-Fa-f]{6}$'
-      example: '#0D9488'
+      example: '#C9B28C'
     EnlaceTienda:
       type: string
       nullable: true

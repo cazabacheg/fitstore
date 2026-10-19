@@ -1,11 +1,12 @@
 # SPEC-7 — Notificaciones
 
-> Versión: **v4 (aprobado)** — 2026-10-19 · Estados: ✅ decidido · 🟡 propuesto · ❓ abierto
+> Versión: **v5 (aprobado)** — 2026-10-19 · Estados: ✅ decidido · 🟡 propuesto · ❓ abierto
 > **Dueña de:** `backend/notification-service` (enrutamiento de eventos, plantillas, envío, registro) · backoffice: `features/notificaciones`.
 > **Depende de:** 0a, 0b, 1 (sesión de staff) · consume los eventos de auth, order, payment, delivery, catalog y settings (AsyncAPI) y usa `/internal/v1/boletas/{numero}` de payment · **Habilita:** 8 (demo con todos los correos en Mailpit y SES).
 > **Contratos:** `contracts/openapi/notification-service.yaml`; no publica eventos; consume los de la sección 6 del micro.
 
 **Historial:**
+- v5 (2026-10-19): etapa de diseño: en los correos el texto sobre el color primario se elige por contraste (blanco o color de texto), como en la tienda (CA-7-15; micro v12).
 - v4 (2026-10-19): revisión de coherencia: CA-7-03 aclara que `PedidoExpirado` y `PagoRechazado` no se escuchan (micro v10).
 - v3 (2026-10-19): los datos de demostración también se cargan en la nube con el perfil `demo` (SPEC-8 I7), con UUID fijos compartidos entre servicios (`docs/demo/ids-demo.md`).
 - v2 (2026-10-19): N7 ✅ "Enviar prueba a mi correo" (CA-7-30; micro v9) → **spec aprobada**.
@@ -108,7 +109,8 @@ CA-7-14  Dado que 10 minutos después de PedidoPagado no llegó BoletaEmitida
 Como tienda, quiero que todos mis correos lleven mi logo, mis colores y mis datos, para que el cliente los reconozca. · Cubre: RF-NOT-02, RNF-17 · Pantallas: [P-7-04](#p-7-04--diseño-de-los-correos)
 
 ```gherkin
-CA-7-15  Cada correo usa el diseño común: logo, color primario en la cabecera y los botones, nombre de la tienda,
+CA-7-15  Cada correo usa el diseño común: logo, color primario en la cabecera y los botones (con el texto en blanco o en el
+         color de texto, el que contraste más), nombre de la tienda,
          y un pie con dirección, horario, redes y enlaces a las políticas; además lleva su versión en texto plano
 
 CA-7-16  Cuando llega ConfiguracionActualizada

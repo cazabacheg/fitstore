@@ -6,7 +6,7 @@
 > **Contratos:** `contracts/openapi/settings-service.yaml`; eventos `ConfiguracionActualizada`, `ReclamoRegistrado`, `ReclamoRespondido`.
 
 **Historial:**
-- v7 (2026-10-19): etapa de diseño: el tema configura solo los cinco colores; tipografía y bordes son fijos del sistema de diseño (HU-3-03, CA-3-09, boceto P-3-04).
+- v7 (2026-10-19): etapa de diseño: el tema configura solo los cinco colores; tipografía y bordes son fijos del sistema de diseño (HU-3-03, CA-3-09, boceto P-3-04). CA-3-10: el texto sobre el primario se deriva (blanco o el color de texto), así que solo se advierte si ninguno de los dos llega a 4.5:1. Diseño de P-3-01 enlazado.
 - v6 (2026-10-19): los datos de demostración también se cargan en la nube con el perfil `demo` (SPEC-8 I7), con UUID fijos compartidos entre servicios (`docs/demo/ids-demo.md`).
 - v5 (2026-10-18): P-3-05 y P-3-06 indican qué abre el enlace de cada fila y sus acciones, según la convención de tablas de la SPEC-0b (R11). Boceto P-3-06 actualizado.
 - v4 (2026-10-18): nuevo parámetro "días para reembolso postventa" (0 a 365, 0 = sin límite, por defecto 30), decidido en la SPEC-5; CA-3-17 ampliado.
@@ -89,7 +89,7 @@ Como administrador, quiero ajustar los colores viendo el resultado al instante, 
 CA-3-09  Cuando cambio un color
          Entonces la vista previa (tienda o backoffice, escritorio o móvil) se actualiza al instante, sin guardar
 
-CA-3-10  Dado un contraste texto/fondo o texto/primario menor a 4.5:1
+CA-3-10  Dado un contraste texto/fondo menor a 4.5:1, o un primario sobre el que ni el blanco ni el color de texto llegan a 4.5:1
          Entonces veo la advertencia con la razón calculada, y puedo guardar igual (no bloquea)
 
 CA-3-11  Cuando guardo el tema
@@ -234,7 +234,7 @@ CA-3-37  Dado Redis caído
 
 - **Ruta / proyecto:** `/` · storefront · público.
 - **Boceto (baja fidelidad):** ![P-3-01](img/P-3-01-landing.png)
-- **Diseño de alta fidelidad:** 🕓 **pantalla clave** (escritorio y móvil, en dos marcas).
+- **Diseño de alta fidelidad:** ✅ [canvas "FitStore Tienda"](https://claude.ai/artifact/1iacKddHAquNYuQcFPBZLg), `Main` (FitStore escritorio) y `MainKallpaMovil`. Hero a todo el ancho con la imagen de fondo y el texto encima; en móvil, hero más bajo y la tienda física en un solo bloque, sin foto.
 - **Componentes:** `InicioPage`, `CarruselHero`, `FranjaBeneficios`, `CategoriasRaiz`, `Destacados` (usa la tarjeta de producto de la spec 2 por contrato visual: misma estructura, componente propio en `inicio/`), `TiendaFisica`.
 - **Estados:** sin imágenes (hero de color), sin beneficios (franja oculta), sin destacados (sección oculta), catálogo caído (destacados ocultos; el resto se ve).
 - **Endpoints:** `GET /settings/public`, `GET /categorias`, `GET /productos/destacados`.

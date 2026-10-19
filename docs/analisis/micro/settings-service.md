@@ -4,7 +4,7 @@
 > Estados: ✅ decidido · 🟡 propuesto · ❓ abierto · 🕓 diferido
 
 **Historial:**
-- v10 (2026-10-19): etapa de diseño: el tema configura **solo los cinco colores**; se quitan `tipografia` y `radioBordes` (D6 reescrita, invariante 2, tabla y configuración).
+- v10 (2026-10-19): etapa de diseño: el tema configura **solo los cinco colores**; se quitan `tipografia` y `radioBordes` (D6 reescrita, invariante 2, tabla y configuración). Invariante 1: colores por defecto de la plantilla FitStore.
 - v9 (2026-10-19): ajustes de la etapa de contratos: la bandeja de reclamos busca por número, nombre o documento (SPEC-3 P-3-06).
 - v8 (2026-10-18): nuevo parámetro público **`diasReembolsoPostventa`** (0 a 365, 0 = sin límite, por defecto 30), decidido en la SPEC-5. Lo usa order.
 - v7 (2026-10-18): nuevo campo opcional **`beneficios`** en el contenido (de 0 a 3 `{icono, texto}`; vacío = la landing oculta la franja), decidido en la SPEC-3 (S1).
@@ -155,7 +155,7 @@ classDiagram
 
 ### 2.2 Invariantes
 
-1. Existe **exactamente una** fila de configuración (se crea en la migración inicial con valores de FitStore por defecto).
+1. Existe **exactamente una** fila de configuración (se crea en la migración inicial con valores de FitStore por defecto; tema: primario `#C9B28C`, secundario `#2B2621`, acento `#4E5B45`, fondo `#FAF9F7`, texto `#26221D`, los del sistema de diseño).
 2. Colores en formato `#RRGGBB`; RUC de 11 dígitos.
 3. Al menos **un método de pago** y **una modalidad de entrega** habilitados.
 4. `expiracionPedidoMinutos` entre **10 y 120** (por defecto 30); `diasReembolsoPostventa` entre **0 y 365** (0 = sin límite, por defecto 30).
