@@ -13,7 +13,7 @@
 | [5](SPEC-5-pagos.md) Pagos ✅ | payment | página de pago, pagos y reembolsos | 0a, 0b | Sí |
 | [6](SPEC-6-envios.md) Envíos ✅ | delivery | entregas, repartidores, tarifas, agencias | 0a, 0b | Sí |
 | [7](SPEC-7-notificaciones.md) Notificaciones ✅ | notification | registro de envíos, editor de plantillas | 0a, 0b | Sí |
-| 8 Integración, nube y demo | pruebas E2E, dashboard, compose cloud, Caddy; adaptador Azure Blob **solo si** se despliega en Azure | dashboard | 1–7 | Al final |
+| [8](SPEC-8-integracion-nube-demo.md) Integración, nube y demo | pruebas E2E, dashboard, compose cloud, Caddy; adaptador Azure Blob **solo si** se despliega en Azure | dashboard | 1–7 | Al final |
 
 ## Reglas de convivencia
 

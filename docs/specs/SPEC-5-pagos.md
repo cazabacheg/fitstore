@@ -1,11 +1,12 @@
 # SPEC-5 — Pagos
 
-> Versión: **v5 (aprobado)** — 2026-10-19 · Estados: ✅ decidido · 🟡 propuesto · ❓ abierto
+> Versión: **v6 (aprobado)** — 2026-10-19 · Estados: ✅ decidido · 🟡 propuesto · ❓ abierto
 > **Dueña de:** `backend/payment-service` (intención, cobros, webhooks, reembolsos, boleta) · tienda: `features/pago` · backoffice: `features/pagos`.
 > **Depende de:** 0a, 0b, 1 (sesión) · usa el contrato de eventos de order (`PedidoCreado`, `PedidoCancelado`, `PedidoExpirado`, `PagoNoAplicable`, `ReembolsoSolicitado`) y `GET /settings/public` · **Habilita:** 4 (el pedido pasa a `PAGADO`, guarda la boleta y registra lo reembolsado), 7 (correos de pago, reembolso y alerta con la boleta adjunta), 8 (demo de punta a punta).
 > **Contratos:** `contracts/openapi/payment-service.yaml`; eventos que publica `PagoConfirmado`, `PagoRechazado`, `BoletaEmitida`, `PagoReembolsado`, `ReembolsoFallido`.
 
 **Historial:**
+- v6 (2026-10-19): el contador de reembolsos fallidos del menú usa `size=1` y lee el total (Spring Data no acepta `size=0`), corregido al redactar la SPEC-8.
 - v5 (2026-10-19): el reembolso postventa también aplica a pedidos devueltos a la tienda (SPEC-6); sin cambios en el flujo de payment.
 - v4 (2026-10-18): P-5-03, P-5-04 y P-5-05 con la convención de tablas de la SPEC-0b (R11) → **spec aprobada**.
 - v3 (2026-10-18): **reembolso postventa**: además de la cancelación, un pedido entregado puede reembolsarse total o parcialmente desde el pedido (SPEC-4 HU-4-12); varios reembolsos por pago; la intención pasa a `REEMBOLSADA_PARCIAL` / `REEMBOLSADA` y el estado fallido vive en cada reembolso (P8). Micros de payment v6, order v6, settings v8, notification v6; macro v20; SPEC-3 v4 y SPEC-4 v4. Revisión completa de las menciones de reembolso (alcance, resolución manual con `PagoReembolsado`, datos, Postman, demo).
@@ -300,7 +301,7 @@ CA-5-38  Cuando lo marco como resuelto manualmente (p. ej. devolví por transfer
 - **Ruta / proyecto:** `/reembolsos` · backoffice · ADMIN.
 - **Boceto:** ![P-5-05](img/P-5-05-reembolsos.png)
 - **Diseño de alta fidelidad:** 🕓 deriva del sistema de diseño.
-- **Componentes:** `ReembolsosPage`, `DialogoResolverManual` (nota obligatoria, hasta 500 caracteres), contador de fallidos en el menú (lo consulta el *shell* con `GET /admin/reembolsos?estado=FALLIDO&size=0`).
+- **Componentes:** `ReembolsosPage`, `DialogoResolverManual` (nota obligatoria, hasta 500 caracteres), contador de fallidos en el menú (lo consulta el *shell* con `GET /admin/reembolsos?estado=FALLIDO&size=1`, leyendo el total).
 - **Tabla (0b R11):** el **código del pedido** abre el detalle del pago al que pertenece el reembolso (`/pagos/:id`); acciones (solo en FALLIDO): "Reintentar" y "Resolver manualmente".
 - **Endpoints:** `GET /admin/reembolsos`, `POST /admin/reembolsos/{id}/reintentar`, `PATCH /admin/reembolsos/{id}/resuelto-manual`.
 
