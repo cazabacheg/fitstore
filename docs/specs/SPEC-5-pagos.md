@@ -1,11 +1,12 @@
 # SPEC-5 — Pagos
 
-> Versión: **v1 (borrador)** — 2026-10-18 · Estados: ✅ decidido · 🟡 propuesto · ❓ abierto
+> Versión: **v2 (borrador)** — 2026-10-18 · Estados: ✅ decidido · 🟡 propuesto · ❓ abierto
 > **Dueña de:** `backend/payment-service` (intención, cobros, webhooks, reembolsos, boleta) · tienda: `features/pago` · backoffice: `features/pagos`.
 > **Depende de:** 0a, 0b, 1 (sesión) · usa el contrato de eventos de order (`PedidoCreado`, `PedidoCancelado`, `PedidoExpirado`, `PagoNoAplicable`) y `GET /settings/public` · **Habilita:** 4 (el pedido pasa a `PAGADO` y guarda la boleta), 7 (correos de pago, reembolso y alerta con la boleta adjunta), 8 (demo de punta a punta).
 > **Contratos:** `contracts/openapi/payment-service.yaml`; eventos que publica `PagoConfirmado`, `PagoRechazado`, `BoletaEmitida`, `PagoReembolsado`, `ReembolsoFallido`.
 
 **Historial:**
+- v2 (2026-10-18): P1 ✅ la prueba de concepto del sandbox es la primera tarea de la implementación; P2 ✅ se mantiene el proveedor simulado (respaldo de la demo y pruebas sin internet).
 - v1 (2026-10-18): borrador inicial.
 
 **Estado de revisión por sección:** 1 ⏳ · 2 ⏳ · 3 ⏳ · 4 ⏳ · 5 ⏳ · 6 ⏳ · 7 ⏳ · 8 ⏳ · 9 ⏳
@@ -298,7 +299,7 @@ Todo según el micro de payment. Decisiones de implementación de esta spec:
 
 | # | Decisión | Detalle |
 |---|---|---|
-| P1 | **Prueba de concepto antes que nada** 🟡 | Primera tarea de la spec (1–2 días): con las llaves de prueba, cobrar con tarjeta y con Yape en Culqi y con el Brick de Mercado Pago, desde una página HTML mínima y `curl`. Se anota en `docs/pruebas/poc-pagos.md`: tarjetas y datos de prueba que funcionan, si Yape se activa en el sandbox, si se exige 3-D Secure y cómo llegan los webhooks. Según el resultado se ajusta esta spec antes de seguir (R16). Ver pregunta 1 |
+| P1 | **Prueba de concepto antes que nada** ✅ | Primera tarea de la spec (1–2 días): con las llaves de prueba, cobrar con tarjeta y con Yape en Culqi y con el Brick de Mercado Pago, desde una página HTML mínima y `curl`. Se anota en `docs/pruebas/poc-pagos.md`: tarjetas y datos de prueba que funcionan, si Yape se activa en el sandbox, si se exige 3-D Secure y cómo llegan los webhooks. Según el resultado se ajusta esta spec antes de seguir (R16) |
 | P2 | **Reglas del proveedor simulado** ✅ | El `FormularioSimulado` pide un número de tarjeta de prueba y genera un token `sim_<últimos 4>`; el `SimuladoProvider` decide por esos dígitos: `1111` aprueba, `0002` rechaza (fondos insuficientes), `0119` deja la transacción en `PROCESANDO` y el verificador la aprueba. Cualquier otro número se aprueba |
 | P3 | **Una sola ruta para pagar y ver el resultado** ✅ | El resultado es un estado de `/pago/:codigo` (como registra la 0b); al recargar, la página muestra el estado real que devuelve la API |
 | P4 | **Consulta tras el 202** ✅ | La página consulta `GET /pagos/{codigo}` cada 3 s hasta 2 minutos; si sigue sin resultado, muestra "Te avisaremos por correo cuando se confirme" y el enlace al pedido |
@@ -349,7 +350,3 @@ Todo según el micro de payment. Decisiones de implementación de esta spec:
 - [ ] El OpenAPI de payment coincide con lo implementado; los eventos coinciden con el AsyncAPI.
 - [ ] Demostración en sandbox: pago con tarjeta de Culqi, con Yape (o con el simulado si el sandbox no lo permite, documentado), con Mercado Pago, un rechazo con reintento y un reembolso tras cancelar.
 - [ ] Revisado y aprobado por el autor.
-
-## Preguntas abiertas ❓
-
-1. **P1, prueba de concepto primero:** propongo que la implementación de esta spec **empiece por la prueba de concepto del sandbox** (1–2 días) y que la spec se ajuste con lo que salga (por ejemplo, agregar 3-D Secure o demostrar Yape con el simulado). La alternativa es hacerla **ya, antes de cerrar las specs**, para que esta spec quede con datos reales desde el inicio. ¿Cuándo la hacemos?
