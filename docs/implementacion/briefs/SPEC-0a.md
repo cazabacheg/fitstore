@@ -7,10 +7,33 @@ La SPEC-0a se construye en tres pasos (I1). Cada paso es un agente, una rama y u
 
 | Paso | Rama | Alcance (V4) | Criterios | Entra |
 |---|---|---|---|---|
-| **0a.1** Monorepo, común e infraestructura | `spec/0a-1-plataforma` | [`SPEC-0a.1.alcance`](SPEC-0a.1.alcance) | 01 (parcial), 04, 08–12, 13 (`X-Request-Id`), 14–17, 21 | En curso |
+| **0a.1** Monorepo, común e infraestructura | `spec/0a-1-plataforma` | [`SPEC-0a.1.alcance`](SPEC-0a.1.alcance) | 01 (parcial), 04, 08–13, 14–16, 21 · complementaria: 17 | En curso |
 | **CK1** Checkpoint de base | — | — | Revisión exhaustiva del lead ([estrategia 2.1](../estrategia-multiagente.md#21-checkpoints-de-base)) | 0a.1 en `dev` |
-| **0a.2** Esqueleto de un servicio (×7, 3 a la vez) | `spec/0a-2-<servicio>` | `SPEC-0a.2-<servicio>.alcance` | 05 y 06 de ese servicio, más su `ContratoOpenApiTest` (I8) | CK1 aprobado por el autor |
-| **0a.3** CI, humo y Postman | `spec/0a-3-ci` | `SPEC-0a.3.alcance` | 01, 02, 03, 07, 13 (traza en Jaeger), 17 (en el compose), 18, 19, 20, 22 | Los 7 esqueletos en `dev` |
+| **0a.2** Esqueleto de un servicio (×7, 3 a la vez) | `spec/0a-2-<servicio>` | `SPEC-0a.2-<servicio>.alcance` | 06 de ese servicio, más su `ContratoOpenApiTest` (I8) y lo que necesita 05 (V1 + entidades con `validate`) | CK1 aprobado por el autor |
+| **0a.3** CI, humo y Postman | `spec/0a-3-ci` | `SPEC-0a.3.alcance` | 01, 02, 03, 05, 07, 17, 18, 19, 20, 22 | Los 7 esqueletos en `dev` |
+
+### Validación del brief (estrategia B2)
+
+Copiada de la sección 7 de la SPEC-0a v6. Cada criterio tiene un solo dueño.
+
+| CA | Sección 7: tipo · dónde | Dueño | ¿Su archivo está en el alcance del dueño? |
+|---|---|---|---|
+| 01 | Build / CI · `./mvnw verify`, `ci.yml` | 0a.3 (0a.1 deja el build en verde) | ✅ `ci.yml` en 0a.3 |
+| 02, 03 | Humo · `infra/smoke.sh` | 0a.3 | ✅ |
+| 04 | Integración · `config-server` + un servicio con Testcontainers | 0a.1 | ✅ `backend/config-server/` |
+| 05 | Humo · `infra/smoke.sh` | 0a.3 (0a.2 construye V1 y entidades) | ✅ |
+| 06 | Datos · `src/test/.../repository/*Test.java` de cada servicio | 0a.2 (cada servicio) | ✅ `backend/<servicio>/` |
+| 07 | Humo · `infra/smoke.sh` | 0a.3 (0a.1 crea `init.sql`) | ✅ |
+| 08–13 | Integración · `api-gateway/src/test` | 0a.1 | ✅ `backend/api-gateway/` |
+| 14, 15, 16 | Integración · `fitstore-common/src/test` | 0a.1 | ✅ `backend/fitstore-common/` |
+| 17 | Humo · `infra/smoke.sh` | 0a.3 (0a.1: prueba complementaria) | ✅ |
+| 18 | CI · `.gitignore` + gitleaks en `ci.yml` | 0a.3 (0a.1 crea `.gitignore`) | ✅ |
+| 19 | Humo · `infra/smoke.sh` | 0a.3 | ✅ |
+| 20 | CI · `ci.yml` | 0a.3 | ✅ |
+| 21 | Build · `jacoco:check` en `./mvnw verify` | 0a.1 (POM padre) | ✅ `pom.xml` |
+| 22 | CI · `ci.yml`, `scripts/contrato.sh`; `ContratoOpenApiTest` en cada esqueleto | 0a.3 (0a.2: `ContratoOpenApiTest`) | ✅ |
+
+Errores encontrados y corregidos (2026-10-19): CA-0a-07 y 18 estaban en 0a.1 (son de 0a.3); CA-0a-05 estaba en 0a.2 y CA-0a-17 en 0a.1 (los dos son *smoke*, de 0a.3); la traza de CA-0a-13 estaba en 0a.3 (la sección 7 la pone en las pruebas del gateway, 0a.1).
 
 ---
 
@@ -43,8 +66,8 @@ En tu **primer mensaje**, antes de escribir código: confirma qué leíste y res
 | CA-0a-01 (parcial) | `./mvnw verify` compila los 11 módulos y pasa todo |
 | CA-0a-04 | `config-server/src/test`: un cliente con perfil `dev` toma su configuración; sin config-server, reintenta y no arranca con valores por defecto |
 | CA-0a-08 a CA-0a-12 | `api-gateway/src/test` con `WebTestClient` + WireMock (+ Redis en Testcontainers para 11) |
-| CA-0a-13 (`X-Request-Id`) | `api-gateway/src/test`: la respuesta trae `X-Request-Id` y se propaga al servicio (la traza en Jaeger la verifica 0a.3) |
-| CA-0a-17 | `api-gateway/src/test`: el selector de Swagger tiene los 7 servicios configurados (0a.3 lo confirma en el compose) |
+| CA-0a-13 | `api-gateway/src/test`: la respuesta trae `X-Request-Id`, se propaga al servicio y el gateway exporta la traza (span del gateway con el servicio destino) a un receptor OTLP de prueba; la sección 7 de la spec pone todo el 13 en las pruebas del gateway |
+| CA-0a-17 (complementaria) | `api-gateway/src/test`: el selector de Swagger tiene los 7 servicios configurados. El dueño del criterio es 0a.3 (*smoke*, sección 7) |
 | CA-0a-14, CA-0a-15 | `fitstore-common/src/test` con PostgreSQL y RabbitMQ en Testcontainers |
 | CA-0a-16 | `fitstore-common/src/test` con Garage en Testcontainers (contenedor genérico) |
 | CA-0a-21 | Demostrar que `jacoco:check` falla con un módulo bajo 80 % (por ejemplo, con un módulo de prueba temporal o una configuración de umbral en una prueba del build) y documentar cómo se verificó en el reporte |

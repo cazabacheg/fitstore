@@ -560,11 +560,11 @@ workspace "FitStore" "Plantilla white-label de e-commerce de ropa y moda para MY
         notRepos -> notificationDb "SQL" "JDBC"
 
         # ================================================================ C3 · gateway
-        caddy -> gwSeguridad "Reenvía /api" "HTTP"
+        caddy -> gwCorrelacion "Reenvía /api" "HTTP"
+        gwCorrelacion -> gwSeguridad "Siguiente filtro"
         gwSeguridad -> gwBloqueo "Siguiente filtro"
         gwBloqueo -> gwRate "Siguiente filtro"
-        gwRate -> gwCorrelacion "Siguiente filtro"
-        gwCorrelacion -> gwRutas "Resuelve destino"
+        gwRate -> gwRutas "Resuelve destino"
         gwRutas -> gwFallback "Si falla"
         gwSeguridad -> auth "JWKS" "HTTP"
         gwRate -> redis "Contadores" "RESP"
