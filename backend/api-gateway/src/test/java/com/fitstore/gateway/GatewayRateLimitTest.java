@@ -22,8 +22,9 @@ class GatewayRateLimitTest {
     @DynamicPropertySource
     static void propiedades(DynamicPropertyRegistry registro) {
         EntornoGateway.registrar(registro);
-        // ventana larga para que la prueba no dependa de cuándo cambia el segundo
-        registro.add("fitstore.gateway.rate-limit.resto.ventana-segundos", () -> "60");
+        // token bucket del resto de rutas: capacidad 100 (ráfaga) y reposición mínima para que la prueba sea exacta
+        registro.add("fitstore.gateway.rate-limit.resto.capacidad", () -> "100");
+        registro.add("fitstore.gateway.rate-limit.resto.reposicion-por-segundo", () -> "1");
     }
 
     @LocalServerPort
@@ -142,7 +143,7 @@ class GatewayRateLimitTest {
     }
 
     @Test
-    @DisplayName("CA-0a-11 el resto de las rutas permite una ráfaga de 100 por ventana y luego responde 429")
+    @DisplayName("CA-0a-11 el resto de las rutas permite una ráfaga de 100 (capacidad del token bucket) y luego responde 429")
     void restoDeRutas() {
         int aceptadas = 0;
         int rechazadas = 0;
@@ -155,7 +156,37 @@ class GatewayRateLimitTest {
                 rechazadas++;
             }
         }
-        assertThat(aceptadas).isEqualTo(100);
-        assertThat(rechazadas).isEqualTo(30);
+        // 100 de la ráfaga más, como mucho, el token que repone 1 por segundo mientras corre la prueba
+        assertThat(aceptadas).isBetween(100, 102);
+        assertThat(rechazadas).isEqualTo(130 - aceptadas);
+    }
+
+    @Test
+    @DisplayName("CA-0a-11 el preflight/OPTIONS no cuenta para el límite")
+    void optionsNoCuenta() {
+        for (int i = 1; i <= 12; i++) {
+            cliente.options().uri("/api/v1/auth/login").header("X-Forwarded-For", "203.0.113.120")
+                    .exchange().expectStatus().value(estado -> assertThat(estado).isNotEqualTo(429));
+        }
+
+        for (int i = 1; i <= 5; i++) {
+            login("203.0.113.120").expectStatus().isOk();
+        }
+        login("203.0.113.120").expectStatus().isEqualTo(429);
+    }
+
+    @Test
+    @DisplayName("CA-0a-11 una ruta con clave por usuario sin token cae a la clave por IP")
+    void claveDeUsuarioSinTokenUsaLaIp() {
+        for (int i = 1; i <= 10; i++) {
+            cliente.post().uri("/api/v1/pedidos").header("X-Forwarded-For", "203.0.113.130")
+                    .bodyValue("{}").exchange().expectStatus().isOk();
+        }
+        cliente.post().uri("/api/v1/pedidos").header("X-Forwarded-For", "203.0.113.130")
+                .bodyValue("{}").exchange().expectStatus().isEqualTo(429);
+
+        // otra IP sin token tiene su propio contador
+        cliente.post().uri("/api/v1/pedidos").header("X-Forwarded-For", "203.0.113.131")
+                .bodyValue("{}").exchange().expectStatus().isOk();
     }
 }
