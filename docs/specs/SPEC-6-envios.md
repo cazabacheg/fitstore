@@ -1,11 +1,12 @@
 # SPEC-6 — Envíos
 
-> Versión: **v1 (borrador)** — 2026-10-18 · Estados: ✅ decidido · 🟡 propuesto · ❓ abierto
+> Versión: **v2 (borrador)** — 2026-10-19 · Estados: ✅ decidido · 🟡 propuesto · ❓ abierto
 > **Dueña de:** `backend/delivery-service` (tarifas, cotización, agencias, repartidores, entregas) · backoffice: `features/entregas`, `features/maestros-envio`.
 > **Depende de:** 0a, 0b, 1 (sesión de staff) · usa el evento `PedidoListoDespacho` de order y `/ubigeo` de settings (en el frontend) · **Habilita:** 4 (cotización y opciones de envío en el checkout; el pedido pasa a `ENVIADO` y `ENTREGADO`), 7 (correos de la entrega), 8 (entregas del día en el dashboard).
 > **Contratos:** `contracts/openapi/delivery-service.yaml`; evento que publica `EntregaActualizada`; consume `PedidoListoDespacho`.
 
 **Historial:**
+- v2 (2026-10-19): **devolución a tienda** (estado final `DEVUELTA`, CA-6-33 y 34; order pasa el pedido a `DEVUELTO` y permite reembolsar); E2 ✅ selector de ubigeo con nivel agregado a la SPEC-0b (v5). Cambios propagados: macro v21, micros de delivery v6, order v7, payment v7 y notification v7 (correo C14), SPEC-4 v6, SPEC-5 v5.
 - v1 (2026-10-18): borrador inicial.
 
 **Estado de revisión por sección:** 1 ⏳ · 2 ⏳ · 3 ⏳ · 4 ⏳ · 5 ⏳ · 6 ⏳ · 7 ⏳ · 8 ⏳ · 9 ⏳
@@ -14,10 +15,10 @@
 
 ## 1. Objetivo y alcance
 
-Al cerrar esta spec, el checkout **cotiza el envío** a cualquier distrito con las tarifas que configura el admin, y cada pedido listo para despacho **se convierte en una entrega** que el operador lleva hasta el final: con **repartidor propio** en Lima y Callao (asignar, en ruta, entregada, intento fallido y reprogramación) o por **agencia** a provincias (código de seguimiento, disponible en agencia, recogido). El operador imprime la **hoja de ruta** de cada repartidor y el cliente ve cada avance en "Mis pedidos".
+Al cerrar esta spec, el checkout **cotiza el envío** a cualquier distrito con las tarifas que configura el admin, y cada pedido listo para despacho **se convierte en una entrega** que el operador lleva hasta el final: con **repartidor propio** en Lima y Callao (asignar, en ruta, entregada, intento fallido y reprogramación) o por **agencia** a provincias (código de seguimiento, disponible en agencia, recogido). Si una entrega no se puede concretar, el operador la marca **devuelta a la tienda** y el pedido queda listo para reembolsar. El operador imprime la **hoja de ruta** de cada repartidor y el cliente ve cada avance en "Mis pedidos".
 
 **Incluye:**
-- Toda la lógica de [`delivery-service`](../analisis/micro/delivery-service.md): tarifas por ubigeo con búsqueda jerárquica, opciones y cotización, agencias, repartidores, entregas desde `PedidoListoDespacho`, máquinas de estado local y agencia, seguimiento, entregas del día y hoja de ruta, resumen para el dashboard.
+- Toda la lógica de [`delivery-service`](../analisis/micro/delivery-service.md): tarifas por ubigeo con búsqueda jerárquica, opciones y cotización, agencias, repartidores, entregas desde `PedidoListoDespacho`, máquinas de estado local y agencia (con la devolución a tienda), seguimiento, entregas del día y hoja de ruta, resumen para el dashboard.
 - Pantallas P-6-01 a P-6-06.
 - Semilla de agencias y tarifas (`V2`) y datos de demostración para `dev`.
 - Colección Postman `delivery`.
@@ -25,15 +26,16 @@ Al cerrar esta spec, el checkout **cotiza el envío** a cualquier distrito con l
 **No incluye (y dónde va):**
 - Recojo en tienda → spec 4 (lo gestiona order, sin entrega).
 - Estado del pedido y línea de tiempo del cliente → spec 4 (consume `EntregaActualizada`).
-- Correos "en camino", "intento fallido", "disponible en agencia" y "entregado" → spec 7.
+- Correos "en camino", "intento fallido", "disponible en agencia", "entregado" y "pedido devuelto a la tienda" (C14) → spec 7.
+- Reembolso de un pedido devuelto → spec 4 (HU-4-12) y spec 5 (lo ejecuta).
 - Pantalla del dashboard → spec 8 (aquí solo su endpoint).
 - Integración con APIs de agencias y cálculo de rutas → fuera de alcance (macro 1.4).
 
 ## 2. Referencias
 
-- Micro [`delivery-service.md`](../analisis/micro/delivery-service.md): todo (D1–D6, invariantes, datos y semilla, endpoints 4.1, cotización 4.2, creación 4.3, local 4.4, agencia 4.5, estados, eventos, seguridad, pruebas, diseño técnico).
+- Micro [`delivery-service.md`](../analisis/micro/delivery-service.md) v6: todo (D1–D6, con D5 actualizada por la devolución a tienda, invariantes, datos y semilla, endpoints 4.1, cotización 4.2, creación 4.3, local 4.4, agencia 4.5, estados, eventos, seguridad, pruebas, diseño técnico).
 - Macro: CU-26, 26b, 27, 28 · RF-DEL-01 a 08 · ADR-009, 015.
-- SPEC-0b: rutas `/entregas/**`, `/repartidores`, `/tarifas`, `/agencias` (R2), tabla con la convención de filas (R11), selector de ubigeo, badge de estado de entrega, diálogo. SPEC-4: CA-4-13 a 16 (opciones y cotización en el checkout), CA-4-45 (`EntregaActualizada` cambia el pedido).
+- SPEC-0b: rutas `/entregas/**`, `/repartidores`, `/tarifas`, `/agencias` (R2), tabla con la convención de filas (R11), selector de ubigeo, badge de estado de entrega, diálogo. SPEC-4: CA-4-13 a 16 (opciones y cotización en el checkout), CA-4-45 (`EntregaActualizada` cambia el pedido, incluida la devolución), HU-4-12 (reembolso de un pedido devuelto).
 
 ## 3. Historias de usuario y criterios de aceptación
 
@@ -200,6 +202,21 @@ CA-6-32  Cuando filtro por estado, fecha programada, repartidor o código de ped
          Entonces veo solo las que cumplen todos los filtros, y los filtros quedan en la URL
 ```
 
+### HU-6-10 — Devolver a la tienda una entrega que no se concretó
+
+Como operador, quiero cerrar una entrega que ya no se puede completar, para que el pedido no quede trabado y la tienda pueda devolver el dinero. · Cubre: RF-DEL-02, RF-ORD-11 · Pantallas: [P-6-02](#p-6-02--detalle-de-entrega)
+
+```gherkin
+CA-6-33  Dado una entrega local FALLIDA, o una por agencia DISPONIBLE_EN_AGENCIA que nadie recogió
+         Cuando marco "Devuelto a tienda" con un motivo (obligatorio: "Cliente no ubicable tras 3 intentos", "No recogido en la agencia")
+         Entonces pasa a DEVUELTA (final), el seguimiento guarda el motivo y mi usuario,
+              y se publica EntregaActualizada con estado DEVUELTA y el motivo
+              (order pasa el pedido a DEVUELTO y notification envía el correo C14)
+
+CA-6-34  Cuando intento devolver una entrega en otro estado (p. ej. ASIGNADA, EN_RUTA o ENTREGADA), o sin motivo
+         Entonces recibo 409 o 400 y nada cambia
+```
+
 ## 4. Pantallas
 
 ### P-6-01 — Entregas
@@ -208,7 +225,7 @@ CA-6-32  Cuando filtro por estado, fecha programada, repartidor o código de ped
 - **Boceto (baja fidelidad):** ![P-6-01](img/P-6-01-entregas.png)
 - **Diseño de alta fidelidad:** 🕓 deriva del sistema de diseño (patrón "tabla").
 - **Componentes:** `EntregasPage` con pestañas Delivery local y Agencia, chips de contador por estado, `FiltrosEntregas` (en la URL), tabla paginada de 0b, `DialogoAsignar`, `DialogoEnvioAgencia`.
-- **Tabla (0b R11):** el **código del pedido** abre `/entregas/:id`; acción: el **siguiente paso** como un botón (E1): "Asignar" (pendiente de asignación), "En ruta" (asignada), "Entregada" (en ruta), "Reprogramar" (fallida), "Registrar envío" (pendiente de envío), "Disponible" (enviado a agencia), "Recogido" (disponible); "No se pudo entregar" está solo en el detalle.
+- **Tabla (0b R11):** el **código del pedido** abre `/entregas/:id`; acción: el **siguiente paso** como un botón (E1): "Asignar" (pendiente de asignación), "En ruta" (asignada), "Entregada" (en ruta), "Reprogramar" (fallida), "Registrar envío" (pendiente de envío), "Disponible" (enviado a agencia), "Recogido" (disponible); "No se pudo entregar" y "Devuelto a tienda" están solo en el detalle.
 - **Estados:** vacío por pestaña, conflicto (409).
 - **Endpoints:** `GET /admin/entregas?modalidad=&estado=&fecha=&repartidorId=&codigo=&page=` (con contadores), `PATCH /admin/entregas/{id}/…`, `GET /admin/repartidores?activo=true`, `GET /agencias`.
 
@@ -217,8 +234,8 @@ CA-6-32  Cuando filtro por estado, fecha programada, repartidor o código de ped
 - **Ruta / proyecto:** `/entregas/:id` · backoffice · OPERADOR, ADMIN.
 - **Boceto:** ![P-6-02](img/P-6-02-detalle-entrega.png)
 - **Diseño de alta fidelidad:** 🕓 deriva del sistema de diseño.
-- **Componentes:** `DetalleEntregaPage` con destinatario (DNI y teléfono visibles solo para staff), dirección, ítems, `AccionesEntrega` (según `accionesPermitidas` de la API, como en la spec 4), `DialogoAsignar`, `DialogoFallida` (observación obligatoria), `DialogoEnvioAgencia`, `SeguimientoEntrega` (eventos con fecha, actor, observación e intento) y el enlace al pedido.
-- **Endpoints:** `GET /admin/entregas/{id}`, `PATCH /admin/entregas/{id}/asignar|en-ruta|entregada|fallida|enviada-agencia|disponible-agencia`.
+- **Componentes:** `DetalleEntregaPage` con destinatario (DNI y teléfono visibles solo para staff), dirección, ítems, `AccionesEntrega` (según `accionesPermitidas` de la API, como en la spec 4), `DialogoAsignar`, `DialogoFallida` (observación obligatoria), `DialogoEnvioAgencia`, `DialogoDevuelta` (motivo obligatorio; solo en FALLIDA o DISPONIBLE_EN_AGENCIA), `SeguimientoEntrega` (eventos con fecha, actor, observación e intento) y el enlace al pedido.
+- **Endpoints:** `GET /admin/entregas/{id}`, `PATCH /admin/entregas/{id}/asignar|en-ruta|entregada|fallida|enviada-agencia|disponible-agencia|devuelta`.
 
 ### P-6-03 — Entregas del día y hoja de ruta
 
@@ -262,17 +279,18 @@ Todo según el micro de delivery. Decisiones de implementación de esta spec:
 | # | Decisión | Detalle |
 |---|---|---|
 | E1 | **Siguiente paso en la fila** ✅ | En el listado, cada entrega muestra como acción el siguiente paso de su máquina de estados (R11 permite hasta 2 botones), para avanzar sin abrir el detalle. El intento fallido, que exige observación y es menos frecuente, queda en el detalle |
-| E2 | **Selector de ubigeo con nivel** 🟡 | El selector de ubigeo de `ui/` (0b) recibe la opción `hasta = 'departamento' \| 'provincia' \| 'distrito'` (por defecto `distrito`); en tarifas se usa con un interruptor "Aplicar a todo el departamento / toda la provincia / un distrito". Es un cambio pequeño a un componente congelado de la 0b: se agrega ahora a la SPEC-0b (CA-0b-26), antes de implementarla |
+| E2 | **Selector de ubigeo con nivel** ✅ | El selector de ubigeo de `ui/` (0b) recibe la opción `hasta = 'departamento' \| 'provincia' \| 'distrito'` (por defecto `distrito`); en tarifas se usa con un interruptor "Aplicar a todo el departamento / toda la provincia / un distrito". Se agregó a la SPEC-0b v5 (CA-0b-26), antes de implementarla |
 | E3 | **Probar cotización** ✅ | Usa el mismo `POST /envios/cotizar` con un distrito y la modalidad, y muestra el nivel de la tarifa aplicada (la respuesta agrega `nivelTarifa` y `ubigeoTarifa`). Sirve para que el admin compruebe su configuración |
 | E4 | **Hoja de ruta impresa desde el navegador** ✅ | Vista con `@media print` (A4, sin menús); sin PDF en el backend (KISS, micro 4.4) |
 | E5 | **Acciones permitidas en la respuesta** ✅ | El detalle incluye `accionesPermitidas` (de `MaquinaEstadosEntrega`), igual que el pedido en la spec 4 (O4) |
 | E6 | **Conflictos con `version`** ✅ | Los `PATCH` de avance llevan la `version` que vio el operador → 409 si cambió (CA-6-24) |
 | E7 | **Fecha programada sin franja horaria** ✅ | Solo fecha (hoy o posterior); sin horarios ni ventanas de entrega (KISS) |
+| E8 | **Devolución a tienda** ✅ | Estado final `DEVUELTA` desde `FALLIDA` o `DISPONIBLE_EN_AGENCIA`, con motivo obligatorio (micro de delivery v6, D5). El stock de las prendas devueltas vuelve con un ajuste de inventario (spec 2); la devolución no lo hace sola, porque el operador revisa el estado de las prendas |
 
 ## 6. Datos
 
 - **Semilla (`V2`, todos los entornos):** agencias Shalom, Olva Courier, Marvisur y Cruz del Sur Cargo (con plantilla de rastreo de ejemplo); tarifas de delivery local para `1501` y `07` más Cercado y La Victoria; tarifas de agencia para los 23 departamentos distintos de Lima y Callao y las provincias de Lima fuera de Lima Metropolitana (micro 3.1).
-- **Datos de demostración (solo `dev`):** 3 repartidores (uno inactivo) y las entregas de los pedidos de demostración de la spec 4: una pendiente de asignar, una asignada para hoy, una en ruta, una con un intento fallido, una por agencia enviada con código y una disponible en agencia.
+- **Datos de demostración (solo `dev`):** 3 repartidores (uno inactivo) y las entregas de los pedidos de demostración de la spec 4: una pendiente de asignar, una asignada para hoy, una en ruta, una con un intento fallido, una por agencia enviada con código, una disponible en agencia y una devuelta a la tienda.
 
 ## 7. Pruebas
 
@@ -283,10 +301,10 @@ Todo según el micro de delivery. Decisiones de implementación de esta spec:
 | 13–15 | Datos + API | `AgenciaRepositoryTest`, `AgenciaServiceTest` (plantilla de URL, borrado) |
 | 16–18 | Datos + API | `RepartidorRepositoryTest`, `RepartidorServiceTest` |
 | 19 | Integración | `ConsumidorPedidosIT` (RabbitMQ Testcontainers, duplicado) |
-| 20–27 | Unitaria + API | `MaquinaEstadosEntregaTest` (tabla parametrizada local y agencia), `EntregaServiceTest` (fallida con observación, intentos, código obligatorio, URL de rastreo, 409 por versión), contenido del evento (sin teléfono del repartidor) |
+| 20–27, 33–34 | Unitaria + API | `MaquinaEstadosEntregaTest` (tabla parametrizada local y agencia), `EntregaServiceTest` (fallida con observación, intentos, código obligatorio, URL de rastreo, devuelta con motivo solo desde FALLIDA o DISPONIBLE_EN_AGENCIA, 409 por versión), contenido del evento (sin teléfono del repartidor) |
 | 28–30 | API + componente | `EntregasDiaControllerTest` (orden por distrito), `hoja-ruta.spec.ts` |
 | 31–32 | Datos + API | `EntregaSpecificationsTest` (filtros y contadores) |
-| Todas | Postman | `postman/delivery.postman_collection.json`: cotizar (distrito propio, provincia, departamento, sin cobertura), flujo local con un intento fallido, flujo por agencia |
+| Todas | Postman | `postman/delivery.postman_collection.json`: cotizar (distrito propio, provincia, departamento, sin cobertura), flujo local con un intento fallido, flujo por agencia, devolución a tienda |
 
 ## 8. Archivos y carpetas que toca
 
@@ -297,20 +315,13 @@ Todo según el micro de delivery. Decisiones de implementación de esta spec:
 | `frontend/projects/backoffice/src/app/features/{entregas,maestros-envio}/` | modifica |
 | `postman/delivery.postman_collection.json` | crea |
 | `docs/specs/img/P-6-*` | crea |
-| `ui/` selector de ubigeo (opción `hasta`, E2) | lo implementa la 0b (se agrega a su CA-0b-26) |
+| `ui/` selector de ubigeo (opción `hasta`, E2) | lo implementa la 0b (CA-0b-26, SPEC-0b v5) |
 | Congelados (`fitstore-common`, gateway, `shared`, `ui/`, `layout/`) | solo lectura |
 
 ## 9. Definición de terminado
 
-- [ ] CA-6-01 a CA-6-32 cumplidos en CI.
+- [ ] CA-6-01 a CA-6-34 cumplidos en CI.
 - [ ] Postman `delivery` en verde.
 - [ ] El OpenAPI de delivery coincide con lo implementado; el evento coincide con el AsyncAPI.
-- [ ] Demostración: configurar una tarifa y probarla; un pedido listo para despacho aparece como entrega, se asigna, sale en la hoja de ruta, falla una vez, se reprograma y se entrega; un envío por agencia con código y enlace de rastreo; el cliente ve cada paso en "Mis pedidos".
+- [ ] Demostración: configurar una tarifa y probarla; un pedido listo para despacho aparece como entrega, se asigna, sale en la hoja de ruta, falla una vez, se reprograma y se entrega; un envío por agencia con código y enlace de rastreo; una entrega devuelta a la tienda y su reembolso; el cliente ve cada paso en "Mis pedidos".
 - [ ] Revisado y aprobado por el autor.
-
-## Preguntas abiertas ❓
-
-1. **¿Qué pasa si una entrega nunca se concreta?** Hoy el micro deja la devolución fuera de alcance (D5): una entrega fallida se reprograma sin límite, y un paquete que nadie recoge en la agencia se queda `DISPONIBLE_EN_AGENCIA`. Si el cliente no aparece nunca, el pedido queda **para siempre en `ENVIADO`**: no se puede cancelar (ya salió) ni reembolsar (el reembolso postventa exige `ENTREGADO`).
-   - **Opción A, dejarlo así (KISS):** el operador reprograma o espera; un caso trabado se resuelve fuera del sistema.
-   - **Opción B, "Devuelto a tienda" (recomendada):** desde `FALLIDA` o `DISPONIBLE_EN_AGENCIA` el operador marca **"Devuelto a tienda"** con un motivo. delivery publica `EntregaActualizada` con estado `DEVUELTA`, order pasa el pedido a un nuevo estado final **`DEVUELTO`** y el admin puede reembolsar (total o parcial, sin plazo) como en la postventa. El stock vuelve con un ajuste de inventario. Implica un estado nuevo en delivery y en order, y ajustes en las specs 4 y 7.
-2. **E2, selector de ubigeo con nivel:** propongo **agregar la opción `hasta` al selector de la 0b** (cambio pequeño, antes de implementarla). La alternativa es que la pantalla de tarifas tenga su propio selector de tres listas, duplicando lógica. ¿Lo agregamos a la 0b?

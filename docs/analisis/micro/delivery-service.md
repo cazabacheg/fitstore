@@ -1,9 +1,10 @@
 # FitStore — Análisis micro: `delivery-service`
 
-> Versión: **v5 (aprobado)** — 2026-10-16. Fuente: [`01-analisis-macro.md`](../01-analisis-macro.md) v15.
+> Versión: **v6 (aprobado)** — 2026-10-19. Fuente: [`01-analisis-macro.md`](../01-analisis-macro.md) v15.
 > Estados: ✅ decidido · 🟡 propuesto · ❓ abierto · 🕓 diferido
 
 **Historial:**
+- v6 (2026-10-19): por SPEC-6: **devolución a tienda** (estado final `DEVUELTA` desde `FALLIDA` o `DISPONIBLE_EN_AGENCIA`, motivo obligatorio; D5 actualizada); la cotización informa el nivel de la tarifa aplicada (`nivelTarifa`, `ubigeoTarifa`) para la prueba de tarifas.
 - v5 (2026-10-18): sección 10 aprobada → **documento completo aprobado**.
 - v4 (2026-10-18): sección 10 (diseño técnico) redactada: C3, código de las partes críticas, paquetes, dependencias, configuración e infraestructura.
 - v3 (2026-10-16): resto del documento aprobado → **documento aprobado**.
@@ -23,7 +24,7 @@
 - **Cotización** de costo y plazo para el checkout (RF-DEL-05).
 - **Agencias de transporte** (datos semilla editables) para el select del checkout (RF-DEL-08).
 - **Repartidores** propios (RF-DEL-03).
-- **Entregas:** se crean solas cuando el pedido está listo para despacho; el operador asigna repartidor y fecha, registra avances, intentos fallidos y códigos de seguimiento (RF-DEL-01, 02, 06).
+- **Entregas:** se crean solas cuando el pedido está listo para despacho; el operador asigna repartidor y fecha, registra avances, intentos fallidos, códigos de seguimiento y la **devolución a tienda** cuando no se puede entregar (RF-DEL-01, 02, 06).
 - **Vista del día y hoja de ruta** por repartidor (RF-DEL-07).
 
 **No hace:**
@@ -96,7 +97,7 @@ classDiagram
 | D2 | **La tarifa de agencia es común a todas las agencias:** el cliente elige la agencia por preferencia, pero el precio depende solo del destino | Menos configuración para el admin (una tabla, no una por agencia). Las agencias son datos mock (macro 1.4) | Tarifa por agencia y destino |
 | D3 | **La entrega guarda copia** del destinatario y la dirección (vienen en `PedidoListoDespacho`) | delivery no llama a nadie para armar la hoja de ruta; si el cliente edita su dirección, la entrega no cambia | Consultar a order o auth |
 | D4 | **Agencias con plantilla de URL de seguimiento** opcional (`https://…/rastreo?codigo={codigo}`) | El cliente recibe un enlace directo para rastrear su envío | Solo el código en texto |
-| D5 | **Sin límite de intentos fallidos:** una entrega fallida vuelve a programarse las veces que el operador decida; se muestra el número de intento | KISS; la devolución a tienda está fuera de alcance | Máximo N intentos y luego devolución |
+| D5 | **Sin límite de intentos fallidos, con devolución a tienda:** una entrega fallida vuelve a programarse las veces que el operador decida (se muestra el número de intento); si el operador decide no intentarlo más, o un paquete en agencia nunca se recoge, la marca **`DEVUELTA`** con motivo (estado final). order pasa el pedido a `DEVUELTO` y el admin puede reembolsar | El operador decide; un pedido nunca queda trabado en `ENVIADO` | Máximo N intentos y devolución automática |
 | D6 | **El cliente ve el nombre del repartidor y la fecha programada, no su teléfono** | Privacidad del repartidor; es él (o la tienda) quien contacta al cliente | Mostrar el teléfono |
 
 ### 2.2 Invariantes
@@ -109,6 +110,7 @@ classDiagram
 6. Para pasar a `ENVIADO_AGENCIA` es obligatorio el **código de seguimiento** (la clave de recojo es opcional, depende de la agencia).
 7. Toda transición deja un `EventoSeguimiento` con fecha, actor y observación.
 8. Un repartidor con entregas asignadas no se elimina (solo se desactiva).
+9. Solo se pasa a `DEVUELTA` desde `FALLIDA` (local) o `DISPONIBLE_EN_AGENCIA` (agencia), y el **motivo** es obligatorio ("Cliente no ubicable tras 3 intentos", "No recogido en la agencia").
 
 ---
 
@@ -142,7 +144,7 @@ classDiagram
 | Método | Ruta | Descripción | Acceso |
 |---|---|---|---|
 | GET | `/api/v1/envios/opciones?ubigeo=` (distrito, 6 dígitos, obligatorio) | Modalidades disponibles para ese distrito con costo y plazo (local y/o agencia) | Público |
-| POST | `/api/v1/envios/cotizar` | `{modalidad, ubigeo (distrito, obligatorio), agenciaId?}` → `{costo, plazoDiasMin, plazoDiasMax, agenciaNombre}` | Público (lo usa order) |
+| POST | `/api/v1/envios/cotizar` | `{modalidad, ubigeo (distrito, obligatorio), agenciaId?}` → `{costo, plazoDiasMin, plazoDiasMax, agenciaNombre, nivelTarifa, ubigeoTarifa}` | Público (lo usa order) |
 | GET | `/api/v1/agencias` | Agencias activas para el select | Público |
 
 **Backoffice**
@@ -155,6 +157,7 @@ classDiagram
 | PATCH | `/api/v1/admin/entregas/{id}/en-ruta` · `/entregada` · `/fallida` | Avances del delivery local (`fallida` exige observación) | OPERADOR, ADMIN |
 | PATCH | `/api/v1/admin/entregas/{id}/enviada-agencia` | `{agenciaId?, codigoSeguimiento, claveRecojo?}` | OPERADOR, ADMIN |
 | PATCH | `/api/v1/admin/entregas/{id}/disponible-agencia` · `/entregada` | Avances del envío por agencia | OPERADOR, ADMIN |
+| PATCH | `/api/v1/admin/entregas/{id}/devuelta` | `{motivo}` (obligatorio): devolución a tienda desde `FALLIDA` o `DISPONIBLE_EN_AGENCIA` (D5) | OPERADOR, ADMIN |
 | GET | `/api/v1/admin/entregas/dia?fecha=&repartidorId=` | Entregas del día y **hoja de ruta** (imprimible desde el frontend) | OPERADOR, ADMIN |
 | GET | `/api/v1/admin/entregas/resumen?fecha=` | Datos del dashboard: entregas del día por estado | OPERADOR, ADMIN |
 | CRUD | `/api/v1/admin/repartidores` (+ `PATCH /{id}/desactivar` · `/activar`) | Repartidores (DELETE solo sin entregas) | OPERADOR, ADMIN |
@@ -193,6 +196,7 @@ Al recibir `PedidoListoDespacho`:
 | Entregado | `EN_RUTA → ENTREGADA` | "Entregado" (order → `ENTREGADO`) |
 | No se pudo entregar (observación obligatoria: "No había nadie", "Dirección incorrecta") | `EN_RUTA → FALLIDA` | "No pudimos entregar tu pedido: …" |
 | Reprogramar | `FALLIDA → ASIGNADA` (nuevo intento, misma u otra fecha o repartidor) | Nueva fecha |
+| No intentar más (motivo obligatorio) | `FALLIDA → DEVUELTA` | "Tu pedido regresó a la tienda: …" (order → `DEVUELTO`) |
 
 **Hoja de ruta** (RF-DEL-07): por repartidor y fecha, ordenada por distrito: código de pedido, destinatario, teléfono, dirección, referencia y bultos. El backoffice la imprime.
 
@@ -203,6 +207,7 @@ Al recibir `PedidoListoDespacho`:
 | Entrega el paquete en la agencia y registra **código de seguimiento** (y clave de recojo si aplica). Puede cambiar la agencia si la elegida no estaba disponible | `PENDIENTE_ENVIO → ENVIADO_AGENCIA` | "Enviado por Shalom, código 12345" + enlace de rastreo (order → `ENVIADO`) |
 | La agencia avisa que llegó al destino | `ENVIADO_AGENCIA → DISPONIBLE_EN_AGENCIA` | "Tu pedido ya está en la agencia: lleva tu DNI y la clave 4821" |
 | El cliente lo recoge | `DISPONIBLE_EN_AGENCIA → ENTREGADA` | "Entregado" (order → `ENTREGADO`) |
+| Nadie lo recoge y la agencia lo devuelve (motivo obligatorio) | `DISPONIBLE_EN_AGENCIA → DEVUELTA` | "Tu pedido regresó a la tienda: …" (order → `DEVUELTO`) |
 
 ---
 
@@ -219,7 +224,9 @@ stateDiagram-v2
     EnRuta --> Entregada: entregado
     EnRuta --> Fallida: no se pudo entregar
     Fallida --> Asignada: reprogramar (nuevo intento)
+    Fallida --> Devuelta: no se intenta más (motivo)
     Entregada --> [*]
+    Devuelta --> [*]
 ```
 
 **Agencia:**
@@ -230,10 +237,12 @@ stateDiagram-v2
     PendienteEnvio --> EnviadoAgencia: código de seguimiento
     EnviadoAgencia --> DisponibleEnAgencia: llegó a destino
     DisponibleEnAgencia --> Entregada: cliente recogió
+    DisponibleEnAgencia --> Devuelta: nadie lo recogió (motivo)
     Entregada --> [*]
+    Devuelta --> [*]
 ```
 
-Son los estados del macro (RF-DEL-02) sin cambios.
+Son los estados del macro (RF-DEL-02), con `DEVUELTA` como final de ambos flujos (v6).
 
 ---
 
@@ -288,7 +297,7 @@ Un solo evento para todos los cambios (como en el macro); cada consumidor reacci
 | `AgenciaRepository` | ✔ | ✔ | físico (sin entregas) | activas | nombre único |
 | `EntregaRepository` | desde evento | estado, asignación | — | filtros, del día por repartidor | `pedidoId` único |
 
-**Unitarias:** máquinas de estado local y agencia (transiciones permitidas y prohibidas), validaciones (código de seguimiento obligatorio, observación en fallida), cotización con todos los niveles.
+**Unitarias:** máquinas de estado local y agencia (transiciones permitidas y prohibidas, incluida `DEVUELTA` solo desde `FALLIDA` o `DISPONIBLE_EN_AGENCIA`), validaciones (código de seguimiento obligatorio, observación en fallida, motivo en devuelta), cotización con todos los niveles.
 
 **Consumidor:** `PedidoListoDespacho` duplicado crea una sola entrega.
 
@@ -340,7 +349,7 @@ classDiagram
 ```
 
 - `masEspecifica`: `SELECT … WHERE modalidad = ? AND activa AND ubigeo IN (:d6, :p4, :d2) ORDER BY length(ubigeo) DESC LIMIT 1`. El servicio valida antes que el código tenga 6 dígitos (`400`) y que delivery local sea Lima/Callao.
-- `MaquinaEstadosEntrega` tiene dos tablas de transiciones (local y agencia) y valida los datos obligatorios de cada avance (código de seguimiento al enviar a agencia, observación en fallida).
+- `MaquinaEstadosEntrega` tiene dos tablas de transiciones (local y agencia) y valida los datos obligatorios de cada avance (código de seguimiento al enviar a agencia, observación en fallida, motivo en devuelta).
 
 ### 10.3 Paquetes y capas
 

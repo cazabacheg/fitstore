@@ -1,9 +1,10 @@
 # FitStore — Análisis micro: `order-service`
 
-> Versión: **v6 (aprobado)** — 2026-10-18. Fuente: [`01-analisis-macro.md`](../01-analisis-macro.md) v12.
+> Versión: **v7 (aprobado)** — 2026-10-19. Fuente: [`01-analisis-macro.md`](../01-analisis-macro.md) v12.
 > Estados: ✅ decidido · 🟡 propuesto · ❓ abierto · 🕓 diferido
 
 **Historial:**
+- v7 (2026-10-19): por SPEC-6: estado final **`DEVUELTO`** (desde `ENVIADO` con `EntregaActualizada` devuelta, o desde `LISTO_RECOJO` cuando el operador marca "No recogido"); el reembolso postventa también se permite en `DEVUELTO`, sin plazo, con motivo `NO_ENTREGADO`.
 - v6 (2026-10-18): **reembolso postventa** (4.8): el ADMIN registra un reembolso total o parcial de un pedido `ENTREGADO` dentro del plazo de settings; tabla `pedido_reembolso`, campo `monto_reembolsado`, evento `ReembolsoSolicitado`, consume `PagoReembolsado`. Decidido en la SPEC-5.
 - v5 (2026-10-18): desde la SPEC-4: los pedidos de un cliente usan `GET /admin/pedidos?clienteId=` (se quita `/admin/clientes/{clienteId}/pedidos`, O3); las ventas del resumen se cuentan por la fecha del paso a `PAGADO` y sin los cancelados, con índice `pedido_historial (estado_nuevo, creado_en)` (O6).
 - v4 (2026-10-18): sección 10 aprobada → **documento completo aprobado**.
@@ -147,7 +148,7 @@ classDiagram
 | `pedido` | `id` (uuid), `codigo`, `cliente_id`, `estado`, `modalidad` (`DELIVERY_LOCAL`, `AGENCIA`, `RECOJO`); destinatario: `dest_nombres`, `dest_apellidos`, `dest_dni`, `dest_telefono`, `dest_email`; dirección: `dir_ubigeo`, `dir_departamento`, `dir_provincia`, `dir_distrito`, `dir_direccion`, `dir_referencia`; envío: `agencia_id`, `agencia_nombre`, `plazo_dias_min`, `plazo_dias_max`, `codigo_seguimiento`; montos: `subtotal`, `descuento_total`, `costo_envio`, `total`; `expira_en`, `boleta_url`, `monto_reembolsado` (por defecto 0), `idempotency_key`, `notas`, `creado_en`, `actualizado_en`, `version` | Único `codigo`; único `(cliente_id, idempotency_key)`; índices `(cliente_id, creado_en DESC)`, `(estado, creado_en)`, parcial `(expira_en) WHERE estado = 'PENDIENTE_PAGO'`; `CHECK` de montos ≥ 0 |
 | `pedido_item` | `id`, `pedido_id`, `variante_id`, `producto_id`, `sku`, `producto_nombre`, `talla`, `color`, `imagen_url`, `precio_unitario`, `cantidad`, `descuento_porcentaje`, `descuento_monto`, `total` | `CHECK cantidad > 0`; índice `producto_id` (top de productos) |
 | `pedido_historial` | `id`, `pedido_id`, `estado_anterior`, `estado_nuevo`, `actor_tipo` (`CLIENTE`, `STAFF`, `SISTEMA`), `actor_id`, `comentario`, `creado_en` | Índices `(pedido_id, creado_en)` y `(estado_nuevo, creado_en)` (ventas por fecha de pago) |
-| `pedido_reembolso` | `id` (uuid), `pedido_id`, `monto`, `motivo` (`DEFECTUOSO`, `TALLA_MODELO_EQUIVOCADO`, `NO_CONFORME`, `OTRO`), `nota`, `items` (`jsonb`: `{varianteId, sku, cantidad}`), `estado` (`SOLICITADO`, `COMPLETADO`), `solicitado_por`, `creado_en`, `completado_en` | Índice `pedido_id`; `CHECK monto > 0` |
+| `pedido_reembolso` | `id` (uuid), `pedido_id`, `monto`, `motivo` (`DEFECTUOSO`, `TALLA_MODELO_EQUIVOCADO`, `NO_CONFORME`, `NO_ENTREGADO`, `OTRO`), `nota`, `items` (`jsonb`: `{varianteId, sku, cantidad}`), `estado` (`SOLICITADO`, `COMPLETADO`), `solicitado_por`, `creado_en`, `completado_en` | Índice `pedido_id`; `CHECK monto > 0` |
 | `pedido_codigo_seq` | secuencia | Genera el número de `FS-000123` |
 
 **Comunes:** `outbox_evento` y `evento_procesado` (ADR-009).
@@ -195,7 +196,7 @@ El TTL de Redis resuelve la expiración de carritos abandonados (RF-CRT-04) sin 
 |---|---|---|
 | GET | `/api/v1/admin/pedidos` | Listar con filtros: estado, modalidad, fechas, código, cliente (nombre, correo o DNI) o `clienteId` (historial de un cliente, CU-29); incluye contadores por estado |
 | GET | `/api/v1/admin/pedidos/{id}` | Detalle completo con historial |
-| PATCH | `/api/v1/admin/pedidos/{id}/estado` | Avanzar estado `{nuevoEstado, comentario?}`: `EN_PREPARACION`, `LISTO_DESPACHO`, `LISTO_RECOJO`, `ENTREGADO` (solo recojo) |
+| PATCH | `/api/v1/admin/pedidos/{id}/estado` | Avanzar estado `{nuevoEstado, comentario?}`: `EN_PREPARACION`, `LISTO_DESPACHO`, `LISTO_RECOJO`, `ENTREGADO` o `DEVUELTO` (solo recojo; `DEVUELTO` exige el motivo en `comentario`) |
 | PATCH | `/api/v1/admin/pedidos/{id}/cancelar` | Cancelar con motivo obligatorio |
 | POST | `/api/v1/admin/pedidos/{id}/reembolsos` | Reembolso postventa `{items[{varianteId, cantidad}], monto, motivo, nota?}` (ADMIN, 4.8) |
 | GET | `/api/v1/admin/pedidos/resumen?desde=&hasta=` | Datos del dashboard: ventas (día, semana, mes, por fecha de pago y sin cancelados), pedidos por estado, top 5 productos |
@@ -276,8 +277,10 @@ sequenceDiagram
 | En camino | delivery (`EntregaActualizada`: en ruta / enviado a agencia) | `LISTO_DESPACHO → ENVIADO` | Guarda agencia y `codigo_seguimiento` si vienen |
 | Entregado | delivery (`EntregaActualizada`: entregada) | `ENVIADO → ENTREGADO` | — |
 | Intento fallido | delivery (`EntregaActualizada`: fallida) | Sin cambio (sigue `ENVIADO`) | Se anota en el historial; delivery la reprograma |
+| Devuelto a tienda | delivery (`EntregaActualizada`: devuelta, con motivo) | `ENVIADO → DEVUELTO` | Se anota el motivo; el admin puede reembolsar (4.8) |
 | Listo para recoger | Operador | `EN_PREPARACION → LISTO_RECOJO` | Publica `PedidoListoRecojo` → notification avisa al cliente |
 | Recogido | Operador (verifica el DNI) | `LISTO_RECOJO → ENTREGADO` | Publica `PedidoRecogido` |
+| No recogido | Operador (motivo obligatorio, p. ej. "No lo recogió en 15 días") | `LISTO_RECOJO → DEVUELTO` | Se anota el motivo; el admin puede reembolsar (4.8) |
 
 ### 4.6 Cancelación (CU-13, RF-ORD-07)
 
@@ -287,23 +290,23 @@ sequenceDiagram
 | Staff | `PENDIENTE_PAGO`, `PAGADO`, `EN_PREPARACION` (motivo obligatorio) | Igual |
 
 - Publica `PedidoCancelado {fuePagado, motivo, actor}`.
-- **Después de `LISTO_DESPACHO` ya no se cancela**: el pedido ya salió o está por salir. Así delivery no necesita escuchar cancelaciones (KISS). Si una vez entregado hay un problema, se usa el **reembolso postventa** (4.8).
+- **Después de `LISTO_DESPACHO` ya no se cancela**: el pedido ya salió o está por salir. Así delivery no necesita escuchar cancelaciones (KISS). Si una vez entregado hay un problema, o si el pedido no se pudo entregar y volvió a la tienda (`DEVUELTO`), se usa el **reembolso postventa** (4.8).
 
 ### 4.8 Reembolso postventa (CU-25, RF-ORD-11)
 
-Para un pedido **entregado** con un problema (prenda defectuosa, talla o modelo equivocado, no conforme), sin cancelarlo.
+Para un pedido **entregado** con un problema (prenda defectuosa, talla o modelo equivocado, no conforme), sin cancelarlo, o para un pedido **devuelto** a la tienda porque no se pudo entregar.
 
-- **Quién y cuándo:** solo `ADMIN`; el pedido debe estar `ENTREGADO` y dentro de `diasReembolsoPostventa` días desde la entrega (fecha del historial `→ ENTREGADO`; `0` = sin límite).
+- **Quién y cuándo:** solo `ADMIN`; el pedido debe estar `ENTREGADO` y dentro de `diasReembolsoPostventa` días desde la entrega (fecha del historial `→ ENTREGADO`; `0` = sin límite), o `DEVUELTO` (**sin plazo**; el motivo propuesto es `NO_ENTREGADO` y el monto propuesto, el total).
 - **Monto:** el admin elige prendas y cantidades; order **propone** el monto con el precio pagado de cada unidad (precio unitario menos su descuento). El admin puede cambiarlo (por ejemplo, sumar el envío), pero la suma de **todos** los reembolsos del pedido (solicitados y completados) nunca supera el `total` cobrado → `409`.
 - **Efecto:** guarda `pedido_reembolso` (`SOLICITADO`), anota el historial ("Reembolso postventa solicitado: S/ X, motivo") **sin cambiar el estado** y publica `ReembolsoSolicitado`. payment lo ejecuta con su proceso de reembolsos (reintentos y alerta incluidos).
 - **Al llegar `PagoReembolsado`:** la solicitud pasa a `COMPLETADO`, suma `monto_reembolsado` y anota el historial. El pedido se muestra como "Reembolso parcial" o "Reembolsado" (cuando `monto_reembolsado = total`).
-- **Stock:** no se reingresa automáticamente (una prenda defectuosa no vuelve a la venta); si regresa en buen estado, el operador hace un ajuste de inventario (catalog).
+- **Stock:** no se reingresa automáticamente (una prenda defectuosa no vuelve a la venta); si regresa en buen estado, como en un pedido devuelto, el operador hace un ajuste de inventario (catalog).
 - **Fuera de alcance:** logística de la devolución física, cambios de prenda (se manejan como reembolso + pedido nuevo) y nota de crédito.
 
 ### 4.7 Mis pedidos y seguimiento (CU-11, CU-12)
 
 - Lista con código, fecha, estado, total y miniatura del primer producto.
-- **Línea de tiempo** construida con el historial: "Pedido creado → Pago confirmado → En preparación → Enviado (Shalom, código 12345) → Entregado", con fecha y hora de cada paso. Los intentos fallidos aparecen como avisos.
+- **Línea de tiempo** construida con el historial: "Pedido creado → Pago confirmado → En preparación → Enviado (Shalom, código 12345) → Entregado", con fecha y hora de cada paso. Los intentos fallidos aparecen como avisos; un pedido devuelto termina en "Devuelto a la tienda" con el motivo.
 - Botón **Descargar boleta** cuando `boleta_url` existe.
 - Un cliente solo ve sus pedidos; uno ajeno responde `404`.
 
@@ -325,12 +328,15 @@ stateDiagram-v2
     ListoDespacho --> Enviado: delivery (en ruta / en agencia)
     Enviado --> Entregado: delivery (entregada)
     ListoRecojo --> Entregado: operador (cliente recogió)
+    Enviado --> Devuelto: delivery (devuelta a tienda)
+    ListoRecojo --> Devuelto: operador (no recogido)
+    Devuelto --> [*]
     Expirado --> [*]
     Cancelado --> [*]
     Entregado --> [*]
 ```
 
-Cambios frente al macro (RF-ORD-03) ✅: se agregan `EXPIRADO` (D6) y `LISTO_RECOJO` (D7).
+Cambios frente al macro (RF-ORD-03) ✅: se agregan `EXPIRADO` (D6), `LISTO_RECOJO` (D7) y `DEVUELTO` (v7).
 
 ---
 
@@ -398,7 +404,8 @@ Todas con OpenFeign + Resilience4j (ADR-010).
 **Servicio (unitarias con clientes Feign simulados):**
 - Checkout: camino feliz; cada dependencia caída; sin stock; precio cambiado (`409`); idempotencia (dos llamadas = un pedido); modalidad deshabilitada; delivery local fuera de Lima/Callao.
 - Máquina de estados: tabla de todas las transiciones permitidas y prohibidas.
-- Reembolso postventa: plazo (dentro, fuera, 0 = sin límite), suma de reembolsos ≤ total, monto propuesto por prendas, solo ADMIN.
+- Reembolso postventa: plazo (dentro, fuera, 0 = sin límite; `DEVUELTO` sin plazo), suma de reembolsos ≤ total, monto propuesto por prendas, solo ADMIN.
+- Devolución: `EntregaActualizada` devuelta pasa `ENVIADO → DEVUELTO`; "No recogido" pasa `LISTO_RECOJO → DEVUELTO` con motivo obligatorio.
 - Carrera pago vs. expiración: gana una sola, la otra publica `PagoNoAplicable`.
 - Fusión de carritos con límites.
 

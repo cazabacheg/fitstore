@@ -1,11 +1,12 @@
 # FitStore — Análisis técnico macro
 
 > Proyecto final DAW II (4697) + DSW II (4698) — Cibertec, 6.º ciclo.
-> Autor: Carlos Azabache. Versión: **v20 (aprobado)** — 2026-10-18.
+> Autor: Carlos Azabache. Versión: **v21 (aprobado)** — 2026-10-19.
 > Documento base: [`CONSOLIDADO-PROYECTO.md`](../../../CONSOLIDADO-PROYECTO.md).
 > Siguiente etapa: análisis técnico micro (por servicio) → C4 → specs → contratos.
 
 **Historial:**
+- v21 (2026-10-19): por SPEC-6: **devolución a tienda** cuando un pedido no se puede entregar o nadie lo recoge: estado `DEVUELTA` en delivery y `DEVUELTO` (final) en order, reembolso sin plazo desde un pedido devuelto, nuevo correo al cliente (14): RF-ORD-03, RF-ORD-11, RF-DEL-02, RF-NOT-01.
 - v20 (2026-10-18): por SPEC-5: **reembolso postventa** desde el pedido entregado (total o parcial, solo ADMIN, plazo configurable con 0 = ilimitado): RF-PAY-06, nuevo RF-ORD-11, RF-SET-05.
 - v19 (2026-10-18): ADR-021 aprobada, sin políticas de rama forzadas.
 - v18 (2026-10-18): ADR-021 propuesta (flujo de ramas dev → stage → main). Desde ahora todo entra por PR a `dev`.
@@ -283,12 +284,12 @@ Formato: `RF-<CONTEXTO>-NN`. Prioridad MoSCoW.
 | RF-ORD-01 | Crear pedido desde el carrito con snapshot de productos, precios y dirección; requiere cliente autenticado | M |
 | RF-ORD-02 | Modalidad de entrega: delivery local (Lima/Callao, tarifa por distrito), agencia a provincia (tarifa por departamento/provincia, elección de agencia) o recojo en tienda | M |
 | RF-ORD-10 | Aplicar descuentos por volumen en el pedido, guardando el detalle del descuento en el snapshot | M |
-| RF-ORD-03 | Máquina de estados: `PENDIENTE_PAGO → PAGADO → EN_PREPARACION → LISTO_DESPACHO → ENVIADO → ENTREGADO`; recojo: `EN_PREPARACION → LISTO_RECOJO → ENTREGADO`; finales `CANCELADO` y `EXPIRADO` | M |
+| RF-ORD-03 | Máquina de estados: `PENDIENTE_PAGO → PAGADO → EN_PREPARACION → LISTO_DESPACHO → ENVIADO → ENTREGADO`; recojo: `EN_PREPARACION → LISTO_RECOJO → ENTREGADO`; finales `CANCELADO`, `EXPIRADO` y `DEVUELTO` (la entrega no se concretó o nadie recogió el pedido y volvió a la tienda) | M |
 | RF-ORD-04 | Historial de estados con fecha, usuario y comentario | M |
 | RF-ORD-05 | Consulta de pedidos del cliente y seguimiento | M |
 | RF-ORD-06 | Gestión de pedidos en backoffice: filtros por estado, fecha, cliente; cambio de estado validado | M |
 | RF-ORD-07 | Cancelación por cliente (antes de despacho) o staff, con compensaciones (reembolso, liberar stock) | M |
-| RF-ORD-11 | **Reembolso postventa** de un pedido entregado (prenda defectuosa, talla o modelo equivocado, no conforme): total o parcial por prendas, con motivo, solo ADMIN, dentro del plazo configurable de la tienda (0 = sin límite); la suma de reembolsos nunca supera lo cobrado y el stock no se reingresa automáticamente | M |
+| RF-ORD-11 | **Reembolso postventa** de un pedido entregado (prenda defectuosa, talla o modelo equivocado, no conforme) o **devuelto a la tienda** (no entregado): total o parcial por prendas, con motivo, solo ADMIN, dentro del plazo configurable de la tienda (0 = sin límite; un pedido devuelto no tiene plazo); la suma de reembolsos nunca supera lo cobrado y el stock no se reingresa automáticamente | M |
 | RF-ORD-08 | Expiración de pedidos `PENDIENTE_PAGO` tras N minutos, configurable en la tienda (sugerido 30) | S |
 | RF-ORD-09 | Código de pedido legible (p. ej. `FS-000123`) | M |
 
@@ -311,7 +312,7 @@ Formato: `RF-<CONTEXTO>-NN`. Prioridad MoSCoW.
 | ID | Requisito | P |
 |---|---|---|
 | RF-DEL-01 | Crear entrega automáticamente cuando el pedido pasa a `LISTO_DESPACHO`, según la modalidad (local o agencia) | M |
-| RF-DEL-02 | Estados locales: `PENDIENTE_ASIGNACION → ASIGNADA → EN_RUTA → ENTREGADA`, `FALLIDA` (reprogramable). Estados agencia: `PENDIENTE_ENVIO → ENVIADO_AGENCIA → DISPONIBLE_EN_AGENCIA → ENTREGADA` | M |
+| RF-DEL-02 | Estados locales: `PENDIENTE_ASIGNACION → ASIGNADA → EN_RUTA → ENTREGADA`, `FALLIDA` (reprogramable o **devuelta a tienda**). Estados agencia: `PENDIENTE_ENVIO → ENVIADO_AGENCIA → DISPONIBLE_EN_AGENCIA → ENTREGADA`, o `DEVUELTA` si nadie lo recoge. `DEVUELTA` es final y exige motivo | M |
 | RF-DEL-03 | CRUD de repartidores (nombre, teléfono, vehículo/placa, activo) | M |
 | RF-DEL-04 | CRUD de tarifas de envío por **código de ubigeo** (se guardan solo los códigos): distrito (local) y departamento/provincia (agencia); costo, tiempo estimado, activa. Como el código es jerárquico (`DDPPdd`), la cotización busca la tarifa del distrito y, si no existe, la de la provincia o el departamento | M |
 | RF-DEL-08 | Agencias de transporte (datos mock semilla, editables por admin): listado para el select del checkout; registro de código de seguimiento / clave de recojo por envío | M |
@@ -323,7 +324,7 @@ Formato: `RF-<CONTEXTO>-NN`. Prioridad MoSCoW.
 
 | ID | Requisito | P |
 |---|---|---|
-| RF-NOT-01 | Correos al cliente (13): bienvenida, recuperación de contraseña, invitación de staff, contraseña cambiada, pedido confirmado (tras el pago, con boleta), cancelado, reembolso realizado, en camino (con agencia y código de seguimiento si aplica), entrega fallida, listo para recoger, entregado, copia y respuesta de reclamo. Ningún correo antes del pago | M |
+| RF-NOT-01 | Correos al cliente (14): bienvenida, recuperación de contraseña, invitación de staff, contraseña cambiada, pedido confirmado (tras el pago, con boleta), cancelado, reembolso realizado, en camino (con agencia y código de seguimiento si aplica), entrega fallida, listo para recoger, entregado, pedido devuelto a la tienda, copia y respuesta de reclamo. Ningún correo antes del pago | M |
 | RF-NOT-02 | Plantillas con la marca de la tienda (logo, colores, nombre) | M |
 | RF-NOT-03 | Registro de envíos con estado y reintentos | S |
 | RF-NOT-04 | Edición de los textos de las plantillas desde backoffice (asunto, título, mensaje, botón; activar/desactivar opcionales), con vista previa | M |
@@ -476,7 +477,7 @@ flowchart LR
 | `PedidoCancelado` / `PedidoExpirado` | order | catalog (liberar), payment (reembolsar si aplica), notification |
 | `PedidoListoDespacho` | order | delivery |
 | `PedidoListoRecojo` / `PedidoRecogido` | order | notification |
-| `EntregaActualizada` (en ruta / en agencia / entregada / fallida) | delivery | order, notification |
+| `EntregaActualizada` (en ruta / en agencia / entregada / fallida / devuelta) | delivery | order, notification |
 | `StockBajo` | catalog | notification |
 | `StockNoConfirmado` (pago confirmado con la reserva vencida y sin stock) | catalog | notification (alerta al admin) |
 | `ConfiguracionActualizada` | settings | notification (refresca caché de marca) |

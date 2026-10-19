@@ -1,11 +1,12 @@
 # SPEC-5 — Pagos
 
-> Versión: **v4 (aprobado)** — 2026-10-18 · Estados: ✅ decidido · 🟡 propuesto · ❓ abierto
+> Versión: **v5 (aprobado)** — 2026-10-19 · Estados: ✅ decidido · 🟡 propuesto · ❓ abierto
 > **Dueña de:** `backend/payment-service` (intención, cobros, webhooks, reembolsos, boleta) · tienda: `features/pago` · backoffice: `features/pagos`.
 > **Depende de:** 0a, 0b, 1 (sesión) · usa el contrato de eventos de order (`PedidoCreado`, `PedidoCancelado`, `PedidoExpirado`, `PagoNoAplicable`, `ReembolsoSolicitado`) y `GET /settings/public` · **Habilita:** 4 (el pedido pasa a `PAGADO`, guarda la boleta y registra lo reembolsado), 7 (correos de pago, reembolso y alerta con la boleta adjunta), 8 (demo de punta a punta).
 > **Contratos:** `contracts/openapi/payment-service.yaml`; eventos que publica `PagoConfirmado`, `PagoRechazado`, `BoletaEmitida`, `PagoReembolsado`, `ReembolsoFallido`.
 
 **Historial:**
+- v5 (2026-10-19): el reembolso postventa también aplica a pedidos devueltos a la tienda (SPEC-6); sin cambios en el flujo de payment.
 - v4 (2026-10-18): P-5-03, P-5-04 y P-5-05 con la convención de tablas de la SPEC-0b (R11) → **spec aprobada**.
 - v3 (2026-10-18): **reembolso postventa**: además de la cancelación, un pedido entregado puede reembolsarse total o parcialmente desde el pedido (SPEC-4 HU-4-12); varios reembolsos por pago; la intención pasa a `REEMBOLSADA_PARCIAL` / `REEMBOLSADA` y el estado fallido vive en cada reembolso (P8). Micros de payment v6, order v6, settings v8, notification v6; macro v20; SPEC-3 v4 y SPEC-4 v4. Revisión completa de las menciones de reembolso (alcance, resolución manual con `PagoReembolsado`, datos, Postman, demo).
 - v2 (2026-10-18): P1 ✅ la prueba de concepto del sandbox es la primera tarea de la implementación; P2 ✅ se mantiene el proveedor simulado (respaldo de la demo y pruebas sin internet).
@@ -17,7 +18,7 @@
 
 ## 1. Objetivo y alcance
 
-Al cerrar esta spec, el cliente **paga su pedido** con tarjeta o Yape (Culqi), con Mercado Pago o, en la demo, con el proveedor simulado, **sin que el backend vea nunca su tarjeta** y **sin que se le cobre dos veces**. Recibe su **boleta simulada** en PDF. Si el pedido se cancela después del pago, o si la tienda registra un **reembolso postventa** (total o parcial) de un pedido entregado, el **reembolso se ejecuta automáticamente**; el admin ve todos los pagos y atiende los reembolsos que fallen.
+Al cerrar esta spec, el cliente **paga su pedido** con tarjeta o Yape (Culqi), con Mercado Pago o, en la demo, con el proveedor simulado, **sin que el backend vea nunca su tarjeta** y **sin que se le cobre dos veces**. Recibe su **boleta simulada** en PDF. Si el pedido se cancela después del pago, o si la tienda registra un **reembolso postventa** (total o parcial) de un pedido entregado o devuelto a la tienda, el **reembolso se ejecuta automáticamente**; el admin ve todos los pagos y atiende los reembolsos que fallen.
 
 **Incluye:**
 - **Primero, la prueba de concepto del sandbox** (R16, P1): Culqi con tarjeta y Yape, Mercado Pago con Payment Brick y si alguno exige 3-D Secure.
@@ -199,7 +200,7 @@ CA-5-29  Cuando descargo mi boleta (GET /pagos/{codigo}/boleta)
 
 ### HU-5-10 — Devolver el dinero automáticamente
 
-Como cliente, quiero que me devuelvan el dinero si mi pedido pagado se cancela o si la tienda aprueba un reembolso de mi pedido entregado, sin trámites extra. · Cubre: RF-PAY-06, CU-25, CU-41 · Pantallas: no aplica (se ve en P-5-04 y P-5-05)
+Como cliente, quiero que me devuelvan el dinero si mi pedido pagado se cancela o si la tienda aprueba un reembolso de mi pedido entregado o devuelto, sin trámites extra. · Cubre: RF-PAY-06, CU-25, CU-41 · Pantallas: no aplica (se ve en P-5-04 y P-5-05)
 
 ```gherkin
 CA-5-30  Cuando llega PedidoCancelado con fuePagado = true, o PagoNoAplicable

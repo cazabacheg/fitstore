@@ -1,10 +1,11 @@
 # SPEC-0b — Fundaciones del frontend
 
-> Versión: **v4 (aprobado)** — 2026-10-18 · Estados: ✅ decidido · 🟡 propuesto · ❓ abierto
+> Versión: **v5 (aprobado)** — 2026-10-19 · Estados: ✅ decidido · 🟡 propuesto · ❓ abierto
 > **Dueña de:** workspace Angular (`frontend/`), librería `shared`, *shells* (layouts) de storefront y backoffice, rutas y menús generales, tema white-label, carpetas `ui/` de cada app, job de frontend en CI.
 > **Depende de:** 0a (gateway y CI), la etapa de contratos (OpenAPI para generar los clientes) y la etapa de diseño (**sistema de diseño**: los componentes de `ui/` se construyen según él). · **Habilita:** pantallas de las specs 1–8.
 
 **Historial:**
+- v5 (2026-10-19): el selector de ubigeo de `ui/` acepta la opción `hasta` (departamento, provincia o distrito), pedida por la SPEC-6 para las tarifas (CA-0b-26).
 - v4 (2026-10-18): **convención de filas de las tablas del backoffice** (R11, CA-0b-28b): el identificador es un enlace real, la fila entera es clicable y la última columna lleva las acciones ("Ver ›", hasta 2 botones o el menú "⋮"). Se aplica a los listados de las specs 1–5 (revisión hecha al cerrar la SPEC-5).
 - v3 (2026-10-18): el pie de la tienda va al final del documento y nunca se ve en la pantalla inicial (boceto P-0b-01 y CA-0b-20b). Resto de la spec aprobado → **spec aprobada**.
 - v2 (2026-10-18): bocetos aprobados; cada pantalla reserva su diseño de alta fidelidad (etapa de diseño). Landing → spec 3. Clientes de API versionados en Git (R5).
@@ -184,6 +185,8 @@ CA-0b-26  Dado el selector de ubigeo
           Cuando elijo Lima › Lima › Miraflores (o lo busco por nombre)
           Entonces emite el código 150122
           Y las listas vienen de /ubigeo con caché en el navegador
+          Y con la opción hasta = "departamento" o "provincia" se detiene en ese nivel y emite 04 o 0401
+               (por defecto, hasta = "distrito"; lo usa la pantalla de tarifas de la spec 6)
 
 CA-0b-27  Dado el pipe de precio
           Cuando formatea 332.456
