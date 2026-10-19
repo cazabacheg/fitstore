@@ -1,0 +1,30 @@
+# Alcance de 0a.1 (scripts/fuera-de-alcance.sh): un patrón por línea.
+pom.xml
+mvnw
+mvnw.cmd
+.mvn/*
+.gitignore
+.editorconfig
+README.md
+backend/fitstore-common/*
+backend/config-server/*
+backend/discovery-server/*
+backend/api-gateway/*
+# Base mínima de los 7 servicios (pom, Application, prueba de arranque, Dockerfile); 0a.2 la completa.
+backend/auth-service/*
+backend/catalog-service/*
+backend/settings-service/*
+backend/order-service/*
+backend/payment-service/*
+backend/delivery-service/*
+backend/notification-service/*
+infra/docker-compose.yml
+infra/docker-compose.dev.yml
+infra/.env.example
+infra/postgres/*
+infra/garage/*
+infra/dev/*
+infra/config-repo/application.yml
+infra/config-repo/config-server*.yml
+infra/config-repo/discovery-server*.yml
+infra/config-repo/api-gateway*.yml

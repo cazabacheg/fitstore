@@ -1,6 +1,6 @@
 # FitStore — Stack y versiones
 
-> Versión: **v3 (aprobado)** — 2026-10-19. v3: Azure Blob diferido (SPEC-8 I6). v2: se adopta MapStruct. Versiones consultadas en Maven Central y npm el 2026-10-18.
+> Versión: **v4 (aprobado)** — 2026-10-19. v4: JaCoCo, oasdiff y cobertura de Vitest (estrategia multiagente V0, SPEC-0a I7–I8). v3: Azure Blob diferido (SPEC-8 I6). v2: se adopta MapStruct. Versiones consultadas en Maven Central y npm el 2026-10-18.
 > Todas las secciones 10.4 de los micros remiten a esta tabla; cada servicio solo lista **qué** usa, no la versión.
 > Regla: las versiones se fijan al crear el repositorio y se actualizan solo con un motivo (seguridad o corrección).
 
@@ -67,6 +67,9 @@ Gestionadas por los BOM de Spring Boot y Spring Cloud salvo que se indique versi
 | Seguridad | `spring-security-test` | BOM Boot |
 | HTTP simulado (pasarelas, Feign) | `org.wiremock:wiremock-standalone` | **3.13.x** (la 4.0 sigue en beta) |
 | SMTP de prueba (notification) | `com.icegreen:greenmail-junit5` | **2.1.x** |
+| Cobertura (backend) | `org.jacoco:jacoco-maven-plugin` | **0.8.15** |
+| Cobertura (frontend) | `@vitest/coverage-v8` | la misma versión que Vitest (la fija 0b) |
+| Contrato vs. código | `oasdiff` (imagen `tufin/oasdiff`) | **v1.33.0** |
 | Carga | k6 (binario / imagen `grafana/k6`) | — |
 
 **Testcontainers 2.0** renombró los módulos (`testcontainers-postgresql` en vez de `postgresql`) y cambió algunos paquetes; los ejemplos de 1.x necesitan ajustes.
