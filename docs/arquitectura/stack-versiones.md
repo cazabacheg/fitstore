@@ -1,6 +1,6 @@
 # FitStore — Stack y versiones
 
-> Versión: **v4 (aprobado)** — 2026-10-19. v4: JaCoCo, oasdiff y cobertura de Vitest (estrategia multiagente V0, SPEC-0a I7–I8). v3: Azure Blob diferido (SPEC-8 I6). v2: se adopta MapStruct. Versiones consultadas en Maven Central y npm el 2026-10-18.
+> Versión: **v5 (aprobado)** — 2026-10-19. v5: `spring-retry` 2.0.13 para el reintento del cliente de config (CA-0a-04) y etiquetas exactas de las imágenes fijadas en 0a.1. v4: JaCoCo, oasdiff y cobertura de Vitest (estrategia multiagente V0, SPEC-0a I7–I8). v3: Azure Blob diferido (SPEC-8 I6). v2: se adopta MapStruct. Versiones consultadas en Maven Central y npm el 2026-10-18.
 > Todas las secciones 10.4 de los micros remiten a esta tabla; cada servicio solo lista **qué** usa, no la versión.
 > Regla: las versiones se fijan al crear el repositorio y se actualizan solo con un motivo (seguridad o corrección).
 
@@ -36,6 +36,7 @@ Gestionadas por los BOM de Spring Boot y Spring Cloud salvo que se indique versi
 | Trazas | `spring-boot-starter-opentelemetry` (Micrometer Tracing + OTLP) | BOM Boot |
 | Correo (solo notification) | `spring-boot-starter-mail`, `spring-boot-starter-thymeleaf` | BOM Boot |
 | Config client | `spring-cloud-starter-config` | BOM Cloud |
+| Reintento del config client | `org.springframework.retry:spring-retry` (el config client 5.0.x la usa internamente; ni Boot 4 ni Cloud 2025.1 la gestionan) | **2.0.13** |
 | Eureka client | `spring-cloud-starter-netflix-eureka-client` | BOM Cloud |
 | Feign | `spring-cloud-starter-openfeign` | BOM Cloud |
 | Resilience4j | `spring-cloud-starter-circuitbreaker-resilience4j` | BOM Cloud (Resilience4j 2.x) |
@@ -78,17 +79,17 @@ Gestionadas por los BOM de Spring Boot y Spring Cloud salvo que se indique versi
 
 | Componente | Imagen | Nota |
 |---|---|---|
-| PostgreSQL | `postgres:17` | Una instancia, 7 bases |
-| Redis | `redis:8` | |
-| RabbitMQ | `rabbitmq:4-management` | |
-| Garage | `dxflrs/garage` | Etiqueta exacta al crear el compose |
-| Jaeger | `jaegertracing/jaeger` (v2, all-in-one) | |
-| Mailpit | `axllent/mailpit` | Solo dev |
+| PostgreSQL | `postgres:17.10` | Una instancia, 7 bases |
+| Redis | `redis:8.10.1` | |
+| RabbitMQ | `rabbitmq:4.3.5-management` | |
+| Garage | `dxflrs/garage:v2.4.1` | Inicializado por `garage-init` con `curlimages/curl:8.22.0` (la imagen de Garage no trae shell) |
+| Jaeger | `jaegertracing/jaeger:2.21.0` (all-in-one) | |
+| Mailpit | `axllent/mailpit:v1.31.1` | Solo dev |
 | Caddy | `caddy:2` | Solo cloud |
-| Servicios Java | `eclipse-temurin:21-jre` (base) | Imagen por servicio |
+| Servicios Java | `eclipse-temurin:21.0.12.1_1-jdk` (compilación) y `-jre` (ejecución) | Imagen por servicio; Maven Wrapper 3.9.14 |
 | Diagramas | `structurizr/structurizr`, `plantuml/plantuml` | Solo documentación |
 
-Las etiquetas exactas (`postgres:17.x`, etc.) se fijan en `infra/docker-compose.yml` al crearlo; nunca `latest`.
+Etiquetas fijadas en 0a.1 (2026-10-19), todas con más de dos semanas de publicadas; nunca `latest`. Caddy se fija en la spec 8.
 
 ## 5. Por verificar en la prueba de concepto
 
