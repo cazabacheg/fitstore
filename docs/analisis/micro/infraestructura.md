@@ -1,10 +1,11 @@
 # FitStore — Análisis micro: infraestructura (`config-server`, `discovery-server`, `api-gateway`) y piezas comunes
 
-> Versión: **v8 (aprobado)** — 2026-10-19. Fuente: [`01-analisis-macro.md`](../01-analisis-macro.md) v16.
+> Versión: **v9 (aprobado)** — 2026-10-19. Fuente: [`01-analisis-macro.md`](../01-analisis-macro.md) v16.
 > Estados: ✅ decidido · propuesto · ❓ abierto · 🕓 diferido
 > Ficha corta: estos servicios no tienen dominio de negocio, así que la estructura difiere de la plantilla.
 
 **Historial:**
+- v9 (2026-10-19): checkpoint CK1: el gateway genera el `X-Request-Id` y reemplaza el del cliente (10.1, C3).
 - v8 (2026-10-19): por la implementación de 0a.1: tipos de `outbox_evento` y `evento_procesado` y puerto `CatalogoRutasEventos` (10.3); `CorrelacionFilter` va primero en la cadena del gateway (10.1), para que `X-Request-Id` salga en todas las respuestas (K9, CA-0a-13); C3-gateway regenerado.
 - v7 (2026-10-19): ajustes de la etapa de contratos: formato de `ApiError` y de la página (K5, K6) y forma del sobre de eventos con `datos` (K12).
 - v6 (2026-10-19): revisión de coherencia: contenedor `duckdns` y Mailpit como respaldo de SES en `cloud` en la tabla de memoria y en los archivos de compose (SPEC-8).
@@ -199,7 +200,7 @@ Stack y versiones: [`docs/arquitectura/stack-versiones.md`](../../arquitectura/s
 
 ![C3 api-gateway](../../arquitectura/img/C3-gateway.png)
 
-Cadena de una petición: **CorrelacionFilter → SeguridadJwt → BloqueoInternoFilter → RateLimiting → Rutas** (la correlación va primero para que `X-Request-Id` salga en todas las respuestas, también en los `401`, `404` y `429` de los filtros siguientes; contracts K9, SPEC-0a CA-0a-13) (→ servicio vía Eureka, o `FallbackController` con `503`). `CorsConfig` y `OpenApiAgregado` completan el gateway. Config-server y Eureka no tienen componentes propios relevantes (son la aplicación Spring Cloud estándar con su configuración).
+Cadena de una petición: **CorrelacionFilter → SeguridadJwt → BloqueoInternoFilter → RateLimiting → Rutas** (la correlación va primero para que `X-Request-Id` salga en todas las respuestas, también en los `401`, `404` y `429` de los filtros siguientes; contracts K9, SPEC-0a CA-0a-13). El gateway **genera** el id de cada petición y reemplaza el que traiga el cliente (es el borde: no se confía en un id externo); hacia adentro lo propagan Feign y los servicios (→ servicio vía Eureka, o `FallbackController` con `503`). `CorsConfig` y `OpenApiAgregado` completan el gateway. Config-server y Eureka no tienen componentes propios relevantes (son la aplicación Spring Cloud estándar con su configuración).
 
 ### 10.2 Repositorio: estructura del monorepo
 

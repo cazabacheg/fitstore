@@ -7,8 +7,8 @@
 
 | Paso | Agente | Rama | Estado | Ronda | PR | Bloqueos / notas |
 |---|---|---|---|---|---|---|
-| 0a.1 Monorepo, común e infraestructura | Sonnet | `spec/0a-1-plataforma` | 🔨 en curso | — | — | Fase de lectura aprobada por el lead; implementando |
-| **CK1** Checkpoint de base (revisión exhaustiva del lead) | lead | — | ⏳ | — | — | Tras 0a.1; el autor lo aprueba antes de lanzar 0a.2 |
+| 0a.1 Monorepo, común e infraestructura | Sonnet | `spec/0a-1-plataforma` | ✅ integrada | 2 | #17 | — |
+| **CK1** Checkpoint de base (revisión exhaustiva del lead) | lead | `fix/ck1-base` | 👀 en revisión del autor | — | — | [Informe](checkpoints/CK1.md): 1 bloqueante (H1) y 4 menores; corrección en curso |
 | 0a.2 auth | — | `spec/0a-2-auth` | ⏳ | — | — | Tras CK1 |
 | 0a.2 catalog | — | `spec/0a-2-catalog` | ⏳ | — | — | Tras CK1 |
 | 0a.2 settings | — | `spec/0a-2-settings` | ⏳ | — | — | Tras CK1 |
@@ -33,4 +33,5 @@
 | Fecha | Evento |
 |---|---|
 | 2026-10-19 | Estrategia aprobada (v3). Brief de 0a.1 listo. |
+| 2026-10-19 | 0a.1 integrada (#17, 2 rondas). CK1: informe con H1–H5; brief de 0a.2 completo. |
 | 2026-10-19 | 0a.1 lanzado; fase de lectura revisada (15 dudas resueltas; CA-0a-07 y 18 vuelven a 0a.3 según la spec). |

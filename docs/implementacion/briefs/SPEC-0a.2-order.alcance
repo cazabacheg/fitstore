@@ -1,0 +1,4 @@
+# Alcance de 0a.2 (order): un patrón por línea.
+backend/order-service/*
+infra/config-repo/order-service.yml
+infra/config-repo/order-service-*.yml

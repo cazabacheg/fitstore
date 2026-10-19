@@ -1,11 +1,12 @@
 # SPEC-0a — Plataforma backend y esqueletos de servicios
 
-> Versión: **v6 (aprobado)** — 2026-10-19 · Estados: ✅ decidido · 🟡 propuesto · ❓ abierto
+> Versión: **v7 (aprobado)** — 2026-10-19 · Estados: ✅ decidido · 🟡 propuesto · ❓ abierto
 > **Dueña de:** monorepo, `fitstore-common`, `config-server`, `discovery-server`, `api-gateway`, `infra/` (entorno dev), CI, y el **esqueleto** de los 7 servicios de negocio.
 > **Depende de:** — · **Habilita:** todas las demás specs.
 > **Contratos:** los esqueletos exponen solo `actuator` y la documentación base; los endpoints de negocio llegan con cada spec.
 
 **Historial:**
+- v7 (2026-10-19): checkpoint CK1: la sección 8 incluye `infra/scripts/ubigeo-a-sql` (ya lo pedía la sección 6) y `.dockerignore`.
 - v6 (2026-10-19): por la estrategia multiagente: cobertura mínima con JaCoCo (CA-0a-21), validación de contratos en CI con Redocly, AsyncAPI CLI y `oasdiff` v1.33.0 (CA-0a-22, K2), I1 con integración en `dev` y los esqueletos de 3 en 3, núcleo a cubrir en la sección 7.
 - v5 (2026-10-19): por la SPEC-8: Flyway incluye `db/dev` con los perfiles `dev` y `demo` (CA-0a-05); el adaptador Azure Blob queda diferido (Garage en la VM, I6).
 - v4 (2026-10-18): CI según la ADR-021 (`ci.yml` + `stage.yml` + plantilla de PR); sin protección de rama.
@@ -277,6 +278,8 @@ Total: **29 repositorios** con pruebas de datos.
 | `backend/<servicio>/` (7) | crea el esqueleto | pasa a su spec dueña (1–7) |
 | `infra/config-repo/application.yml` | crea | **congelado** |
 | `infra/config-repo/<servicio>*.yml` | crea | pasa a su spec dueña |
+| `infra/scripts/ubigeo-a-sql` (settings, sección 6) | crea | pasa a la spec 3 |
+| `.dockerignore` | crea | congelado |
 | `infra/docker-compose.yml`, `docker-compose.dev.yml`, `.env.example`, `postgres/`, `garage/`, `smoke.sh`, `dev/` | crea | congelados (spec 8 agrega `docker-compose.cloud.yml` y `caddy/`) |
 | `scripts/contrato.sh`, `contracts/implementados.txt` | crea | `contrato.sh` congelado; `implementados.txt` lo amplía cada spec al cerrar |
 | `.github/workflows/ci.yml`, `.github/workflows/stage.yml`, `.github/pull_request_template.md` | crea | congelados (0b agrega el job de frontend; la spec 8 crea `deploy.yml`) |

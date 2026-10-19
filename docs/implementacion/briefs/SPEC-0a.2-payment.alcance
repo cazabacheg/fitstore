@@ -1,0 +1,4 @@
+# Alcance de 0a.2 (payment): un patrón por línea.
+backend/payment-service/*
+infra/config-repo/payment-service.yml
+infra/config-repo/payment-service-*.yml

@@ -1,0 +1,5 @@
+# Alcance de 0a.2 (settings): un patrón por línea.
+backend/settings-service/*
+infra/config-repo/settings-service.yml
+infra/config-repo/settings-service-*.yml
+infra/scripts/ubigeo-a-sql*

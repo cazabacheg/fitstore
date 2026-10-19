@@ -1,0 +1,4 @@
+# Alcance de 0a.2 (notification): un patrón por línea.
+backend/notification-service/*
+infra/config-repo/notification-service.yml
+infra/config-repo/notification-service-*.yml

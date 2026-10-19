@@ -98,3 +98,69 @@ Entidades, migraciones, repositorios y eventos de los servicios (0a.2); `config-
 ### 7. Detenerse y preguntar
 
 Además de lo de `CLAUDE.md` sección 4: si una versión de imagen Docker no está fijada en `stack-versiones.md`, propón la versión estable más reciente con al menos dos semanas de publicada y pregunta antes de fijarla.
+
+---
+
+## 0a.2 — Esqueleto de un servicio (×7, 3 a la vez)
+
+> Completado tras el checkpoint CK1 (2026-10-19). Un agente por servicio, cada uno con su rama `spec/0a-2-<servicio>` desde `dev` y su archivo de alcance `SPEC-0a.2-<servicio>.alcance`. Entra cuando el autor aprueba el CK1 y está integrada la corrección `fix/ck1-base` (MapStruct y procesadores en el POM padre).
+
+**Orden de lanzamiento (3 a la vez):** auth, catalog y settings → order, payment y delivery → notification (entra cuando se libera un cupo).
+
+### 1. Lectura obligatoria (en este orden)
+
+1. [`CLAUDE.md`](../../../CLAUDE.md).
+2. [SPEC-0a](../../specs/SPEC-0a-plataforma-backend.md): sección 1 (punto "Esqueleto de cada servicio de negocio"), 3 (CA-0a-05 y CA-0a-06), 5 (I3, I4, I6, I8), 6 (datos) y 7 (tabla de repositorios de tu servicio).
+3. **El micro de tu servicio** (`docs/analisis/micro/<servicio>-service.md`): secciones **3** (modelo de datos completo: tablas, índices, `CHECK`, secuencias, semillas), **6** (eventos que publica y consume), **9** (pruebas de capa de datos: la tabla de tu servicio) y **10** (10.4 dependencias, 10.5 configuración y puerto, 10.6 infraestructura).
+4. [`infraestructura.md`](../../analisis/micro/infraestructura.md) sección 7, 8 y 10.3: qué te da `fitstore-common` y cómo se activa.
+5. [`contracts/asyncapi/fitstore-eventos.yaml`](../../../contracts/asyncapi/fitstore-eventos.yaml): los canales (routing keys) de los eventos que publica tu servicio.
+6. [`stack-versiones.md`](../../arquitectura/stack-versiones.md) v5.
+7. **El código de la base ya integrada**, como ejemplo de estilo y de pruebas: `backend/fitstore-common` (autoconfiguraciones y propiedades `fitstore.*`), `fitstore-common/src/test/.../event/OutboxPublisherTest.java` (Testcontainers con `@ServiceConnection`) y la base mínima de tu servicio (`pom.xml`, `Application`, `Dockerfile`).
+
+En tu primer mensaje: qué leíste, las tablas, entidades, repositorios y eventos que vas a crear, y cómo probarás cada repositorio.
+
+### 2. Qué construyes (solo en tu carpeta)
+
+1. **`pom.xml` de tu servicio:** las dependencias de la sección 10.4 de tu micro (versiones del POM padre; no toques el POM padre), más `spring-cloud-starter-config` con `spring-retry` (CA-0a-04), Flyway, `fitstore-common`, `springdoc-openapi-starter-webmvc-ui` y Testcontainers. Lombok y MapStruct, si los usas, ya están configurados en el POM padre.
+2. **`infra/config-repo/<servicio>.yml`, `<servicio>-dev.yml` y `<servicio>-cloud.yml`** según la sección 10.5 de tu micro (puerto, datasource con las variables de `.env.example`, `fitstore.eventos.*`, `fitstore.outbox.*`, `fitstore.storage.*` si aplica, `springdoc.api-docs.version=openapi_3_0`). Sin secretos: solo `${VARIABLES}`.
+3. **Migraciones Flyway** en `src/main/resources/db/migration/`: `V1__esquema_inicial.sql` con **todo** el esquema de la sección 3.1 (incluidas `outbox_evento` y `evento_procesado` con los tipos de infraestructura 10.3, si tu servicio publica o consume eventos) y las semillas aprobadas según SPEC-0a I6 y tu micro (`V2__…`, `V3__…` cuando el micro las nombra así).
+4. **Entidades JPA, enums y repositorios** de la sección 3, con `spring.jpa.hibernate.ddl-auto=validate` (lo que necesita CA-0a-05).
+5. **Pruebas de capa de datos (CA-0a-06)** de la tabla de la sección 7 de la spec (y la sección 9 de tu micro): `@DataJpaTest` + PostgreSQL en Testcontainers (Redis para el carrito de order), con insertar, actualizar, eliminar (físico o lógico según el micro), listar y las restricciones (duplicados, `CHECK`, índices únicos, concurrencia cuando la tabla lo pide). `@DisplayName("CA-0a-06 …")`.
+6. **Eventos (I4):** las clases de los eventos que publica y consume (sección 6) como `record`; la implementación de `CatalogoRutasEventos` con las routing keys de los canales del AsyncAPI (prueba que cada evento que publica tu servicio tiene su routing key); `fitstore.eventos.enlaces` con las routing keys que consume.
+7. **`ContratoOpenApiTest` (I8):** `@SpringBootTest` + MockMvc que guarda `GET /v3/api-docs` en `target/openapi.json` (todavía casi vacío: los endpoints llegan con cada spec). Con `@DisplayName("CA-0a-22 …")`.
+8. **Seguridad base (I3):** la de `fitstore-common`, sin abrir endpoints de negocio. `/actuator/health` y la documentación quedan abiertos.
+
+### 3. Criterios (tabla de validación)
+
+| CA | Qué te toca | Prueba |
+|---|---|---|
+| CA-0a-06 | Todos los repositorios de tu servicio de la tabla de la sección 7 | `src/test/.../repository/*Test.java` |
+| CA-0a-05 | Lo que lo hace posible: `V1` (y semillas) + entidades con `validate`. Su verificación es del *smoke* de 0a.3 | Tus pruebas `@DataJpaTest` ya corren Flyway + `validate` |
+| CA-0a-22 | Solo `ContratoOpenApiTest` | `src/test/.../ContratoOpenApiTest.java` |
+
+### 4. Núcleo a cubrir por completo
+
+Los repositorios con reglas: consultas propias, restricciones y concurrencia (reserva atómica de stock en catalog, correlativo de reclamos en settings, búsqueda jerárquica de tarifas en delivery) y la implementación de `CatalogoRutasEventos`.
+
+### 5. Por servicio
+
+| Servicio | Puerto | Migraciones y semillas | Repositorios (CA-0a-06) | Extra |
+|---|---|---|---|---|
+| auth | 8081 | `V1` | `ClienteRepository`, `StaffRepository`, `DireccionRepository`, `TokenPasswordRepository` | — |
+| catalog | 8082 | `V1` + semillas de tallas, colores y política de descuentos | `CategoriaRepository`, `ProductoRepository`, `VarianteRepository`, `StockRepository` (reserva atómica + concurrencia), `MovimientoStockRepository`, `TramoDescuentoRepository` | — |
+| settings | 8087 | `V1`, `V2__ubigeo_inei.sql`, `V3__configuracion_semilla.sql` | `ConfiguracionTiendaRepository`, `ImagenTiendaRepository`, `PoliticaRepository`, `ReclamoRepository` (+ correlativo concurrente), `UbigeoRepository` | `infra/scripts/ubigeo-a-sql` (SPEC-0a sección 6): genera `V2` desde el CSV oficial del INEI |
+| order | 8083 | `V1` | `PedidoRepository`, `CarritoRepository` (Redis en Testcontainers) | — |
+| payment | 8084 | `V1` | `IntencionPagoRepository`, `TransaccionRepository`, `ReembolsoRepository`, `BoletaRepository` | — |
+| delivery | 8085 | `V1`, `V2__semilla.sql` (agencias y tarifas) | `RepartidorRepository`, `TarifaEnvioRepository` (búsqueda jerárquica), `AgenciaRepository`, `EntregaRepository` | — |
+| notification | 8086 | `V1` + semilla de plantillas | `EnvioCorreoRepository`, `PedidoResumenRepository`, `MarcaTiendaRepository`, `PlantillaRepository` | — |
+
+### 6. Fuera de alcance de 0a.2
+
+Controladores, servicios de aplicación, lógica de negocio, consumidores con lógica y pantallas (specs 1–7); `smoke.sh`, CI y Postman (0a.3); el POM padre, `fitstore-common`, el gateway, `infra/docker-compose*.yml`, `infra/config-repo/application.yml` (congelados); los datos de demostración (`db/dev`, los agrega cada spec).
+
+### 7. Lecciones de 0a.1 (CK1)
+
+- Hibernate 7.2 + Jackson 3: las columnas `jsonb` ya funcionan con el `JacksonJsonFormatMapper` de `fitstore-common`; no agregues otro mapper.
+- El SDK de S3 con Garage necesita checksums `WHEN_REQUIRED` (ya lo hace `S3FileStorage`).
+- Testcontainers 2: módulos `testcontainers-postgresql`, `-rabbitmq`, `-junit-jupiter`; usa `@ServiceConnection` como en `OutboxPublisherTest`.
+- Si el puerto 5432 de la máquina está ocupado, las pruebas no se afectan (Testcontainers usa puertos aleatorios).
