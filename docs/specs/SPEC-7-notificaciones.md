@@ -1,11 +1,12 @@
 # SPEC-7 — Notificaciones
 
-> Versión: **v3 (aprobado)** — 2026-10-19 · Estados: ✅ decidido · 🟡 propuesto · ❓ abierto
+> Versión: **v4 (aprobado)** — 2026-10-19 · Estados: ✅ decidido · 🟡 propuesto · ❓ abierto
 > **Dueña de:** `backend/notification-service` (enrutamiento de eventos, plantillas, envío, registro) · backoffice: `features/notificaciones`.
 > **Depende de:** 0a, 0b, 1 (sesión de staff) · consume los eventos de auth, order, payment, delivery, catalog y settings (AsyncAPI) y usa `/internal/v1/boletas/{numero}` de payment · **Habilita:** 8 (demo con todos los correos en Mailpit y SES).
 > **Contratos:** `contracts/openapi/notification-service.yaml`; no publica eventos; consume los de la sección 6 del micro.
 
 **Historial:**
+- v4 (2026-10-19): revisión de coherencia: CA-7-03 aclara que `PedidoExpirado` y `PagoRechazado` no se escuchan (micro v10).
 - v3 (2026-10-19): los datos de demostración también se cargan en la nube con el perfil `demo` (SPEC-8 I7), con UUID fijos compartidos entre servicios (`docs/demo/ids-demo.md`).
 - v2 (2026-10-19): N7 ✅ "Enviar prueba a mi correo" (CA-7-30; micro v9) → **spec aprobada**.
 - v1 (2026-10-19): borrador inicial.
@@ -50,9 +51,9 @@ CA-7-01  Cuando llega cada evento de la tabla 4.1 del micro
 CA-7-02  Dado que el mismo evento llega dos veces
          Entonces se crea un solo envío
 
-CA-7-03  Cuando llegan PedidoCreado, PedidoPagado, PedidoExpirado, PagoRechazado o EntregaActualizada
-         en PENDIENTE_* o ASIGNADA
+CA-7-03  Cuando llegan PedidoCreado, PedidoPagado o EntregaActualizada en PENDIENTE_* o ASIGNADA
          Entonces no se envía ningún correo (PedidoCreado guarda la copia del pedido; PedidoPagado inicia el respaldo de la boleta)
+         Y PedidoExpirado y PagoRechazado ni siquiera se escuchan (la cola no se enlaza a sus routing keys)
 
 CA-7-04  Dado que el admin desactivó una plantilla opcional (p. ej. la bienvenida)
          Entonces su evento no genera envío
@@ -234,7 +235,7 @@ Todo según el micro de notification. Decisiones de implementación de esta spec
 | N5 | **Reenvío con textos actuales** ✅ | Reenviar vuelve a renderizar con la marca y los textos vigentes (no se guarda el HTML enviado, para no almacenar datos personales de más) |
 | N6 | **Ritmo por entorno** ✅ | `ritmo-por-segundo`: 1 en `cloud` (límite de SES en sandbox) y 10 en `dev` (Mailpit no tiene límite), para que la demo local sea ágil |
 | N7 | **Enviar prueba a mi correo** ✅ | Botón en el editor que envía el correo con los textos actuales y datos de ejemplo al correo del admin conectado (lo toma del token), con "[Prueba]" en el asunto; respeta el ritmo y queda en el registro con referencia `PRUEBA`. Endpoint `POST /admin/notificaciones/plantillas/{codigo}/prueba` (micro v9). En la nube, con SES en sandbox, el correo del admin debe estar verificado (R14) |
-| N8 | **Corrección del micro** ✅ | El micro dice "definición de las 17" plantillas en 10.1; con C14 son **18**. Se corrige en esta spec (micro v8) |
+| N8 | **Corrección del micro** ✅ | El micro decía "definición de las 17" plantillas en 10.1; con C14 son **18**. Corregido en el micro v8 |
 
 ## 6. Datos
 

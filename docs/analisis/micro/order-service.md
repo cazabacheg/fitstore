@@ -1,9 +1,10 @@
 # FitStore — Análisis micro: `order-service`
 
-> Versión: **v7 (aprobado)** — 2026-10-19. Fuente: [`01-analisis-macro.md`](../01-analisis-macro.md) v12.
+> Versión: **v8 (aprobado)** — 2026-10-19. Fuente: [`01-analisis-macro.md`](../01-analisis-macro.md) v12.
 > Estados: ✅ decidido · 🟡 propuesto · ❓ abierto · 🕓 diferido
 
 **Historial:**
+- v8 (2026-10-19): revisión de coherencia: `PedidoExpirado` no lo consume notification (no hay correo de pedido expirado).
 - v7 (2026-10-19): por SPEC-6: estado final **`DEVUELTO`** (desde `ENVIADO` con `EntregaActualizada` devuelta, o desde `LISTO_RECOJO` cuando el operador marca "No recogido"); el reembolso postventa también se permite en `DEVUELTO`, sin plazo, con motivo `NO_ENTREGADO`.
 - v6 (2026-10-18): **reembolso postventa** (4.8): el ADMIN registra un reembolso total o parcial de un pedido `ENTREGADO` dentro del plazo de settings; tabla `pedido_reembolso`, campo `monto_reembolsado`, evento `ReembolsoSolicitado`, consume `PagoReembolsado`. Decidido en la SPEC-5.
 - v5 (2026-10-18): desde la SPEC-4: los pedidos de un cliente usan `GET /admin/pedidos?clienteId=` (se quita `/admin/clientes/{clienteId}/pedidos`, O3); las ventas del resumen se cuentan por la fecha del paso a `PAGADO` y sin los cancelados, con índice `pedido_historial (estado_nuevo, creado_en)` (O6).
@@ -351,7 +352,7 @@ Exchange `fitstore.eventos` (topic), sobre común, outbox e idempotencia (ADR-00
 | `PedidoCreado` | `order.pedido.creado` | `pedidoId`, `codigo`, `clienteId`, destinatario, modalidad, dirección, `items[]`, `subtotal`, `descuentoTotal`, `costoEnvio`, `total`, `expiraEn` | payment (intención de pago), notification |
 | `PedidoPagado` | `order.pedido.pagado` | `pedidoId`, `codigo`, `items[{varianteId, cantidad}]` | catalog (confirmar reserva), notification |
 | `PedidoCancelado` | `order.pedido.cancelado` | `pedidoId`, `codigo`, `fuePagado`, `motivo`, `actor`, `items[]` | catalog, payment (reembolso si fue pagado), notification |
-| `PedidoExpirado` | `order.pedido.expirado` | `pedidoId`, `codigo` | catalog, payment (anular intención), notification |
+| `PedidoExpirado` | `order.pedido.expirado` | `pedidoId`, `codigo` | catalog, payment (anular intención) |
 | `PagoNoAplicable` | `order.pago.no-aplicable` | `pedidoId`, `pagoId`, `motivo` | payment (reembolso automático) |
 | `PedidoListoDespacho` | `order.pedido.listo-despacho` | `pedidoId`, `codigo`, modalidad, destinatario, dirección, agencia, resumen de ítems | delivery (crear entrega) |
 | `ReembolsoSolicitado` ✅ **nuevo** | `order.reembolso.solicitado` | `pedidoId`, `codigo`, `solicitudId` (id de `pedido_reembolso`, clave de idempotencia), `monto`, `motivo` | payment (ejecuta el reembolso) |

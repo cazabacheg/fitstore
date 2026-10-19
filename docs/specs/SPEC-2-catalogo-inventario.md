@@ -1,11 +1,12 @@
 # SPEC-2 — Catálogo e inventario
 
-> Versión: **v6 (aprobado)** — 2026-10-19 · Estados: ✅ decidido · 🟡 propuesto · ❓ abierto
+> Versión: **v7 (aprobado)** — 2026-10-19 · Estados: ✅ decidido · 🟡 propuesto · ❓ abierto
 > **Dueña de:** `backend/catalog-service` (módulos catálogo e inventario) · tienda: `features/catalogo` · backoffice: `features/catalogo`, `features/inventario`.
 > **Depende de:** 0a, 0b, 1 (sesión de staff) · **Habilita:** 3 (destacados de la landing), 4 (cotización y reserva), 8.
 > **Contratos:** `contracts/openapi/catalog-service.yaml` (incluye `/internal/v1/inventario/reservas`); usa el contrato de order (`POST /carrito/items`); eventos `StockBajo`, `StockNoConfirmado` (publica) y `PedidoPagado`, `PedidoCancelado`, `PedidoExpirado` (consume).
 
 **Historial:**
+- v7 (2026-10-19): revisión de coherencia: P-2-07 ya no menciona la configuración de inventario (se movió a P-3-04 en la v4).
 - v6 (2026-10-19): los datos de demostración también se cargan en la nube con el perfil `demo` (SPEC-8 I7), con UUID fijos compartidos entre servicios (`docs/demo/ids-demo.md`).
 - v5 (2026-10-18): convención de tablas de la SPEC-0b (R11) aplicada a P-2-03, P-2-07, P-2-08 y P-2-09 (y señalada como no aplicable en P-2-05 y P-2-06); P-2-04 se abre en solo lectura para OPERADOR (antes la ruta era solo ADMIN, aunque P-2-03 le permitía ver los productos). Bocetos actualizados.
 - v4 (2026-10-18): por decisión de la SPEC-3 (S2), el stock mínimo por defecto y el margen de reserva se editan en Configuración de tienda (P-3-04, pestaña Parámetros); se quita `DialogoConfiguracionInventario` de P-2-07. El endpoint sigue siendo de esta spec.
@@ -383,12 +384,12 @@ CA-2-57  Dado Redis caído
 
 ### P-2-07 — Inventario
 
-- **Ruta / proyecto:** `/inventario` · backoffice · OPERADOR y ADMIN (configuración: solo ADMIN).
+- **Ruta / proyecto:** `/inventario` · backoffice · OPERADOR y ADMIN.
 - **Boceto:** ![P-2-07](img/P-2-07-inventario.png)
 - **Diseño de alta fidelidad:** 🕓 deriva del sistema de diseño (patrón "tabla").
 - **Componentes:** `InventarioPage` (tabla con filas resaltadas por stock bajo y agotado), `DialogoEntrada` (varias líneas), `DialogoAjuste`. La configuración de inventario de la tienda se edita en P-3-04 (SPEC-3).
 - **Tabla (0b R11):** el **SKU** abre el kardex (`/inventario/:varianteId`, P-2-08); acciones: "Kardex ›" y "Mínimo" (diálogo para el umbral propio del SKU, CA-2-43).
-- **Endpoints:** `GET /admin/inventario`, `POST /admin/inventario/entradas|ajustes`, `PATCH /admin/inventario/{varianteId}/minimo`, `GET/PUT /admin/inventario/configuracion`.
+- **Endpoints:** `GET /admin/inventario`, `POST /admin/inventario/entradas|ajustes`, `PATCH /admin/inventario/{varianteId}/minimo`. (`GET/PUT /admin/inventario/configuracion` lo implementa esta spec, pero lo usa P-3-04 de la SPEC-3.)
 
 ### P-2-09 — Carga masiva
 

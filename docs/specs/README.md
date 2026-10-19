@@ -30,6 +30,6 @@
 
 Specs (con bocetos de baja fidelidad) → contratos (OpenAPI / AsyncAPI) → **diseño**: sistema de diseño + ~12 pantallas clave de alta fidelidad en **dos marcas** (demuestra el white-label) → se enlazan en cada pantalla de las specs (campo "Diseño de alta fidelidad") → estrategia multiagente → implementación. La 0b no se implementa sin el sistema de diseño.
 
-Pantallas clave previstas: tienda (landing, listado, detalle de producto, carrito, checkout, pago, mis pedidos; escritorio y móvil) y backoffice (dashboard, lista de pedidos, detalle de pedido, formulario de producto, configuración de tienda). El resto deriva del sistema de diseño y su boceto.
+Pantallas clave (12 grupos, 14 pantallas): tienda (landing, listado, detalle de producto, carrito, checkout, pago y su resultado, mis pedidos y su detalle; escritorio y móvil) y backoffice (dashboard, lista de pedidos, detalle de pedido, formulario de producto, configuración de tienda). El resto deriva del sistema de diseño y su boceto.
 
 Plantilla: [`_plantilla.md`](_plantilla.md) (v3: criterios dentro de cada historia; historias enlazadas a sus pantallas `P-XX-NN`; bocetos en `img/`; cada pantalla reserva su diseño de alta fidelidad).

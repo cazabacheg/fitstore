@@ -1,11 +1,12 @@
 # SPEC-4 — Pedidos
 
-> Versión: **v7 (aprobado)** — 2026-10-19 · Estados: ✅ decidido · 🟡 propuesto · ❓ abierto
+> Versión: **v8 (aprobado)** — 2026-10-19 · Estados: ✅ decidido · 🟡 propuesto · ❓ abierto
 > **Dueña de:** `backend/order-service` (carrito, checkout, pedidos, saga) · tienda: `features/carrito`, `features/checkout`, `features/mis-pedidos` · backoffice: `features/pedidos`.
 > **Depende de:** 0a, 0b, 1 (sesión y direcciones) · usa los contratos de catalog (cotizar, reservar), auth (cliente y dirección), delivery (opciones y cotización de envío) y settings (parámetros y ubigeo) · **Habilita:** 5 (pago del pedido), 6 (entrega desde `PedidoListoDespacho`), 7 (correos del pedido), 8 (dashboard y E2E).
 > **Contratos:** `contracts/openapi/order-service.yaml`; eventos que publica `PedidoCreado`, `PedidoPagado`, `PedidoCancelado`, `PedidoExpirado`, `PagoNoAplicable`, `PedidoListoDespacho`, `PedidoListoRecojo`, `PedidoRecogido`, `ReembolsoSolicitado`; consume `PagoConfirmado`, `PagoRechazado`, `BoletaEmitida`, `PagoReembolsado`, `EntregaActualizada`.
 
 **Historial:**
+- v8 (2026-10-19): revisión de coherencia: "No incluye" deja explícito que exportar pedidos a CSV (RF-BO-03, C) es alcance futuro.
 - v7 (2026-10-19): los datos de demostración también se cargan en la nube con el perfil `demo` (SPEC-8 I7), con UUID fijos compartidos entre servicios (`docs/demo/ids-demo.md`).
 - v6 (2026-10-19): por la SPEC-6, estado final **DEVUELTO**: desde ENVIADO cuando delivery devuelve la entrega a la tienda (CA-4-45) o desde LISTO_RECOJO cuando nadie recoge el pedido (CA-4-60); el reembolso postventa se permite en DEVUELTO sin plazo (CA-4-54, 57); etapa "Devuelto a la tienda" en el seguimiento (O9). Micro de order v7.
 - v5 (2026-10-18): P-4-05 y P-4-06 indican qué abre el enlace de cada fila y sus acciones, según la convención de tablas de la SPEC-0b (R11). Boceto P-4-05 actualizado.
@@ -33,6 +34,7 @@ Al cerrar esta spec, el cliente **arma su carrito** (con o sin sesión), ve sus 
 - Crear y avanzar la entrega (repartidor, agencia, intentos) → spec 6 (aquí se publica `PedidoListoDespacho` y se consume `EntregaActualizada`).
 - Correos del pedido → spec 7.
 - Pantalla del dashboard → spec 8 (aquí solo su endpoint de ventas).
+- Exportar pedidos a CSV (RF-BO-03, prioridad C) → alcance futuro.
 - Cotización y reserva de stock → spec 2 (aquí se llaman por contrato). Formulario de direcciones → spec 1.
 
 ## 2. Referencias

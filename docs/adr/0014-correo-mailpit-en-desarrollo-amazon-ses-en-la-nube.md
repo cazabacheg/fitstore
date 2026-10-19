@@ -14,3 +14,7 @@ Accepted
 - **Plantillas** ✅: **Thymeleaf genera el HTML completo de cada correo** en `notification-service` (con logo, colores y textos de `settings-service`) y SES solo lo **envía** (no se usan plantillas de SES). El envío pasa por un puerto `EmailSender` con dos adaptadores: SMTP (Mailpit en local) y SES (en la nube); la plantilla es la misma en ambos. Así los correos son white-label, editables desde backoffice y portables. Se descartan las plantillas nativas de SES (más acopladas a AWS y más difíciles de adaptar por cliente).
 
 Fuente: `docs/analisis/01-analisis-macro.md`, sección 6.
+
+## Actualización (2026-10-19)
+
+En la nube, Mailpit también corre sin publicar como **respaldo de SES** para la demo: si SES falla, se cambia `SMTP_HOST` a `mailpit` y los correos se revisan por túnel SSH (SPEC-8, CA-8-30).

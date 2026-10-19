@@ -1,9 +1,10 @@
 # FitStore — Análisis micro: `notification-service`
 
-> Versión: **v9 (aprobado)** — 2026-10-19. Fuente: [`01-analisis-macro.md`](../01-analisis-macro.md) v15.
+> Versión: **v10 (aprobado)** — 2026-10-19. Fuente: [`01-analisis-macro.md`](../01-analisis-macro.md) v15.
 > Estados: ✅ decidido · 🟡 propuesto · ❓ abierto · 🕓 diferido
 
 **Historial:**
+- v10 (2026-10-19): revisión de coherencia: se distingue lo que se consume sin correo de lo que no se escucha (`PedidoExpirado`, `PagoRechazado`).
 - v9 (2026-10-19): por la SPEC-7 (N7): **enviar prueba a mi correo** desde el editor (`POST …/plantillas/{codigo}/prueba`).
 - v8 (2026-10-19): corrección de la SPEC-7: el catálogo tiene **18** plantillas (10.1 decía 17 antes de agregar C14).
 - v7 (2026-10-19): nuevo correo **C14 "Tu pedido regresó a la tienda"** (`EntregaActualizada` → `DEVUELTA`), decidido en la SPEC-6: 14 al cliente + 4 a la tienda.
@@ -162,7 +163,7 @@ classDiagram
 | T3 | `ReembolsoFallido` | ⚠ Reembolso fallido: pedido, monto, error, "reintenta desde el backoffice" |
 | T4 | `ReclamoRegistrado` | Nuevo reclamo: número, tipo y fecha límite |
 
-**No generan correo:** `PedidoCreado` (solo alimenta la copia del resumen, D4), `PedidoPagado` (solo el temporizador de 4.3), `PedidoExpirado`, `PagoRechazado` y `EntregaActualizada` en `PENDIENTE_*` y `ASIGNADA` (la fecha se ve en "Mis pedidos").
+**Se consumen sin correo:** `PedidoCreado` (solo alimenta la copia del resumen, D4), `PedidoPagado` (solo el temporizador de 4.3) y `EntregaActualizada` en `PENDIENTE_*` y `ASIGNADA` (la fecha se ve en "Mis pedidos"). **No se escuchan:** `PedidoExpirado` ni `PagoRechazado` (no tienen correo).
 
 ### 4.2 Flujo de un envío
 
