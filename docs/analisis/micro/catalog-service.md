@@ -205,7 +205,7 @@ Extensiones: `unaccent` y `pg_trgm` (búsqueda sin tildes y por similitud).
 
 `movimiento_stock.tipo` ∈ `ENTRADA`, `AJUSTE` (+/−), `VENTA` (al confirmar el pago), `REINGRESO` (cancelación de un pedido pagado). Reservar y liberar no cambian `fisico`, por eso no generan movimiento (quedan en `reserva`).
 
-**Comunes:** `outbox_evento` (igual que auth) y `evento_procesado` (`evento_id` PK, `procesado_en`) para consumidores idempotentes (ADR-009). `configuracion_inventario` (fila única): `stock_minimo_por_defecto` (semilla 5) y `margen_reserva_minutos` (ver 4.6). Se edita desde el backoffice en la misma pantalla de configuración de la tienda, pero el dato lo guarda catalog, que es quien lo usa.
+**Comunes:** `outbox_evento` (igual que auth) y `evento_procesado` (`evento_id` PK, `procesado_en`) para consumidores idempotentes (ADR-009). `configuracion_inventario` (fila única): `stock_minimo_por_defecto` (semilla 5) y `margen_reserva_minutos` (ver 4.6). Se edita desde el backoffice en la pestaña Parámetros de la configuración de la tienda (P-3-04, SPEC-3), pero el dato lo guarda catalog, que es quien lo usa.
 
 ### 3.2 Redis (prefijo `catalog:`)
 
