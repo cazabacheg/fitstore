@@ -7,10 +7,10 @@ La SPEC-0a se construye en tres pasos (I1). Cada paso es un agente, una rama y u
 
 | Paso | Rama | Alcance (V4) | Criterios | Entra |
 |---|---|---|---|---|
-| **0a.1** Monorepo, común e infraestructura | `spec/0a-1-plataforma` | [`SPEC-0a.1.alcance`](SPEC-0a.1.alcance) | 01 (parcial), 04, 07, 08–12, 13 (`X-Request-Id`), 14–16, 18 (`.gitignore` y `.env.example`), 21 | Ahora |
+| **0a.1** Monorepo, común e infraestructura | `spec/0a-1-plataforma` | [`SPEC-0a.1.alcance`](SPEC-0a.1.alcance) | 01 (parcial), 04, 08–12, 13 (`X-Request-Id`), 14–17, 21 | En curso |
 | **CK1** Checkpoint de base | — | — | Revisión exhaustiva del lead ([estrategia 2.1](../estrategia-multiagente.md#21-checkpoints-de-base)) | 0a.1 en `dev` |
 | **0a.2** Esqueleto de un servicio (×7, 3 a la vez) | `spec/0a-2-<servicio>` | `SPEC-0a.2-<servicio>.alcance` | 05 y 06 de ese servicio, más su `ContratoOpenApiTest` (I8) | CK1 aprobado por el autor |
-| **0a.3** CI, humo y Postman | `spec/0a-3-ci` | `SPEC-0a.3.alcance` | 01, 02, 03, 13 (traza en Jaeger), 17, 18 (gitleaks), 19, 20, 22 | Los 7 esqueletos en `dev` |
+| **0a.3** CI, humo y Postman | `spec/0a-3-ci` | `SPEC-0a.3.alcance` | 01, 02, 03, 07, 13 (traza en Jaeger), 17 (en el compose), 18, 19, 20, 22 | Los 7 esqueletos en `dev` |
 
 ---
 
@@ -42,15 +42,16 @@ En tu **primer mensaje**, antes de escribir código: confirma qué leíste y res
 |---|---|
 | CA-0a-01 (parcial) | `./mvnw verify` compila los 11 módulos y pasa todo |
 | CA-0a-04 | `config-server/src/test`: un cliente con perfil `dev` toma su configuración; sin config-server, reintenta y no arranca con valores por defecto |
-| CA-0a-07 | Prueba con Testcontainers que ejecuta `infra/postgres/init.sql` y verifica que el usuario de un servicio no puede leer la base de otro |
 | CA-0a-08 a CA-0a-12 | `api-gateway/src/test` con `WebTestClient` + WireMock (+ Redis en Testcontainers para 11) |
 | CA-0a-13 (`X-Request-Id`) | `api-gateway/src/test`: la respuesta trae `X-Request-Id` y se propaga al servicio (la traza en Jaeger la verifica 0a.3) |
+| CA-0a-17 | `api-gateway/src/test`: el selector de Swagger tiene los 7 servicios configurados (0a.3 lo confirma en el compose) |
 | CA-0a-14, CA-0a-15 | `fitstore-common/src/test` con PostgreSQL y RabbitMQ en Testcontainers |
 | CA-0a-16 | `fitstore-common/src/test` con Garage en Testcontainers (contenedor genérico) |
-| CA-0a-18 (parte de archivos) | Prueba o verificación de que `.env` está ignorado y solo existe `.env.example` (gitleaks llega en 0a.3) |
 | CA-0a-21 | Demostrar que `jacoco:check` falla con un módulo bajo 80 % (por ejemplo, con un módulo de prueba temporal o una configuración de umbral en una prueba del build) y documentar cómo se verificó en el reporte |
 
 Cada prueba lleva el id del criterio en `@DisplayName` (o en un comentario `# CA-0a-xx` en scripts).
+
+**Ajuste tras la fase de lectura (2026-10-19):** CA-0a-07 y CA-0a-18 pasan a 0a.3, porque la sección 7 de la spec los verifica en `smoke.sh` y en `ci.yml`. Se agrega `.dockerignore` al alcance. Decisiones del lead sobre las dudas del agente: `X-Request-Id` con la mayor precedencia (K9), JWKS de prueba leído desde archivo solo en dev (I2), routing key resuelta por un puerto `tipo → routing key` que implementa cada servicio en 0a.2 con los canales del AsyncAPI, compose con el orden exacto de 6.2.
 
 ### 4. Núcleo a cubrir por completo
 
@@ -62,7 +63,7 @@ Cada prueba lleva el id del criterio en `@DisplayName` (o en un comentario `# CA
 2. HU-0a-04 (outbox y consumidor) y HU-0a-05 (archivos) en `fitstore-common`, junto con `api` y `security`.
 3. `config-server` y `discovery-server` (CA-0a-04).
 4. HU-0a-03 en `api-gateway` (CA-0a-08 a CA-0a-13).
-5. `infra/`: `init.sql` (CA-0a-07), compose, Garage, `.env.example`, JWKS de prueba.
+5. `infra/`: `init.sql` (7 usuarios aislados; su verificación CA-0a-07 es del *smoke* de 0a.3), compose, Garage, `.env.example`, JWKS de prueba.
 6. CA-0a-21 (JaCoCo) y CA-0a-01 con todo el repo.
 
 Antes de pedir verificación: levanta la **infraestructura** del compose (`postgres`, `redis`, `rabbitmq`, `garage`, `jaeger`, `mailpit`, `config-server`, `discovery-server`, `api-gateway`) y comprueba que queda *healthy*. Los 7 servicios todavía no tienen base ni configuración, así que no se exige que arranquen.
