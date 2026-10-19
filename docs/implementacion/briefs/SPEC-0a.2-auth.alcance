@@ -1,0 +1,4 @@
+# Alcance de 0a.2 (auth): un patrón por línea.
+backend/auth-service/*
+infra/config-repo/auth-service.yml
+infra/config-repo/auth-service-*.yml

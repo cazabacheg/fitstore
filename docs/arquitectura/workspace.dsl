@@ -40,7 +40,7 @@ workspace "FitStore" "Plantilla white-label de e-commerce de ropa y moda para MY
                 gwSeguridad = component "SeguridadJwt" "Valida firma y expiración del JWT con el JWKS de auth; rutas públicas sin token." "SecurityWebFilterChain · resource server" "Seguridad"
                 gwBloqueo = component "BloqueoInternoFilter" "Rechaza /internal/** con 404." "GlobalFilter" "Seguridad"
                 gwRate = component "RateLimiting" "RequestRateLimiter con Redis; KeyResolver por IP (X-Forwarded-For de Caddy) y por usuario (sub)." "RedisRateLimiter" "Seguridad"
-                gwCorrelacion = component "CorrelacionFilter" "Genera o propaga X-Request-Id." "GlobalFilter" "Servicio"
+                gwCorrelacion = component "CorrelacionFilter" "Genera el X-Request-Id de cada petición (reemplaza el del cliente)." "GlobalFilter" "Servicio"
                 gwCors = component "CorsConfig" "Orígenes permitidos de storefront y backoffice." "CorsWebFilter" "Seguridad"
                 gwFallback = component "FallbackController" "503 con formato ApiResponse cuando un servicio no responde." "@RestController" "Servicio"
                 gwDocs = component "OpenApiAgregado" "Swagger UI con un selector por servicio (protegido en cloud)." "springdoc webflux" "Servicio"

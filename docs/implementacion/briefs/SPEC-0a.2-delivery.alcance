@@ -1,0 +1,4 @@
+# Alcance de 0a.2 (delivery): un patrón por línea.
+backend/delivery-service/*
+infra/config-repo/delivery-service.yml
+infra/config-repo/delivery-service-*.yml

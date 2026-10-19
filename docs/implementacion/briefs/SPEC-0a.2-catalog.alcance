@@ -1,0 +1,4 @@
+# Alcance de 0a.2 (catalog): un patrón por línea.
+backend/catalog-service/*
+infra/config-repo/catalog-service.yml
+infra/config-repo/catalog-service-*.yml
