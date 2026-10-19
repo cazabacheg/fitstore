@@ -1,15 +1,16 @@
 # SPEC-3 — Tienda y reclamos
 
-> Versión: **v2 (borrador)** — 2026-10-18 · Estados: ✅ decidido · 🟡 propuesto · ❓ abierto
+> Versión: **v3 (aprobado)** — 2026-10-18 · Estados: ✅ decidido · 🟡 propuesto · ❓ abierto
 > **Dueña de:** `backend/settings-service` (configuración, ubigeo, Libro de Reclamaciones) · tienda: `features/inicio`, `features/legal` · backoffice: `features/configuracion`, `features/reclamos`.
 > **Depende de:** 0a, 0b, 1 (sesión de staff) · usa el contrato de catalog (destacados y categorías) · **Habilita:** la marca real en todas las pantallas (0b ya la consume), versiones de políticas para el registro (spec 1), parámetros para order y payment (specs 4 y 5).
 > **Contratos:** `contracts/openapi/settings-service.yaml`; eventos `ConfiguracionActualizada`, `ReclamoRegistrado`, `ReclamoRespondido`.
 
 **Historial:**
+- v3 (2026-10-18): revisada por el autor → **spec aprobada**.
 - v2 (2026-10-18): S1 ✅ franja de beneficios **opcional** (sin beneficios, la franja no se muestra); S2 ✅ el stock mínimo por defecto y el margen de reserva se editan en la pestaña Parámetros (API de catalog), y se quita el diálogo de P-2-07 (SPEC-2 v4). Nuevo CA-3-38.
 - v1 (2026-10-18): borrador inicial.
 
-**Estado de revisión por sección:** 1 ⏳ · 2 ⏳ · 3 ⏳ · 4 ⏳ · 5 ⏳ · 6 ⏳ · 7 ⏳ · 8 ⏳ · 9 ⏳
+**Estado de revisión por sección:** 1 ✅ · 2 ✅ · 3 ✅ · 4 ✅ · 5 ✅ · 6 ✅ · 7 ✅ · 8 ✅ · 9 ✅
 
 ---
 
