@@ -1,9 +1,11 @@
 # FitStore — Análisis micro: `notification-service`
 
-> Versión: **v7 (aprobado)** — 2026-10-19. Fuente: [`01-analisis-macro.md`](../01-analisis-macro.md) v15.
+> Versión: **v9 (aprobado)** — 2026-10-19. Fuente: [`01-analisis-macro.md`](../01-analisis-macro.md) v15.
 > Estados: ✅ decidido · 🟡 propuesto · ❓ abierto · 🕓 diferido
 
 **Historial:**
+- v9 (2026-10-19): por la SPEC-7 (N7): **enviar prueba a mi correo** desde el editor (`POST …/plantillas/{codigo}/prueba`).
+- v8 (2026-10-19): corrección de la SPEC-7: el catálogo tiene **18** plantillas (10.1 decía 17 antes de agregar C14).
 - v7 (2026-10-19): nuevo correo **C14 "Tu pedido regresó a la tienda"** (`EntregaActualizada` → `DEVUELTA`), decidido en la SPEC-6: 14 al cliente + 4 a la tienda.
 - v6 (2026-10-18): el correo C7 (reembolso realizado) distingue el reembolso parcial postventa (SPEC-5).
 - v5 (2026-10-18): sección 10 aprobada → **documento completo aprobado**.
@@ -213,6 +215,7 @@ Separar **recibir** (rápido, en la transacción del consumidor) de **enviar** (
 | GET / PUT | `/api/v1/admin/notificaciones/plantillas/{codigo}` | Ver / editar textos y activar o desactivar |
 | POST | `/api/v1/admin/notificaciones/plantillas/{codigo}/restaurar` | Volver a los textos predeterminados |
 | POST | `/api/v1/admin/notificaciones/plantillas/{codigo}/vista-previa` | HTML renderizado con los textos enviados (aunque no se hayan guardado) y datos de ejemplo |
+| POST | `/api/v1/admin/notificaciones/plantillas/{codigo}/prueba` | Envía ese mismo correo al admin conectado, con "[Prueba]" en el asunto (máximo 5 por minuto) |
 
 ### 4.6 Editor de plantillas (RF-NOT-04, CU-33) ✅
 
@@ -222,6 +225,7 @@ Separar **recibir** (rápido, en la transacción del consumidor) de **enviar** (
 - **Vista previa en vivo:** antes de guardar, el admin ve el correo con sus cambios, la marca actual y datos de ejemplo.
 - **Activar o desactivar:** el admin puede apagar los correos opcionales (por ejemplo, la bienvenida). Los **obligatorios** no se pueden desactivar: recuperación de contraseña, invitación de staff, pedido confirmado y los del Libro de Reclamaciones.
 - **Restaurar predeterminado:** devuelve los textos sembrados.
+- **Enviar prueba a mi correo:** manda el correo con los textos del editor y datos de ejemplo al admin conectado, para verlo en un buzón real; queda en el registro con referencia `PRUEBA`.
 
 ---
 
@@ -321,7 +325,7 @@ Stack y versiones comunes: [`docs/arquitectura/stack-versiones.md`](../../arquit
 |---|---|
 | Controladores | `AdminNotificacionController`, `AdminPlantillaController` |
 | Recepción | `EnrutadorEventos` (`@RabbitListener`): evento → plantillas y destinatarios; guarda la copia de marca y de pedidos |
-| Plantillas | `CatalogoPlantillas` (definición de las 17), `PlantillaService` (editor), `RenderizadorCorreo` (Thymeleaf) |
+| Plantillas | `CatalogoPlantillas` (definición de las 18), `PlantillaService` (editor), `RenderizadorCorreo` (Thymeleaf) |
 | Envío | `DespachadorCorreos` (`@Scheduled`), `SmtpEmailSender` (implementa `EmailSender`), `PaymentClient` (boleta) |
 | Procesos | `TemporizadorConfirmacion` (respaldo de 10 min), `LimpiezaRetencion` (180 días) |
 | Clientes | `PaymentClient`, `SettingsClient` (solo al arrancar sin copia) |
