@@ -1,10 +1,11 @@
 # SPEC-0b — Fundaciones del frontend
 
-> Versión: **v3 (aprobado)** — 2026-10-18 · Estados: ✅ decidido · 🟡 propuesto · ❓ abierto
+> Versión: **v4 (aprobado)** — 2026-10-18 · Estados: ✅ decidido · 🟡 propuesto · ❓ abierto
 > **Dueña de:** workspace Angular (`frontend/`), librería `shared`, *shells* (layouts) de storefront y backoffice, rutas y menús generales, tema white-label, carpetas `ui/` de cada app, job de frontend en CI.
 > **Depende de:** 0a (gateway y CI), la etapa de contratos (OpenAPI para generar los clientes) y la etapa de diseño (**sistema de diseño**: los componentes de `ui/` se construyen según él). · **Habilita:** pantallas de las specs 1–8.
 
 **Historial:**
+- v4 (2026-10-18): **convención de filas de las tablas del backoffice** (R11, CA-0b-28b): el identificador es un enlace real, la fila entera es clicable y la última columna lleva las acciones ("Ver ›", hasta 2 botones o el menú "⋮"). Se aplica a los listados de las specs 1–5 (revisión hecha al cerrar la SPEC-5).
 - v3 (2026-10-18): el pie de la tienda va al final del documento y nunca se ve en la pantalla inicial (boceto P-0b-01 y CA-0b-20b). Resto de la spec aprobado → **spec aprobada**.
 - v2 (2026-10-18): bocetos aprobados; cada pantalla reserva su diseño de alta fidelidad (etapa de diseño). Landing → spec 3. Clientes de API versionados en Git (R5).
 - v1 (2026-10-18): borrador inicial.
@@ -191,6 +192,13 @@ CA-0b-27  Dado el pipe de precio
 CA-0b-28  Dado la tabla paginada del backoffice
           Cuando cambio de página, tamaño u orden
           Entonces emite page, size y sort en el formato de la API (ADR-015)
+
+CA-0b-28b Dado una tabla del backoffice cuyas filas tienen detalle (R11)
+          Entonces el identificador de la fila es un enlace (Tab, Enter y Ctrl+clic para abrirlo en otra pestaña),
+               toda la fila responde al clic con cambio de color al pasar el mouse,
+               y la última columna muestra "Ver ›", hasta 2 botones de acción o el menú "⋮" si son 3 o más
+          Y hacer clic en una acción de esa columna no abre el detalle
+          Y en una tabla sin detalle (p. ej. movimientos o errores de una carga), las filas no son clicables
 ```
 
 ### HU-0b-07 — Clientes de API que no se desalinean
@@ -263,6 +271,7 @@ No modifica el backend. Decisiones de implementación del frontend:
 | R8 | **Contador del carrito** | `CarritoContador` (señal en `shared/carrito`): la cabecera lo muestra y la spec 4 lo actualiza. Así 0b no depende de la lógica del carrito |
 | R9 | **Pruebas unitarias** ✅ | El *runner* por defecto del CLI de Angular 22 (Vitest) con Angular Testing Library; se verifica al crear el workspace |
 | R10 | **Accesibilidad** | Componentes de `ui/` con etiquetas, foco visible y contraste del tema (RNF-19 advierte en settings); objetivo Lighthouse ≥ 85 se mide en la spec 8 |
+| R11 | **Filas de las tablas del backoffice** ✅ | Convención única de la tabla paginada de `ui/` (`FsTabla` con `filaEnlace` y `acciones`): (1) el **identificador** de la fila (código, nombre o número) es un `<a routerLink>`; (2) **toda la fila** es clicable, con *hover*, y navega a lo mismo; (3) **última columna de acciones**, alineada a la derecha: "Ver ›" si la fila solo tiene detalle, **1 o 2 botones** si tiene acciones propias, o el menú **"⋮"** (`mat-menu`) si son 3 o más. Los clics en acciones no se propagan a la fila. Si la entidad no tiene página de detalle, el enlace abre su diálogo de edición. Cada spec indica en la pantalla qué abre el enlace y qué acciones lleva la fila |
 
 **Rutas registradas (R2):**
 
@@ -302,7 +311,7 @@ No aplica (no hay base de datos). En el navegador: `localStorage` solo para la c
 | 09–14 | Unitaria | `shared/http/*.spec.ts` con `HttpTestingController` (refresh único con 3 peticiones simultáneas, logout al fallar, mapeo de errores, `X-Carrito-Id`) |
 | 15–19 | Unitaria | pruebas de rutas y guards por app |
 | 20–24 (incl. 20b) | Componente | pruebas de `TiendaShell` y `BackofficeShell` (incluye ancho 390 px) |
-| 25–28 | Componente | pruebas de cada componente de `ui/` y de los pipes |
+| 25–28, 28b | Componente | pruebas de cada componente de `ui/` y de los pipes; `fs-tabla.spec.ts` (enlace, clic en fila, acciones sin propagar, tabla sin detalle) |
 | 29 | Script | `npm run api:generate` en CI |
 
 ## 8. Archivos y carpetas que toca
@@ -319,7 +328,7 @@ No aplica (no hay base de datos). En el navegador: `localStorage` solo para la c
 
 ## 9. Definición de terminado
 
-- [ ] CA-0b-01 a CA-0b-30 (y CA-0b-20b) cumplidos.
+- [ ] CA-0b-01 a CA-0b-30 (y CA-0b-20b, CA-0b-28b) cumplidos.
 - [ ] Las dos apps arrancan contra la plataforma 0a y muestran la marca de settings (con los datos semilla).
 - [ ] `/_ui` muestra todos los componentes de `ui/` en ambas apps.
 - [ ] Sin tokens en `localStorage`; sin atribución de IA en commits.

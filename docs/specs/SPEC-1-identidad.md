@@ -1,11 +1,12 @@
 # SPEC-1 — Identidad
 
-> Versión: **v3 (aprobado)** — 2026-10-18 · Estados: ✅ decidido · 🟡 propuesto · ❓ abierto
+> Versión: **v4 (aprobado)** — 2026-10-18 · Estados: ✅ decidido · 🟡 propuesto · ❓ abierto
 > **Dueña de:** `backend/auth-service` (lógica, controladores, emisión de JWT) · tienda: `features/acceso`, `features/cuenta` · backoffice: `features/acceso`, `features/perfil`, `features/usuarios`.
 > **Depende de:** 0a, 0b · **Habilita:** todas las pantallas protegidas; spec 4 (datos del destinatario en el checkout).
 > **Contratos:** `contracts/openapi/auth-service.yaml`; eventos `ClienteRegistrado`, `PasswordResetSolicitado`, `PasswordCambiado`.
 
 **Historial:**
+- v4 (2026-10-18): P-1-08 y P-1-09 indican qué abre el enlace de cada fila y sus acciones, según la convención de tablas de la SPEC-0b (R11). Bocetos actualizados.
 - v3 (2026-10-18): por la SPEC-4 (O2), `DialogoDireccion` queda **reutilizable** (A6): el checkout lo abre para agregar una dirección sin salir de la página.
 - v2 (2026-10-18): spec aprobada. A2: al borrar la predeterminada pasa a serlo la dirección creada más recientemente. Datos de demostración en dev aprobados.
 - v1 (2026-10-18): borrador inicial.
@@ -315,11 +316,13 @@ CA-1-38  Cuando arranca auth sin ningún ADMIN y con FITSTORE_ADMIN_EMAIL y FITS
 - **Boceto:** ![P-1-08](img/P-1-08-staff.png)
 - **Diseño de alta fidelidad:** 🕓 deriva del sistema de diseño (patrón "tabla" de la lista de pedidos).
 - **Componentes:** `StaffPage` (tabla paginada de `ui/`, filtros por rol y estado), `DialogoStaff` (invitar / editar), confirmación al desactivar.
+- **Tabla (0b R11):** el **nombre** abre el diálogo de edición (`DialogoStaff`; no hay página de detalle); acciones según el estado, como máximo 2: "Editar" y "Desactivar" (activo), "Reenviar invitación" (invitación pendiente), "Activar" (inactivo).
 - **Endpoints:** `GET/POST /staff`, `GET/PUT /staff/{id}`, `PATCH /staff/{id}/desactivar|activar`, `POST /staff/{id}/reenviar-invitacion`.
 
 ### P-1-09 — Clientes
 
 - **Ruta / proyecto:** `/clientes` y `/clientes/:id` · backoffice · OPERADOR (ver), ADMIN (bloquear).
+- **Tabla (0b R11):** el **nombre** abre `/clientes/:id`; acción "Ver ›". "Bloquear" y "Ver sus pedidos" están en el detalle.
 - **Boceto:** ![P-1-09](img/P-1-09-clientes.png)
 - **Diseño de alta fidelidad:** 🕓 deriva del sistema de diseño.
 - **Endpoints:** `GET /clientes`, `GET /clientes/{id}`, `PATCH /clientes/{id}/desactivar|activar`.

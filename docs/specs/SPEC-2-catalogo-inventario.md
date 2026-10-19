@@ -1,11 +1,12 @@
 # SPEC-2 — Catálogo e inventario
 
-> Versión: **v4 (aprobado)** — 2026-10-18 · Estados: ✅ decidido · 🟡 propuesto · ❓ abierto
+> Versión: **v5 (aprobado)** — 2026-10-18 · Estados: ✅ decidido · 🟡 propuesto · ❓ abierto
 > **Dueña de:** `backend/catalog-service` (módulos catálogo e inventario) · tienda: `features/catalogo` · backoffice: `features/catalogo`, `features/inventario`.
 > **Depende de:** 0a, 0b, 1 (sesión de staff) · **Habilita:** 3 (destacados de la landing), 4 (cotización y reserva), 8.
 > **Contratos:** `contracts/openapi/catalog-service.yaml` (incluye `/internal/v1/inventario/reservas`); usa el contrato de order (`POST /carrito/items`); eventos `StockBajo`, `StockNoConfirmado` (publica) y `PedidoPagado`, `PedidoCancelado`, `PedidoExpirado` (consume).
 
 **Historial:**
+- v5 (2026-10-18): convención de tablas de la SPEC-0b (R11) aplicada a P-2-03, P-2-07, P-2-08 y P-2-09 (y señalada como no aplicable en P-2-05 y P-2-06); P-2-04 se abre en solo lectura para OPERADOR (antes la ruta era solo ADMIN, aunque P-2-03 le permitía ver los productos). Bocetos actualizados.
 - v4 (2026-10-18): por decisión de la SPEC-3 (S2), el stock mínimo por defecto y el margen de reserva se editan en Configuración de tienda (P-3-04, pestaña Parámetros); se quita `DialogoConfiguracionInventario` de P-2-07. El endpoint sigue siendo de esta spec.
 - v3 (2026-10-18): categorías semilla definidas (Shorts y Faldas dentro de Leggings y pantalones; Vestidos como raíz) → **spec aprobada**.
 - v2 (2026-10-18): galería solo del color elegido y colores sin stock no seleccionables; publicar exige foto por color; nueva HU-2-12 de carga masiva (P-2-09); filtros de categoría en lista vertical; nombres de categorías propuestos; fotos de demo libres con variantes de color generadas; SKU aprobado.
@@ -348,13 +349,14 @@ CA-2-57  Dado Redis caído
 ### P-2-03 — Productos (backoffice)
 
 - **Ruta / proyecto:** `/catalogo/productos` · backoffice · ADMIN (OPERADOR solo lectura).
+- **Tabla (0b R11):** el **nombre del producto** abre `/catalogo/productos/:id` (P-2-04; en modo solo lectura para OPERADOR); acciones: menú "⋮" para ADMIN (Editar, Publicar o Desactivar, Eliminar) y "Ver ›" para OPERADOR.
 - **Boceto:** ![P-2-03](img/P-2-03-productos.png)
 - **Diseño de alta fidelidad:** 🕓 deriva del sistema de diseño (patrón "tabla").
 - **Endpoints:** `GET /admin/productos`.
 
 ### P-2-04 — Formulario de producto
 
-- **Ruta / proyecto:** `/catalogo/productos/nuevo` y `/catalogo/productos/:id` · backoffice · ADMIN.
+- **Ruta / proyecto:** `/catalogo/productos/nuevo` y `/catalogo/productos/:id` · backoffice · ADMIN (OPERADOR: `/:id` en solo lectura, sin botones de guardar ni publicar, como en P-2-03).
 - **Boceto:** ![P-2-04](img/P-2-04-producto-form.png)
 - **Diseño de alta fidelidad:** 🕓 **pantalla clave** (patrón "formulario").
 - **Componentes:** `ProductoFormPage` con pestañas Datos, Variantes (`GeneradorMatriz`, `TablaVariantes`), Imágenes (subida de `ui/` + orden arrastrable + color + principal), Descuento (`EditorTramos` en modo personalizado); `AvisoPublicacion` con la lista de faltantes.
@@ -366,6 +368,7 @@ CA-2-57  Dado Redis caído
 - **Boceto:** ![P-2-05](img/P-2-05-categorias.png)
 - **Diseño de alta fidelidad:** 🕓 deriva del sistema de diseño.
 - **Componentes:** `ArbolCategorias` (arrastrable, 2 niveles), `DialogoCategoria`, `EditorGuiaTallas` (tabla editable).
+- **R11 no aplica:** es un árbol, no una tabla; cada nodo muestra sus acciones (Editar, Desactivar) y la guía de tallas se edita al seleccionarlo.
 - **Endpoints:** `/admin/categorias/**`, `PUT /admin/categorias/{id}/guia-tallas`.
 
 ### P-2-06 — Tallas, colores y política de descuentos
@@ -374,6 +377,7 @@ CA-2-57  Dado Redis caído
 - **Boceto:** ![P-2-06](img/P-2-06-maestros-descuentos.png)
 - **Diseño de alta fidelidad:** 🕓 deriva del sistema de diseño.
 - **Componentes:** `ListaTallas` (arrastrable), `ListaColores` (con selector de color), `EditorTramos` (reutilizado en P-2-04), vista previa del texto de la tienda.
+- **R11 no aplica:** son listas editables en el sitio (sin página de detalle).
 - **Endpoints:** `/admin/tallas/**`, `/admin/colores/**`, `GET/PUT /admin/descuentos`.
 
 ### P-2-07 — Inventario
@@ -382,6 +386,7 @@ CA-2-57  Dado Redis caído
 - **Boceto:** ![P-2-07](img/P-2-07-inventario.png)
 - **Diseño de alta fidelidad:** 🕓 deriva del sistema de diseño (patrón "tabla").
 - **Componentes:** `InventarioPage` (tabla con filas resaltadas por stock bajo y agotado), `DialogoEntrada` (varias líneas), `DialogoAjuste`. La configuración de inventario de la tienda se edita en P-3-04 (SPEC-3).
+- **Tabla (0b R11):** el **SKU** abre el kardex (`/inventario/:varianteId`, P-2-08); acciones: "Kardex ›" y "Mínimo" (diálogo para el umbral propio del SKU, CA-2-43).
 - **Endpoints:** `GET /admin/inventario`, `POST /admin/inventario/entradas|ajustes`, `PATCH /admin/inventario/{varianteId}/minimo`, `GET/PUT /admin/inventario/configuracion`.
 
 ### P-2-09 — Carga masiva
@@ -390,11 +395,13 @@ CA-2-57  Dado Redis caído
 - **Boceto:** ![P-2-09](img/P-2-09-carga-masiva.png)
 - **Diseño de alta fidelidad:** 🕓 deriva del sistema de diseño.
 - **Componentes:** `CargaMasivaPage` en 3 pasos: (1) descargar plantilla, (2) subir y ver el informe (resumen + tabla de errores por fila), (3) confirmar y ver el resultado con enlaces a los productos creados.
+- **Tabla (0b R11):** la tabla de errores no tiene detalle (filas no clicables).
 - **Endpoints:** `GET /admin/productos/carga-masiva/plantilla`, `POST …/validar`, `POST …/{validacionId}/confirmar`.
 
 ### P-2-08 — Kardex
 
 - **Ruta / proyecto:** `/inventario/:varianteId` · backoffice · OPERADOR y ADMIN.
+- **Tabla (0b R11):** los movimientos no tienen detalle (filas no clicables); el código de pedido de una venta o reserva, si existe, es un enlace a `/pedidos?codigo=…`.
 - **Boceto:** ![P-2-08](img/P-2-08-kardex.png)
 - **Diseño de alta fidelidad:** 🕓 deriva del sistema de diseño.
 - **Endpoints:** `GET /admin/inventario/{varianteId}/movimientos`.

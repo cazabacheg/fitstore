@@ -1,11 +1,12 @@
 # SPEC-4 — Pedidos
 
-> Versión: **v4 (aprobado)** — 2026-10-18 · Estados: ✅ decidido · 🟡 propuesto · ❓ abierto
+> Versión: **v5 (aprobado)** — 2026-10-18 · Estados: ✅ decidido · 🟡 propuesto · ❓ abierto
 > **Dueña de:** `backend/order-service` (carrito, checkout, pedidos, saga) · tienda: `features/carrito`, `features/checkout`, `features/mis-pedidos` · backoffice: `features/pedidos`.
 > **Depende de:** 0a, 0b, 1 (sesión y direcciones) · usa los contratos de catalog (cotizar, reservar), auth (cliente y dirección), delivery (opciones y cotización de envío) y settings (parámetros y ubigeo) · **Habilita:** 5 (pago del pedido), 6 (entrega desde `PedidoListoDespacho`), 7 (correos del pedido), 8 (dashboard y E2E).
 > **Contratos:** `contracts/openapi/order-service.yaml`; eventos que publica `PedidoCreado`, `PedidoPagado`, `PedidoCancelado`, `PedidoExpirado`, `PagoNoAplicable`, `PedidoListoDespacho`, `PedidoListoRecojo`, `PedidoRecogido`, `ReembolsoSolicitado`; consume `PagoConfirmado`, `PagoRechazado`, `BoletaEmitida`, `PagoReembolsado`, `EntregaActualizada`.
 
 **Historial:**
+- v5 (2026-10-18): P-4-05 y P-4-06 indican qué abre el enlace de cada fila y sus acciones, según la convención de tablas de la SPEC-0b (R11). Boceto P-4-05 actualizado.
 - v4 (2026-10-18): nueva **HU-4-12 Reembolso postventa** (CA-4-54 a 59) decidida en la SPEC-5 (también en el alcance, los eventos del encabezado, Postman y la demostración): total o parcial desde un pedido entregado, solo ADMIN, plazo configurable (0 = sin límite); las ventas restan lo reembolsado (CA-4-52). Micro de order v6.
 - v3 (2026-10-18): O3 y O6 aprobados (micro de order v5) → **spec aprobada**.
 - v2 (2026-10-18): O1 ✅ checkout en una sola página; O2 ✅ la nueva dirección se agrega en un diálogo sobre el checkout (reutiliza `DialogoDireccion` de la SPEC-1, A6); cada etapa del seguimiento lleva una breve descripción debajo de su nombre (O9).
@@ -373,6 +374,7 @@ CA-4-59  Un OPERADOR no ve el botón y la API le responde 403
 - **Boceto:** ![P-4-05](img/P-4-05-pedidos.png)
 - **Diseño de alta fidelidad:** 🕓 **pantalla clave** (lista de pedidos).
 - **Componentes:** `PedidosPage` con chips de contador por estado, `FiltrosPedidos` (sincronizados con la URL), tabla paginada de 0b.
+- **Tabla (0b R11):** el **código del pedido** abre `/pedidos/:id`; acción "Ver ›". Avanzar, cancelar y reembolsar están en el detalle.
 - **Endpoints:** `GET /admin/pedidos?estado=&modalidad=&desde=&hasta=&codigo=&cliente=&clienteId=&page=` (devuelve también los contadores por estado).
 
 ### P-4-06 — Detalle de pedido (backoffice)
@@ -381,6 +383,7 @@ CA-4-59  Un OPERADOR no ve el botón y la API le responde 403
 - **Boceto:** ![P-4-06](img/P-4-06-detalle-pedido.png)
 - **Diseño de alta fidelidad:** 🕓 **pantalla clave**.
 - **Componentes:** `DetallePedidoAdminPage`, `AccionesEstado` (botones según `transicionesPermitidas` que envía la API), `DialogoComentario`, `DialogoRecogido` (casilla "verifiqué el DNI"), `DialogoCancelarStaff` (motivo), `DialogoReembolsoPostventa` (solo ADMIN y pedidos ENTREGADO dentro del plazo: prendas y cantidades, monto propuesto editable, motivo, nota, máximo a devolver), `HistorialPedido`, etiqueta "Reembolso parcial" / "Reembolsado".
+- **Tabla (0b R11):** la tabla de productos del pedido no tiene detalle (filas no clicables); el SKU es un enlace a su kardex (`/inventario/:varianteId`).
 - **Estados:** conflicto (409), acción en curso, pedido final (sin acciones).
 - **Endpoints:** `GET /admin/pedidos/{id}` (incluye `reembolsoPostventa: {permitido, maximo, venceEl}`), `PATCH /admin/pedidos/{id}/estado`, `PATCH /admin/pedidos/{id}/cancelar`, `POST /admin/pedidos/{id}/reembolsos`.
 

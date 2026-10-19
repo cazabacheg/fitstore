@@ -1,16 +1,17 @@
 # SPEC-5 — Pagos
 
-> Versión: **v3 (borrador)** — 2026-10-18 · Estados: ✅ decidido · 🟡 propuesto · ❓ abierto
+> Versión: **v4 (aprobado)** — 2026-10-18 · Estados: ✅ decidido · 🟡 propuesto · ❓ abierto
 > **Dueña de:** `backend/payment-service` (intención, cobros, webhooks, reembolsos, boleta) · tienda: `features/pago` · backoffice: `features/pagos`.
 > **Depende de:** 0a, 0b, 1 (sesión) · usa el contrato de eventos de order (`PedidoCreado`, `PedidoCancelado`, `PedidoExpirado`, `PagoNoAplicable`, `ReembolsoSolicitado`) y `GET /settings/public` · **Habilita:** 4 (el pedido pasa a `PAGADO`, guarda la boleta y registra lo reembolsado), 7 (correos de pago, reembolso y alerta con la boleta adjunta), 8 (demo de punta a punta).
 > **Contratos:** `contracts/openapi/payment-service.yaml`; eventos que publica `PagoConfirmado`, `PagoRechazado`, `BoletaEmitida`, `PagoReembolsado`, `ReembolsoFallido`.
 
 **Historial:**
+- v4 (2026-10-18): P-5-03, P-5-04 y P-5-05 con la convención de tablas de la SPEC-0b (R11) → **spec aprobada**.
 - v3 (2026-10-18): **reembolso postventa**: además de la cancelación, un pedido entregado puede reembolsarse total o parcialmente desde el pedido (SPEC-4 HU-4-12); varios reembolsos por pago; la intención pasa a `REEMBOLSADA_PARCIAL` / `REEMBOLSADA` y el estado fallido vive en cada reembolso (P8). Micros de payment v6, order v6, settings v8, notification v6; macro v20; SPEC-3 v4 y SPEC-4 v4. Revisión completa de las menciones de reembolso (alcance, resolución manual con `PagoReembolsado`, datos, Postman, demo).
 - v2 (2026-10-18): P1 ✅ la prueba de concepto del sandbox es la primera tarea de la implementación; P2 ✅ se mantiene el proveedor simulado (respaldo de la demo y pruebas sin internet).
 - v1 (2026-10-18): borrador inicial.
 
-**Estado de revisión por sección:** 1 ⏳ · 2 ⏳ · 3 ⏳ · 4 ⏳ · 5 ⏳ · 6 ⏳ · 7 ⏳ · 8 ⏳ · 9 ⏳
+**Estado de revisión por sección:** 1 ✅ · 2 ✅ · 3 ✅ · 4 ✅ · 5 ✅ · 6 ✅ · 7 ✅ · 8 ✅ · 9 ✅
 
 ---
 
@@ -281,6 +282,7 @@ CA-5-38  Cuando lo marco como resuelto manualmente (p. ej. devolví por transfer
 - **Boceto:** ![P-5-03](img/P-5-03-pagos.png)
 - **Diseño de alta fidelidad:** 🕓 deriva del sistema de diseño (patrón "tabla").
 - **Componentes:** `PagosPage`, `FiltrosPagos` (en la URL), tabla paginada, badge de estado de pago de 0b.
+- **Tabla (0b R11):** el **código del pedido** abre el detalle del pago (`/pagos/:id`; desde ahí hay un enlace al pedido); acción "Ver ›".
 - **Endpoints:** `GET /admin/pagos?estado=&proveedor=&desde=&hasta=&codigo=&page=`.
 
 ### P-5-04 — Detalle de pago (backoffice)
@@ -289,6 +291,7 @@ CA-5-38  Cuando lo marco como resuelto manualmente (p. ej. devolví por transfer
 - **Boceto:** ![P-5-04](img/P-5-04-detalle-pago.png)
 - **Diseño de alta fidelidad:** 🕓 deriva del sistema de diseño.
 - **Componentes:** `DetallePagoPage`, `TablaIntentos`, `ListaReembolsos` (cada uno con motivo, monto, estado, intentos y nota), `TarjetaBoleta`.
+- **Tabla (0b R11):** la tabla de intentos no tiene detalle (filas no clicables); el código del pedido del encabezado enlaza a `/pedidos/:id`.
 - **Endpoints:** `GET /admin/pagos/{id}`, `GET /admin/pagos/{id}/boleta`.
 
 ### P-5-05 — Reembolsos (backoffice)
@@ -297,6 +300,7 @@ CA-5-38  Cuando lo marco como resuelto manualmente (p. ej. devolví por transfer
 - **Boceto:** ![P-5-05](img/P-5-05-reembolsos.png)
 - **Diseño de alta fidelidad:** 🕓 deriva del sistema de diseño.
 - **Componentes:** `ReembolsosPage`, `DialogoResolverManual` (nota obligatoria, hasta 500 caracteres), contador de fallidos en el menú (lo consulta el *shell* con `GET /admin/reembolsos?estado=FALLIDO&size=0`).
+- **Tabla (0b R11):** el **código del pedido** abre el detalle del pago al que pertenece el reembolso (`/pagos/:id`); acciones (solo en FALLIDO): "Reintentar" y "Resolver manualmente".
 - **Endpoints:** `GET /admin/reembolsos`, `POST /admin/reembolsos/{id}/reintentar`, `PATCH /admin/reembolsos/{id}/resuelto-manual`.
 
 ### P-5-06 — Boleta (PDF)
