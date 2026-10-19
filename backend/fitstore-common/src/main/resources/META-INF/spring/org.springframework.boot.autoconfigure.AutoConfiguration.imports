@@ -1,0 +1,8 @@
+com.fitstore.common.api.ManejadorErroresAutoConfiguration
+com.fitstore.common.security.FitstoreSecurityAutoConfiguration
+com.fitstore.common.event.EventosAutoConfiguration
+com.fitstore.common.event.OutboxAutoConfiguration
+com.fitstore.common.storage.StorageAutoConfiguration
+com.fitstore.common.feign.FeignPropagacionAutoConfiguration
+com.fitstore.common.persistence.JsonPersistenciaAutoConfiguration
+com.fitstore.common.feign.ResilienciaAutoConfiguration

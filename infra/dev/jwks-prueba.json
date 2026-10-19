@@ -1,0 +1,13 @@
+{
+  "_aviso": "CLAVE DE PRUEBA SOLO PARA DESARROLLO (SPEC-0a I2). No es un secreto real: no protege nada. Se elimina al cerrar la spec 1, cuando auth-service firme los tokens.",
+  "keys": [
+    {
+      "kty": "RSA",
+      "use": "sig",
+      "alg": "RS256",
+      "kid": "fitstore-dev-prueba",
+      "n": "oldKJJ1A-woXTjaib4H7rkr6mj21cECVzr4uoz2DYxgG5wrnNoDfz3ZrVZ8uMwS17lWTpq_A7nZzAYi-8u9obv1iAp_MjIzgciiF5g6vL5jcJz0Lgan8sFnNEsjeUX6dUvXL9cugPvYXwhc9fgCP3qXhKXUY-1ZkYOjD_6TKxVPnaUmqjlJ9VNLFAMZZQiOOiaBK8wj-77gN0W6NIh0EIVj4CL2Vvujw412ceQkw4AMAij13hmILOEeJsLE6B5Ih7ZngWip_9ttVJBQ5BTQFezP7atKE7-xYLZZSW7kTGHeUsknFjzEbUDP2fEFwXenUrEXQpd2-8zRhWA1GqfmH1Q",
+      "e": "AQAB"
+    }
+  ]
+}

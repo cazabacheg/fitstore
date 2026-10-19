@@ -1,0 +1,266 @@
+# FitStore: base común del compose (infraestructura 6). Memoria total ≈ 4,6 GB (RNF-03).
+# Orden de arranque (6.2): postgres, redis, rabbitmq, garage → config-server → discovery-server →
+# servicios de negocio → api-gateway. Con docker-compose.dev.yml se añaden Mailpit, puertos y el perfil dev.
+name: fitstore
+
+x-servicio-java: &servicio-java
+  restart: unless-stopped
+  env_file: .env
+  environment: &entorno-java
+    CONFIG_HOST: config-server
+  depends_on: &espera-servicio
+    config-server:
+      condition: service_healthy
+    discovery-server:
+      condition: service_healthy
+    postgres:
+      condition: service_healthy
+    redis:
+      condition: service_healthy
+    rabbitmq:
+      condition: service_healthy
+
+services:
+  # --- Infraestructura ---
+  postgres:
+    image: postgres:17.10
+    restart: unless-stopped
+    mem_limit: 512m
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      # init.sql lee estos valores con \getenv para crear las 7 bases y los 7 usuarios
+      AUTH_DB_USER: ${AUTH_DB_USER}
+      AUTH_DB_PASSWORD: ${AUTH_DB_PASSWORD}
+      CATALOG_DB_USER: ${CATALOG_DB_USER}
+      CATALOG_DB_PASSWORD: ${CATALOG_DB_PASSWORD}
+      SETTINGS_DB_USER: ${SETTINGS_DB_USER}
+      SETTINGS_DB_PASSWORD: ${SETTINGS_DB_PASSWORD}
+      ORDER_DB_USER: ${ORDER_DB_USER}
+      ORDER_DB_PASSWORD: ${ORDER_DB_PASSWORD}
+      PAYMENT_DB_USER: ${PAYMENT_DB_USER}
+      PAYMENT_DB_PASSWORD: ${PAYMENT_DB_PASSWORD}
+      DELIVERY_DB_USER: ${DELIVERY_DB_USER}
+      DELIVERY_DB_PASSWORD: ${DELIVERY_DB_PASSWORD}
+      NOTIFICATION_DB_USER: ${NOTIFICATION_DB_USER}
+      NOTIFICATION_DB_PASSWORD: ${NOTIFICATION_DB_PASSWORD}
+    volumes:
+      - postgres-datos:/var/lib/postgresql/data
+      - ./postgres/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  redis:
+    image: redis:8.10.1
+    restart: unless-stopped
+    mem_limit: 96m
+    command: ["redis-server", "--maxmemory", "64mb", "--maxmemory-policy", "allkeys-lru", "--save", ""]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  rabbitmq:
+    image: rabbitmq:4.3.5-management
+    restart: unless-stopped
+    mem_limit: 384m
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD}
+    volumes:
+      - rabbitmq-datos:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 10s
+      timeout: 10s
+      retries: 20
+      start_period: 20s
+
+  garage:
+    image: dxflrs/garage:v2.4.1
+    restart: unless-stopped
+    mem_limit: 96m
+    environment:
+      GARAGE_RPC_SECRET: ${GARAGE_RPC_SECRET}
+      GARAGE_ADMIN_TOKEN: ${GARAGE_ADMIN_TOKEN}
+    volumes:
+      - ./garage/garage.toml:/etc/garage.toml:ro
+      - garage-meta:/var/lib/garage/meta
+      - garage-datos:/var/lib/garage/data
+    healthcheck:
+      # La imagen no trae shell: el propio binario consulta el estado del nodo
+      test: ["CMD", "/garage", "-c", "/etc/garage.toml", "status"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  # Crea el layout, la clave de acceso y los dos buckets la primera vez (SPEC-0a I5)
+  garage-init:
+    image: curlimages/curl:8.22.0
+    restart: "no"
+    mem_limit: 32m
+    depends_on:
+      garage:
+        condition: service_healthy
+    environment:
+      GARAGE_ADMIN_URL: http://garage:3903
+      GARAGE_ADMIN_TOKEN: ${GARAGE_ADMIN_TOKEN}
+      S3_ACCESS_KEY: ${S3_ACCESS_KEY}
+      S3_SECRET_KEY: ${S3_SECRET_KEY}
+      BUCKET_PUBLICO: ${S3_BUCKET_PUBLICO}
+      BUCKET_PRIVADO: ${S3_BUCKET_PRIVADO}
+    volumes:
+      - ./garage/garage-init.sh:/garage-init.sh:ro
+    entrypoint: ["sh", "/garage-init.sh"]
+
+  jaeger:
+    image: jaegertracing/jaeger:2.21.0
+    restart: unless-stopped
+    mem_limit: 256m
+    # All-in-one con almacenamiento en memoria; recibe OTLP en 4317 (gRPC) y 4318 (HTTP)
+
+  # --- Plataforma ---
+  config-server:
+    build:
+      context: ..
+      dockerfile: backend/config-server/Dockerfile
+    image: fitstore/config-server:dev
+    restart: unless-stopped
+    mem_limit: 256m
+    environment:
+      CONFIG_USER: ${CONFIG_USER}
+      CONFIG_PASSWORD: ${CONFIG_PASSWORD}
+    volumes:
+      - ./config-repo:/config-repo:ro
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      garage:
+        condition: service_healthy
+
+  discovery-server:
+    build:
+      context: ..
+      dockerfile: backend/discovery-server/Dockerfile
+    image: fitstore/discovery-server:dev
+    restart: unless-stopped
+    mem_limit: 256m
+    depends_on:
+      config-server:
+        condition: service_healthy
+
+  # --- Servicios de negocio ---
+  auth-service:
+    <<: *servicio-java
+    build:
+      context: ..
+      dockerfile: backend/auth-service/Dockerfile
+    image: fitstore/auth-service:dev
+    mem_limit: 320m
+
+  catalog-service:
+    <<: *servicio-java
+    build:
+      context: ..
+      dockerfile: backend/catalog-service/Dockerfile
+    image: fitstore/catalog-service:dev
+    mem_limit: 320m
+    depends_on:
+      <<: *espera-servicio
+      garage-init:
+        condition: service_completed_successfully
+
+  settings-service:
+    <<: *servicio-java
+    build:
+      context: ..
+      dockerfile: backend/settings-service/Dockerfile
+    image: fitstore/settings-service:dev
+    mem_limit: 320m
+    depends_on:
+      <<: *espera-servicio
+      garage-init:
+        condition: service_completed_successfully
+
+  order-service:
+    <<: *servicio-java
+    build:
+      context: ..
+      dockerfile: backend/order-service/Dockerfile
+    image: fitstore/order-service:dev
+    mem_limit: 320m
+
+  payment-service:
+    <<: *servicio-java
+    build:
+      context: ..
+      dockerfile: backend/payment-service/Dockerfile
+    image: fitstore/payment-service:dev
+    mem_limit: 320m
+    depends_on:
+      <<: *espera-servicio
+      garage-init:
+        condition: service_completed_successfully
+
+  delivery-service:
+    <<: *servicio-java
+    build:
+      context: ..
+      dockerfile: backend/delivery-service/Dockerfile
+    image: fitstore/delivery-service:dev
+    mem_limit: 320m
+
+  notification-service:
+    <<: *servicio-java
+    build:
+      context: ..
+      dockerfile: backend/notification-service/Dockerfile
+    image: fitstore/notification-service:dev
+    mem_limit: 320m
+
+  # --- Punto de entrada ---
+  api-gateway:
+    build:
+      context: ..
+      dockerfile: backend/api-gateway/Dockerfile
+    image: fitstore/api-gateway:dev
+    restart: unless-stopped
+    mem_limit: 256m
+    env_file: .env
+    environment:
+      CONFIG_HOST: config-server
+    depends_on:
+      config-server:
+        condition: service_healthy
+      discovery-server:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      auth-service:
+        condition: service_healthy
+      catalog-service:
+        condition: service_healthy
+      settings-service:
+        condition: service_healthy
+      order-service:
+        condition: service_healthy
+      payment-service:
+        condition: service_healthy
+      delivery-service:
+        condition: service_healthy
+      notification-service:
+        condition: service_healthy
+
+volumes:
+  postgres-datos:
+  rabbitmq-datos:
+  garage-meta:
+  garage-datos:

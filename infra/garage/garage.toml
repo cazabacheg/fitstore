@@ -1,0 +1,23 @@
+# Garage (almacenamiento S3 compatible) para dev y para la VM. Un solo nodo, sin replicación.
+# Los secretos NO van aquí: GARAGE_RPC_SECRET y GARAGE_ADMIN_TOKEN se pasan por variables de entorno (.env).
+metadata_dir = "/var/lib/garage/meta"
+data_dir = "/var/lib/garage/data"
+db_engine = "lmdb"
+replication_factor = 1
+
+rpc_bind_addr = "[::]:3901"
+rpc_public_addr = "garage:3901"
+
+[s3_api]
+s3_region = "garage"
+api_bind_addr = "[::]:3900"
+root_domain = ".s3.garage"
+
+# Endpoint web: sirve sin credenciales los buckets con acceso web habilitado (bucket público de medios).
+[s3_web]
+bind_addr = "[::]:3902"
+root_domain = ".web.localhost"
+index = "index.html"
+
+[admin]
+api_bind_addr = "[::]:3903"

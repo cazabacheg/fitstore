@@ -1,0 +1,6 @@
+eureka:
+  server:
+    # En dev un servicio caído debe desaparecer rápido del registro (infraestructura 3)
+    enable-self-preservation: false
+    eviction-interval-timer-in-ms: 5000
+    response-cache-update-interval-ms: 3000
