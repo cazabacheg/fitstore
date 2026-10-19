@@ -1,9 +1,10 @@
 # FitStore — Análisis micro: `order-service`
 
-> Versión: **v4 (aprobado)** — 2026-10-16. Fuente: [`01-analisis-macro.md`](../01-analisis-macro.md) v12.
+> Versión: **v5 (aprobado)** — 2026-10-18. Fuente: [`01-analisis-macro.md`](../01-analisis-macro.md) v12.
 > Estados: ✅ decidido · 🟡 propuesto · ❓ abierto · 🕓 diferido
 
 **Historial:**
+- v5 (2026-10-18): desde la SPEC-4: los pedidos de un cliente usan `GET /admin/pedidos?clienteId=` (se quita `/admin/clientes/{clienteId}/pedidos`, O3); las ventas del resumen se cuentan por la fecha del paso a `PAGADO` y sin los cancelados, con índice `pedido_historial (estado_nuevo, creado_en)` (O6).
 - v4 (2026-10-18): sección 10 aprobada → **documento completo aprobado**.
 - v3 (2026-10-18): sección 10 (diseño técnico) redactada: C3, código de las partes críticas, paquetes, dependencias, configuración e infraestructura.
 - v2 (2026-10-16): todas las secciones aprobadas sin cambios (D1–D8, límites del carrito, cancelación del cliente solo en `PENDIENTE_PAGO`/`PAGADO`, caché de 5 min para settings). Cambios propagados al macro v13.
@@ -144,7 +145,7 @@ classDiagram
 |---|---|---|
 | `pedido` | `id` (uuid), `codigo`, `cliente_id`, `estado`, `modalidad` (`DELIVERY_LOCAL`, `AGENCIA`, `RECOJO`); destinatario: `dest_nombres`, `dest_apellidos`, `dest_dni`, `dest_telefono`, `dest_email`; dirección: `dir_ubigeo`, `dir_departamento`, `dir_provincia`, `dir_distrito`, `dir_direccion`, `dir_referencia`; envío: `agencia_id`, `agencia_nombre`, `plazo_dias_min`, `plazo_dias_max`, `codigo_seguimiento`; montos: `subtotal`, `descuento_total`, `costo_envio`, `total`; `expira_en`, `boleta_url`, `idempotency_key`, `notas`, `creado_en`, `actualizado_en`, `version` | Único `codigo`; único `(cliente_id, idempotency_key)`; índices `(cliente_id, creado_en DESC)`, `(estado, creado_en)`, parcial `(expira_en) WHERE estado = 'PENDIENTE_PAGO'`; `CHECK` de montos ≥ 0 |
 | `pedido_item` | `id`, `pedido_id`, `variante_id`, `producto_id`, `sku`, `producto_nombre`, `talla`, `color`, `imagen_url`, `precio_unitario`, `cantidad`, `descuento_porcentaje`, `descuento_monto`, `total` | `CHECK cantidad > 0`; índice `producto_id` (top de productos) |
-| `pedido_historial` | `id`, `pedido_id`, `estado_anterior`, `estado_nuevo`, `actor_tipo` (`CLIENTE`, `STAFF`, `SISTEMA`), `actor_id`, `comentario`, `creado_en` | Índice `(pedido_id, creado_en)` |
+| `pedido_historial` | `id`, `pedido_id`, `estado_anterior`, `estado_nuevo`, `actor_tipo` (`CLIENTE`, `STAFF`, `SISTEMA`), `actor_id`, `comentario`, `creado_en` | Índices `(pedido_id, creado_en)` y `(estado_nuevo, creado_en)` (ventas por fecha de pago) |
 | `pedido_codigo_seq` | secuencia | Genera el número de `FS-000123` |
 
 **Comunes:** `outbox_evento` y `evento_procesado` (ADR-009).
@@ -190,12 +191,11 @@ El TTL de Redis resuelve la expiración de carritos abandonados (RF-CRT-04) sin 
 
 | Método | Ruta | Descripción |
 |---|---|---|
-| GET | `/api/v1/admin/pedidos` | Listar con filtros: estado, modalidad, fechas, código, cliente (nombre, correo o DNI) |
+| GET | `/api/v1/admin/pedidos` | Listar con filtros: estado, modalidad, fechas, código, cliente (nombre, correo o DNI) o `clienteId` (historial de un cliente, CU-29); incluye contadores por estado |
 | GET | `/api/v1/admin/pedidos/{id}` | Detalle completo con historial |
 | PATCH | `/api/v1/admin/pedidos/{id}/estado` | Avanzar estado `{nuevoEstado, comentario?}`: `EN_PREPARACION`, `LISTO_DESPACHO`, `LISTO_RECOJO`, `ENTREGADO` (solo recojo) |
 | PATCH | `/api/v1/admin/pedidos/{id}/cancelar` | Cancelar con motivo obligatorio |
-| GET | `/api/v1/admin/clientes/{clienteId}/pedidos` | Historial de un cliente (CU-29) |
-| GET | `/api/v1/admin/pedidos/resumen?desde=&hasta=` | Datos del dashboard: ventas (día, semana, mes), pedidos por estado, top 5 productos |
+| GET | `/api/v1/admin/pedidos/resumen?desde=&hasta=` | Datos del dashboard: ventas (día, semana, mes, por fecha de pago y sin cancelados), pedidos por estado, top 5 productos |
 
 El dashboard (RF-BO-01) lo arma el backoffice llamando a order (ventas y pedidos), catalog (stock bajo) y delivery (entregas del día); no hay un servicio agregador (KISS).
 

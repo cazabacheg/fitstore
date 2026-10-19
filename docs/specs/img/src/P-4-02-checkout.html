@@ -1,0 +1,28 @@
+<!doctype html><html><head><meta charset="utf-8"><link rel="stylesheet" href="_boceto.css"><style>body{width:1440px}</style></head><body>
+<h1 class="title">P-4-02 · Checkout — /checkout · CLIENTE (pantalla clave) · una sola página (O1)</h1><div class="shell">cabecera de la tienda</div>
+<div class="row" style="align-items:flex-start;padding:20px 32px;gap:28px">
+<div class="col sp"><div class="t" style="font-size:24px">Finalizar compra</div>
+<div class="card col"><b>1. ¿Dónde lo recibes?</b>
+<div class="b row pad" style="outline:3px solid #0d9488"><span>◉</span><div class="col sp" style="gap:2px"><b>Casa (predeterminada)</b><span class="s">Jr. Gamarra 123, dpto 4 · La Victoria, Lima, Lima · Ref.: frente al parque</span></div></div>
+<div class="b row pad"><span>○</span><div class="col sp" style="gap:2px"><b>Trabajo</b><span class="s">Calle Mercaderes 456 · Cercado, Arequipa, Arequipa</span></div></div>
+<div class="btn b" style="align-self:flex-start">+ Agregar dirección</div>
+<div class="card col" style="border-style:dashed;margin-left:30px;background:#fafafa"><b>Nueva dirección (diálogo sobre el checkout · DialogoDireccion de la SPEC-1, O2)</b>
+<div class="row"><div class="f sp">Alias: Casa de mamá</div><div class="f sp">Departamento ▾</div><div class="f sp">Provincia ▾</div><div class="f sp">Distrito ▾</div></div>
+<div class="row"><div class="f sp">Dirección</div><div class="f sp">Referencia (opcional)</div></div>
+<div class="row"><span class="s">Al guardar queda elegida y se recalcula el resumen · máx. 10 direcciones</span><span class="sp"></span><div class="btn b">Cancelar</div><div class="btn p">Guardar dirección</div></div></div></div>
+<div class="card col"><b>2. ¿Cómo lo recibes?</b>
+<div class="b row pad" style="outline:3px solid #0d9488"><span>◉</span><div class="col sp" style="gap:2px"><b>Delivery a domicilio</b><span class="s">Llega en 1–2 días hábiles</span></div><b>S/ 10.00</b></div>
+<div class="b row pad"><span>○</span><div class="col sp" style="gap:2px"><b>Envío por agencia</b><span class="s">Recoges en la agencia de tu ciudad · 2–4 días</span></div><b>S/ 15.00</b></div>
+<div class="row" style="padding-left:30px"><div class="f" style="width:340px">Agencia: Shalom ▾</div><span class="s">(solo si eliges agencia)</span></div>
+<div class="b row pad"><span>○</span><div class="col sp" style="gap:2px"><b>Recojo en tienda</b><span class="s">Galería Gamarra, Jr. Gamarra 700, tienda 210 · Lun–Sáb 9:00–19:00</span></div><b>Gratis</b></div>
+<span class="tag">opciones = habilitadas en settings ∩ GET /envios/opciones?ubigeo= · local solo Lima/Callao</span></div>
+<div class="card col"><b>3. Revisa tu pedido</b><div class="row s"><span class="g box" style="width:44px;height:44px">f</span><span class="sp">Legging Pro Compresión · M · Negro × 4</span><span>S/ 215.64</span></div><div class="row s"><span class="g box" style="width:44px;height:44px">f</span><span class="sp">Legging Pro Compresión · S · Azul × 2</span><span>S/ 107.82</span></div><div class="row s"><span class="g box" style="width:44px;height:44px">f</span><span class="sp">Top Flex · M · Rojo × 1</span><span>S/ 39.90</span></div>
+<div class="f" style="height:56px">Notas para la tienda (opcional, 300 caracteres)</div></div></div>
+<div class="card col" style="width:400px"><b style="font-size:18px">Resumen del pedido</b>
+<div class="row"><span class="sp">Subtotal</span><span>S/ 399.30</span></div><div class="row" style="color:#047857"><span class="sp">Descuento por volumen</span><span>− S/ 35.94</span></div><div class="row"><span class="sp">Envío (delivery)</span><span>S/ 10.00</span></div>
+<div class="row t" style="font-size:20px;border-top:2px solid #ddd;padding-top:10px"><span class="sp">Total</span><span>S/ 373.36</span></div>
+<span class="tag">POST /checkout/resumen en cada cambio</span>
+<div class="btn p">Confirmar pedido</div><div class="s">Al confirmar aceptas los Términos y condiciones. Apartamos tu stock por 30 minutos para que pagues.</div>
+<div class="pad s" style="background:#fee2e2;border-radius:6px">409: "Los precios cambiaron, revisa tu pedido" · "Sin stock para: Top Flex M Rojo"</div>
+<span class="tag">→ 201 {codigo} → /pago/FS-000124 (spec 5)</span></div></div>
+</body></html>

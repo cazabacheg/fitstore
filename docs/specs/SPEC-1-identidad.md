@@ -1,11 +1,12 @@
 # SPEC-1 — Identidad
 
-> Versión: **v2 (aprobado)** — 2026-10-18 · Estados: ✅ decidido · 🟡 propuesto · ❓ abierto
+> Versión: **v3 (aprobado)** — 2026-10-18 · Estados: ✅ decidido · 🟡 propuesto · ❓ abierto
 > **Dueña de:** `backend/auth-service` (lógica, controladores, emisión de JWT) · tienda: `features/acceso`, `features/cuenta` · backoffice: `features/acceso`, `features/perfil`, `features/usuarios`.
 > **Depende de:** 0a, 0b · **Habilita:** todas las pantallas protegidas; spec 4 (datos del destinatario en el checkout).
 > **Contratos:** `contracts/openapi/auth-service.yaml`; eventos `ClienteRegistrado`, `PasswordResetSolicitado`, `PasswordCambiado`.
 
 **Historial:**
+- v3 (2026-10-18): por la SPEC-4 (O2), `DialogoDireccion` queda **reutilizable** (A6): el checkout lo abre para agregar una dirección sin salir de la página.
 - v2 (2026-10-18): spec aprobada. A2: al borrar la predeterminada pasa a serlo la dirección creada más recientemente. Datos de demostración en dev aprobados.
 - v1 (2026-10-18): borrador inicial.
 
@@ -297,7 +298,7 @@ CA-1-38  Cuando arranca auth sin ningún ADMIN y con FITSTORE_ADMIN_EMAIL y FITS
 - **Ruta / proyecto:** `/cuenta/direcciones` · storefront · CLIENTE.
 - **Boceto:** ![P-1-06](img/P-1-06-direcciones.png)
 - **Diseño de alta fidelidad:** 🕓 deriva del sistema de diseño.
-- **Componentes:** `DireccionesPage`, `TarjetaDireccion`, `DialogoDireccion` (con el selector de ubigeo de `ui/`).
+- **Componentes:** `DireccionesPage`, `TarjetaDireccion`, `DialogoDireccion` (con el selector de ubigeo de `ui/`; reutilizable, ver A6).
 - **Estados:** vacío ("Aún no tienes direcciones"), límite de 10 alcanzado.
 - **Endpoints:** `GET/POST /clientes/me/direcciones`, `PUT/DELETE /clientes/me/direcciones/{id}`, `PATCH …/{id}/predeterminada`, `/ubigeo/*`.
 
@@ -341,6 +342,7 @@ Todo según el micro de auth. Decisiones de implementación de esta spec:
 | A3 | **Enlaces de los correos** | Recuperación de cliente: `{STOREFRONT_URL}/restablecer?token=…` · de staff e invitación: `{BACKOFFICE_URL}/restablecer?token=…` |
 | A4 | **Cookie de refresh** | Una por app (cada app en su subdominio, auth 4.4); `HttpOnly`, `SameSite=Strict`, `Path=/api/v1/auth`. `POST /auth/refresh` y `/auth/logout` solo aceptan la cookie (sin cuerpo) |
 | A5 | **Retiro del JWKS de prueba** | Se borra `infra/dev/jwks-prueba.json` y su clave; el gateway y los servicios apuntan a `http://auth-service/.well-known/jwks.json` (excepción acordada a la regla de "0a congelada") |
+| A6 | **`DialogoDireccion` reutilizable** ✅ | Componente *standalone* exportado desde `features/cuenta/direcciones/` con el `DialogoDireccionService.abrir(direccion?)`, que devuelve la dirección guardada (o nada si se cancela). Él mismo llama a `POST`/`PUT /clientes/me/direcciones` y respeta el límite de 10. Lo usa el checkout (SPEC-4); como es solo de la tienda, no va a `shared` |
 
 ## 6. Datos
 
