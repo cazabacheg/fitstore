@@ -1,9 +1,10 @@
 # FitStore — Estrategia multiagente de implementación
 
-> Versión: **v2 (borrador)** — 2026-10-19 · Estados: ✅ decidido · 🟡 propuesto · ❓ abierto
+> Versión: **v3 (aprobado)** — 2026-10-19 · Estados: ✅ decidido · 🟡 propuesto · ❓ abierto
 > Etapa: specs ✅ → contratos ✅ → diseño ✅ → **estrategia multiagente** → implementación.
 
 **Historial:**
+- v3 (2026-10-19): cobertura mínima 80 % con el núcleo cubierto (V10); rojo por historia confirmado (F3); la ola 0 se parte en 0a.1 → 0a.2 (los 7 esqueletos, 3 a la vez) → 0a.3 → **estrategia aprobada**.
 - v2 (2026-10-19): respuestas del autor: 3 agentes a la vez (O1 ✅), el lead integra tras la aprobación (C1 ✅), tablero en archivo ✅, pantallas revisadas en el navegador o en el chat (V6 ✅). Nuevo: los implementadores leen la spec **y el micro** de su servicio (B1), corren con **Sonnet** (M1), y TDD *test first* como barrera durante toda la construcción (F2–F4, V3).
 - v1 (2026-10-19): borrador inicial: roles (autor, lead, implementadores), olas, flujo TDD por agente, verificación del DoD por el lead, puntos de control y herramientas.
 
@@ -27,7 +28,7 @@ Las dependencias salen de la tabla de [`specs/README.md`](../specs/README.md): 0
 
 | Ola | Specs | Paralelismo | Entra cuando |
 |---|---|---|---|
-| 0 | **0a** Plataforma backend | 1 agente (los 7 esqueletos los hace el mismo agente en serie, son repetitivos) | Ahora, tras aprobar esta estrategia |
+| 0 | **0a** Plataforma backend, en tres pasos (SPEC-0a I1): **0a.1** monorepo, `fitstore-common` e infraestructura → **0a.2** los 7 esqueletos → **0a.3** CI, *smoke* y Postman | 0a.1 y 0a.3: 1 agente. 0a.2: un agente por esqueleto, **3 a la vez** (no comparten archivos) | 0a.1 ahora; 0a.2 cuando 0a.1 esté en `dev`; 0a.3 cuando estén los 7 |
 | 1 | **0b** Fundaciones del frontend | 1 agente | 0a integrada en `dev` |
 | 2a | **1** Identidad, **2** Catálogo, **3** Tienda y reclamos | 3 agentes | 0b integrada |
 | 2b | **4** Pedidos, **5** Pagos (empieza por la PoC de pasarelas, P1), **6** Envíos, **7** Notificaciones | 3 agentes a la vez; el cuarto entra cuando sale uno de 2a | Cada una, cuando haya un hueco |
@@ -98,6 +99,9 @@ Un mensaje con: rama y último commit; tabla **CA → archivo de prueba** comple
 
 El lead pasa esta lista **en el worktree del agente, con sus propios comandos**, antes de abrir el PR a `dev`:
 
+**V0 ✅ Cobertura: 80 % mínimo, con todo lo esencial cubierto.** No se persigue el 100 %: el umbral de 80 % de líneas por módulo lo hace cumplir el CI (SPEC-0a, SPEC-0b), y además el **núcleo** debe estar cubierto por completo. Núcleo = lo que decide el negocio: entidades con reglas e invariantes, servicios de aplicación (casos de uso), máquinas de estado, calculadoras (descuentos, montos, tarifas), consumidores y publicadores de eventos, adaptadores de pasarela y de almacenamiento, filtros de seguridad del gateway. Cada spec lo hace explícito en su sección 7 y el brief lo lista.
+
+
 | # | Verificación | Cómo |
 |---|---|---|
 | V1 | **Todos los criterios tienen prueba** | Script `scripts/ca-cobertura.sh SPEC-NN`: extrae los `CA-NN-xx` de la spec y los busca en los nombres de las pruebas; la lista de faltantes debe estar vacía |
@@ -108,10 +112,11 @@ El lead pasa esta lista **en el worktree del agente, con sus propios comandos**,
 | V6 | **Diseño respetado** (specs con pantallas) | Compara las pantallas clave con [`docs/diseno/`](../diseno/) con capturas de Playwright a 1280 y 390 px, y **te las muestra en el chat**; si prefieres, abres la app levantada en Lyanna en tu navegador |
 | V7 | **Higiene** | gitleaks limpio, sin secretos en `application*.yml`, commits sin atribución de IA y con autor `cazabacheg`, migraciones con el nombre convenido |
 | V8 | **CI en verde** | `ci.yml` del PR a `dev` |
+| V10 | **Cobertura** | Informe de JaCoCo (backend) y de Vitest (frontend): **al menos 80 % de líneas** en cada módulo que tocó (sin contar configuración, DTOs, clases `Application` ni código generado), y el **núcleo cubierto**: el lead abre el informe del núcleo y cada línea o rama sin cubrir debe estar justificada en el PR |
 | V9 | **Resto de la sección 9** | Cada casilla del DoD de la spec, salvo la del autor; las que requieren `stage` (Postman completo, k6) se marcan pendientes de la promoción |
 
 - **V-a ✅ Si algo falla,** el lead devuelve al agente la lista concreta de lo que no se cumple. Máximo **2 rondas**; a la tercera, el lead se lo plantea al autor con el diagnóstico.
-- **V-b ✅ El PR a `dev`** lleva la lista V1–V9 marcada con la evidencia (salida de los comandos, enlaces). El autor revisa, hace la demostración de la sección 9 y aprueba; recién ahí se integra.
+- **V-b ✅ El PR a `dev`** lleva la lista V1–V10 marcada con la evidencia (salida de los comandos, enlaces). El autor revisa, hace la demostración de la sección 9 y aprueba; recién ahí se integra.
 
 ## 7. Puntos de control del autor
 
