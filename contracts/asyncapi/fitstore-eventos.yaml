@@ -1,0 +1,1235 @@
+asyncapi: 3.0.0
+info:
+  title: FitStore — eventos de dominio
+  version: 1.0.0
+  description: |
+    Todos los eventos del exchange `fitstore.eventos` (RabbitMQ, topic). Un canal por routing key `{servicio}.{entidad}.{acción}`.
+    Cada servicio consumidor tiene su cola `{servicio}.eventos` (con DLQ `{servicio}.eventos.dlq`) enlazada a las routing keys que
+    le interesan. Publicación con outbox y *publisher confirms*; consumo idempotente por `eventoId` (ADR-009).
+
+    **Sobre común (K12):** `{eventoId, tipo, version, ocurridoEn, datos}`; los campos propios de cada evento van en `datos`.
+    Un consumidor ignora los campos que no conoce (compatibilidad hacia adelante).
+
+    Fuente: sección 6 de cada micro en `docs/analisis/micro/` y el catálogo de eventos del macro (5.3).
+  license:
+    name: Uso académico
+defaultContentType: application/json
+
+servers:
+  local:
+    host: rabbitmq:5672
+    protocol: amqp
+    description: RabbitMQ 4 en el docker compose (red interna; también en la nube, sin publicar).
+
+channels:
+  clienteRegistrado:
+    address: auth.cliente.registrado
+    messages:
+      clienteRegistrado:
+        $ref: '#/components/messages/ClienteRegistrado'
+    bindings:
+      $ref: '#/components/channelBindings/fitstoreEventos'
+  passwordResetSolicitado:
+    address: auth.password.reset-solicitado
+    messages:
+      passwordResetSolicitado:
+        $ref: '#/components/messages/PasswordResetSolicitado'
+    bindings:
+      $ref: '#/components/channelBindings/fitstoreEventos'
+  passwordCambiado:
+    address: auth.password.cambiado
+    messages:
+      passwordCambiado:
+        $ref: '#/components/messages/PasswordCambiado'
+    bindings:
+      $ref: '#/components/channelBindings/fitstoreEventos'
+  stockBajo:
+    address: catalog.stock.bajo
+    messages:
+      stockBajo:
+        $ref: '#/components/messages/StockBajo'
+    bindings:
+      $ref: '#/components/channelBindings/fitstoreEventos'
+  stockNoConfirmado:
+    address: catalog.stock.no-confirmado
+    messages:
+      stockNoConfirmado:
+        $ref: '#/components/messages/StockNoConfirmado'
+    bindings:
+      $ref: '#/components/channelBindings/fitstoreEventos'
+  pedidoCreado:
+    address: order.pedido.creado
+    messages:
+      pedidoCreado:
+        $ref: '#/components/messages/PedidoCreado'
+    bindings:
+      $ref: '#/components/channelBindings/fitstoreEventos'
+  pedidoPagado:
+    address: order.pedido.pagado
+    messages:
+      pedidoPagado:
+        $ref: '#/components/messages/PedidoPagado'
+    bindings:
+      $ref: '#/components/channelBindings/fitstoreEventos'
+  pedidoCancelado:
+    address: order.pedido.cancelado
+    messages:
+      pedidoCancelado:
+        $ref: '#/components/messages/PedidoCancelado'
+    bindings:
+      $ref: '#/components/channelBindings/fitstoreEventos'
+  pedidoExpirado:
+    address: order.pedido.expirado
+    messages:
+      pedidoExpirado:
+        $ref: '#/components/messages/PedidoExpirado'
+    bindings:
+      $ref: '#/components/channelBindings/fitstoreEventos'
+  pagoNoAplicable:
+    address: order.pago.no-aplicable
+    messages:
+      pagoNoAplicable:
+        $ref: '#/components/messages/PagoNoAplicable'
+    bindings:
+      $ref: '#/components/channelBindings/fitstoreEventos'
+  pedidoListoDespacho:
+    address: order.pedido.listo-despacho
+    messages:
+      pedidoListoDespacho:
+        $ref: '#/components/messages/PedidoListoDespacho'
+    bindings:
+      $ref: '#/components/channelBindings/fitstoreEventos'
+  pedidoListoRecojo:
+    address: order.pedido.listo-recojo
+    messages:
+      pedidoListoRecojo:
+        $ref: '#/components/messages/PedidoListoRecojo'
+    bindings:
+      $ref: '#/components/channelBindings/fitstoreEventos'
+  pedidoRecogido:
+    address: order.pedido.recogido
+    messages:
+      pedidoRecogido:
+        $ref: '#/components/messages/PedidoRecogido'
+    bindings:
+      $ref: '#/components/channelBindings/fitstoreEventos'
+  reembolsoSolicitado:
+    address: order.reembolso.solicitado
+    messages:
+      reembolsoSolicitado:
+        $ref: '#/components/messages/ReembolsoSolicitado'
+    bindings:
+      $ref: '#/components/channelBindings/fitstoreEventos'
+  pagoConfirmado:
+    address: payment.pago.confirmado
+    messages:
+      pagoConfirmado:
+        $ref: '#/components/messages/PagoConfirmado'
+    bindings:
+      $ref: '#/components/channelBindings/fitstoreEventos'
+  pagoRechazado:
+    address: payment.pago.rechazado
+    messages:
+      pagoRechazado:
+        $ref: '#/components/messages/PagoRechazado'
+    bindings:
+      $ref: '#/components/channelBindings/fitstoreEventos'
+  boletaEmitida:
+    address: payment.boleta.emitida
+    messages:
+      boletaEmitida:
+        $ref: '#/components/messages/BoletaEmitida'
+    bindings:
+      $ref: '#/components/channelBindings/fitstoreEventos'
+  pagoReembolsado:
+    address: payment.reembolso.completado
+    messages:
+      pagoReembolsado:
+        $ref: '#/components/messages/PagoReembolsado'
+    bindings:
+      $ref: '#/components/channelBindings/fitstoreEventos'
+  reembolsoFallido:
+    address: payment.reembolso.fallido
+    messages:
+      reembolsoFallido:
+        $ref: '#/components/messages/ReembolsoFallido'
+    bindings:
+      $ref: '#/components/channelBindings/fitstoreEventos'
+  entregaActualizada:
+    address: delivery.entrega.actualizada
+    messages:
+      entregaActualizada:
+        $ref: '#/components/messages/EntregaActualizada'
+    bindings:
+      $ref: '#/components/channelBindings/fitstoreEventos'
+  configuracionActualizada:
+    address: settings.configuracion.actualizada
+    messages:
+      configuracionActualizada:
+        $ref: '#/components/messages/ConfiguracionActualizada'
+    bindings:
+      $ref: '#/components/channelBindings/fitstoreEventos'
+  reclamoRegistrado:
+    address: settings.reclamo.registrado
+    messages:
+      reclamoRegistrado:
+        $ref: '#/components/messages/ReclamoRegistrado'
+    bindings:
+      $ref: '#/components/channelBindings/fitstoreEventos'
+  reclamoRespondido:
+    address: settings.reclamo.respondido
+    messages:
+      reclamoRespondido:
+        $ref: '#/components/messages/ReclamoRespondido'
+    bindings:
+      $ref: '#/components/channelBindings/fitstoreEventos'
+
+operations:
+  # --- Publicadores (send) ---
+  authPublicaClienteRegistrado:
+    action: send
+    channel:
+      $ref: '#/channels/clienteRegistrado'
+    summary: auth publica al registrarse un cliente.
+  authPublicaPasswordResetSolicitado:
+    action: send
+    channel:
+      $ref: '#/channels/passwordResetSolicitado'
+    summary: auth publica al pedir recuperación o invitar a un staff.
+  authPublicaPasswordCambiado:
+    action: send
+    channel:
+      $ref: '#/channels/passwordCambiado'
+    summary: auth publica al cambiar o restablecer una contraseña.
+  catalogPublicaStockBajo:
+    action: send
+    channel:
+      $ref: '#/channels/stockBajo'
+    summary: catalog publica cuando el disponible cruza el mínimo hacia abajo.
+  catalogPublicaStockNoConfirmado:
+    action: send
+    channel:
+      $ref: '#/channels/stockNoConfirmado'
+    summary: catalog publica si un pago llega con la reserva vencida y sin stock.
+  orderPublicaPedidoCreado:
+    action: send
+    channel:
+      $ref: '#/channels/pedidoCreado'
+    summary: order publica al confirmar el checkout (T1).
+  orderPublicaPedidoPagado:
+    action: send
+    channel:
+      $ref: '#/channels/pedidoPagado'
+    summary: order publica al pasar el pedido a PAGADO.
+  orderPublicaPedidoCancelado:
+    action: send
+    channel:
+      $ref: '#/channels/pedidoCancelado'
+    summary: order publica al cancelar (cliente o staff).
+  orderPublicaPedidoExpirado:
+    action: send
+    channel:
+      $ref: '#/channels/pedidoExpirado'
+    summary: order publica al vencer un pedido sin pago.
+  orderPublicaPagoNoAplicable:
+    action: send
+    channel:
+      $ref: '#/channels/pagoNoAplicable'
+    summary: order publica si un pago llega con el pedido ya expirado o cancelado.
+  orderPublicaPedidoListoDespacho:
+    action: send
+    channel:
+      $ref: '#/channels/pedidoListoDespacho'
+    summary: order publica al dejar listo un pedido de delivery o agencia.
+  orderPublicaPedidoListoRecojo:
+    action: send
+    channel:
+      $ref: '#/channels/pedidoListoRecojo'
+    summary: order publica al dejar listo un pedido de recojo.
+  orderPublicaPedidoRecogido:
+    action: send
+    channel:
+      $ref: '#/channels/pedidoRecogido'
+    summary: order publica cuando el cliente recoge en tienda.
+  orderPublicaReembolsoSolicitado:
+    action: send
+    channel:
+      $ref: '#/channels/reembolsoSolicitado'
+    summary: order publica al registrar un reembolso postventa.
+  paymentPublicaPagoConfirmado:
+    action: send
+    channel:
+      $ref: '#/channels/pagoConfirmado'
+    summary: payment publica al aprobarse un cargo (T3).
+  paymentPublicaPagoRechazado:
+    action: send
+    channel:
+      $ref: '#/channels/pagoRechazado'
+    summary: payment publica al rechazarse un cargo.
+  paymentPublicaBoletaEmitida:
+    action: send
+    channel:
+      $ref: '#/channels/boletaEmitida'
+    summary: payment publica al generar la boleta (T6).
+  paymentPublicaPagoReembolsado:
+    action: send
+    channel:
+      $ref: '#/channels/pagoReembolsado'
+    summary: payment publica al completar (o resolver a mano) un reembolso.
+  paymentPublicaReembolsoFallido:
+    action: send
+    channel:
+      $ref: '#/channels/reembolsoFallido'
+    summary: payment publica tras el cuarto intento fallido de un reembolso.
+  deliveryPublicaEntregaActualizada:
+    action: send
+    channel:
+      $ref: '#/channels/entregaActualizada'
+    summary: delivery publica en cada cambio de estado de una entrega.
+  settingsPublicaConfiguracionActualizada:
+    action: send
+    channel:
+      $ref: '#/channels/configuracionActualizada'
+    summary: settings publica al guardar una sección o una imagen.
+  settingsPublicaReclamoRegistrado:
+    action: send
+    channel:
+      $ref: '#/channels/reclamoRegistrado'
+    summary: settings publica al registrar un reclamo.
+  settingsPublicaReclamoRespondido:
+    action: send
+    channel:
+      $ref: '#/channels/reclamoRespondido'
+    summary: settings publica al responder un reclamo.
+
+  # --- Consumidores (receive) ---
+  notificationRecibeClienteRegistrado:
+    action: receive
+    channel:
+      $ref: '#/channels/clienteRegistrado'
+    summary: Correo C1 (bienvenida).
+  notificationRecibePasswordResetSolicitado:
+    action: receive
+    channel:
+      $ref: '#/channels/passwordResetSolicitado'
+    summary: Correo C2 (recuperación) o C3 (invitación) según `motivo`.
+  notificationRecibePasswordCambiado:
+    action: receive
+    channel:
+      $ref: '#/channels/passwordCambiado'
+    summary: Correo C4 (aviso de seguridad).
+  notificationRecibeStockBajo:
+    action: receive
+    channel:
+      $ref: '#/channels/stockBajo'
+    summary: Alerta T1 a los correos para alertas.
+  notificationRecibeStockNoConfirmado:
+    action: receive
+    channel:
+      $ref: '#/channels/stockNoConfirmado'
+    summary: Alerta T2.
+  paymentRecibePedidoCreado:
+    action: receive
+    channel:
+      $ref: '#/channels/pedidoCreado'
+    summary: Crea la intención de pago (T2).
+  notificationRecibePedidoCreado:
+    action: receive
+    channel:
+      $ref: '#/channels/pedidoCreado'
+    summary: Guarda la copia del resumen del pedido (sin correo).
+  catalogRecibePedidoPagado:
+    action: receive
+    channel:
+      $ref: '#/channels/pedidoPagado'
+    summary: Confirma la reserva y descuenta el físico (T5).
+  notificationRecibePedidoPagado:
+    action: receive
+    channel:
+      $ref: '#/channels/pedidoPagado'
+    summary: Inicia el respaldo de 10 min de la confirmación sin boleta.
+  catalogRecibePedidoCancelado:
+    action: receive
+    channel:
+      $ref: '#/channels/pedidoCancelado'
+    summary: Libera la reserva o reingresa el stock si fue pagado.
+  paymentRecibePedidoCancelado:
+    action: receive
+    channel:
+      $ref: '#/channels/pedidoCancelado'
+    summary: Reembolso total si fue pagado; si no, anula la intención.
+  notificationRecibePedidoCancelado:
+    action: receive
+    channel:
+      $ref: '#/channels/pedidoCancelado'
+    summary: Correo C6.
+  catalogRecibePedidoExpirado:
+    action: receive
+    channel:
+      $ref: '#/channels/pedidoExpirado'
+    summary: Libera la reserva.
+  paymentRecibePedidoExpirado:
+    action: receive
+    channel:
+      $ref: '#/channels/pedidoExpirado'
+    summary: Anula la intención.
+  paymentRecibePagoNoAplicable:
+    action: receive
+    channel:
+      $ref: '#/channels/pagoNoAplicable'
+    summary: Reembolso total automático.
+  deliveryRecibePedidoListoDespacho:
+    action: receive
+    channel:
+      $ref: '#/channels/pedidoListoDespacho'
+    summary: Crea la entrega.
+  notificationRecibePedidoListoRecojo:
+    action: receive
+    channel:
+      $ref: '#/channels/pedidoListoRecojo'
+    summary: Correo C10 (listo para recoger).
+  notificationRecibePedidoRecogido:
+    action: receive
+    channel:
+      $ref: '#/channels/pedidoRecogido'
+    summary: Correo C11 (entregado).
+  paymentRecibeReembolsoSolicitado:
+    action: receive
+    channel:
+      $ref: '#/channels/reembolsoSolicitado'
+    summary: Crea el reembolso POSTVENTA (idempotente por solicitudId).
+  orderRecibePagoConfirmado:
+    action: receive
+    channel:
+      $ref: '#/channels/pagoConfirmado'
+    summary: Pasa el pedido a PAGADO (o publica PagoNoAplicable).
+  orderRecibePagoRechazado:
+    action: receive
+    channel:
+      $ref: '#/channels/pagoRechazado'
+    summary: Anota el rechazo en el historial.
+  orderRecibeBoletaEmitida:
+    action: receive
+    channel:
+      $ref: '#/channels/boletaEmitida'
+    summary: Guarda la URL de la boleta.
+  notificationRecibeBoletaEmitida:
+    action: receive
+    channel:
+      $ref: '#/channels/boletaEmitida'
+    summary: Correo C5 (pedido confirmado) con la boleta adjunta.
+  notificationRecibePagoReembolsado:
+    action: receive
+    channel:
+      $ref: '#/channels/pagoReembolsado'
+    summary: Correo C7 (reembolso realizado, parcial o total).
+  orderRecibePagoReembolsado:
+    action: receive
+    channel:
+      $ref: '#/channels/pagoReembolsado'
+    summary: Actualiza monto_reembolsado (si trae solicitudId).
+  notificationRecibeReembolsoFallido:
+    action: receive
+    channel:
+      $ref: '#/channels/reembolsoFallido'
+    summary: Alerta T3.
+  orderRecibeEntregaActualizada:
+    action: receive
+    channel:
+      $ref: '#/channels/entregaActualizada'
+    summary: Pasa el pedido a ENVIADO, ENTREGADO o DEVUELTO, o anota el intento fallido.
+  notificationRecibeEntregaActualizada:
+    action: receive
+    channel:
+      $ref: '#/channels/entregaActualizada'
+    summary: Correos C8, C9, C10, C11 o C14 según el estado.
+  notificationRecibeConfiguracionActualizada:
+    action: receive
+    channel:
+      $ref: '#/channels/configuracionActualizada'
+    summary: Actualiza la copia de la marca y los correos para alertas.
+  notificationRecibeReclamoRegistrado:
+    action: receive
+    channel:
+      $ref: '#/channels/reclamoRegistrado'
+    summary: Correo C12 al consumidor y alerta T4 a la tienda.
+  notificationRecibeReclamoRespondido:
+    action: receive
+    channel:
+      $ref: '#/channels/reclamoRespondido'
+    summary: Correo C13.
+
+components:
+  channelBindings:
+    fitstoreEventos:
+      amqp:
+        is: routingKey
+        exchange:
+          name: fitstore.eventos
+          type: topic
+          durable: true
+          autoDelete: false
+          vhost: /
+        bindingVersion: 0.3.0
+
+  messages:
+    ClienteRegistrado:
+      name: ClienteRegistrado
+      title: Cliente registrado
+      payload:
+        $ref: '#/components/schemas/SobreClienteRegistrado'
+    PasswordResetSolicitado:
+      name: PasswordResetSolicitado
+      title: Recuperación o invitación solicitada
+      payload:
+        $ref: '#/components/schemas/SobrePasswordResetSolicitado'
+    PasswordCambiado:
+      name: PasswordCambiado
+      title: Contraseña cambiada
+      payload:
+        $ref: '#/components/schemas/SobrePasswordCambiado'
+    StockBajo:
+      name: StockBajo
+      title: Stock bajo
+      payload:
+        $ref: '#/components/schemas/SobreStockBajo'
+    StockNoConfirmado:
+      name: StockNoConfirmado
+      title: Pago confirmado sin stock
+      payload:
+        $ref: '#/components/schemas/SobreStockNoConfirmado'
+    PedidoCreado:
+      name: PedidoCreado
+      title: Pedido creado
+      payload:
+        $ref: '#/components/schemas/SobrePedidoCreado'
+    PedidoPagado:
+      name: PedidoPagado
+      title: Pedido pagado
+      payload:
+        $ref: '#/components/schemas/SobrePedidoPagado'
+    PedidoCancelado:
+      name: PedidoCancelado
+      title: Pedido cancelado
+      payload:
+        $ref: '#/components/schemas/SobrePedidoCancelado'
+    PedidoExpirado:
+      name: PedidoExpirado
+      title: Pedido expirado
+      payload:
+        $ref: '#/components/schemas/SobrePedidoExpirado'
+    PagoNoAplicable:
+      name: PagoNoAplicable
+      title: Pago no aplicable
+      payload:
+        $ref: '#/components/schemas/SobrePagoNoAplicable'
+    PedidoListoDespacho:
+      name: PedidoListoDespacho
+      title: Pedido listo para despacho
+      payload:
+        $ref: '#/components/schemas/SobrePedidoListoDespacho'
+    PedidoListoRecojo:
+      name: PedidoListoRecojo
+      title: Pedido listo para recoger
+      payload:
+        $ref: '#/components/schemas/SobrePedidoRecojo'
+    PedidoRecogido:
+      name: PedidoRecogido
+      title: Pedido recogido en tienda
+      payload:
+        $ref: '#/components/schemas/SobrePedidoRecojo'
+    ReembolsoSolicitado:
+      name: ReembolsoSolicitado
+      title: Reembolso postventa solicitado
+      payload:
+        $ref: '#/components/schemas/SobreReembolsoSolicitado'
+    PagoConfirmado:
+      name: PagoConfirmado
+      title: Pago confirmado
+      payload:
+        $ref: '#/components/schemas/SobrePagoConfirmado'
+    PagoRechazado:
+      name: PagoRechazado
+      title: Pago rechazado
+      payload:
+        $ref: '#/components/schemas/SobrePagoRechazado'
+    BoletaEmitida:
+      name: BoletaEmitida
+      title: Boleta emitida
+      payload:
+        $ref: '#/components/schemas/SobreBoletaEmitida'
+    PagoReembolsado:
+      name: PagoReembolsado
+      title: Reembolso completado
+      payload:
+        $ref: '#/components/schemas/SobrePagoReembolsado'
+    ReembolsoFallido:
+      name: ReembolsoFallido
+      title: Reembolso fallido
+      payload:
+        $ref: '#/components/schemas/SobreReembolsoFallido'
+    EntregaActualizada:
+      name: EntregaActualizada
+      title: Entrega actualizada
+      payload:
+        $ref: '#/components/schemas/SobreEntregaActualizada'
+    ConfiguracionActualizada:
+      name: ConfiguracionActualizada
+      title: Configuración de tienda actualizada
+      payload:
+        $ref: '#/components/schemas/SobreConfiguracionActualizada'
+    ReclamoRegistrado:
+      name: ReclamoRegistrado
+      title: Reclamo registrado
+      payload:
+        $ref: '#/components/schemas/SobreReclamoRegistrado'
+    ReclamoRespondido:
+      name: ReclamoRespondido
+      title: Reclamo respondido
+      payload:
+        $ref: '#/components/schemas/SobreReclamoRespondido'
+
+  schemas:
+    Sobre:
+      type: object
+      required: [eventoId, tipo, version, ocurridoEn, datos]
+      properties:
+        eventoId:
+          type: string
+          format: uuid
+          description: Clave de idempotencia del consumidor (evento_procesado).
+        tipo:
+          type: string
+          description: Nombre del evento (p. ej. PedidoCreado).
+        version:
+          type: integer
+          const: 1
+        ocurridoEn:
+          type: string
+          format: date-time
+        datos:
+          type: object
+
+    Monto:
+      type: number
+      multipleOf: 0.01
+      minimum: 0
+    Persona:
+      type: object
+      required: [nombre, email]
+      properties:
+        nombre:
+          type: string
+        email:
+          type: string
+          format: email
+    Destinatario:
+      type: object
+      required: [nombres, apellidos, dni, telefono, email]
+      properties:
+        nombres:
+          type: string
+        apellidos:
+          type: string
+        dni:
+          type: string
+          pattern: '^[0-9]{8}$'
+        telefono:
+          type: string
+        email:
+          type: string
+          format: email
+    Direccion:
+      type: object
+      required: [ubigeo, departamento, provincia, distrito, direccion]
+      properties:
+        ubigeo:
+          type: string
+          pattern: '^[0-9]{6}$'
+        departamento:
+          type: string
+        provincia:
+          type: string
+        distrito:
+          type: string
+        direccion:
+          type: string
+        referencia:
+          type: [string, 'null']
+    ItemCantidad:
+      type: object
+      required: [varianteId, cantidad]
+      properties:
+        varianteId:
+          type: integer
+        cantidad:
+          type: integer
+          minimum: 1
+    ItemPedido:
+      type: object
+      required: [varianteId, sku, producto, talla, color, precioUnitario, cantidad, descuentoMonto, total]
+      properties:
+        varianteId:
+          type: integer
+        productoId:
+          type: integer
+        sku:
+          type: string
+        producto:
+          type: string
+        talla:
+          type: string
+        color:
+          type: string
+        imagenUrl:
+          type: [string, 'null']
+        precioUnitario:
+          $ref: '#/components/schemas/Monto'
+        cantidad:
+          type: integer
+        descuentoPorcentaje:
+          type: number
+        descuentoMonto:
+          $ref: '#/components/schemas/Monto'
+        total:
+          $ref: '#/components/schemas/Monto'
+    Modalidad:
+      type: string
+      enum: [DELIVERY_LOCAL, AGENCIA, RECOJO]
+
+    SobreClienteRegistrado:
+      allOf:
+        - $ref: '#/components/schemas/Sobre'
+        - type: object
+          properties:
+            datos:
+              type: object
+              required: [clienteId, email, nombres]
+              properties:
+                clienteId:
+                  type: string
+                  format: uuid
+                email:
+                  type: string
+                  format: email
+                nombres:
+                  type: string
+    SobrePasswordResetSolicitado:
+      allOf:
+        - $ref: '#/components/schemas/Sobre'
+        - type: object
+          properties:
+            datos:
+              type: object
+              required: [cuentaId, tipoCuenta, email, nombres, motivo, enlace, expiraEn]
+              properties:
+                cuentaId:
+                  type: string
+                  format: uuid
+                tipoCuenta:
+                  type: string
+                  enum: [CLIENTE, STAFF]
+                email:
+                  type: string
+                  format: email
+                nombres:
+                  type: string
+                motivo:
+                  type: string
+                  enum: [RECUPERACION, INVITACION]
+                enlace:
+                  type: string
+                  description: URL al frontend que corresponde, con el token.
+                expiraEn:
+                  type: string
+                  format: date-time
+    SobrePasswordCambiado:
+      allOf:
+        - $ref: '#/components/schemas/Sobre'
+        - type: object
+          properties:
+            datos:
+              type: object
+              required: [cuentaId, tipoCuenta, email, nombres]
+              properties:
+                cuentaId:
+                  type: string
+                  format: uuid
+                tipoCuenta:
+                  type: string
+                  enum: [CLIENTE, STAFF]
+                email:
+                  type: string
+                  format: email
+                nombres:
+                  type: string
+    SobreStockBajo:
+      allOf:
+        - $ref: '#/components/schemas/Sobre'
+        - type: object
+          properties:
+            datos:
+              type: object
+              required: [varianteId, sku, producto, talla, color, disponible, minimo]
+              properties:
+                varianteId:
+                  type: integer
+                sku:
+                  type: string
+                producto:
+                  type: string
+                talla:
+                  type: string
+                color:
+                  type: string
+                disponible:
+                  type: integer
+                minimo:
+                  type: integer
+    SobreStockNoConfirmado:
+      allOf:
+        - $ref: '#/components/schemas/Sobre'
+        - type: object
+          properties:
+            datos:
+              type: object
+              required: [pedidoId, faltantes]
+              properties:
+                pedidoId:
+                  type: string
+                  format: uuid
+                faltantes:
+                  type: array
+                  items:
+                    type: object
+                    required: [varianteId, solicitado, disponible]
+                    properties:
+                      varianteId:
+                        type: integer
+                      sku:
+                        type: string
+                      solicitado:
+                        type: integer
+                      disponible:
+                        type: integer
+    SobrePedidoCreado:
+      allOf:
+        - $ref: '#/components/schemas/Sobre'
+        - type: object
+          properties:
+            datos:
+              type: object
+              required: [pedidoId, codigo, clienteId, destinatario, modalidad, items, subtotal, descuentoTotal, costoEnvio, total, expiraEn]
+              properties:
+                pedidoId:
+                  type: string
+                  format: uuid
+                codigo:
+                  type: string
+                  pattern: '^FS-[0-9]{6}$'
+                clienteId:
+                  type: string
+                  format: uuid
+                destinatario:
+                  $ref: '#/components/schemas/Destinatario'
+                modalidad:
+                  $ref: '#/components/schemas/Modalidad'
+                direccion:
+                  oneOf:
+                    - $ref: '#/components/schemas/Direccion'
+                    - type: 'null'
+                items:
+                  type: array
+                  minItems: 1
+                  items:
+                    $ref: '#/components/schemas/ItemPedido'
+                subtotal:
+                  $ref: '#/components/schemas/Monto'
+                descuentoTotal:
+                  $ref: '#/components/schemas/Monto'
+                costoEnvio:
+                  $ref: '#/components/schemas/Monto'
+                total:
+                  $ref: '#/components/schemas/Monto'
+                expiraEn:
+                  type: string
+                  format: date-time
+    SobrePedidoPagado:
+      allOf:
+        - $ref: '#/components/schemas/Sobre'
+        - type: object
+          properties:
+            datos:
+              type: object
+              required: [pedidoId, codigo, items]
+              properties:
+                pedidoId:
+                  type: string
+                  format: uuid
+                codigo:
+                  type: string
+                items:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/ItemCantidad'
+    SobrePedidoCancelado:
+      allOf:
+        - $ref: '#/components/schemas/Sobre'
+        - type: object
+          properties:
+            datos:
+              type: object
+              required: [pedidoId, codigo, fuePagado, motivo, actor, items]
+              properties:
+                pedidoId:
+                  type: string
+                  format: uuid
+                codigo:
+                  type: string
+                fuePagado:
+                  type: boolean
+                motivo:
+                  type: [string, 'null']
+                actor:
+                  type: string
+                  enum: [CLIENTE, STAFF]
+                items:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/ItemCantidad'
+    SobrePedidoExpirado:
+      allOf:
+        - $ref: '#/components/schemas/Sobre'
+        - type: object
+          properties:
+            datos:
+              type: object
+              required: [pedidoId, codigo]
+              properties:
+                pedidoId:
+                  type: string
+                  format: uuid
+                codigo:
+                  type: string
+    SobrePagoNoAplicable:
+      allOf:
+        - $ref: '#/components/schemas/Sobre'
+        - type: object
+          properties:
+            datos:
+              type: object
+              required: [pedidoId, pagoId, motivo]
+              properties:
+                pedidoId:
+                  type: string
+                  format: uuid
+                pagoId:
+                  type: string
+                  format: uuid
+                  description: intencionId del pago que llegó tarde.
+                motivo:
+                  type: string
+                  enum: [PEDIDO_EXPIRADO, PEDIDO_CANCELADO]
+    SobrePedidoListoDespacho:
+      allOf:
+        - $ref: '#/components/schemas/Sobre'
+        - type: object
+          properties:
+            datos:
+              type: object
+              required: [pedidoId, codigo, modalidad, destinatario, direccion, resumenItems, bultos]
+              properties:
+                pedidoId:
+                  type: string
+                  format: uuid
+                codigo:
+                  type: string
+                modalidad:
+                  type: string
+                  enum: [DELIVERY_LOCAL, AGENCIA]
+                destinatario:
+                  $ref: '#/components/schemas/Destinatario'
+                direccion:
+                  $ref: '#/components/schemas/Direccion'
+                agenciaId:
+                  type: [integer, 'null']
+                agenciaNombre:
+                  type: [string, 'null']
+                resumenItems:
+                  type: string
+                bultos:
+                  type: integer
+                  minimum: 1
+    SobrePedidoRecojo:
+      allOf:
+        - $ref: '#/components/schemas/Sobre'
+        - type: object
+          properties:
+            datos:
+              type: object
+              required: [pedidoId, codigo, destinatario]
+              properties:
+                pedidoId:
+                  type: string
+                  format: uuid
+                codigo:
+                  type: string
+                destinatario:
+                  $ref: '#/components/schemas/Destinatario'
+    SobreReembolsoSolicitado:
+      allOf:
+        - $ref: '#/components/schemas/Sobre'
+        - type: object
+          properties:
+            datos:
+              type: object
+              required: [pedidoId, codigo, solicitudId, monto, motivo]
+              properties:
+                pedidoId:
+                  type: string
+                  format: uuid
+                codigo:
+                  type: string
+                solicitudId:
+                  type: string
+                  format: uuid
+                  description: Id de pedido_reembolso; clave de idempotencia en payment.
+                monto:
+                  $ref: '#/components/schemas/Monto'
+                motivo:
+                  type: string
+                  enum: [DEFECTUOSO, TALLA_MODELO_EQUIVOCADO, NO_CONFORME, NO_ENTREGADO, OTRO]
+    SobrePagoConfirmado:
+      allOf:
+        - $ref: '#/components/schemas/Sobre'
+        - type: object
+          properties:
+            datos:
+              type: object
+              required: [pedidoId, intencionId, transaccionId, proveedor, medio, monto, confirmadoEn]
+              properties:
+                pedidoId:
+                  type: string
+                  format: uuid
+                intencionId:
+                  type: string
+                  format: uuid
+                transaccionId:
+                  type: string
+                  format: uuid
+                proveedor:
+                  type: string
+                  enum: [CULQI, MERCADO_PAGO, SIMULADO]
+                medio:
+                  type: string
+                  enum: [TARJETA, YAPE, SALDO_MP]
+                  description: Lo guarda order para mostrar "Pagado con…" sin acceso a la API de pagos.
+                monto:
+                  $ref: '#/components/schemas/Monto'
+                confirmadoEn:
+                  type: string
+                  format: date-time
+    SobrePagoRechazado:
+      allOf:
+        - $ref: '#/components/schemas/Sobre'
+        - type: object
+          properties:
+            datos:
+              type: object
+              required: [pedidoId, proveedor, motivo]
+              properties:
+                pedidoId:
+                  type: string
+                  format: uuid
+                proveedor:
+                  type: string
+                  enum: [CULQI, MERCADO_PAGO, SIMULADO]
+                motivo:
+                  type: string
+                  description: Motivo legible ("Fondos insuficientes").
+    SobreBoletaEmitida:
+      allOf:
+        - $ref: '#/components/schemas/Sobre'
+        - type: object
+          properties:
+            datos:
+              type: object
+              required: [pedidoId, numero, url]
+              properties:
+                pedidoId:
+                  type: string
+                  format: uuid
+                numero:
+                  type: string
+                  pattern: '^B001-[0-9]{8}$'
+                url:
+                  type: string
+                  description: Endpoint autenticado de descarga (/api/v1/pagos/{codigo}/boleta).
+    SobrePagoReembolsado:
+      allOf:
+        - $ref: '#/components/schemas/Sobre'
+        - type: object
+          properties:
+            datos:
+              type: object
+              required: [pedidoId, codigoPedido, monto, parcial, motivo, manual, cliente]
+              properties:
+                pedidoId:
+                  type: string
+                  format: uuid
+                codigoPedido:
+                  type: string
+                solicitudId:
+                  type: [string, 'null']
+                  format: uuid
+                  description: Solo en reembolsos postventa.
+                monto:
+                  $ref: '#/components/schemas/Monto'
+                parcial:
+                  type: boolean
+                motivo:
+                  type: string
+                  enum: [CANCELACION, PAGO_NO_APLICABLE, POSTVENTA]
+                manual:
+                  type: boolean
+                cliente:
+                  $ref: '#/components/schemas/Persona'
+    SobreReembolsoFallido:
+      allOf:
+        - $ref: '#/components/schemas/Sobre'
+        - type: object
+          properties:
+            datos:
+              type: object
+              required: [pedidoId, codigoPedido, monto, ultimoError, intentos]
+              properties:
+                pedidoId:
+                  type: string
+                  format: uuid
+                codigoPedido:
+                  type: string
+                monto:
+                  $ref: '#/components/schemas/Monto'
+                ultimoError:
+                  type: string
+                intentos:
+                  type: integer
+    SobreEntregaActualizada:
+      allOf:
+        - $ref: '#/components/schemas/Sobre'
+        - type: object
+          properties:
+            datos:
+              type: object
+              required: [entregaId, pedidoId, codigoPedido, modalidad, estado, intento, destinatario]
+              properties:
+                entregaId:
+                  type: string
+                  format: uuid
+                pedidoId:
+                  type: string
+                  format: uuid
+                codigoPedido:
+                  type: string
+                modalidad:
+                  type: string
+                  enum: [DELIVERY_LOCAL, AGENCIA]
+                estado:
+                  type: string
+                  enum: [PENDIENTE_ASIGNACION, ASIGNADA, EN_RUTA, FALLIDA, PENDIENTE_ENVIO, ENVIADO_AGENCIA, DISPONIBLE_EN_AGENCIA, ENTREGADA, DEVUELTA]
+                intento:
+                  type: integer
+                fechaProgramada:
+                  type: [string, 'null']
+                  format: date
+                repartidorNombre:
+                  type: [string, 'null']
+                  description: Nunca el teléfono del repartidor (D6).
+                agenciaNombre:
+                  type: [string, 'null']
+                codigoSeguimiento:
+                  type: [string, 'null']
+                claveRecojo:
+                  type: [string, 'null']
+                urlSeguimiento:
+                  type: [string, 'null']
+                observacion:
+                  type: [string, 'null']
+                  description: Observación del intento fallido o motivo de la devolución.
+                destinatario:
+                  $ref: '#/components/schemas/Persona'
+    SobreConfiguracionActualizada:
+      allOf:
+        - $ref: '#/components/schemas/Sobre'
+        - type: object
+          properties:
+            datos:
+              type: object
+              required: [version, secciones, configuracion, correosAlertas]
+              properties:
+                version:
+                  type: integer
+                secciones:
+                  type: array
+                  items:
+                    type: string
+                    enum: [IDENTIDAD, TEMA, CONTENIDO, PARAMETROS, IMAGENES]
+                configuracion:
+                  type: object
+                  description: La configuración pública completa (mismo formato que `ConfiguracionPublica` de settings-service.yaml).
+                correosAlertas:
+                  type: array
+                  minItems: 1
+                  maxItems: 5
+                  items:
+                    type: string
+                    format: email
+                  description: No es público; el broker es interno.
+    SobreReclamoRegistrado:
+      allOf:
+        - $ref: '#/components/schemas/Sobre'
+        - type: object
+          properties:
+            datos:
+              type: object
+              required: [numero, tipo, consumidor, bien, detalle, pedidoConsumidor, fechaLimite, creadoEn]
+              properties:
+                numero:
+                  type: string
+                  pattern: '^RC-[0-9]{4}-[0-9]{6}$'
+                tipo:
+                  type: string
+                  enum: [RECLAMO, QUEJA]
+                consumidor:
+                  $ref: '#/components/schemas/Persona'
+                bien:
+                  type: object
+                  description: Mismo formato que `BienContratado` de settings-service.yaml.
+                detalle:
+                  type: string
+                pedidoConsumidor:
+                  type: string
+                fechaLimite:
+                  type: string
+                  format: date
+                creadoEn:
+                  type: string
+                  format: date-time
+    SobreReclamoRespondido:
+      allOf:
+        - $ref: '#/components/schemas/Sobre'
+        - type: object
+          properties:
+            datos:
+              type: object
+              required: [numero, consumidor, respuesta, respondidoEn]
+              properties:
+                numero:
+                  type: string
+                consumidor:
+                  $ref: '#/components/schemas/Persona'
+                respuesta:
+                  type: string
+                respondidoEn:
+                  type: string
+                  format: date-time
