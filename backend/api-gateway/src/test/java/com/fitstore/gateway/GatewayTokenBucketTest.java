@@ -74,17 +74,4 @@ class GatewayTokenBucketTest {
         // una ventana fija de 2 s no repondría nada a 1,1 s; el token bucket repuso la capacidad entera
         assertThat(aceptados).isBetween(5, 7);
     }
-
-    @Test
-    @DisplayName("CA-0a-11 token bucket: 429 con Retry-After de al menos 1 segundo")
-    void retryAfter() {
-        String ip = "198.51.100.78";
-        for (int i = 1; i <= 5; i++) {
-            estado(ip);
-        }
-        var respuesta = cliente.get().uri("/api/v1/categorias").header("X-Forwarded-For", ip)
-                .exchange().returnResult(String.class);
-        assertThat(respuesta.getStatus().value()).isEqualTo(429);
-        assertThat(Long.parseLong(respuesta.getResponseHeaders().getFirst("Retry-After"))).isBetween(1L, 2L);
-    }
 }

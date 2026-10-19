@@ -41,6 +41,7 @@
     <awssdk.version>2.56.0</awssdk.version>
     <wiremock.version>3.13.2</wiremock.version>
     <lombok.version>1.18.48</lombok.version>
+    <spring-retry.version>2.0.13</spring-retry.version>
     <!-- Umbral de cobertura de líneas por módulo (SPEC-0a I7, CA-0a-21) -->
     <jacoco.umbral>0.80</jacoco.umbral>
   </properties>
@@ -82,6 +83,12 @@
         <groupId>org.wiremock</groupId>
         <artifactId>wiremock-standalone</artifactId>
         <version>${wiremock.version}</version>
+      </dependency>
+      <!-- Reintentos del cliente de config (CA-0a-04): ni Boot 4 ni Cloud 2025.1 lo gestionan -->
+      <dependency>
+        <groupId>org.springframework.retry</groupId>
+        <artifactId>spring-retry</artifactId>
+        <version>${spring-retry.version}</version>
       </dependency>
       <dependency>
         <groupId>com.fitstore</groupId>

@@ -157,6 +157,10 @@ class GatewayRateLimitTest {
             }
         }
         // 100 de la ráfaga más, como mucho, el token que repone 1 por segundo mientras corre la prueba
+        var rechazo = cliente.get().uri("/api/v1/categorias").header("X-Forwarded-For", "203.0.113.99")
+                .exchange().returnResult(String.class);
+        assertThat(rechazo.getStatus().value()).isEqualTo(429);
+        assertThat(Long.parseLong(rechazo.getResponseHeaders().getFirst("Retry-After"))).isBetween(1L, 2L);
         assertThat(aceptadas).isBetween(100, 102);
         assertThat(rechazadas).isEqualTo(130 - aceptadas);
     }
