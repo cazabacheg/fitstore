@@ -6,7 +6,7 @@
 > **Contratos:** no crea endpoints; consume los ya definidos (sección 4).
 
 **Historial:**
-- v3 (2026-10-19): revisión de coherencia: Mailpit corre en la nube sin publicar como respaldo de SES (CA-8-15, CA-8-30; micro de infraestructura v5 con `duckdns` y Mailpit en la tabla de memoria).
+- v3 (2026-10-19): revisión de coherencia: Mailpit corre en la nube sin publicar como respaldo de SES (CA-8-15, CA-8-30; micro de infraestructura v6 con `duckdns` y Mailpit en la tabla de memoria).
 - v2 (2026-10-19): I6 ✅ Garage en la VM (adaptador Azure Blob diferido); I7 ✅ la nube carga **todos** los datos de demostración, incluidos clientes y pedidos, con la contraseña de las cuentas demo desde un secreto (CA-8-31) → **spec aprobada**. Ajustes propagados: SPEC-0a v5, SPEC-1 v5, SPEC-2 a SPEC-7 (nota del perfil `demo`), micro de infraestructura v5, stack v3, macro v22 y ADR-013.
 - v1 (2026-10-19): borrador inicial.
 

@@ -1,11 +1,12 @@
 # FitStore — Análisis micro: infraestructura (`config-server`, `discovery-server`, `api-gateway`) y piezas comunes
 
-> Versión: **v5 (aprobado)** — 2026-10-19. Fuente: [`01-analisis-macro.md`](../01-analisis-macro.md) v16.
+> Versión: **v6 (aprobado)** — 2026-10-19. Fuente: [`01-analisis-macro.md`](../01-analisis-macro.md) v16.
 > Estados: ✅ decidido · propuesto · ❓ abierto · 🕓 diferido
 > Ficha corta: estos servicios no tienen dominio de negocio, así que la estructura difiere de la plantilla.
 
 **Historial:**
-- v5 (2026-10-19): contenedor `duckdns` y Mailpit como respaldo de SES en `cloud` (SPEC-8); `AzureBlobFileStorage` diferido (en la nube se usa Garage en la VM, SPEC-8 I6); se quita la ruta `/api/v1/admin/clientes/*/pedidos` del gateway (los pedidos de un cliente usan `GET /admin/pedidos?clienteId=`, SPEC-4 O3); detectado al redactar la SPEC-8.
+- v6 (2026-10-19): revisión de coherencia: contenedor `duckdns` y Mailpit como respaldo de SES en `cloud` en la tabla de memoria y en los archivos de compose (SPEC-8).
+- v5 (2026-10-19): `AzureBlobFileStorage` diferido (en la nube se usa Garage en la VM, SPEC-8 I6); se quita la ruta `/api/v1/admin/clientes/*/pedidos` del gateway (los pedidos de un cliente usan `GET /admin/pedidos?clienteId=`, SPEC-4 O3); detectado al redactar la SPEC-8.
 - v4 (2026-10-18): sección 10 aprobada → **documento completo aprobado**.
 - v3 (2026-10-18): sección 10 (diseño técnico) redactada: C3, código de las partes críticas, paquetes, dependencias, configuración e infraestructura.
 - v2 (2026-10-16): documento aprobado. Dominio de la demo: subdominio gratuito de **DuckDNS** (`tienda.` y `admin.` debajo). Swagger publicado en la nube **con contraseña**.
