@@ -1,10 +1,11 @@
 # FitStore — Análisis micro: infraestructura (`config-server`, `discovery-server`, `api-gateway`) y piezas comunes
 
-> Versión: **v7 (aprobado)** — 2026-10-19. Fuente: [`01-analisis-macro.md`](../01-analisis-macro.md) v16.
+> Versión: **v8 (aprobado)** — 2026-10-19. Fuente: [`01-analisis-macro.md`](../01-analisis-macro.md) v16.
 > Estados: ✅ decidido · propuesto · ❓ abierto · 🕓 diferido
 > Ficha corta: estos servicios no tienen dominio de negocio, así que la estructura difiere de la plantilla.
 
 **Historial:**
+- v8 (2026-10-19): por la implementación de 0a.1: tipos de `outbox_evento` y `evento_procesado` y puerto `CatalogoRutasEventos` (10.3); `CorrelacionFilter` va primero en la cadena del gateway (10.1), para que `X-Request-Id` salga en todas las respuestas (K9, CA-0a-13); C3-gateway regenerado.
 - v7 (2026-10-19): ajustes de la etapa de contratos: formato de `ApiError` y de la página (K5, K6) y forma del sobre de eventos con `datos` (K12).
 - v6 (2026-10-19): revisión de coherencia: contenedor `duckdns` y Mailpit como respaldo de SES en `cloud` en la tabla de memoria y en los archivos de compose (SPEC-8).
 - v5 (2026-10-19): `AzureBlobFileStorage` diferido (en la nube se usa Garage en la VM, SPEC-8 I6); se quita la ruta `/api/v1/admin/clientes/*/pedidos` del gateway (los pedidos de un cliente usan `GET /admin/pedidos?clienteId=`, SPEC-4 O3); detectado al redactar la SPEC-8.
@@ -198,7 +199,7 @@ Stack y versiones: [`docs/arquitectura/stack-versiones.md`](../../arquitectura/s
 
 ![C3 api-gateway](../../arquitectura/img/C3-gateway.png)
 
-Cadena de una petición: **SeguridadJwt → BloqueoInternoFilter → RateLimiting → CorrelacionFilter → Rutas** (→ servicio vía Eureka, o `FallbackController` con `503`). `CorsConfig` y `OpenApiAgregado` completan el gateway. Config-server y Eureka no tienen componentes propios relevantes (son la aplicación Spring Cloud estándar con su configuración).
+Cadena de una petición: **CorrelacionFilter → SeguridadJwt → BloqueoInternoFilter → RateLimiting → Rutas** (la correlación va primero para que `X-Request-Id` salga en todas las respuestas, también en los `401`, `404` y `429` de los filtros siguientes; contracts K9, SPEC-0a CA-0a-13) (→ servicio vía Eureka, o `FallbackController` con `503`). `CorsConfig` y `OpenApiAgregado` completan el gateway. Config-server y Eureka no tienen componentes propios relevantes (son la aplicación Spring Cloud estándar con su configuración).
 
 ### 10.2 Repositorio: estructura del monorepo
 
@@ -235,7 +236,7 @@ com.fitstore.common
 └── autoconfigure registro de las autoconfiguraciones (cada servicio las activa con propiedades)
 ```
 
-Cada servicio que usa outbox incluye la tabla `outbox_evento` y `evento_procesado` en su propia migración Flyway (la librería no crea tablas).
+Cada servicio que usa outbox incluye la tabla `outbox_evento` y `evento_procesado` en su propia migración Flyway (la librería no crea tablas). Tipos que espera `fitstore-common`: `outbox_evento(id uuid PK, tipo varchar(100), agregado_id varchar(64), payload jsonb, creado_en timestamptz, publicado_en timestamptz NULL)` y `evento_procesado(evento_id uuid PK, procesado_en timestamptz)`. La *routing key* de cada `tipo` la da el puerto `CatalogoRutasEventos`, que cada servicio implementa con los canales del AsyncAPI.
 
 ### 10.4 Dependencias de las piezas de infraestructura
 

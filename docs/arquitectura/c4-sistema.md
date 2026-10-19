@@ -1,6 +1,6 @@
 # FitStore — Arquitectura C4 del sistema (C1, C2 y C3)
 
-> Versión: **v5 (aprobado)** — 2026-10-19. v5: eventos y componentes del reembolso postventa en order y payment (SPEC-5; imágenes C2-Eventos, C2-Pagos, C3-order y C3-payment regeneradas). v4: C3 de los 8 contenedores aprobados. v3: C1 y C2 aprobados. v2: el C2 general se aligera; nuevas vistas C2-Datos y C2-Pagos. Modelo fuente: [`workspace.dsl`](workspace.dsl) (Structurizr DSL).
+> Versión: **v6 (aprobado)** — 2026-10-19. v6: C3-gateway con `CorrelacionFilter` primero en la cadena (micro de infraestructura v8, CA-0a-13). v5: eventos y componentes del reembolso postventa en order y payment (SPEC-5; imágenes C2-Eventos, C2-Pagos, C3-order y C3-payment regeneradas). v4: C3 de los 8 contenedores aprobados. v3: C1 y C2 aprobados. v2: el C2 general se aligera; nuevas vistas C2-Datos y C2-Pagos. Modelo fuente: [`workspace.dsl`](workspace.dsl) (Structurizr DSL).
 > Las imágenes de `img/` se generan desde el modelo; **no se editan a mano**.
 
 ## Cómo ver y regenerar los diagramas

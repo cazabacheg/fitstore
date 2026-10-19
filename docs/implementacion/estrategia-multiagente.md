@@ -1,9 +1,10 @@
 # FitStore — Estrategia multiagente de implementación
 
-> Versión: **v5 (aprobado)** — 2026-10-19 · Estados: ✅ decidido · 🟡 propuesto · ❓ abierto
+> Versión: **v6 (aprobado)** — 2026-10-19 · Estados: ✅ decidido · 🟡 propuesto · ❓ abierto
 > Etapa: specs ✅ → contratos ✅ → diseño ✅ → **estrategia multiagente** → implementación.
 
 **Historial:**
+- v6 (2026-10-19): **validación del brief contra la spec** antes de lanzar cada agente (B2), tras detectar en 0a.1 criterios asignados al paso equivocado.
 - v5 (2026-10-19): **spec primero** en toda validación (V-c); **terminado = 100 % del alcance de la spec**, sin agregados ni adelantos (V0b, V11). La cobertura de 80 % es un piso de calidad, no la medida de terminado.
 - v4 (2026-10-19): **checkpoints de base** (sección 2.1): revisión exhaustiva del lead antes de arrancar agentes en paralelo (tras 0a.1 y tras 0a + 0b).
 - v3 (2026-10-19): cobertura mínima 80 % con el núcleo cubierto (V10); rojo por historia confirmado (F3); la ola 0 se parte en 0a.1 → 0a.2 (los 7 esqueletos, 3 a la vez) → 0a.3 → **estrategia aprobada**.
@@ -72,6 +73,16 @@ El lead arma un *brief* con esta plantilla y lo guarda en `docs/implementacion/b
 5. **Rama y worktree:** `spec/NN-nombre` desde `dev`.
 6. **Cuándo detenerse y preguntar** (sección 5).
 7. **Cómo reportar** (sección 4.3).
+
+**B2 ✅ Validación del brief antes de lanzar (spec primero).** El brief no se arma "de memoria" ni por inferencia: cada asignación se copia de la spec. Antes de lanzar a un agente, el lead completa en el brief la tabla **"Validación del brief"** con todos los criterios de la spec y comprueba:
+
+1. **Cada criterio** de la spec aparece **exactamente una vez** como dueño (un paso o un agente), sin huecos ni duplicados. Si otro paso agrega una prueba complementaria, se anota como tal, sin quitarle el criterio a su dueño.
+2. **Dónde se prueba** coincide literalmente con la fila de la **sección 7** de la spec (tipo y archivo). Si la sección 7 dice *smoke* o CI, el criterio es de quien crea ese *smoke* o ese CI.
+3. **El dueño puede probarlo:** el archivo de prueba que indica la sección 7 está dentro del alcance (`.alcance`) de ese paso.
+4. **El alcance** de cada paso está contenido en la **sección 8** de la spec, y la unión de los pasos la cubre completa.
+5. **"Incluye" y "No incluye"** de la sección 1 están repartidos sin huecos y sin adelantar trabajo de otras specs.
+
+El autor ve esa tabla al aprobar la ola. Si el agente encuentra después una asignación mal hecha, el lead corrige el brief por PR y registra el error en el tablero.
 
 Las reglas comunes a todos los agentes (convenciones, TDD, commits, carpetas congeladas) van en un `CLAUDE.md` en la raíz del repo, que Claude Code carga en cada agente; el brief solo agrega lo propio de la spec.
 
