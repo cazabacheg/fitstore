@@ -1,15 +1,16 @@
 # SPEC-4 — Pedidos
 
-> Versión: **v2 (borrador)** — 2026-10-18 · Estados: ✅ decidido · 🟡 propuesto · ❓ abierto
+> Versión: **v3 (aprobado)** — 2026-10-18 · Estados: ✅ decidido · 🟡 propuesto · ❓ abierto
 > **Dueña de:** `backend/order-service` (carrito, checkout, pedidos, saga) · tienda: `features/carrito`, `features/checkout`, `features/mis-pedidos` · backoffice: `features/pedidos`.
 > **Depende de:** 0a, 0b, 1 (sesión y direcciones) · usa los contratos de catalog (cotizar, reservar), auth (cliente y dirección), delivery (opciones y cotización de envío) y settings (parámetros y ubigeo) · **Habilita:** 5 (pago del pedido), 6 (entrega desde `PedidoListoDespacho`), 7 (correos del pedido), 8 (dashboard y E2E).
 > **Contratos:** `contracts/openapi/order-service.yaml`; eventos que publica `PedidoCreado`, `PedidoPagado`, `PedidoCancelado`, `PedidoExpirado`, `PagoNoAplicable`, `PedidoListoDespacho`, `PedidoListoRecojo`, `PedidoRecogido`; consume `PagoConfirmado`, `PagoRechazado`, `BoletaEmitida`, `EntregaActualizada`.
 
 **Historial:**
+- v3 (2026-10-18): O3 y O6 aprobados (micro de order v5) → **spec aprobada**.
 - v2 (2026-10-18): O1 ✅ checkout en una sola página; O2 ✅ la nueva dirección se agrega en un diálogo sobre el checkout (reutiliza `DialogoDireccion` de la SPEC-1, A6); cada etapa del seguimiento lleva una breve descripción debajo de su nombre (O9).
 - v1 (2026-10-18): borrador inicial.
 
-**Estado de revisión por sección:** 1 ⏳ · 2 ⏳ · 3 ⏳ · 4 ⏳ · 5 ⏳ · 6 ⏳ · 7 ⏳ · 8 ⏳ · 9 ⏳
+**Estado de revisión por sección:** 1 ✅ · 2 ✅ · 3 ✅ · 4 ✅ · 5 ✅ · 6 ✅ · 7 ✅ · 8 ✅ · 9 ✅
 
 ---
 
@@ -359,7 +360,7 @@ Todo según el micro de order. Decisiones de implementación de esta spec:
 |---|---|---|
 | O1 | **Checkout en una sola página** ✅ | Dirección, entrega y revisión en una página con el resumen al costado (abajo en móvil), en lugar de un asistente de pasos. Más compacto, menos clics; cada cambio recalcula el resumen |
 | O2 | **Nueva dirección en un diálogo sobre el checkout** ✅ | El checkout abre `DialogoDireccion` de la SPEC-1 (A6) con `DialogoDireccionService.abrir()`; la dirección devuelta se agrega a la lista y queda elegida. No se toca `shared`: el diálogo es solo de la tienda y sigue siendo de la spec 1; el checkout solo lo importa |
-| O3 | **Pedidos de un cliente con el mismo listado** 🟡 | `GET /admin/pedidos?clienteId=` reemplaza a `GET /admin/clientes/{clienteId}/pedidos` del micro: un endpoint menos y la misma pantalla P-4-05. Cambio menor al micro de order |
+| O3 | **Pedidos de un cliente con el mismo listado** ✅ | `GET /admin/pedidos?clienteId=` reemplaza a `GET /admin/clientes/{clienteId}/pedidos` del micro: un endpoint menos y la misma pantalla P-4-05. Cambio menor al micro de order |
 | O4 | **Transiciones permitidas en la respuesta** ✅ | El detalle del backoffice incluye `transicionesPermitidas` (calculadas por `MaquinaEstadosPedido`), y el frontend solo dibuja esos botones. Las reglas viven en un solo lugar |
 | O5 | **Conflictos con `version`** ✅ | `PATCH …/estado` y `…/cancelar` llevan la `version` del pedido que vio el operador → 409 si cambió (CA-4-48). Los eventos internos usan la actualización condicional del micro (4.4) |
 | O6 | **Ventas por fecha de pago** ✅ | El resumen toma la fecha del historial `→ PAGADO` (índice `(estado_nuevo, creado_en)` en `pedido_historial`, por migración) y excluye los pedidos que terminaron `CANCELADO` |
