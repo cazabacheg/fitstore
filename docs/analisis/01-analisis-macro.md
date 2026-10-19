@@ -1,11 +1,12 @@
 # FitStore — Análisis técnico macro
 
 > Proyecto final DAW II (4697) + DSW II (4698) — Cibertec, 6.º ciclo.
-> Autor: Carlos Azabache. Versión: **v23 (aprobado)** — 2026-10-19.
+> Autor: Carlos Azabache. Versión: **v24 (aprobado)** — 2026-10-19.
 > Documento base: [`CONSOLIDADO-PROYECTO.md`](../../../CONSOLIDADO-PROYECTO.md).
 > Siguiente etapa: análisis técnico micro (por servicio) → C4 → specs → contratos.
 
 **Historial:**
+- v24 (2026-10-19): por la etapa de diseño: el tema de la tienda configura solo los colores (CU-31, RF-SET-02); tipografía y bordes fijos.
 - v23 (2026-10-19): revisión de coherencia: catálogo de eventos: `PedidoExpirado` separado de `PedidoCancelado` (notification no lo consume); RF-BO-03 marcado como alcance futuro.
 - v22 (2026-10-19): por SPEC-8: ADR-013 actualizada (Garage en la VM también en Azure; adaptador Azure Blob diferido); los datos de demostración se cargan también en la nube (perfil `demo`).
 - v21 (2026-10-19): por SPEC-6: **devolución a tienda** cuando un pedido no se puede entregar o nadie lo recoge: estado `DEVUELTA` en delivery y `DEVUELTO` (final) en order, reembolso sin plazo desde un pedido devuelto, nuevo correo al cliente (14): RF-ORD-03, RF-ORD-11, RF-DEL-02, RF-NOT-01.
@@ -174,7 +175,7 @@ Prioridad: **M** = imprescindible, **S** = importante, **C** = deseable.
 | CU-28 | Gestionar tarifas de envío (por distrito en Lima/Callao, por departamento/provincia para agencia; costo y tiempo estimado) y agencias habilitadas | Admin | M |
 | CU-29 | Consultar clientes y su historial | Operador, Admin | S |
 | CU-30 | Gestionar usuarios staff y roles | Admin | M |
-| CU-31 | **Configurar tienda**: marca, logo, colores, tipografía, textos, contacto, redes, políticas | Admin | M |
+| CU-31 | **Configurar tienda**: marca, logo, colores, textos, contacto, redes, políticas | Admin | M |
 | CU-32 | Configurar parámetros de negocio: moneda, métodos de pago y de entrega habilitados, stock mínimo | Admin | M |
 | CU-33 | Gestionar plantillas de notificación y ver el registro de envíos | Admin | M |
 | CU-34 | Atender reclamos del Libro de Reclamaciones | Admin | S |
@@ -337,7 +338,7 @@ Formato: `RF-<CONTEXTO>-NN`. Prioridad MoSCoW.
 | ID | Requisito | P |
 |---|---|---|
 | RF-SET-01 | Identidad: nombre, eslogan, logo (claro/oscuro), favicon, imágenes de la landing | M |
-| RF-SET-02 | Tema: colores (primario, secundario, acento, fondo, texto), tipografía, radio de bordes | M |
+| RF-SET-02 | Tema: colores (primario, secundario, acento, fondo, texto); la tipografía y los bordes son fijos del sistema de diseño | M |
 | RF-SET-03 | Contenido: textos de la landing, contacto, redes, horario, dirección de tienda física | M |
 | RF-SET-04 | Políticas: términos, privacidad, cambios y devoluciones, envíos | M |
 | RF-SET-05 | Parámetros de negocio: moneda, métodos de pago y entrega habilitados, minutos de expiración de pedido, correos para alertas, días para reembolso postventa (0 = sin límite) (el stock mínimo por defecto lo guarda catalog, RF-INV-05) | M |

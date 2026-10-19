@@ -1,9 +1,10 @@
 # FitStore — Análisis micro: `notification-service`
 
-> Versión: **v11 (aprobado)** — 2026-10-19. Fuente: [`01-analisis-macro.md`](../01-analisis-macro.md) v15.
+> Versión: **v12 (aprobado)** — 2026-10-19. Fuente: [`01-analisis-macro.md`](../01-analisis-macro.md) v15.
 > Estados: ✅ decidido · 🟡 propuesto · ❓ abierto · 🕓 diferido
 
 **Historial:**
+- v12 (2026-10-19): etapa de diseño: el texto sobre el color primario en los correos se elige por contraste (4.4).
 - v11 (2026-10-19): ajustes de la etapa de contratos: `envio_correo.historial_intentos` (`jsonb`) para mostrar cada intento con su fecha (SPEC-7 CA-7-20).
 - v10 (2026-10-19): revisión de coherencia: se distingue lo que se consume sin correo de lo que no se escucha (`PedidoExpirado`, `PagoRechazado`).
 - v9 (2026-10-19): por la SPEC-7 (N7): **enviar prueba a mi correo** desde el editor (`POST …/plantillas/{codigo}/prueba`).
@@ -201,7 +202,7 @@ Separar **recibir** (rápido, en la transacción del consumidor) de **enviar** (
 
 ### 4.4 Marca en los correos (RF-NOT-02)
 
-- Layout común: logo (URL pública `/media/...`), color primario en botones y cabecera, nombre de la tienda, pie con dirección, horario, redes y enlaces a las políticas.
+- Layout común: logo (URL pública `/media/...`), color primario en botones y cabecera (texto encima en blanco o en el color de texto, el que dé más contraste; mismo cálculo que `fs-color-en-primario` del sistema de diseño), nombre de la tienda, pie con dirección, horario, redes y enlaces a las políticas.
 - HTML compatible con clientes de correo (tablas y estilos en línea); cada correo tiene además su **versión en texto plano**.
 - Fechas y montos en formato `es-PE` (`jueves 22 de octubre`, `S/ 332.46`).
 - **Vista previa** en el backoffice: cada plantilla se puede ver renderizada con datos de ejemplo y la marca actual (útil para la exposición).

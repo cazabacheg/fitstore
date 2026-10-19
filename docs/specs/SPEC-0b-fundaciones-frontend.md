@@ -1,10 +1,11 @@
 # SPEC-0b — Fundaciones del frontend
 
-> Versión: **v6 (aprobado)** — 2026-10-19 · Estados: ✅ decidido · 🟡 propuesto · ❓ abierto
+> Versión: **v7 (aprobado)** — 2026-10-19 · Estados: ✅ decidido · 🟡 propuesto · ❓ abierto
 > **Dueña de:** workspace Angular (`frontend/`), librería `shared`, *shells* (layouts) de storefront y backoffice, rutas y menús generales, tema white-label, carpetas `ui/` de cada app, job de frontend en CI.
 > **Depende de:** 0a (gateway y CI), la etapa de contratos (OpenAPI para generar los clientes) y la etapa de diseño (**sistema de diseño**: los componentes de `ui/` se construyen según él). · **Habilita:** pantallas de las specs 1–8.
 
 **Historial:**
+- v7 (2026-10-19): etapa de diseño: el tema de settings trae solo los cinco colores; la tipografía y los radios son fijos (HU-0b-02, CA-0b-05, R4). Cabecera de la tienda: hasta 4 categorías raíz, atenuación al pasar el mouse (CA-0b-20, nuevo CA-0b-20c, CA-0b-21); diseño de P-0b-01 enlazado.
 - v6 (2026-10-19): revisión de coherencia: HU-0b-06 cita RF-BO-02 (tablas con paginación, filtros y orden); menú del backoffice completo (R3: ítems, subítems, roles) y mecanismo de contadores por funcionalidad (`CONTADOR_MENU`), que necesitaba la SPEC-5 para los reembolsos fallidos (CA-0b-24).
 - v5 (2026-10-19): el selector de ubigeo de `ui/` acepta la opción `hasta` (departamento, provincia o distrito), pedida por la SPEC-6 para las tarifas (CA-0b-26).
 - v4 (2026-10-18): **convención de filas de las tablas del backoffice** (R11, CA-0b-28b): el identificador es un enlace real, la fila entera es clicable y la última columna lleva las acciones ("Ver ›", hasta 2 botones o el menú "⋮"). Se aplica a los listados de las specs 1–5 (revisión hecha al cerrar la SPEC-5).
@@ -69,12 +70,12 @@ CA-0b-04  Dado un pull request que solo modifica frontend/
 
 ### HU-0b-02 — La marca de la tienda sin recompilar
 
-Como administrador, quiero que la tienda y el backoffice tomen el logo, los colores y la tipografía de la configuración, para cambiar la marca sin recompilar. · Cubre: RF-SET-01, 02, 06 · RNF-17 · Pantallas: [P-0b-01](#p-0b-01--layout-de-la-tienda), [P-0b-02](#p-0b-02--layout-del-backoffice), [P-0b-04](#p-0b-04--catálogo-de-componentes)
+Como administrador, quiero que la tienda y el backoffice tomen el logo y los colores de la configuración, para cambiar la marca sin recompilar. · Cubre: RF-SET-01, 02, 06 · RNF-17 · Pantallas: [P-0b-01](#p-0b-01--layout-de-la-tienda), [P-0b-02](#p-0b-02--layout-del-backoffice), [P-0b-04](#p-0b-04--catálogo-de-componentes)
 
 ```gherkin
-CA-0b-05  Dado que settings devuelve color primario #E11D48 y tipografía Poppins
+CA-0b-05  Dado que settings devuelve color primario #E11D48
           Cuando abro la tienda o el backoffice
-          Entonces botones, enlaces y acentos usan #E11D48 y el texto usa Poppins,
+          Entonces botones, enlaces y acentos usan #E11D48,
                tanto en los componentes de Tailwind (tienda) como en los de Angular Material (backoffice)
 
 CA-0b-06  Dado que el admin cambió el color en settings
@@ -152,7 +153,7 @@ Como visitante, quiero una cabecera y un pie claros en cualquier dispositivo; co
 
 ```gherkin
 CA-0b-20  Cuando abro la tienda en escritorio
-          Entonces veo logo, categorías (de GET /categorias), buscador, cuenta y carrito con contador
+          Entonces veo logo, hasta 4 categorías raíz (de GET /categorias, en su orden), buscador, cuenta y carrito con contador
           Y en el pie, contacto, políticas, redes y el enlace "Libro de Reclamaciones"
 
 CA-0b-20b Cuando abro cualquier página de la tienda (incluso una corta, como un carrito vacío o la 404)
@@ -160,8 +161,12 @@ CA-0b-20b Cuando abro cualquier página de la tienda (incluso una corta, como un
           Y el pie queda al final del documento: no se ve en la pantalla inicial, solo al hacer scroll hasta el fondo
           Y el pie nunca es fijo (sin position: fixed ni sticky)
 
+CA-0b-20c Cuando paso el mouse o el foco del teclado por una categoría del menú
+          Entonces las demás se atenúan y la categoría de la página actual sigue subrayada
+          Y si hay más de 4 categorías raíz, las demás se ven en "Compra por categoría" de la landing y en los filtros de /productos
+
 CA-0b-21  Cuando abro la tienda en un celular (390 px)
-          Entonces el menú de categorías y la cuenta pasan a un menú lateral (☰), sin scroll horizontal
+          Entonces todas las categorías y la cuenta pasan a un menú lateral (☰) junto al logo, sin scroll horizontal
 
 CA-0b-22  Cuando escribo en el buscador y presiono Enter
           Entonces navego a /productos?q=<texto>
@@ -227,7 +232,7 @@ CA-0b-30  Dado que alguien cambió un contrato sin regenerar
 - **Proyecto / acceso:** storefront · público.
 - **Boceto (escritorio):** ![P-0b-01](img/P-0b-01-tienda.png)
 - **Boceto (móvil):** ![P-0b-01 móvil](img/P-0b-01-tienda-movil.png)
-- **Diseño de alta fidelidad:** 🕓 pendiente de la etapa de diseño (pantalla clave: cabecera y pie de la tienda, en dos marcas)
+- **Diseño de alta fidelidad:** ✅ [canvas "FitStore Tienda"](https://claude.ai/artifact/1iacKddHAquNYuQcFPBZLg), piezas `TiendaCabecera` y `TiendaPie` (FitStore y Kallpa). Cabecera clara (`fs-color-superficie` con línea inferior), menú en mayúsculas con letra espaciada; el pie va en `fs-color-secundario`.
 - **Componentes:** `TiendaShell`, `Cabecera` (logo, `MenuCategorias`, `Buscador`, `IconoCuenta`, `IconoCarrito`), `MenuMovil`, `Pie`, `BarraAnuncio`.
 - **Estados:** si `/categorias` falla, la cabecera se muestra sin categorías (no bloquea); el contador del carrito empieza en 0.
 - **Pie:** al final del documento, debajo del pliegue; el contenido tiene `min-height` igual al alto visible menos la cabecera, para que el pie no aparezca en la primera pantalla ni en páginas cortas (CA-0b-20b).
@@ -270,7 +275,7 @@ No modifica el backend. Decisiones de implementación del frontend:
 | R1 | **Estructura** ✅ | `frontend/projects/{storefront,backoffice}/src/app/{core,layout,ui,features}` y `frontend/projects/shared/src/lib/{api,auth,http,theme,i18n,ubigeo,carrito,models,pipes}`. Componentes *standalone*, señales (`signal`, `computed`) para el estado y control de flujo nuevo (`@if`, `@for`). Sin NgRx (KISS) |
 | R2 | **Rutas registradas** ✅ | Tabla de abajo; cada ruta carga `features/<carpeta>/<carpeta>.routes.ts`, que 0b crea con una página "Próximamente". La spec dueña solo reemplaza el contenido de su carpeta |
 | R3 | **Menú por rol** ✅ | Definido en `layout/menu.ts` del backoffice con el rol mínimo de cada ítem y sus subítems (tabla de abajo y P-0b-02); los ítems pueden mostrar un contador aportado por su funcionalidad |
-| R4 | **Tema** ✅ | `provideAppInitializer` carga `/settings/public` y escribe variables CSS en `:root` (`--fs-color-primario`, `--fs-color-secundario`, `--fs-color-acento`, `--fs-color-fondo`, `--fs-color-texto`, `--fs-fuente`, `--fs-radio`). Tailwind 4 las usa en su `@theme`; en Angular Material 3 se asignan a los tokens del sistema (`--mat-sys-primary`, …). La configuración se guarda en `localStorage` como respaldo (CA-0b-07). La fuente se carga de Google Fonts según `tipografia` |
+| R4 | **Tema** ✅ | `provideAppInitializer` carga `/settings/public` y escribe variables CSS en `:root` (`--fs-color-primario`, `--fs-color-secundario`, `--fs-color-acento`, `--fs-color-fondo`, `--fs-color-texto`) y deriva los demás colores (`--fs-color-en-primario`, `--fs-color-primario-texto`, …; ver el sistema de diseño). Tailwind 4 las usa en su `@theme`; en Angular Material 3 se asignan a los tokens del sistema (`--mat-sys-primary`, …). La configuración se guarda en `localStorage` como respaldo (CA-0b-07). La tipografía (Poppins) y los radios son fijos: vienen de los estilos de `ui/`, no de settings |
 | R5 | **Clientes de API** ✅ | `openapi-generator` (`typescript-angular`) → `shared/api/<servicio>/`, **versionados en Git**; el CI regenera y falla si hay diferencias (CA-0b-30). Ninguna spec los edita a mano |
 | R6 | **Sesión** | `SesionStore` en `shared/auth` (señales: cuenta, rol, tipo; el access token solo en memoria). `iniciarSesion()` y `cerrarSesion()` los llaman las pantallas de la spec 1. Guards `autenticadoGuard`, `rolGuard('ADMIN')` |
 | R7 | **Interceptores** (en este orden) | `requestId` → `autenticacion` (Bearer) → `carritoId` (solo tienda, solo `/carrito`) → `refresco` (401 → un único refresh compartido → reintento) → `errores` (toast, banner 503, errores de campos) |
@@ -336,7 +341,7 @@ No aplica (no hay base de datos). En el navegador: `localStorage` solo para la c
 | 05–08 | Unitaria + manual | `shared/theme/*.spec.ts` (variables escritas, respaldo, valores por defecto) |
 | 09–14 | Unitaria | `shared/http/*.spec.ts` con `HttpTestingController` (refresh único con 3 peticiones simultáneas, logout al fallar, mapeo de errores, `X-Carrito-Id`) |
 | 15–19 | Unitaria | pruebas de rutas y guards por app |
-| 20–24 (incl. 20b) | Componente | pruebas de `TiendaShell` y `BackofficeShell` (incluye ancho 390 px) |
+| 20–24 (incl. 20b, 20c) | Componente | pruebas de `TiendaShell` y `BackofficeShell` (incluye ancho 390 px y el límite de 4 categorías) |
 | 25–28, 28b | Componente | pruebas de cada componente de `ui/` y de los pipes; `fs-tabla.spec.ts` (enlace, clic en fila, acciones sin propagar, tabla sin detalle) |
 | 29 | Script | `npm run api:generate` en CI |
 
@@ -354,7 +359,7 @@ No aplica (no hay base de datos). En el navegador: `localStorage` solo para la c
 
 ## 9. Definición de terminado
 
-- [ ] CA-0b-01 a CA-0b-30 (y CA-0b-20b, CA-0b-28b) cumplidos.
+- [ ] CA-0b-01 a CA-0b-30 (y CA-0b-20b, CA-0b-20c, CA-0b-28b) cumplidos.
 - [ ] Las dos apps arrancan contra la plataforma 0a y muestran la marca de settings (con los datos semilla).
 - [ ] `/_ui` muestra todos los componentes de `ui/` en ambas apps.
 - [ ] Sin tokens en `localStorage`; sin atribución de IA en commits.

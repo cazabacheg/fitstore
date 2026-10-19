@@ -1,9 +1,10 @@
 # FitStore — Contratos de API y de eventos
 
-> Versión: **v4 (aprobado)** — 2026-10-19 · Estados: ✅ decidido · 🟡 propuesto · ❓ abierto
+> Versión: **v5 (aprobado)** — 2026-10-19 · Estados: ✅ decidido · 🟡 propuesto · ❓ abierto
 > Etapa: specs ✅ → **contratos ✅** → diseño → estrategia multiagente → implementación.
 
 **Historial:**
+- v5 (2026-10-19): etapa de diseño: el `Tema` de settings tiene solo los cinco colores (se quitan `tipografia`, `radioBordes` y el enum `Tipografia`).
 - v4 (2026-10-19): revisados por el autor → **contratos aprobados**.
 - v3 (2026-10-19): contratos de los 7 servicios y AsyncAPI de los 23 eventos, todos validados; sobre de eventos con `datos` (K12); ajustes propagados a micros y specs (sección 6).
 - v2 (2026-10-19): **OpenAPI 3.0.3** (soporte completo de OpenAPI Generator; 3.1 sigue experimental); K2 ✅ controladores a mano + `oasdiff` en CI; K13 TDD como barrera en la implementación.
@@ -62,7 +63,7 @@ Versiones fijadas (con más de dos semanas de publicadas):
 |---|---|---|---|
 | `auth-service.yaml` | 32 | 37 | ✅ Redocly + openapi-generator |
 | `catalog-service.yaml` | 56 | 88 | ✅ |
-| `settings-service.yaml` | 22 | 52 | ✅ |
+| `settings-service.yaml` | 22 | 51 | ✅ |
 | `order-service.yaml` | 17 | 50 | ✅ |
 | `payment-service.yaml` | 12 | 33 | ✅ |
 | `delivery-service.yaml` | 31 | 49 | ✅ |
