@@ -124,15 +124,20 @@ class TokenPasswordRepositoryTest {
     }
 
     @Test
-    @DisplayName("CA-0a-06 TokenPasswordRepository rechaza un token sin dueño o con dos dueños (CHECK)")
-    void rechazaDuenoInvalido() {
-        Instant expira = Instant.now().plus(Duration.ofMinutes(30));
-        TokenPassword sinDueno = tokenDeCliente(hash('j'), expira);
+    @DisplayName("CA-0a-06 TokenPasswordRepository rechaza un token sin dueño (CHECK)")
+    void rechazaSinDueno() {
+        TokenPassword sinDueno = tokenDeCliente(hash('j'), Instant.now().plus(Duration.ofMinutes(30)));
         sinDueno.setCliente(null);
-        TokenPassword dosDuenos = tokenDeCliente(hash('k'), expira);
-        dosDuenos.setStaff(staff);
 
         assertThatThrownBy(() -> repositorio.saveAndFlush(sinDueno)).isInstanceOf(DataIntegrityViolationException.class);
+    }
+
+    @Test
+    @DisplayName("CA-0a-06 TokenPasswordRepository rechaza un token con dos dueños (CHECK)")
+    void rechazaDosDuenos() {
+        TokenPassword dosDuenos = tokenDeCliente(hash('k'), Instant.now().plus(Duration.ofMinutes(30)));
+        dosDuenos.setStaff(staff);
+
         assertThatThrownBy(() -> repositorio.saveAndFlush(dosDuenos)).isInstanceOf(DataIntegrityViolationException.class);
     }
 }

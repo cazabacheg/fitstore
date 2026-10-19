@@ -1,0 +1,37 @@
+# auth-service (micro auth, sección 10.5). Sin secretos: solo ${VARIABLES} que salen del .env de cada contenedor.
+server:
+  port: 8081
+
+spring:
+  datasource:
+    url: jdbc:postgresql://${DB_HOST:postgres}:5432/auth_db
+    username: ${AUTH_DB_USER}
+    password: ${AUTH_DB_PASSWORD}
+  jpa:
+    hibernate:
+      ddl-auto: validate        # el esquema lo maneja Flyway
+
+# Documentación OpenAPI 3.0 para oasdiff (contracts K2, SPEC-0a I8)
+springdoc:
+  api-docs:
+    version: openapi_3_0
+
+fitstore:
+  eventos:
+    servicio: auth              # exchange fitstore.eventos; auth publica y no consume, así que no enlaza routing keys
+  outbox:
+    habilitado: true
+    intervalo-ms: 1000
+  auth:
+    issuer: ${FITSTORE_PUBLIC_URL}        # p. ej. https://tienda.<sub>.duckdns.org
+    access-ttl: 15m
+    refresh-ttl: 7d
+    bcrypt-strength: 10
+    bloqueo: { intentos: 5, duracion: 15m }
+    token-recuperacion-ttl: 30m
+    token-invitacion-ttl: 24h
+    claves: { privada: "${JWT_PRIVATE_KEY_PATH}", publica: "${JWT_PUBLIC_KEY_PATH}", kid: "${JWT_KID:fs-1}" }
+    cookie: { nombre: fs_refresh, secure: true, same-site: Strict, path: /api/v1/auth }
+    enlaces:
+      storefront: ${STOREFRONT_URL}       # enlaces de recuperación
+      backoffice: ${BACKOFFICE_URL}       # enlaces de invitación y recuperación del staff
