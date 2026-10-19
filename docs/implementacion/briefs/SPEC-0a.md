@@ -8,7 +8,8 @@ La SPEC-0a se construye en tres pasos (I1). Cada paso es un agente, una rama y u
 | Paso | Rama | Alcance (V4) | Criterios | Entra |
 |---|---|---|---|---|
 | **0a.1** Monorepo, común e infraestructura | `spec/0a-1-plataforma` | [`SPEC-0a.1.alcance`](SPEC-0a.1.alcance) | 01 (parcial), 04, 07, 08–12, 13 (`X-Request-Id`), 14–16, 18 (`.gitignore` y `.env.example`), 21 | Ahora |
-| **0a.2** Esqueleto de un servicio (×7, 3 a la vez) | `spec/0a-2-<servicio>` | `SPEC-0a.2-<servicio>.alcance` | 05 y 06 de ese servicio, más su `ContratoOpenApiTest` (I8) | 0a.1 en `dev` |
+| **CK1** Checkpoint de base | — | — | Revisión exhaustiva del lead ([estrategia 2.1](../estrategia-multiagente.md#21-checkpoints-de-base)) | 0a.1 en `dev` |
+| **0a.2** Esqueleto de un servicio (×7, 3 a la vez) | `spec/0a-2-<servicio>` | `SPEC-0a.2-<servicio>.alcance` | 05 y 06 de ese servicio, más su `ContratoOpenApiTest` (I8) | CK1 aprobado por el autor |
 | **0a.3** CI, humo y Postman | `spec/0a-3-ci` | `SPEC-0a.3.alcance` | 01, 02, 03, 13 (traza en Jaeger), 17, 18 (gitleaks), 19, 20, 22 | Los 7 esqueletos en `dev` |
 
 ---

@@ -1,9 +1,10 @@
 # FitStore — Estrategia multiagente de implementación
 
-> Versión: **v3 (aprobado)** — 2026-10-19 · Estados: ✅ decidido · 🟡 propuesto · ❓ abierto
+> Versión: **v4 (aprobado)** — 2026-10-19 · Estados: ✅ decidido · 🟡 propuesto · ❓ abierto
 > Etapa: specs ✅ → contratos ✅ → diseño ✅ → **estrategia multiagente** → implementación.
 
 **Historial:**
+- v4 (2026-10-19): **checkpoints de base** (sección 2.1): revisión exhaustiva del lead antes de arrancar agentes en paralelo (tras 0a.1 y tras 0a + 0b).
 - v3 (2026-10-19): cobertura mínima 80 % con el núcleo cubierto (V10); rojo por historia confirmado (F3); la ola 0 se parte en 0a.1 → 0a.2 (los 7 esqueletos, 3 a la vez) → 0a.3 → **estrategia aprobada**.
 - v2 (2026-10-19): respuestas del autor: 3 agentes a la vez (O1 ✅), el lead integra tras la aprobación (C1 ✅), tablero en archivo ✅, pantallas revisadas en el navegador o en el chat (V6 ✅). Nuevo: los implementadores leen la spec **y el micro** de su servicio (B1), corren con **Sonnet** (M1), y TDD *test first* como barrera durante toda la construcción (F2–F4, V3).
 - v1 (2026-10-19): borrador inicial: roles (autor, lead, implementadores), olas, flujo TDD por agente, verificación del DoD por el lead, puntos de control y herramientas.
@@ -33,6 +34,27 @@ Las dependencias salen de la tabla de [`specs/README.md`](../specs/README.md): 0
 | 2a | **1** Identidad, **2** Catálogo, **3** Tienda y reclamos | 3 agentes | 0b integrada |
 | 2b | **4** Pedidos, **5** Pagos (empieza por la PoC de pasarelas, P1), **6** Envíos, **7** Notificaciones | 3 agentes a la vez; el cuarto entra cuando sale uno de 2a | Cada una, cuando haya un hueco |
 | 3 | **8** Integración, nube y demo | 1 agente | 1 a 7 integradas; `dev → stage` en verde |
+
+### 2.1 Checkpoints de base
+
+Antes de arrancar agentes en paralelo sobre una base, el lead la revisa **completa** (no por muestra): un error en la base se multiplica en cada agente que construye encima.
+
+| Checkpoint | Cuándo | Qué protege |
+|---|---|---|
+| **CK1** | 0a.1 integrada, antes de lanzar los 7 esqueletos (0a.2) | Monorepo, `fitstore-common`, gateway, config, compose y la base mínima de los 7 servicios |
+| **CK2** | 0a y 0b integradas, antes de lanzar la ola 2 (specs 1–7) | Todo lo anterior más los esqueletos, el CI, el *smoke*, el workspace Angular, `shared`, `ui/`, layouts y el tema |
+
+**Qué revisa el lead en cada checkpoint:**
+
+1. **Desde cero:** clona `dev` en una carpeta limpia, `./mvnw verify` (y `npm ci && npm test` en CK2) y levanta el compose de dev; todo en verde y *healthy*.
+2. **Código completo de la base, archivo por archivo**, contra el micro (infraestructura 2–10 en CK1; además 0b R1–R11 en CK2): paquetes y nombres como en 10.3, nada de lógica de negocio en `fitstore-common`, cada filtro del gateway en el orden de 10.1.
+3. **Contratos:** `ApiResponse`, `ApiError`, página y sobre de eventos idénticos a K5, K6 y K12 (los usarán todos los servicios).
+4. **Pruebas y cobertura:** informe completo de JaCoCo (y Vitest en CK2), todo el núcleo cubierto; lectura de todas las pruebas de la base, no de una muestra.
+5. **Seguridad:** sin secretos versionados, la clave JWKS de prueba marcada como tal, todo cerrado salvo `health` y la documentación (I3).
+6. **Lista para el paralelo:** cada agente siguiente puede trabajar **solo en su carpeta** (ningún archivo compartido por completar), y su brief puede apuntar a ejemplos reales de la base (cómo se escribe una prueba de datos, un consumidor, una configuración).
+7. **Briefs siguientes:** se completan con lo aprendido (rutas reales, ejemplos, trampas encontradas).
+
+**Resultado:** un informe al autor con lo revisado, los hallazgos y su corrección. Los hallazgos se corrigen **antes** del paralelo (PR `fix/…` o una ronda más del agente de la base). El autor aprueba el checkpoint y recién ahí se lanzan los agentes en paralelo.
 
 - **O1 ✅ Máximo 3 implementadores a la vez, cuando las dependencias lo permitan.** Límites reales: tu capacidad de revisar PRs, la RAM de Lyanna (cada agente levanta PostgreSQL, Redis y RabbitMQ con Testcontainers) y los minutos de GitHub Actions. Con 3 se terminan 1–7 en unas 3 vueltas.
 - **O2 🟡 1 y 2 primero dentro de 2a:** auth (JWT real) y catalog (productos) son las que más usan las demás en sus pruebas manuales; el resto trabaja contra WireMock de todas formas.
@@ -123,6 +145,7 @@ El lead pasa esta lista **en el worktree del agente, con sus propios comandos**,
 | Momento | El autor |
 |---|---|
 | Inicio de cada ola | Aprueba qué specs entran y sus briefs |
+| Checkpoints de base CK1 y CK2 (2.1) | Revisa el informe del lead y aprueba antes de lanzar agentes en paralelo |
 | Preguntas escaladas (sección 5) | Decide |
 | Cada PR a `dev` | Revisa, demuestra la sección 9 y aprueba la integración |
 | Promoción `dev → stage` | Al cerrar cada ola: `stage.yml` corre el compose completo, Postman y (desde la 8) E2E |

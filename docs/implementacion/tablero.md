@@ -8,6 +8,7 @@
 | Paso | Agente | Rama | Estado | Ronda | PR | Bloqueos / notas |
 |---|---|---|---|---|---|---|
 | 0a.1 Monorepo, común e infraestructura | — | `spec/0a-1-plataforma` | 📝 brief listo | — | — | Esperando la aprobación del autor para lanzar |
+| **CK1** Checkpoint de base (revisión exhaustiva del lead) | lead | — | ⏳ | — | — | Tras 0a.1; el autor lo aprueba antes de lanzar 0a.2 |
 | 0a.2 auth | — | `spec/0a-2-auth` | ⏳ | — | — | Tras 0a.1 |
 | 0a.2 catalog | — | `spec/0a-2-catalog` | ⏳ | — | — | Tras 0a.1 |
 | 0a.2 settings | — | `spec/0a-2-settings` | ⏳ | — | — | Tras 0a.1 |
@@ -22,6 +23,7 @@
 | Ola | Specs | Estado |
 |---|---|---|
 | 1 | 0b | ⏳ |
+| — | **CK2** Checkpoint de base (0a + 0b) | ⏳ |
 | 2a | 1, 2, 3 | ⏳ |
 | 2b | 4, 5, 6, 7 | ⏳ |
 | 3 | 8 | ⏳ |
