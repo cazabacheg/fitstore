@@ -1,0 +1,551 @@
+openapi: 3.0.3
+info:
+  title: FitStore — notification-service
+  version: 1.0.0
+  description: |
+    Registro de envíos de correo, reenvío y editor de textos de las plantillas con vista previa y envío de prueba.
+    Los correos se generan a partir de eventos (contracts/asyncapi); este contrato cubre solo el backoffice.
+
+    Fuente: micro `docs/analisis/micro/notification-service.md` (sección 4) y `docs/specs/SPEC-7-notificaciones.md`.
+    Convenciones: `contracts/README.md`. Rol requerido en cada operación: extensión `x-roles`.
+  license:
+    name: Uso académico
+servers:
+  - url: http://localhost:8080
+    description: Gateway en local (docker compose)
+  - url: https://admin.{sub}.duckdns.org
+    description: Nube (demo), dominio del backoffice
+    variables:
+      sub:
+        default: fitstore
+        description: Subdominio de DuckDNS
+tags:
+  - name: registro
+    description: Registro de envíos y reenvío
+  - name: plantillas
+    description: Textos editables de los 18 correos
+
+paths:
+  /api/v1/admin/notificaciones:
+    get:
+      tags: [registro]
+      operationId: listarEnvios
+      summary: Registro de envíos
+      description: Del más reciente al más antiguo; filtros por estado, plantilla, destinatario, referencia y fechas (CA-7-19).
+      x-roles: [ADMIN]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: estado
+          in: query
+          schema:
+            $ref: '#/components/schemas/EstadoEnvio'
+        - name: plantilla
+          in: query
+          schema:
+            $ref: '#/components/schemas/CodigoPlantilla'
+        - name: destinatario
+          in: query
+          schema:
+            type: string
+            maxLength: 254
+        - name: referencia
+          in: query
+          description: Código de pedido (FS-…), de reclamo (RC-…) o PRUEBA.
+          schema:
+            type: string
+            maxLength: 20
+        - name: desde
+          in: query
+          schema:
+            type: string
+            format: date
+        - name: hasta
+          in: query
+          schema:
+            type: string
+            format: date
+        - $ref: './comun.yaml#/components/parameters/page'
+        - $ref: './comun.yaml#/components/parameters/size'
+        - $ref: './comun.yaml#/components/parameters/sort'
+      responses:
+        '200':
+          description: Página de envíos con contadores por estado.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RespuestaPaginaEnvios'
+        '401':
+          $ref: './comun.yaml#/components/responses/NoAutenticado'
+        '403':
+          $ref: './comun.yaml#/components/responses/SinPermiso'
+
+  /api/v1/admin/notificaciones/{id}:
+    parameters:
+      - $ref: '#/components/parameters/EnvioId'
+    get:
+      tags: [registro]
+      operationId: obtenerEnvio
+      summary: Detalle de un envío
+      description: Asunto, destinatario, referencia, cada intento y el último error (CA-7-20).
+      x-roles: [ADMIN]
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          $ref: '#/components/responses/EnvioActual'
+        '401':
+          $ref: './comun.yaml#/components/responses/NoAutenticado'
+        '403':
+          $ref: './comun.yaml#/components/responses/SinPermiso'
+        '404':
+          $ref: './comun.yaml#/components/responses/NoEncontrado'
+
+  /api/v1/admin/notificaciones/{id}/reenviar:
+    parameters:
+      - $ref: '#/components/parameters/EnvioId'
+    post:
+      tags: [registro]
+      operationId: reenviarEnvio
+      summary: Reenviar un correo
+      description: Vuelve a PENDIENTE y se renderiza con la marca y los textos actuales (N5, CA-7-21).
+      x-roles: [ADMIN]
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          $ref: '#/components/responses/EnvioActual'
+        '401':
+          $ref: './comun.yaml#/components/responses/NoAutenticado'
+        '403':
+          $ref: './comun.yaml#/components/responses/SinPermiso'
+        '404':
+          $ref: './comun.yaml#/components/responses/NoEncontrado'
+        '409':
+          $ref: './comun.yaml#/components/responses/Conflicto'
+
+  /api/v1/admin/notificaciones/plantillas:
+    get:
+      tags: [plantillas]
+      operationId: listarPlantillas
+      summary: Catálogo de plantillas
+      description: Las 18, con su destinatario (cliente o tienda), evento, si es obligatoria y si está activa (CA-7-23).
+      x-roles: [ADMIN]
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Plantillas.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RespuestaPlantillas'
+        '401':
+          $ref: './comun.yaml#/components/responses/NoAutenticado'
+        '403':
+          $ref: './comun.yaml#/components/responses/SinPermiso'
+
+  /api/v1/admin/notificaciones/plantillas/{codigo}:
+    parameters:
+      - $ref: '#/components/parameters/Codigo'
+    get:
+      tags: [plantillas]
+      operationId: obtenerPlantilla
+      summary: Ver una plantilla
+      x-roles: [ADMIN]
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          $ref: '#/components/responses/PlantillaActual'
+        '401':
+          $ref: './comun.yaml#/components/responses/NoAutenticado'
+        '403':
+          $ref: './comun.yaml#/components/responses/SinPermiso'
+        '404':
+          $ref: './comun.yaml#/components/responses/NoEncontrado'
+    put:
+      tags: [plantillas]
+      operationId: guardarPlantilla
+      summary: Guardar los textos y activar o desactivar
+      description: |
+        Variable desconocida → 400 en el campo (CA-7-25). Desactivar una obligatoria → 409 `PLANTILLA_OBLIGATORIA` (CA-7-27).
+        Los textos se escapan; nunca se ejecutan (CA-7-26).
+      x-roles: [ADMIN]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PlantillaRequest'
+            example:
+              asunto: '¡Gracias por tu compra, {{nombre}}! Pedido {{codigoPedido}}'
+              titulo: ¡Tu pedido está confirmado!
+              mensaje: 'Hola {{nombre}}, recibimos tu pago de **{{total}}**. Te avisaremos cuando tu pedido salga.'
+              textoBoton: Ver mi pedido
+              activa: true
+      responses:
+        '200':
+          $ref: '#/components/responses/PlantillaActual'
+        '400':
+          $ref: './comun.yaml#/components/responses/ErrorValidacion'
+        '401':
+          $ref: './comun.yaml#/components/responses/NoAutenticado'
+        '403':
+          $ref: './comun.yaml#/components/responses/SinPermiso'
+        '404':
+          $ref: './comun.yaml#/components/responses/NoEncontrado'
+        '409':
+          $ref: './comun.yaml#/components/responses/Conflicto'
+
+  /api/v1/admin/notificaciones/plantillas/{codigo}/restaurar:
+    parameters:
+      - $ref: '#/components/parameters/Codigo'
+    post:
+      tags: [plantillas]
+      operationId: restaurarPlantilla
+      summary: Volver a los textos predeterminados
+      x-roles: [ADMIN]
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          $ref: '#/components/responses/PlantillaActual'
+        '401':
+          $ref: './comun.yaml#/components/responses/NoAutenticado'
+        '403':
+          $ref: './comun.yaml#/components/responses/SinPermiso'
+        '404':
+          $ref: './comun.yaml#/components/responses/NoEncontrado'
+
+  /api/v1/admin/notificaciones/plantillas/{codigo}/vista-previa:
+    parameters:
+      - $ref: '#/components/parameters/Codigo'
+    post:
+      tags: [plantillas]
+      operationId: previsualizarPlantilla
+      summary: Vista previa con los textos del editor
+      description: Renderiza con los textos enviados (aunque no estén guardados), la marca actual y datos de ejemplo (N3, CA-7-24).
+      x-roles: [ADMIN]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TextosPlantilla'
+      responses:
+        '200':
+          description: Correo renderizado.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RespuestaVistaPrevia'
+        '400':
+          $ref: './comun.yaml#/components/responses/ErrorValidacion'
+        '401':
+          $ref: './comun.yaml#/components/responses/NoAutenticado'
+        '403':
+          $ref: './comun.yaml#/components/responses/SinPermiso'
+        '404':
+          $ref: './comun.yaml#/components/responses/NoEncontrado'
+
+  /api/v1/admin/notificaciones/plantillas/{codigo}/prueba:
+    parameters:
+      - $ref: '#/components/parameters/Codigo'
+    post:
+      tags: [plantillas]
+      operationId: enviarPruebaPlantilla
+      summary: Enviar una prueba a mi correo
+      description: |
+        Envía el correo con los textos del editor y datos de ejemplo al admin conectado (lo toma del token), con "[Prueba]" en el
+        asunto; queda en el registro con referencia PRUEBA. Máximo 5 por minuto por admin → 429 (N7, CA-7-30).
+      x-roles: [ADMIN]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TextosPlantilla'
+      responses:
+        '202':
+          description: Prueba encolada (sale según el ritmo de envío).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RespuestaEnvio'
+        '400':
+          $ref: './comun.yaml#/components/responses/ErrorValidacion'
+        '401':
+          $ref: './comun.yaml#/components/responses/NoAutenticado'
+        '403':
+          $ref: './comun.yaml#/components/responses/SinPermiso'
+        '404':
+          $ref: './comun.yaml#/components/responses/NoEncontrado'
+        '429':
+          $ref: './comun.yaml#/components/responses/DemasiadosIntentos'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      $ref: './comun.yaml#/components/securitySchemes/bearerAuth'
+
+  parameters:
+    EnvioId:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    Codigo:
+      name: codigo
+      in: path
+      required: true
+      schema:
+        $ref: '#/components/schemas/CodigoPlantilla'
+
+  responses:
+    EnvioActual:
+      description: Envío.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/RespuestaEnvio'
+    PlantillaActual:
+      description: Plantilla.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/RespuestaPlantilla'
+
+  schemas:
+    EstadoEnvio:
+      type: string
+      enum: [PENDIENTE, ENVIANDO, ENVIADO, FALLIDO]
+    CodigoPlantilla:
+      type: string
+      description: Catálogo del micro (4.1 y 10.2), 14 al cliente y 4 a la tienda.
+      enum:
+        - BIENVENIDA
+        - RECUPERAR_PASSWORD
+        - INVITACION_STAFF
+        - PASSWORD_CAMBIADO
+        - PEDIDO_CONFIRMADO
+        - PEDIDO_CANCELADO
+        - REEMBOLSO_REALIZADO
+        - EN_CAMINO
+        - ENTREGA_FALLIDA
+        - LISTO_PARA_RECOGER
+        - ENTREGADO
+        - RECLAMO_COPIA
+        - RECLAMO_RESPUESTA
+        - PEDIDO_DEVUELTO
+        - ALERTA_STOCK_BAJO
+        - ALERTA_SIN_STOCK
+        - ALERTA_REEMBOLSO_FALLIDO
+        - ALERTA_RECLAMO_NUEVO
+
+    Intento:
+      type: object
+      required: [numero, fecha]
+      properties:
+        numero:
+          type: integer
+          minimum: 1
+        fecha:
+          type: string
+          format: date-time
+        error:
+          type: string
+          nullable: true
+          description: null = enviado en ese intento.
+
+    EnvioResumen:
+      type: object
+      required: [id, plantilla, destinatario, asunto, estado, intentos, creadoEn]
+      properties:
+        id:
+          type: string
+          format: uuid
+        plantilla:
+          $ref: '#/components/schemas/CodigoPlantilla'
+        destinatario:
+          type: string
+          format: email
+        asunto:
+          type: string
+        referencia:
+          type: string
+          nullable: true
+          example: FS-000124
+        estado:
+          $ref: '#/components/schemas/EstadoEnvio'
+        intentos:
+          type: integer
+          minimum: 0
+        conAdjunto:
+          type: boolean
+        creadoEn:
+          type: string
+          format: date-time
+        enviadoEn:
+          type: string
+          format: date-time
+          nullable: true
+
+    Envio:
+      allOf:
+        - $ref: '#/components/schemas/EnvioResumen'
+        - type: object
+          required: [historialIntentos]
+          properties:
+            historialIntentos:
+              type: array
+              items:
+                $ref: '#/components/schemas/Intento'
+            ultimoError:
+              type: string
+              nullable: true
+            proximoIntentoEn:
+              type: string
+              format: date-time
+              nullable: true
+
+    TextosPlantilla:
+      type: object
+      required: [asunto, titulo, mensaje]
+      properties:
+        asunto:
+          type: string
+          minLength: 3
+          maxLength: 150
+        titulo:
+          type: string
+          minLength: 3
+          maxLength: 120
+        mensaje:
+          type: string
+          minLength: 3
+          maxLength: 3000
+          description: Texto con saltos de línea y **negrita**; variables `{{nombre}}` permitidas por plantilla (N4).
+        textoBoton:
+          type: string
+          nullable: true
+          maxLength: 40
+
+    PlantillaRequest:
+      allOf:
+        - $ref: '#/components/schemas/TextosPlantilla'
+        - type: object
+          required: [activa]
+          properties:
+            activa:
+              type: boolean
+
+    Plantilla:
+      allOf:
+        - $ref: '#/components/schemas/TextosPlantilla'
+        - type: object
+          required: [codigo, nombre, para, evento, activa, obligatoria, variables, personalizada]
+          properties:
+            codigo:
+              $ref: '#/components/schemas/CodigoPlantilla'
+            nombre:
+              type: string
+              example: ¡Pedido confirmado!
+            para:
+              type: string
+              enum: [CLIENTE, TIENDA]
+            evento:
+              type: string
+              example: se emite la boleta (con adjunto)
+            activa:
+              type: boolean
+            obligatoria:
+              type: boolean
+            variables:
+              type: array
+              items:
+                type: string
+              example: ['{{nombre}}', '{{codigoPedido}}', '{{total}}', '{{modalidad}}', '{{nombreTienda}}']
+            personalizada:
+              type: boolean
+              description: true si sus textos difieren de los predeterminados.
+            actualizadaEn:
+              type: string
+              format: date-time
+              nullable: true
+            actualizadaPor:
+              type: string
+              nullable: true
+
+    VistaPrevia:
+      type: object
+      required: [asunto, html, texto]
+      properties:
+        asunto:
+          type: string
+        html:
+          type: string
+          description: Se muestra en un iframe con sandbox.
+        texto:
+          type: string
+          description: Versión en texto plano.
+
+    PaginaEnvios:
+      allOf:
+        - $ref: './comun.yaml#/components/schemas/PaginaMeta'
+        - type: object
+          required: [contenido, contadores]
+          properties:
+            contenido:
+              type: array
+              items:
+                $ref: '#/components/schemas/EnvioResumen'
+            contadores:
+              $ref: './comun.yaml#/components/schemas/Contadores'
+
+    # Respuestas envueltas (K4)
+    RespuestaPaginaEnvios:
+      allOf:
+        - $ref: './comun.yaml#/components/schemas/ApiResponse'
+        - type: object
+          properties:
+            data:
+              $ref: '#/components/schemas/PaginaEnvios'
+    RespuestaEnvio:
+      allOf:
+        - $ref: './comun.yaml#/components/schemas/ApiResponse'
+        - type: object
+          properties:
+            data:
+              $ref: '#/components/schemas/Envio'
+    RespuestaPlantillas:
+      allOf:
+        - $ref: './comun.yaml#/components/schemas/ApiResponse'
+        - type: object
+          properties:
+            data:
+              type: array
+              items:
+                $ref: '#/components/schemas/Plantilla'
+    RespuestaPlantilla:
+      allOf:
+        - $ref: './comun.yaml#/components/schemas/ApiResponse'
+        - type: object
+          properties:
+            data:
+              $ref: '#/components/schemas/Plantilla'
+    RespuestaVistaPrevia:
+      allOf:
+        - $ref: './comun.yaml#/components/schemas/ApiResponse'
+        - type: object
+          properties:
+            data:
+              $ref: '#/components/schemas/VistaPrevia'
