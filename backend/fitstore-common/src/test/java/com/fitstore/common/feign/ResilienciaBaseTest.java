@@ -17,13 +17,15 @@ import org.springframework.cloud.client.circuitbreaker.CircuitBreakerFactory;
 class ResilienciaBaseTest {
 
     private final ApplicationContextRunner contexto = new ApplicationContextRunner()
+            .withBean(CircuitBreakerRegistry.class, CircuitBreakerRegistry::ofDefaults)
+            .withBean(TimeLimiterRegistry.class, TimeLimiterRegistry::ofDefaults)
             .withConfiguration(AutoConfigurations.of(Resilience4JAutoConfiguration.class, ResilienciaAutoConfiguration.class));
 
     @Test
     @DisplayName("Resilience4j: sin propiedades se aplican los valores base (50 %, ventana 10, 10 s abierto, 3 de prueba, timeout 10 s)")
     void valoresBase() {
         contexto.run(ctx -> {
-            ctx.getBean(CircuitBreakerFactory.class).create("catalog-service");
+            ctx.getBean(CircuitBreakerFactory.class).create("catalog-service").run(() -> "ok", t -> "fallback");
 
             CircuitBreakerConfig config = ctx.getBean(CircuitBreakerRegistry.class)
                     .circuitBreaker("catalog-service").getCircuitBreakerConfig();
@@ -46,7 +48,7 @@ class ResilienciaBaseTest {
                         "fitstore.resilience.llamadas-semiabierto=2",
                         "fitstore.resilience.timeout-ms=1500")
                 .run(ctx -> {
-                    ctx.getBean(CircuitBreakerFactory.class).create("order-service");
+                    ctx.getBean(CircuitBreakerFactory.class).create("order-service").run(() -> "ok", t -> "fallback");
 
                     CircuitBreakerConfig config = ctx.getBean(CircuitBreakerRegistry.class)
                             .circuitBreaker("order-service").getCircuitBreakerConfig();

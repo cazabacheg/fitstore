@@ -39,19 +39,8 @@ logging:
     format:
       console: ecs
 
-# Configuración base de Resilience4j para las llamadas Feign entre servicios (ADR-010)
-resilience4j:
-  circuitbreaker:
-    configs:
-      default:
-        sliding-window-size: 10
-        failure-rate-threshold: 50
-        wait-duration-in-open-state: 10s
-        permitted-number-of-calls-in-half-open-state: 3
-  timelimiter:
-    configs:
-      default:
-        timeout-duration: 10s
+# Resilience4j: la configuración base (50 %, ventana 10, 10 s abierto, timeout 10 s) viene de fitstore-common
+# y se ajusta con fitstore.resilience.* (umbral-fallos, ventana, espera-abierto-ms, llamadas-semiabierto, timeout-ms)
 ---
 # Muestreo de trazas: 100 % en dev
 spring:
