@@ -1,10 +1,11 @@
 # FitStore — Análisis micro: infraestructura (`config-server`, `discovery-server`, `api-gateway`) y piezas comunes
 
-> Versión: **v6 (aprobado)** — 2026-10-19. Fuente: [`01-analisis-macro.md`](../01-analisis-macro.md) v16.
+> Versión: **v7 (aprobado)** — 2026-10-19. Fuente: [`01-analisis-macro.md`](../01-analisis-macro.md) v16.
 > Estados: ✅ decidido · propuesto · ❓ abierto · 🕓 diferido
 > Ficha corta: estos servicios no tienen dominio de negocio, así que la estructura difiere de la plantilla.
 
 **Historial:**
+- v7 (2026-10-19): ajustes de la etapa de contratos: formato de `ApiError` y de la página (K5, K6) y forma del sobre de eventos con `datos` (K12).
 - v6 (2026-10-19): revisión de coherencia: contenedor `duckdns` y Mailpit como respaldo de SES en `cloud` en la tabla de memoria y en los archivos de compose (SPEC-8).
 - v5 (2026-10-19): `AzureBlobFileStorage` diferido (en la nube se usa Garage en la VM, SPEC-8 I6); se quita la ruta `/api/v1/admin/clientes/*/pedidos` del gateway (los pedidos de un cliente usan `GET /admin/pedidos?clienteId=`, SPEC-4 O3); detectado al redactar la SPEC-8.
 - v4 (2026-10-18): sección 10 aprobada → **documento completo aprobado**.
@@ -159,7 +160,7 @@ Para no repetir código entre los 7 servicios de negocio (ADR-018), un módulo M
 
 | Pieza | Contenido |
 |---|---|
-| API | `ApiResponse<T>`, `GlobalExceptionHandler` base, excepciones comunes (`RecursoNoEncontrado`, `ConflictoNegocio`, …), paginación (ADR-015) |
+| API | `ApiResponse<T>`, `ApiError` (`{success, mensaje, codigo, errores[], requestId, detalles}`, contracts K5), `GlobalExceptionHandler` base, excepciones comunes (`RecursoNoEncontrado`, `ConflictoNegocio`, …, cada una con su `codigo`), paginación `{contenido, pagina, tamano, totalElementos, totalPaginas}` (ADR-015, K6) |
 | Seguridad | Configuración de *resource server* JWT (JWKS de auth), `RoleHierarchy` (`ADMIN > OPERADOR`), lectura del `clienteId`/`tipo` del token |
 | Eventos | Sobre común (`eventoId`, `tipo`, `version`, `ocurridoEn`), **outbox** (entidad + publicador programado) y **consumidor idempotente** (`evento_procesado`) (ADR-009) |
 | Archivos | Puerto `FileStorage` + adaptador `S3FileStorage` (Garage en local y en la VM; S3 real en AWS). `AzureBlobFileStorage` diferido (ADR-013, SPEC-8 I6) |
@@ -176,7 +177,7 @@ Regla: `fitstore-common` **no contiene lógica de negocio** ni entidades de un d
 - Cada servicio consumidor tiene **su propia cola** (`{servicio}.eventos`), enlazada solo a las routing keys que le interesan.
 - **Reintentos:** 3 con espera creciente; luego el mensaje va a la **cola de mensajes muertos** `{servicio}.eventos.dlq` para revisión manual (consola de RabbitMQ).
 - Mensajes persistentes y confirmación del publicador (*publisher confirms*) en el outbox: una fila se marca como publicada solo cuando RabbitMQ confirma.
-- JSON con versión en el sobre; un consumidor ignora campos que no conoce (compatibilidad hacia adelante).
+- JSON con el sobre `{eventoId, tipo, version, ocurridoEn, datos}` (contracts K12, `contracts/asyncapi/fitstore-eventos.yaml`); un consumidor ignora campos que no conoce (compatibilidad hacia adelante).
 
 ---
 

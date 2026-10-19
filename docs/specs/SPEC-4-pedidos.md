@@ -1,11 +1,12 @@
 # SPEC-4 — Pedidos
 
-> Versión: **v8 (aprobado)** — 2026-10-19 · Estados: ✅ decidido · 🟡 propuesto · ❓ abierto
+> Versión: **v9 (aprobado)** — 2026-10-19 · Estados: ✅ decidido · 🟡 propuesto · ❓ abierto
 > **Dueña de:** `backend/order-service` (carrito, checkout, pedidos, saga) · tienda: `features/carrito`, `features/checkout`, `features/mis-pedidos` · backoffice: `features/pedidos`.
 > **Depende de:** 0a, 0b, 1 (sesión y direcciones) · usa los contratos de catalog (cotizar, reservar), auth (cliente y dirección), delivery (opciones y cotización de envío) y settings (parámetros y ubigeo) · **Habilita:** 5 (pago del pedido), 6 (entrega desde `PedidoListoDespacho`), 7 (correos del pedido), 8 (dashboard y E2E).
 > **Contratos:** `contracts/openapi/order-service.yaml`; eventos que publica `PedidoCreado`, `PedidoPagado`, `PedidoCancelado`, `PedidoExpirado`, `PagoNoAplicable`, `PedidoListoDespacho`, `PedidoListoRecojo`, `PedidoRecogido`, `ReembolsoSolicitado`; consume `PagoConfirmado`, `PagoRechazado`, `BoletaEmitida`, `PagoReembolsado`, `EntregaActualizada`.
 
 **Historial:**
+- v9 (2026-10-19): ajustes de la etapa de contratos: el bloque de pago de P-4-06 sale del propio pedido (order guarda proveedor y medio desde `PagoConfirmado`).
 - v8 (2026-10-19): revisión de coherencia: "No incluye" deja explícito que exportar pedidos a CSV (RF-BO-03, C) es alcance futuro.
 - v7 (2026-10-19): los datos de demostración también se cargan en la nube con el perfil `demo` (SPEC-8 I7), con UUID fijos compartidos entre servicios (`docs/demo/ids-demo.md`).
 - v6 (2026-10-19): por la SPEC-6, estado final **DEVUELTO**: desde ENVIADO cuando delivery devuelve la entrega a la tienda (CA-4-45) o desde LISTO_RECOJO cuando nadie recoge el pedido (CA-4-60); el reembolso postventa se permite en DEVUELTO sin plazo (CA-4-54, 57); etapa "Devuelto a la tienda" en el seguimiento (O9). Micro de order v7.
@@ -396,6 +397,7 @@ CA-4-59  Un OPERADOR no ve el botón y la API le responde 403
 - **Componentes:** `DetallePedidoAdminPage`, `AccionesEstado` (botones según `transicionesPermitidas` que envía la API), `DialogoComentario`, `DialogoRecogido` (casilla "verifiqué el DNI"), `DialogoNoRecogido` (motivo obligatorio), `DialogoCancelarStaff` (motivo), `DialogoReembolsoPostventa` (solo ADMIN, en pedidos ENTREGADO dentro del plazo o DEVUELTO: prendas y cantidades, monto propuesto editable, motivo, nota, máximo a devolver), `HistorialPedido`, etiqueta "Reembolso parcial" / "Reembolsado".
 - **Tabla (0b R11):** la tabla de productos del pedido no tiene detalle (filas no clicables); el SKU es un enlace a su kardex (`/inventario/:varianteId`).
 - **Estados:** conflicto (409), acción en curso, pedido final (sin acciones).
+- **Bloque de pago:** usa el campo `pago` del detalle (proveedor, medio y fecha, que order guarda desde `PagoConfirmado`), así el OPERADOR lo ve sin acceso a la API de pagos; la boleta se descarga con `boletaUrl`.
 - **Endpoints:** `GET /admin/pedidos/{id}` (incluye `reembolsoPostventa: {permitido, maximo, venceEl}`), `PATCH /admin/pedidos/{id}/estado`, `PATCH /admin/pedidos/{id}/cancelar`, `POST /admin/pedidos/{id}/reembolsos`.
 
 ## 5. Backend

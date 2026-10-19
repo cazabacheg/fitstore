@@ -1,9 +1,10 @@
 # FitStore — Contratos de API y de eventos
 
-> Versión: **v2 (borrador)** — 2026-10-19 · Estados: ✅ decidido · 🟡 propuesto · ❓ abierto
+> Versión: **v3 (borrador)** — 2026-10-19 · Estados: ✅ decidido · 🟡 propuesto · ❓ abierto
 > Etapa: specs ✅ → **contratos** → diseño → estrategia multiagente → implementación.
 
 **Historial:**
+- v3 (2026-10-19): contratos de los 7 servicios y AsyncAPI de los 23 eventos, todos validados; sobre de eventos con `datos` (K12); ajustes propagados a micros y specs (sección 6).
 - v2 (2026-10-19): **OpenAPI 3.0.3** (soporte completo de OpenAPI Generator; 3.1 sigue experimental); K2 ✅ controladores a mano + `oasdiff` en CI; K13 TDD como barrera en la implementación.
 - v1 (2026-10-19): convenciones, componentes comunes y primer contrato (auth) para revisión.
 
@@ -40,7 +41,7 @@ Fuente de verdad: los **micros** (secciones 4 y 6) y las **specs** (criterios y 
 | K9 | **Cabeceras comunes** ✅ | `X-Request-Id` en todas las respuestas (correlación); `Idempotency-Key` en el checkout y en los cobros; `X-Carrito-Id` en el carrito anónimo; `Retry-After` en el `429` |
 | K10 | **Versión** ✅ | `info.version` semántica (`1.0.0`); un cambio incompatible exige `/api/v2` (no previsto en el proyecto) |
 | K11 | **Ejemplos** ✅ | Cada operación lleva al menos un ejemplo realista en español (los mismos datos de demostración de las specs), que usan WireMock y la documentación |
-| K12 | **Eventos** ✅ | AsyncAPI 3.0 con un canal por routing key (`{servicio}.{entidad}.{acción}`), el sobre común (`eventoId`, `tipo`, `version`, `ocurridoEn`) y el `payload` de cada evento según el micro de su servicio. Cada mensaje indica quién lo publica y quién lo consume |
+| K12 | **Eventos** ✅ | AsyncAPI 3.0 con un canal por routing key (`{servicio}.{entidad}.{acción}`) y el sobre común `{eventoId, tipo, version, ocurridoEn, datos}`, con los campos de cada evento en `datos` según el micro de su servicio. Una operación `send` por publicador y una `receive` por consumidor |
 | K13 | **TDD como barrera** ✅ | La implementación es guiada por las specs y usa TDD: cada criterio de aceptación empieza como una prueba que falla (rojo → verde → refactor). Los ejemplos de los contratos se reutilizan en las pruebas de API (MockMvc) y en los stubs de WireMock, y la prueba de `oasdiff` asegura que el código no se aparte del contrato. El detalle va en la estrategia multiagente |
 
 ## 4. Validación
@@ -54,7 +55,34 @@ Versiones fijadas (con más de dos semanas de publicadas):
 | OpenAPI Generator | `openapitools/openapi-generator-cli:v7.10.0` | Clientes `typescript-angular` (SPEC-0b R5). Con OpenAPI 3.0.3 no hay avisos; se verificó con auth que genera bien el envoltorio `allOf`, los nulos (`string \| null`), los enums, las páginas con nombre y las referencias a `comun.yaml` |
 | oasdiff | se fija en la SPEC-0a | `oasdiff breaking` entre el contrato y el OpenAPI generado por cada servicio (K2) |
 
-## 5. Orden de trabajo
+## 5. Estado
+
+| Archivo | Operaciones | Modelos TS generados | Validación |
+|---|---|---|---|
+| `auth-service.yaml` | 32 | 37 | ✅ Redocly + openapi-generator |
+| `catalog-service.yaml` | 56 | 88 | ✅ |
+| `settings-service.yaml` | 22 | 52 | ✅ |
+| `order-service.yaml` | 17 | 50 | ✅ |
+| `payment-service.yaml` | 12 | 33 | ✅ |
+| `delivery-service.yaml` | 31 | 49 | ✅ |
+| `notification-service.yaml` | 9 | 20 | ✅ (1 aviso de ruta ambigua sin efecto real) |
+| `asyncapi/fitstore-eventos.yaml` | 23 eventos · 23 send · 31 receive | — | ✅ AsyncAPI CLI |
+
+## 6. Ajustes que la etapa llevó a los micros y specs
+
+| Documento | Ajuste |
+|---|---|
+| Infraestructura v7 | Formato de `ApiError` y de la página; sobre de eventos con `datos` |
+| catalog v8 | La cotización pública no expone el stock exacto; el kardex trae el stock actual |
+| order v9 | Guarda proveedor, medio y fecha del pago; `PedidoListoDespacho` con agencia, resumen y `bultos` |
+| payment v9 | `PagoConfirmado` lleva `medio` |
+| notification v11 | `historial_intentos` para ver cada intento |
+| delivery v7 | Orden arrastrable de agencias; `bultos` en la entrega |
+| settings v9 | Búsqueda por texto en la bandeja de reclamos |
+| auth v5 | Nombre de la cookie de refresh (`fs_refresh`) |
+| SPEC-4 v9 | El bloque de pago de P-4-06 sale del propio pedido |
+
+## 7. Orden de trabajo
 
 1. Convenciones, `comun.yaml` y **auth** (este PR) → revisión.
 2. catalog, settings, order, payment, delivery, notification (en un PR, revisados por servicio).

@@ -1,9 +1,10 @@
 # FitStore — Análisis micro: `auth-service`
 
-> Versión: **v4 (aprobado)** — 2026-10-16. Fuente: [`01-analisis-macro.md`](../01-analisis-macro.md) v11.
+> Versión: **v5 (aprobado)** — 2026-10-19. Fuente: [`01-analisis-macro.md`](../01-analisis-macro.md) v11.
 > Estados: ✅ decidido · 🟡 propuesto · ❓ abierto · 🕓 diferido
 
 **Historial:**
+- v5 (2026-10-19): ajustes de la etapa de contratos: nombre de la cookie de refresh: `fs_refresh` (contracts K8).
 - v4 (2026-10-18): sección 10 aprobada → **documento completo aprobado**.
 - v3 (2026-10-18): sección 10 (diseño técnico) redactada: C3, código de tokens, paquetes, dependencias, configuración e infraestructura.
 - v2 (2026-10-16): revisión aprobada. **Clientes y staff en tablas separadas** (`cliente`, `staff`) con login separado; resto del modelo aprobado (D1, D3–D6). Dependencia order → auth por Feign con el JWT del cliente aprobada (opción a; se refleja en macro v11). Verificación de correo → mejora; eliminación de cuenta → extensión futura.
@@ -289,7 +290,7 @@ sequenceDiagram
 | Formato | JWT RS256 | JWT RS256 con `typ = refresh` |
 | Vida | 15 min | 7 días |
 | Claims | `sub` (id), `tipo` (`CLIENTE`/`STAFF`), `rol`, `email`, `nombre`, `iss`, `iat`, `exp`, `jti` | `sub`, `tipo`, `jti`, `iat`, `exp` |
-| Dónde vive en el navegador | **En memoria** (variable del frontend) | **Cookie `HttpOnly`, `Secure`, `SameSite=Strict`**, ruta `/api/v1/auth` |
+| Dónde vive en el navegador | **En memoria** (variable del frontend) | **Cookie `fs_refresh`, `HttpOnly`, `Secure`, `SameSite=Strict`**, ruta `/api/v1/auth` |
 
 - **No se incluye el DNI ni datos sensibles** en los tokens (se pueden decodificar).
 - Guardar el refresh en una cookie `HttpOnly` evita que un script malicioso (XSS) lo robe; el access token en memoria dura poco. Al recargar la página, el frontend llama a `/refresh` y recupera la sesión. Storefront y backoffice se sirven en subdominios distintos, así que cada uno tiene su propia cookie.

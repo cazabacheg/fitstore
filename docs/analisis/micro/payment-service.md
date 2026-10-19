@@ -1,9 +1,10 @@
 # FitStore — Análisis micro: `payment-service`
 
-> Versión: **v8 (aprobado)** — 2026-10-19. Fuente: [`01-analisis-macro.md`](../01-analisis-macro.md) v13.
+> Versión: **v9 (aprobado)** — 2026-10-19. Fuente: [`01-analisis-macro.md`](../01-analisis-macro.md) v13.
 > Estados: ✅ decidido · 🟡 propuesto · ❓ abierto · 🕓 diferido
 
 **Historial:**
+- v9 (2026-10-19): ajustes de la etapa de contratos: `PagoConfirmado` lleva `medio` (order lo guarda para mostrar con qué se pagó).
 - v8 (2026-10-19): revisión de coherencia: `PagoReembolsado` también lo consume order (actualiza `monto_reembolsado`).
 - v7 (2026-10-19): D4 menciona también los pedidos devueltos a la tienda (SPEC-6); el flujo no cambia.
 - v6 (2026-10-18): **reembolso postventa** (decidido en la SPEC-5): D4 amplía el origen de los reembolsos (cancelación o postventa, siempre desde el pedido); varios reembolsos por intención, parciales, sin superar lo cobrado; la intención pasa a `REEMBOLSADA_PARCIAL` / `REEMBOLSADA` y el estado en curso o fallido vive en cada reembolso; consume `ReembolsoSolicitado`.
@@ -307,7 +308,7 @@ Exchange `fitstore.eventos` (topic), sobre común, outbox e idempotencia (ADR-00
 
 | Evento | Routing key | Payload | Consume |
 |---|---|---|---|
-| `PagoConfirmado` | `payment.pago.confirmado` | `pedidoId`, `intencionId`, `transaccionId`, `proveedor`, `monto`, `confirmadoEn` | order |
+| `PagoConfirmado` | `payment.pago.confirmado` | `pedidoId`, `intencionId`, `transaccionId`, `proveedor`, `medio`, `monto`, `confirmadoEn` | order |
 | `PagoRechazado` | `payment.pago.rechazado` | `pedidoId`, `proveedor`, `motivo` | order (historial) |
 | `BoletaEmitida` | `payment.boleta.emitida` | `pedidoId`, `numero`, `url` (endpoint autenticado de descarga) | order, notification (adjunto) |
 | `PagoReembolsado` ✅ **nuevo** | `payment.reembolso.completado` | `pedidoId`, `codigoPedido`, `solicitudId` (solo postventa), `monto`, `parcial`, `motivo`, `manual`, `cliente` (nombre, email) | notification (avisa al cliente), order (registra lo reembolsado) |
