@@ -1,0 +1,1399 @@
+openapi: 3.0.3
+info:
+  title: FitStore — auth-service
+  version: 1.0.0
+  description: |
+    Identidad de clientes y staff: registro, login, sesión (JWT RS256 + refresh en cookie), recuperación de contraseña,
+    perfil, direcciones, administración de staff y consulta de clientes.
+
+    Fuente: micro `docs/analisis/micro/auth-service.md` (sección 4) y `docs/specs/SPEC-1-identidad.md`.
+    Convenciones: `contracts/README.md`. Rol requerido en cada operación: extensión `x-roles`.
+  license:
+    name: Uso académico
+servers:
+  - url: http://localhost:8080
+    description: Gateway en local (docker compose)
+  - url: https://{app}.{sub}.duckdns.org
+    description: Nube (demo); cada frontend llama a /api en su propio dominio
+    variables:
+      app:
+        enum: [tienda, admin]
+        default: tienda
+      sub:
+        default: fitstore
+        description: Subdominio de DuckDNS
+tags:
+  - name: autenticacion
+    description: Registro, login, sesión y recuperación de contraseña
+  - name: cliente
+    description: Cuenta propia del cliente (perfil y direcciones)
+  - name: staff-propio
+    description: Cuenta propia del staff
+  - name: staff
+    description: Administración del personal (ADMIN)
+  - name: clientes-admin
+    description: Consulta y bloqueo de clientes desde el backoffice
+  - name: jwks
+    description: Clave pública para validar los tokens
+
+paths:
+  /api/v1/auth/registro:
+    post:
+      tags: [autenticacion]
+      operationId: registrarCliente
+      summary: Registrar un cliente
+      description: Crea la cuenta, guarda los consentimientos y deja la sesión iniciada (CA-1-01 a 03). Rate limit 3/min por IP.
+      x-roles: [PUBLICO]
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegistroRequest'
+            example:
+              email: ana.quispe@correo.com
+              password: Gamarra2026
+              nombres: Ana
+              apellidos: Quispe Rojas
+              dni: '45678912'
+              telefono: '987654321'
+              aceptaTerminos: true
+              aceptaPrivacidad: true
+              versionTerminos: 1
+              versionPrivacidad: 1
+      responses:
+        '201':
+          description: Cuenta creada y sesión iniciada.
+          headers:
+            Location:
+              $ref: './comun.yaml#/components/headers/Location'
+            Set-Cookie:
+              $ref: '#/components/headers/SetCookieRefresh'
+            X-Request-Id:
+              $ref: './comun.yaml#/components/headers/XRequestId'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RespuestaSesion'
+              examples:
+                cliente:
+                  $ref: '#/components/examples/SesionCliente'
+        '400':
+          $ref: './comun.yaml#/components/responses/ErrorValidacion'
+        '409':
+          description: Correo o DNI ya registrados (`CORREO_DUPLICADO`, `DNI_DUPLICADO`).
+          content:
+            application/json:
+              schema:
+                $ref: './comun.yaml#/components/schemas/ApiError'
+              example:
+                success: false
+                mensaje: El correo ya está registrado
+                codigo: CORREO_DUPLICADO
+        '429':
+          $ref: './comun.yaml#/components/responses/DemasiadosIntentos'
+
+  /api/v1/auth/login:
+    post:
+      tags: [autenticacion]
+      operationId: loginCliente
+      summary: Iniciar sesión como cliente (tienda)
+      description: Mensaje genérico ante cualquier fallo (CA-1-05); 5 fallos → bloqueo de 15 min (CA-1-06). Rate limit 5/min por IP.
+      x-roles: [PUBLICO]
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+            example:
+              email: ana.quispe@correo.com
+              password: Gamarra2026
+      responses:
+        '200':
+          $ref: '#/components/responses/SesionIniciada'
+        '400':
+          $ref: './comun.yaml#/components/responses/ErrorValidacion'
+        '401':
+          $ref: '#/components/responses/CredencialesInvalidas'
+        '423':
+          $ref: '#/components/responses/CuentaBloqueada'
+        '429':
+          $ref: './comun.yaml#/components/responses/DemasiadosIntentos'
+
+  /api/v1/auth/staff/login:
+    post:
+      tags: [autenticacion]
+      operationId: loginStaff
+      summary: Iniciar sesión como staff (backoffice)
+      description: Cuentas separadas de los clientes (CA-1-07, 23); bloqueo independiente (CA-1-24).
+      x-roles: [PUBLICO]
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+            example:
+              email: admin@modaactiva.pe
+              password: CambiarEsta1
+      responses:
+        '200':
+          $ref: '#/components/responses/SesionIniciada'
+        '400':
+          $ref: './comun.yaml#/components/responses/ErrorValidacion'
+        '401':
+          $ref: '#/components/responses/CredencialesInvalidas'
+        '423':
+          $ref: '#/components/responses/CuentaBloqueada'
+        '429':
+          $ref: './comun.yaml#/components/responses/DemasiadosIntentos'
+
+  /api/v1/auth/refresh:
+    post:
+      tags: [autenticacion]
+      operationId: refrescarSesion
+      summary: Renovar el access token
+      description: Usa solo la cookie (sin cuerpo) y la rota. Un refresh ya usado o anterior a un cambio de credenciales → 401 (CA-1-08 a 11).
+      x-roles: [PUBLICO]
+      security:
+        - refreshCookie: []
+      responses:
+        '200':
+          $ref: '#/components/responses/SesionIniciada'
+        '401':
+          $ref: './comun.yaml#/components/responses/NoAutenticado'
+
+  /api/v1/auth/logout:
+    post:
+      tags: [autenticacion]
+      operationId: cerrarSesion
+      summary: Cerrar la sesión
+      description: Revoca el refresh y borra la cookie (CA-1-10). Responde 200 aunque la cookie ya no sea válida.
+      x-roles: [PUBLICO]
+      security:
+        - refreshCookie: []
+      responses:
+        '200':
+          description: Sesión cerrada.
+          headers:
+            Set-Cookie:
+              description: Borra la cookie `fs_refresh` (Max-Age=0).
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: './comun.yaml#/components/schemas/ApiResponseVacia'
+        '429':
+          $ref: './comun.yaml#/components/responses/DemasiadosIntentos'
+
+  /api/v1/auth/password/olvido:
+    post:
+      tags: [autenticacion]
+      operationId: olvidoPasswordCliente
+      summary: Pedir enlace de recuperación (cliente)
+      description: Responde siempre 200 para no revelar cuentas (CA-1-12). Rate limit 3/min por IP.
+      x-roles: [PUBLICO]
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OlvidoRequest'
+      responses:
+        '200':
+          $ref: '#/components/responses/OlvidoAceptado'
+        '400':
+          $ref: './comun.yaml#/components/responses/ErrorValidacion'
+        '429':
+          $ref: './comun.yaml#/components/responses/DemasiadosIntentos'
+
+  /api/v1/auth/staff/password/olvido:
+    post:
+      tags: [autenticacion]
+      operationId: olvidoPasswordStaff
+      summary: Pedir enlace de recuperación (staff)
+      x-roles: [PUBLICO]
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OlvidoRequest'
+      responses:
+        '200':
+          $ref: '#/components/responses/OlvidoAceptado'
+        '400':
+          $ref: './comun.yaml#/components/responses/ErrorValidacion'
+        '429':
+          $ref: './comun.yaml#/components/responses/DemasiadosIntentos'
+
+  /api/v1/auth/password/restablecer:
+    post:
+      tags: [autenticacion]
+      operationId: restablecerPassword
+      summary: Crear una nueva contraseña con el enlace
+      description: Sirve para recuperación (30 min) e invitación de staff (24 h). Cierra las demás sesiones (CA-1-13, 14, 26).
+      x-roles: [PUBLICO]
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RestablecerRequest'
+      responses:
+        '200':
+          $ref: './comun.yaml#/components/responses/Ok'
+        '400':
+          description: Datos inválidos o enlace inválido, usado o vencido (`TOKEN_INVALIDO`).
+          content:
+            application/json:
+              schema:
+                $ref: './comun.yaml#/components/schemas/ApiError'
+              example:
+                success: false
+                mensaje: Enlace inválido o expirado
+                codigo: TOKEN_INVALIDO
+
+  /api/v1/clientes/me:
+    get:
+      tags: [cliente]
+      operationId: obtenerMiPerfilCliente
+      summary: Ver mi perfil de cliente
+      description: También lo usa order-service en el checkout, con el JWT del cliente, para copiar el destinatario.
+      x-roles: [CLIENTE]
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Perfil del cliente.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RespuestaPerfilCliente'
+        '401':
+          $ref: './comun.yaml#/components/responses/NoAutenticado'
+        '403':
+          $ref: './comun.yaml#/components/responses/SinPermiso'
+    put:
+      tags: [cliente]
+      operationId: actualizarMiPerfilCliente
+      summary: Editar mi perfil (nombres, apellidos, celular)
+      description: El correo y el DNI no se editan (CA-1-15).
+      x-roles: [CLIENTE]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ActualizarPerfilClienteRequest'
+      responses:
+        '200':
+          description: Perfil actualizado.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RespuestaPerfilCliente'
+        '400':
+          $ref: './comun.yaml#/components/responses/ErrorValidacion'
+        '401':
+          $ref: './comun.yaml#/components/responses/NoAutenticado'
+        '403':
+          $ref: './comun.yaml#/components/responses/SinPermiso'
+
+  /api/v1/clientes/me/password:
+    put:
+      tags: [cliente]
+      operationId: cambiarMiPasswordCliente
+      summary: Cambiar mi contraseña
+      description: Pide la actual; cierra las demás sesiones y publica PasswordCambiado (CA-1-16). Contraseña actual errada → 400 en `passwordActual`.
+      x-roles: [CLIENTE]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CambiarPasswordRequest'
+      responses:
+        '200':
+          $ref: './comun.yaml#/components/responses/Ok'
+        '400':
+          $ref: './comun.yaml#/components/responses/ErrorValidacion'
+        '401':
+          $ref: './comun.yaml#/components/responses/NoAutenticado'
+        '403':
+          $ref: './comun.yaml#/components/responses/SinPermiso'
+
+  /api/v1/clientes/me/direcciones:
+    get:
+      tags: [cliente]
+      operationId: listarMisDirecciones
+      summary: Listar mis direcciones
+      description: La predeterminada primero; máximo 10.
+      x-roles: [CLIENTE]
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Direcciones del cliente.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RespuestaDirecciones'
+        '401':
+          $ref: './comun.yaml#/components/responses/NoAutenticado'
+        '403':
+          $ref: './comun.yaml#/components/responses/SinPermiso'
+    post:
+      tags: [cliente]
+      operationId: crearDireccion
+      summary: Crear una dirección
+      description: La primera queda como predeterminada (CA-1-17). Con 10 direcciones → 409 `LIMITE_DIRECCIONES` (CA-1-20). La usa también el diálogo del checkout (SPEC-1 A6).
+      x-roles: [CLIENTE]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DireccionRequest'
+            example:
+              alias: Casa
+              ubigeo: '150115'
+              direccion: Jr. Gamarra 123, dpto 4
+              referencia: Frente al parque
+      responses:
+        '201':
+          description: Dirección creada.
+          headers:
+            Location:
+              $ref: './comun.yaml#/components/headers/Location'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RespuestaDireccion'
+        '400':
+          $ref: './comun.yaml#/components/responses/ErrorValidacion'
+        '401':
+          $ref: './comun.yaml#/components/responses/NoAutenticado'
+        '403':
+          $ref: './comun.yaml#/components/responses/SinPermiso'
+        '409':
+          $ref: './comun.yaml#/components/responses/Conflicto'
+
+  /api/v1/clientes/me/direcciones/{id}:
+    parameters:
+      - $ref: '#/components/parameters/DireccionId'
+    get:
+      tags: [cliente]
+      operationId: obtenerDireccion
+      summary: Ver una dirección propia
+      description: La usa order-service en el checkout. Una dirección ajena → 404 (CA-1-21).
+      x-roles: [CLIENTE]
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Dirección.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RespuestaDireccion'
+        '401':
+          $ref: './comun.yaml#/components/responses/NoAutenticado'
+        '404':
+          $ref: './comun.yaml#/components/responses/NoEncontrado'
+    put:
+      tags: [cliente]
+      operationId: actualizarDireccion
+      summary: Editar una dirección propia
+      x-roles: [CLIENTE]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DireccionRequest'
+      responses:
+        '200':
+          description: Dirección actualizada.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RespuestaDireccion'
+        '400':
+          $ref: './comun.yaml#/components/responses/ErrorValidacion'
+        '401':
+          $ref: './comun.yaml#/components/responses/NoAutenticado'
+        '404':
+          $ref: './comun.yaml#/components/responses/NoEncontrado'
+    delete:
+      tags: [cliente]
+      operationId: eliminarDireccion
+      summary: Eliminar una dirección propia
+      description: DELETE físico; si era la predeterminada, pasa a serlo la creada más recientemente (CA-1-19).
+      x-roles: [CLIENTE]
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          $ref: './comun.yaml#/components/responses/Ok'
+        '401':
+          $ref: './comun.yaml#/components/responses/NoAutenticado'
+        '404':
+          $ref: './comun.yaml#/components/responses/NoEncontrado'
+
+  /api/v1/clientes/me/direcciones/{id}/predeterminada:
+    parameters:
+      - $ref: '#/components/parameters/DireccionId'
+    patch:
+      tags: [cliente]
+      operationId: marcarDireccionPredeterminada
+      summary: Marcar como predeterminada
+      description: La anterior deja de serlo (CA-1-18).
+      x-roles: [CLIENTE]
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Lista actualizada de direcciones.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RespuestaDirecciones'
+        '401':
+          $ref: './comun.yaml#/components/responses/NoAutenticado'
+        '404':
+          $ref: './comun.yaml#/components/responses/NoEncontrado'
+
+  /api/v1/staff/me:
+    get:
+      tags: [staff-propio]
+      operationId: obtenerMiPerfilStaff
+      summary: Ver mi perfil de staff
+      x-roles: [OPERADOR, ADMIN]
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Perfil del staff.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RespuestaStaff'
+        '401':
+          $ref: './comun.yaml#/components/responses/NoAutenticado'
+        '403':
+          $ref: './comun.yaml#/components/responses/SinPermiso'
+    put:
+      tags: [staff-propio]
+      operationId: actualizarMiPerfilStaff
+      summary: Editar mi nombre
+      description: El correo y el rol no son editables por uno mismo (CA-1-35).
+      x-roles: [OPERADOR, ADMIN]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PerfilStaffRequest'
+      responses:
+        '200':
+          description: Perfil actualizado.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RespuestaStaff'
+        '400':
+          $ref: './comun.yaml#/components/responses/ErrorValidacion'
+        '401':
+          $ref: './comun.yaml#/components/responses/NoAutenticado'
+
+  /api/v1/staff/me/password:
+    put:
+      tags: [staff-propio]
+      operationId: cambiarMiPasswordStaff
+      summary: Cambiar mi contraseña de staff
+      x-roles: [OPERADOR, ADMIN]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CambiarPasswordRequest'
+      responses:
+        '200':
+          $ref: './comun.yaml#/components/responses/Ok'
+        '400':
+          $ref: './comun.yaml#/components/responses/ErrorValidacion'
+        '401':
+          $ref: './comun.yaml#/components/responses/NoAutenticado'
+
+  /api/v1/staff:
+    get:
+      tags: [staff]
+      operationId: listarStaff
+      summary: Listar el personal
+      x-roles: [ADMIN]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: q
+          in: query
+          description: Busca por nombre o correo.
+          schema:
+            type: string
+            maxLength: 80
+        - name: rol
+          in: query
+          schema:
+            $ref: '#/components/schemas/RolStaff'
+        - name: estado
+          in: query
+          schema:
+            $ref: '#/components/schemas/EstadoStaff'
+        - $ref: './comun.yaml#/components/parameters/page'
+        - $ref: './comun.yaml#/components/parameters/size'
+        - $ref: './comun.yaml#/components/parameters/sort'
+      responses:
+        '200':
+          description: Página de staff.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RespuestaPaginaStaff'
+        '401':
+          $ref: './comun.yaml#/components/responses/NoAutenticado'
+        '403':
+          $ref: './comun.yaml#/components/responses/SinPermiso'
+    post:
+      tags: [staff]
+      operationId: invitarStaff
+      summary: Invitar a un miembro del staff
+      description: Se crea sin contraseña ("Invitación pendiente") y se publica PasswordResetSolicitado con motivo INVITACION (CA-1-25).
+      x-roles: [ADMIN]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InvitarStaffRequest'
+            example:
+              email: luis.rojas@modaactiva.pe
+              nombres: Luis
+              apellidos: Rojas
+              rol: OPERADOR
+      responses:
+        '201':
+          description: Miembro creado.
+          headers:
+            Location:
+              $ref: './comun.yaml#/components/headers/Location'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RespuestaStaff'
+        '400':
+          $ref: './comun.yaml#/components/responses/ErrorValidacion'
+        '401':
+          $ref: './comun.yaml#/components/responses/NoAutenticado'
+        '403':
+          $ref: './comun.yaml#/components/responses/SinPermiso'
+        '409':
+          $ref: './comun.yaml#/components/responses/Conflicto'
+
+  /api/v1/staff/{id}:
+    parameters:
+      - $ref: '#/components/parameters/CuentaId'
+    get:
+      tags: [staff]
+      operationId: obtenerStaff
+      summary: Ver un miembro del staff
+      x-roles: [ADMIN]
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Miembro del staff.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RespuestaStaff'
+        '401':
+          $ref: './comun.yaml#/components/responses/NoAutenticado'
+        '403':
+          $ref: './comun.yaml#/components/responses/SinPermiso'
+        '404':
+          $ref: './comun.yaml#/components/responses/NoEncontrado'
+    put:
+      tags: [staff]
+      operationId: editarStaff
+      summary: Editar nombre o rol
+      description: No se puede degradar al último ADMIN activo (409 `ULTIMO_ADMIN`, CA-1-27, 28).
+      x-roles: [ADMIN]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EditarStaffRequest'
+      responses:
+        '200':
+          description: Miembro actualizado.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RespuestaStaff'
+        '400':
+          $ref: './comun.yaml#/components/responses/ErrorValidacion'
+        '401':
+          $ref: './comun.yaml#/components/responses/NoAutenticado'
+        '403':
+          $ref: './comun.yaml#/components/responses/SinPermiso'
+        '404':
+          $ref: './comun.yaml#/components/responses/NoEncontrado'
+        '409':
+          $ref: './comun.yaml#/components/responses/Conflicto'
+
+  /api/v1/staff/{id}/desactivar:
+    parameters:
+      - $ref: '#/components/parameters/CuentaId'
+    patch:
+      tags: [staff]
+      operationId: desactivarStaff
+      summary: Desactivar a un miembro
+      description: No puede ingresar ni refrescar su sesión (CA-1-29). 409 `ULTIMO_ADMIN` o `AUTO_DESACTIVACION` (CA-1-28).
+      x-roles: [ADMIN]
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Miembro desactivado.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RespuestaStaff'
+        '401':
+          $ref: './comun.yaml#/components/responses/NoAutenticado'
+        '403':
+          $ref: './comun.yaml#/components/responses/SinPermiso'
+        '404':
+          $ref: './comun.yaml#/components/responses/NoEncontrado'
+        '409':
+          $ref: './comun.yaml#/components/responses/Conflicto'
+
+  /api/v1/staff/{id}/activar:
+    parameters:
+      - $ref: '#/components/parameters/CuentaId'
+    patch:
+      tags: [staff]
+      operationId: activarStaff
+      summary: Reactivar a un miembro
+      x-roles: [ADMIN]
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Miembro activo.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RespuestaStaff'
+        '401':
+          $ref: './comun.yaml#/components/responses/NoAutenticado'
+        '403':
+          $ref: './comun.yaml#/components/responses/SinPermiso'
+        '404':
+          $ref: './comun.yaml#/components/responses/NoEncontrado'
+
+  /api/v1/staff/{id}/reenviar-invitacion:
+    parameters:
+      - $ref: '#/components/parameters/CuentaId'
+    post:
+      tags: [staff]
+      operationId: reenviarInvitacionStaff
+      summary: Reenviar la invitación
+      description: El enlace anterior deja de servir (CA-1-30). Solo para invitaciones pendientes; si no, 409.
+      x-roles: [ADMIN]
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          $ref: './comun.yaml#/components/responses/Ok'
+        '401':
+          $ref: './comun.yaml#/components/responses/NoAutenticado'
+        '403':
+          $ref: './comun.yaml#/components/responses/SinPermiso'
+        '404':
+          $ref: './comun.yaml#/components/responses/NoEncontrado'
+        '409':
+          $ref: './comun.yaml#/components/responses/Conflicto'
+
+  /api/v1/clientes:
+    get:
+      tags: [clientes-admin]
+      operationId: listarClientes
+      summary: Buscar clientes
+      description: Por nombre, correo o DNI (CA-1-32).
+      x-roles: [OPERADOR, ADMIN]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: q
+          in: query
+          schema:
+            type: string
+            maxLength: 80
+        - name: activo
+          in: query
+          schema:
+            type: boolean
+        - $ref: './comun.yaml#/components/parameters/page'
+        - $ref: './comun.yaml#/components/parameters/size'
+        - $ref: './comun.yaml#/components/parameters/sort'
+      responses:
+        '200':
+          description: Página de clientes.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RespuestaPaginaClientes'
+        '401':
+          $ref: './comun.yaml#/components/responses/NoAutenticado'
+        '403':
+          $ref: './comun.yaml#/components/responses/SinPermiso'
+
+  /api/v1/clientes/{id}:
+    parameters:
+      - $ref: '#/components/parameters/CuentaId'
+    get:
+      tags: [clientes-admin]
+      operationId: obtenerCliente
+      summary: Ver un cliente con sus direcciones
+      description: Desde aquí el backoffice enlaza a /pedidos?clienteId=… (CA-1-33).
+      x-roles: [OPERADOR, ADMIN]
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Cliente con direcciones.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RespuestaClienteDetalle'
+        '401':
+          $ref: './comun.yaml#/components/responses/NoAutenticado'
+        '403':
+          $ref: './comun.yaml#/components/responses/SinPermiso'
+        '404':
+          $ref: './comun.yaml#/components/responses/NoEncontrado'
+
+  /api/v1/clientes/{id}/desactivar:
+    parameters:
+      - $ref: '#/components/parameters/CuentaId'
+    patch:
+      tags: [clientes-admin]
+      operationId: bloquearCliente
+      summary: Bloquear a un cliente
+      description: No puede ingresar ni refrescar su sesión (CA-1-34). OPERADOR → 403.
+      x-roles: [ADMIN]
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Cliente bloqueado.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RespuestaClienteDetalle'
+        '401':
+          $ref: './comun.yaml#/components/responses/NoAutenticado'
+        '403':
+          $ref: './comun.yaml#/components/responses/SinPermiso'
+        '404':
+          $ref: './comun.yaml#/components/responses/NoEncontrado'
+
+  /api/v1/clientes/{id}/activar:
+    parameters:
+      - $ref: '#/components/parameters/CuentaId'
+    patch:
+      tags: [clientes-admin]
+      operationId: desbloquearCliente
+      summary: Desbloquear a un cliente
+      x-roles: [ADMIN]
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Cliente activo.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RespuestaClienteDetalle'
+        '401':
+          $ref: './comun.yaml#/components/responses/NoAutenticado'
+        '403':
+          $ref: './comun.yaml#/components/responses/SinPermiso'
+        '404':
+          $ref: './comun.yaml#/components/responses/NoEncontrado'
+
+  /.well-known/jwks.json:
+    get:
+      tags: [jwks]
+      operationId: obtenerJwks
+      summary: Clave pública (JWKS)
+      description: Formato estándar RFC 7517, sin envoltorio ApiResponse (K4). La cachean el gateway y los servicios.
+      x-roles: [PUBLICO]
+      security: []
+      responses:
+        '200':
+          description: Conjunto de claves.
+          headers:
+            Cache-Control:
+              schema:
+                type: string
+                example: 'public, max-age=3600'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Jwks'
+        '429':
+          $ref: './comun.yaml#/components/responses/DemasiadosIntentos'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      $ref: './comun.yaml#/components/securitySchemes/bearerAuth'
+    refreshCookie:
+      $ref: './comun.yaml#/components/securitySchemes/refreshCookie'
+  parameters:
+    DireccionId:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: integer
+        format: int64
+        minimum: 1
+    CuentaId:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+
+  headers:
+    SetCookieRefresh:
+      description: Cookie `fs_refresh` (HttpOnly; Secure; SameSite=Strict; Path=/api/v1/auth; Max-Age=604800).
+      schema:
+        type: string
+
+  responses:
+    SesionIniciada:
+      description: Sesión iniciada; el refresh va en la cookie.
+      headers:
+        Set-Cookie:
+          $ref: '#/components/headers/SetCookieRefresh'
+        X-Request-Id:
+          $ref: './comun.yaml#/components/headers/XRequestId'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/RespuestaSesion'
+          examples:
+            cliente:
+              $ref: '#/components/examples/SesionCliente'
+    CredencialesInvalidas:
+      description: Correo o contraseña incorrectos, cuenta inactiva o invitación pendiente (mismo mensaje).
+      content:
+        application/json:
+          schema:
+            $ref: './comun.yaml#/components/schemas/ApiError'
+          example:
+            success: false
+            mensaje: Correo o contraseña incorrectos
+            codigo: CREDENCIALES_INVALIDAS
+    CuentaBloqueada:
+      description: 5 intentos fallidos; bloqueo de 15 minutos.
+      content:
+        application/json:
+          schema:
+            $ref: './comun.yaml#/components/schemas/ApiError'
+          example:
+            success: false
+            mensaje: Cuenta bloqueada temporalmente
+            codigo: CUENTA_BLOQUEADA
+    OlvidoAceptado:
+      description: Siempre igual, exista o no la cuenta.
+      content:
+        application/json:
+          schema:
+            $ref: './comun.yaml#/components/schemas/ApiResponseVacia'
+          example:
+            success: true
+            mensaje: Si el correo está registrado, te enviaremos un enlace
+            data: null
+
+  examples:
+    SesionCliente:
+      summary: Sesión de cliente
+      value:
+        success: true
+        mensaje: Bienvenida, Ana
+        data:
+          accessToken: eyJhbGciOiJSUzI1NiIsImtpZCI6ImsxIn0.eyJzdWIiOiIuLi4ifQ.firma
+          expiraEn: '2026-10-22T15:15:00Z'
+          cuenta:
+            id: 3f6c1a52-8a0e-4c8b-9d2a-1b7e5f0c9a11
+            tipo: CLIENTE
+            rol: CLIENTE
+            email: ana.quispe@correo.com
+            nombres: Ana
+            apellidos: Quispe Rojas
+
+  schemas:
+    Email:
+      type: string
+      format: email
+      maxLength: 254
+      example: ana.quispe@correo.com
+    Password:
+      type: string
+      minLength: 8
+      maxLength: 64
+      pattern: '^(?=.*[A-Za-z])(?=.*[0-9]).{8,64}$'
+      description: 8 a 64 caracteres, al menos una letra y un número (auth 4.7).
+      writeOnly: true
+    Nombre:
+      type: string
+      minLength: 2
+      maxLength: 80
+    RolStaff:
+      type: string
+      enum: [OPERADOR, ADMIN]
+    EstadoStaff:
+      type: string
+      enum: [ACTIVO, INACTIVO, INVITACION_PENDIENTE]
+
+    RegistroRequest:
+      type: object
+      required: [email, password, nombres, apellidos, dni, telefono, aceptaTerminos, aceptaPrivacidad, versionTerminos, versionPrivacidad]
+      properties:
+        email:
+          $ref: '#/components/schemas/Email'
+        password:
+          $ref: '#/components/schemas/Password'
+        nombres:
+          $ref: '#/components/schemas/Nombre'
+        apellidos:
+          $ref: '#/components/schemas/Nombre'
+        dni:
+          $ref: './comun.yaml#/components/schemas/Dni'
+        telefono:
+          $ref: './comun.yaml#/components/schemas/Celular'
+        aceptaTerminos:
+          type: boolean
+          enum: [true]
+        aceptaPrivacidad:
+          type: boolean
+          enum: [true]
+        versionTerminos:
+          type: integer
+          minimum: 1
+          description: Versión de los términos que mostró la tienda (de /settings/public).
+        versionPrivacidad:
+          type: integer
+          minimum: 1
+
+    LoginRequest:
+      type: object
+      required: [email, password]
+      properties:
+        email:
+          $ref: '#/components/schemas/Email'
+        password:
+          type: string
+          minLength: 1
+          maxLength: 64
+          writeOnly: true
+
+    OlvidoRequest:
+      type: object
+      required: [email]
+      properties:
+        email:
+          $ref: '#/components/schemas/Email'
+
+    RestablecerRequest:
+      type: object
+      required: [token, nuevaPassword]
+      properties:
+        token:
+          type: string
+          minLength: 20
+          maxLength: 100
+          description: Token del enlace (se guarda solo su hash).
+        nuevaPassword:
+          $ref: '#/components/schemas/Password'
+
+    CambiarPasswordRequest:
+      type: object
+      required: [passwordActual, nuevaPassword]
+      properties:
+        passwordActual:
+          type: string
+          minLength: 1
+          maxLength: 64
+          writeOnly: true
+        nuevaPassword:
+          $ref: '#/components/schemas/Password'
+
+    Cuenta:
+      type: object
+      description: Datos de la cuenta que inició sesión (los mismos del JWT, sin DNI).
+      required: [id, tipo, rol, email, nombres, apellidos]
+      properties:
+        id:
+          type: string
+          format: uuid
+        tipo:
+          type: string
+          enum: [CLIENTE, STAFF]
+        rol:
+          type: string
+          enum: [CLIENTE, OPERADOR, ADMIN]
+        email:
+          $ref: '#/components/schemas/Email'
+        nombres:
+          type: string
+        apellidos:
+          type: string
+
+    Sesion:
+      type: object
+      required: [accessToken, expiraEn, cuenta]
+      properties:
+        accessToken:
+          type: string
+          description: JWT RS256 de 15 minutos. Se guarda solo en memoria.
+        expiraEn:
+          type: string
+          format: date-time
+        cuenta:
+          $ref: '#/components/schemas/Cuenta'
+
+    PerfilCliente:
+      type: object
+      required: [id, email, nombres, apellidos, dni, telefono, creadoEn]
+      properties:
+        id:
+          type: string
+          format: uuid
+        email:
+          $ref: '#/components/schemas/Email'
+        nombres:
+          type: string
+        apellidos:
+          type: string
+        dni:
+          $ref: './comun.yaml#/components/schemas/Dni'
+        telefono:
+          $ref: './comun.yaml#/components/schemas/Celular'
+        creadoEn:
+          type: string
+          format: date-time
+
+    ActualizarPerfilClienteRequest:
+      type: object
+      required: [nombres, apellidos, telefono]
+      properties:
+        nombres:
+          $ref: '#/components/schemas/Nombre'
+        apellidos:
+          $ref: '#/components/schemas/Nombre'
+        telefono:
+          $ref: './comun.yaml#/components/schemas/Celular'
+
+    Direccion:
+      type: object
+      required: [id, alias, ubigeo, direccion, predeterminada]
+      properties:
+        id:
+          type: integer
+          format: int64
+        alias:
+          type: string
+          maxLength: 40
+          example: Casa
+        ubigeo:
+          $ref: './comun.yaml#/components/schemas/Ubigeo'
+        direccion:
+          type: string
+          maxLength: 200
+        referencia:
+          type: string
+          nullable: true
+          maxLength: 200
+        telefonoContacto:
+          description: Si es null se usa el celular del cliente.
+          type: string
+          nullable: true
+          pattern: '^9[0-9]{8}$'
+        predeterminada:
+          type: boolean
+
+    DireccionRequest:
+      type: object
+      required: [alias, ubigeo, direccion]
+      properties:
+        alias:
+          type: string
+          minLength: 1
+          maxLength: 40
+        ubigeo:
+          $ref: './comun.yaml#/components/schemas/Ubigeo'
+        direccion:
+          type: string
+          minLength: 5
+          maxLength: 200
+        referencia:
+          type: string
+          nullable: true
+          maxLength: 200
+        telefonoContacto:
+          type: string
+          nullable: true
+          pattern: '^9[0-9]{8}$'
+
+    Staff:
+      type: object
+      required: [id, email, nombres, apellidos, rol, estado, version]
+      properties:
+        id:
+          type: string
+          format: uuid
+        email:
+          $ref: '#/components/schemas/Email'
+        nombres:
+          type: string
+        apellidos:
+          type: string
+        rol:
+          $ref: '#/components/schemas/RolStaff'
+        estado:
+          $ref: '#/components/schemas/EstadoStaff'
+        ultimoLoginEn:
+          type: string
+          nullable: true
+          format: date-time
+        creadoEn:
+          type: string
+          format: date-time
+        version:
+          type: integer
+          description: Bloqueo optimista; se envía al editar.
+
+    InvitarStaffRequest:
+      type: object
+      required: [email, nombres, apellidos, rol]
+      properties:
+        email:
+          $ref: '#/components/schemas/Email'
+        nombres:
+          $ref: '#/components/schemas/Nombre'
+        apellidos:
+          $ref: '#/components/schemas/Nombre'
+        rol:
+          $ref: '#/components/schemas/RolStaff'
+
+    EditarStaffRequest:
+      type: object
+      required: [nombres, apellidos, rol, version]
+      properties:
+        nombres:
+          $ref: '#/components/schemas/Nombre'
+        apellidos:
+          $ref: '#/components/schemas/Nombre'
+        rol:
+          $ref: '#/components/schemas/RolStaff'
+        version:
+          type: integer
+
+    PerfilStaffRequest:
+      type: object
+      required: [nombres, apellidos]
+      properties:
+        nombres:
+          $ref: '#/components/schemas/Nombre'
+        apellidos:
+          $ref: '#/components/schemas/Nombre'
+
+    ClienteResumen:
+      type: object
+      required: [id, email, nombres, apellidos, dni, telefono, activo, creadoEn]
+      properties:
+        id:
+          type: string
+          format: uuid
+        email:
+          $ref: '#/components/schemas/Email'
+        nombres:
+          type: string
+        apellidos:
+          type: string
+        dni:
+          $ref: './comun.yaml#/components/schemas/Dni'
+        telefono:
+          $ref: './comun.yaml#/components/schemas/Celular'
+        activo:
+          type: boolean
+        creadoEn:
+          type: string
+          format: date-time
+
+    ClienteDetalle:
+      allOf:
+        - $ref: '#/components/schemas/ClienteResumen'
+        - type: object
+          required: [direcciones]
+          properties:
+            ultimoLoginEn:
+              type: string
+              nullable: true
+              format: date-time
+            direcciones:
+              type: array
+              items:
+                $ref: '#/components/schemas/Direccion'
+
+    Jwks:
+      type: object
+      required: [keys]
+      properties:
+        keys:
+          type: array
+          items:
+            $ref: '#/components/schemas/ClaveJwk'
+    ClaveJwk:
+      type: object
+      required: [kty, kid, use, alg, n, e]
+      properties:
+        kty:
+          type: string
+          enum: [RSA]
+        kid:
+          type: string
+        use:
+          type: string
+          enum: [sig]
+        alg:
+          type: string
+          enum: [RS256]
+        n:
+          type: string
+        e:
+          type: string
+
+    # Respuestas envueltas (K4)
+    RespuestaSesion:
+      allOf:
+        - $ref: './comun.yaml#/components/schemas/ApiResponse'
+        - type: object
+          properties:
+            data:
+              $ref: '#/components/schemas/Sesion'
+    RespuestaPerfilCliente:
+      allOf:
+        - $ref: './comun.yaml#/components/schemas/ApiResponse'
+        - type: object
+          properties:
+            data:
+              $ref: '#/components/schemas/PerfilCliente'
+    RespuestaDireccion:
+      allOf:
+        - $ref: './comun.yaml#/components/schemas/ApiResponse'
+        - type: object
+          properties:
+            data:
+              $ref: '#/components/schemas/Direccion'
+    RespuestaDirecciones:
+      allOf:
+        - $ref: './comun.yaml#/components/schemas/ApiResponse'
+        - type: object
+          properties:
+            data:
+              type: array
+              maxItems: 10
+              items:
+                $ref: '#/components/schemas/Direccion'
+    RespuestaStaff:
+      allOf:
+        - $ref: './comun.yaml#/components/schemas/ApiResponse'
+        - type: object
+          properties:
+            data:
+              $ref: '#/components/schemas/Staff'
+    PaginaStaff:
+      allOf:
+        - $ref: './comun.yaml#/components/schemas/PaginaMeta'
+        - type: object
+          required: [contenido]
+          properties:
+            contenido:
+              type: array
+              items:
+                $ref: '#/components/schemas/Staff'
+    RespuestaPaginaStaff:
+      allOf:
+        - $ref: './comun.yaml#/components/schemas/ApiResponse'
+        - type: object
+          properties:
+            data:
+              $ref: '#/components/schemas/PaginaStaff'
+    PaginaClientes:
+      allOf:
+        - $ref: './comun.yaml#/components/schemas/PaginaMeta'
+        - type: object
+          required: [contenido]
+          properties:
+            contenido:
+              type: array
+              items:
+                $ref: '#/components/schemas/ClienteResumen'
+    RespuestaPaginaClientes:
+      allOf:
+        - $ref: './comun.yaml#/components/schemas/ApiResponse'
+        - type: object
+          properties:
+            data:
+              $ref: '#/components/schemas/PaginaClientes'
+    RespuestaClienteDetalle:
+      allOf:
+        - $ref: './comun.yaml#/components/schemas/ApiResponse'
+        - type: object
+          properties:
+            data:
+              $ref: '#/components/schemas/ClienteDetalle'

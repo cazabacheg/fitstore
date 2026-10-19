@@ -1,9 +1,10 @@
 # FitStore — Análisis micro: `notification-service`
 
-> Versión: **v10 (aprobado)** — 2026-10-19. Fuente: [`01-analisis-macro.md`](../01-analisis-macro.md) v15.
+> Versión: **v11 (aprobado)** — 2026-10-19. Fuente: [`01-analisis-macro.md`](../01-analisis-macro.md) v15.
 > Estados: ✅ decidido · 🟡 propuesto · ❓ abierto · 🕓 diferido
 
 **Historial:**
+- v11 (2026-10-19): ajustes de la etapa de contratos: `envio_correo.historial_intentos` (`jsonb`) para mostrar cada intento con su fecha (SPEC-7 CA-7-20).
 - v10 (2026-10-19): revisión de coherencia: se distingue lo que se consume sin correo de lo que no se escucha (`PedidoExpirado`, `PagoRechazado`).
 - v9 (2026-10-19): por la SPEC-7 (N7): **enviar prueba a mi correo** desde el editor (`POST …/plantillas/{codigo}/prueba`).
 - v8 (2026-10-19): corrección de la SPEC-7: el catálogo tiene **18** plantillas (10.1 decía 17 antes de agregar C14).
@@ -121,7 +122,7 @@ classDiagram
 
 | Tabla | Columnas principales | Restricciones / índices |
 |---|---|---|
-| `envio_correo` | `id`, `evento_id`, `plantilla`, `destinatario`, `asunto`, `variables` (`jsonb`), `adjunto` (número de boleta o NULL), `estado` (`PENDIENTE`, `ENVIANDO`, `ENVIADO`, `FALLIDO`), `intentos`, `proximo_intento_en`, `ultimo_error`, `referencia` (código de pedido o reclamo), `creado_en`, `enviado_en` | Índice parcial `(proximo_intento_en) WHERE estado = 'PENDIENTE'`; índices `(referencia)`, `(creado_en DESC)` |
+| `envio_correo` | `id`, `evento_id`, `plantilla`, `destinatario`, `asunto`, `variables` (`jsonb`), `adjunto` (número de boleta o NULL), `estado` (`PENDIENTE`, `ENVIANDO`, `ENVIADO`, `FALLIDO`), `intentos`, `historial_intentos` (`jsonb`: `[{numero, fecha, error}]`, lo muestra el detalle del registro), `proximo_intento_en`, `ultimo_error`, `referencia` (código de pedido o reclamo), `creado_en`, `enviado_en` | Índice parcial `(proximo_intento_en) WHERE estado = 'PENDIENTE'`; índices `(referencia)`, `(creado_en DESC)` |
 | `plantilla` | `codigo` (PK), `asunto`, `titulo`, `mensaje` (`text`), `texto_boton`, `activa`, `obligatoria`, `actualizada_en`, `actualizada_por` | Sembrada con los valores por defecto (`V2__plantillas.sql`) |
 | `marca_tienda` | `id` (siempre 1), `configuracion` (`jsonb`), `correos_alertas` (`text[]`), `version`, `actualizado_en` | `CHECK (id = 1)` |
 | `pedido_resumen` | `pedido_id` (PK), `codigo`, `email`, `nombre`, `items` (`jsonb`), `totales` (`jsonb`), `modalidad`, `creado_en` | |
@@ -210,7 +211,7 @@ Separar **recibir** (rápido, en la transacción del consumidor) de **enviar** (
 | Método | Ruta | Descripción |
 |---|---|---|
 | GET | `/api/v1/admin/notificaciones` | Registro de envíos (filtros: estado, plantilla, destinatario, referencia, fechas) |
-| GET | `/api/v1/admin/notificaciones/{id}` | Detalle: asunto, destinatario, intentos, último error |
+| GET | `/api/v1/admin/notificaciones/{id}` | Detalle: asunto, destinatario, cada intento con su fecha y error, último error |
 | POST | `/api/v1/admin/notificaciones/{id}/reenviar` | Reenviar (vuelve a `PENDIENTE`) |
 | GET | `/api/v1/admin/notificaciones/plantillas` | Catálogo de plantillas con estado (activa, obligatoria) |
 | GET / PUT | `/api/v1/admin/notificaciones/plantillas/{codigo}` | Ver / editar textos y activar o desactivar |

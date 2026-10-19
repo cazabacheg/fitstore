@@ -1,9 +1,10 @@
 # FitStore — Análisis micro: `catalog-service`
 
-> Versión: **v7 (aprobado)** — 2026-10-19. Fuente: [`01-analisis-macro.md`](../01-analisis-macro.md) v11.
+> Versión: **v8 (aprobado)** — 2026-10-19. Fuente: [`01-analisis-macro.md`](../01-analisis-macro.md) v11.
 > Estados: ✅ decidido · 🟡 propuesto · ❓ abierto · 🕓 diferido
 
 **Historial:**
+- v8 (2026-10-19): ajustes de la etapa de contratos: la cotización pública no expone el stock exacto (estado por línea; `disponible` solo si no alcanza); el kardex devuelve también el stock actual.
 - v7 (2026-10-19): revisión de coherencia: rangos de la configuración de inventario (stock mínimo por defecto 0–999, margen de reserva 0–30 min, como valida la SPEC-3 CA-3-38); se edita en la pestaña Parámetros de la configuración de tienda (SPEC-3 S2). Las dos entradas sin número de versión del 2026-10-18 corresponden a cambios de la SPEC-2 sobre la v6.
 - (2026-10-18, por SPEC-2) Cada imagen pertenece a un color (D3) y publicar exige una imagen por color activo (invariante 4); color maestro "Variado"; carga masiva de productos por CSV/XLSX (4.4.1); ejemplo de categorías renombrado.
 - v6 (2026-10-18): sección 10 aprobada → **documento completo aprobado**.
@@ -269,7 +270,7 @@ Bucket `fitstore-media`, clave `productos/{productoId}/{uuid}-{tamaño}.jpg`. Se
 | GET / PUT | `/api/v1/admin/descuentos` | Política global (tramos + activo) | ADMIN |
 | PUT | `/api/v1/admin/productos/{id}/descuento` | Modo y tramos propios | ADMIN |
 | GET | `/api/v1/admin/inventario` | Stock por variante (filtros: producto, stock bajo, agotado) | OPERADOR, ADMIN |
-| GET | `/api/v1/admin/inventario/{varianteId}/movimientos` | Kardex paginado | OPERADOR, ADMIN |
+| GET | `/api/v1/admin/inventario/{varianteId}/movimientos` | Kardex: stock actual de la variante y movimientos paginados | OPERADOR, ADMIN |
 | POST | `/api/v1/admin/inventario/entradas` | Ingreso de mercadería (varias líneas, motivo) | OPERADOR, ADMIN |
 | POST | `/api/v1/admin/inventario/ajustes` | Ajuste +/− con motivo obligatorio | OPERADOR, ADMIN |
 | PATCH | `/api/v1/admin/inventario/{varianteId}/minimo` | Umbral de stock bajo propio | OPERADOR, ADMIN |
@@ -334,6 +335,8 @@ Bucket `fitstore-media`, clave `productos/{productoId}/{uuid}-{tamaño}.jpg`. Se
 | Top Flex · Rojo · S | 39.90 | 1 | 39.90 | sin tramo | 39.90 |
 
 **Cotización** (`POST /precios/cotizar`): recibe hasta 50 líneas y devuelve por línea el precio vigente, el descuento y la disponibilidad; por producto, el tramo alcanzado y **cuánto falta para el siguiente** ("Agrega 2 más y ahorra 15 %"); y el total. Si una variante está inactiva o el producto no está `ACTIVO`, la línea vuelve marcada como `NO_DISPONIBLE`. La usa order para el carrito y para el checkout; **es la única fuente de precios y descuentos** (order guarda el resultado como copia en el pedido).
+
+**Privacidad del stock en la cotización** (contrato de catalog): como la cotización es pública, cada línea devuelve un `estado` (`OK`, `STOCK_INSUFICIENTE`, `NO_DISPONIBLE`) y solo informa `disponible` cuando lo pedido no alcanza (lo necesita el mensaje "Solo quedan N unidades"); nunca el stock exacto de todas las variantes.
 
 ### 4.6 Reserva de stock (CU-40, RF-INV-03) — paso T1 de la saga
 

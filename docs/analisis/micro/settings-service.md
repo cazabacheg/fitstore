@@ -1,9 +1,10 @@
 # FitStore — Análisis micro: `settings-service`
 
-> Versión: **v8 (aprobado)** — 2026-10-18. Fuente: [`01-analisis-macro.md`](../01-analisis-macro.md) v12.
+> Versión: **v9 (aprobado)** — 2026-10-19. Fuente: [`01-analisis-macro.md`](../01-analisis-macro.md) v12.
 > Estados: ✅ decidido · 🟡 propuesto · ❓ abierto · 🕓 diferido
 
 **Historial:**
+- v9 (2026-10-19): ajustes de la etapa de contratos: la bandeja de reclamos busca por número, nombre o documento (SPEC-3 P-3-06).
 - v8 (2026-10-18): nuevo parámetro público **`diasReembolsoPostventa`** (0 a 365, 0 = sin límite, por defecto 30), decidido en la SPEC-5. Lo usa order.
 - v7 (2026-10-18): nuevo campo opcional **`beneficios`** en el contenido (de 0 a 3 `{icono, texto}`; vacío = la landing oculta la franja), decidido en la SPEC-3 (S1).
 - v6 (2026-10-18): sección 10 aprobada → **documento completo aprobado**.
@@ -238,7 +239,7 @@ Bucket `fitstore-media`, claves `tienda/{tipo}/{uuid}.{ext}`. Logos en PNG o Web
 | PUT / DELETE | `/api/v1/admin/settings/imagenes/{id}` | Orden, texto alternativo, enlace / eliminar |
 | GET | `/api/v1/admin/settings/politicas/{tipo}/versiones` | Historial de versiones |
 | POST | `/api/v1/admin/settings/politicas/{tipo}` | Publicar nueva versión |
-| GET | `/api/v1/admin/reclamos` | Listar (filtros: estado, tipo, fechas, por vencer, vencidos) |
+| GET | `/api/v1/admin/reclamos` | Listar (filtros: estado, tipo, fechas, por vencer, vencidos y texto: número, nombre o documento) |
 | GET | `/api/v1/admin/reclamos/{id}` | Detalle |
 | PATCH | `/api/v1/admin/reclamos/{id}/en-atencion` | Marcar en atención |
 | POST | `/api/v1/admin/reclamos/{id}/respuesta` | Responder (cierra el reclamo) |

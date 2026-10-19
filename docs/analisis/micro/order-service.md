@@ -1,9 +1,10 @@
 # FitStore — Análisis micro: `order-service`
 
-> Versión: **v8 (aprobado)** — 2026-10-19. Fuente: [`01-analisis-macro.md`](../01-analisis-macro.md) v12.
+> Versión: **v9 (aprobado)** — 2026-10-19. Fuente: [`01-analisis-macro.md`](../01-analisis-macro.md) v12.
 > Estados: ✅ decidido · 🟡 propuesto · ❓ abierto · 🕓 diferido
 
 **Historial:**
+- v9 (2026-10-19): ajustes de la etapa de contratos: guarda proveedor, medio y fecha del pago desde `PagoConfirmado` (columnas `pago_proveedor`, `pago_medio`, `pagado_en`); `PedidoListoDespacho` lleva `agenciaId`, `agenciaNombre`, `resumenItems` y `bultos` (la hoja de ruta los muestra).
 - v8 (2026-10-19): revisión de coherencia: `PedidoExpirado` no lo consume notification (no hay correo de pedido expirado).
 - v7 (2026-10-19): por SPEC-6: estado final **`DEVUELTO`** (desde `ENVIADO` con `EntregaActualizada` devuelta, o desde `LISTO_RECOJO` cuando el operador marca "No recogido"); el reembolso postventa también se permite en `DEVUELTO`, sin plazo, con motivo `NO_ENTREGADO`.
 - v6 (2026-10-18): **reembolso postventa** (4.8): el ADMIN registra un reembolso total o parcial de un pedido `ENTREGADO` dentro del plazo de settings; tabla `pedido_reembolso`, campo `monto_reembolsado`, evento `ReembolsoSolicitado`, consume `PagoReembolsado`. Decidido en la SPEC-5.
@@ -146,7 +147,7 @@ classDiagram
 
 | Tabla | Columnas principales | Restricciones / índices |
 |---|---|---|
-| `pedido` | `id` (uuid), `codigo`, `cliente_id`, `estado`, `modalidad` (`DELIVERY_LOCAL`, `AGENCIA`, `RECOJO`); destinatario: `dest_nombres`, `dest_apellidos`, `dest_dni`, `dest_telefono`, `dest_email`; dirección: `dir_ubigeo`, `dir_departamento`, `dir_provincia`, `dir_distrito`, `dir_direccion`, `dir_referencia`; envío: `agencia_id`, `agencia_nombre`, `plazo_dias_min`, `plazo_dias_max`, `codigo_seguimiento`; montos: `subtotal`, `descuento_total`, `costo_envio`, `total`; `expira_en`, `boleta_url`, `monto_reembolsado` (por defecto 0), `idempotency_key`, `notas`, `creado_en`, `actualizado_en`, `version` | Único `codigo`; único `(cliente_id, idempotency_key)`; índices `(cliente_id, creado_en DESC)`, `(estado, creado_en)`, parcial `(expira_en) WHERE estado = 'PENDIENTE_PAGO'`; `CHECK` de montos ≥ 0 |
+| `pedido` | `id` (uuid), `codigo`, `cliente_id`, `estado`, `modalidad` (`DELIVERY_LOCAL`, `AGENCIA`, `RECOJO`); destinatario: `dest_nombres`, `dest_apellidos`, `dest_dni`, `dest_telefono`, `dest_email`; dirección: `dir_ubigeo`, `dir_departamento`, `dir_provincia`, `dir_distrito`, `dir_direccion`, `dir_referencia`; envío: `agencia_id`, `agencia_nombre`, `plazo_dias_min`, `plazo_dias_max`, `codigo_seguimiento`; montos: `subtotal`, `descuento_total`, `costo_envio`, `total`; `expira_en`, `boleta_url`, `pago_proveedor`, `pago_medio`, `pagado_en` (desde `PagoConfirmado`), `monto_reembolsado` (por defecto 0), `idempotency_key`, `notas`, `creado_en`, `actualizado_en`, `version` | Único `codigo`; único `(cliente_id, idempotency_key)`; índices `(cliente_id, creado_en DESC)`, `(estado, creado_en)`, parcial `(expira_en) WHERE estado = 'PENDIENTE_PAGO'`; `CHECK` de montos ≥ 0 |
 | `pedido_item` | `id`, `pedido_id`, `variante_id`, `producto_id`, `sku`, `producto_nombre`, `talla`, `color`, `imagen_url`, `precio_unitario`, `cantidad`, `descuento_porcentaje`, `descuento_monto`, `total` | `CHECK cantidad > 0`; índice `producto_id` (top de productos) |
 | `pedido_historial` | `id`, `pedido_id`, `estado_anterior`, `estado_nuevo`, `actor_tipo` (`CLIENTE`, `STAFF`, `SISTEMA`), `actor_id`, `comentario`, `creado_en` | Índices `(pedido_id, creado_en)` y `(estado_nuevo, creado_en)` (ventas por fecha de pago) |
 | `pedido_reembolso` | `id` (uuid), `pedido_id`, `monto`, `motivo` (`DEFECTUOSO`, `TALLA_MODELO_EQUIVOCADO`, `NO_CONFORME`, `NO_ENTREGADO`, `OTRO`), `nota`, `items` (`jsonb`: `{varianteId, sku, cantidad}`), `estado` (`SOLICITADO`, `COMPLETADO`), `solicitado_por`, `creado_en`, `completado_en` | Índice `pedido_id`; `CHECK monto > 0` |
@@ -261,7 +262,7 @@ sequenceDiagram
 
 | Llega | Estado del pedido | Acción |
 |---|---|---|
-| `PagoConfirmado` | `PENDIENTE_PAGO` | → `PAGADO`; publica `PedidoPagado` |
+| `PagoConfirmado` | `PENDIENTE_PAGO` | → `PAGADO`; guarda proveedor, medio y fecha del pago (para mostrar "Pagado con…" sin la API de pagos); publica `PedidoPagado` |
 | `PagoConfirmado` | `EXPIRADO` o `CANCELADO` | Sin cambio; publica `PagoNoAplicable` → payment reembolsa |
 | `PagoRechazado` | `PENDIENTE_PAGO` | Sin cambio de estado; se anota en el historial ("pago rechazado"). El cliente puede reintentar hasta que expire |
 | `BoletaEmitida` | cualquiera | Guarda `boleta_url` |
@@ -354,7 +355,7 @@ Exchange `fitstore.eventos` (topic), sobre común, outbox e idempotencia (ADR-00
 | `PedidoCancelado` | `order.pedido.cancelado` | `pedidoId`, `codigo`, `fuePagado`, `motivo`, `actor`, `items[]` | catalog, payment (reembolso si fue pagado), notification |
 | `PedidoExpirado` | `order.pedido.expirado` | `pedidoId`, `codigo` | catalog, payment (anular intención) |
 | `PagoNoAplicable` | `order.pago.no-aplicable` | `pedidoId`, `pagoId`, `motivo` | payment (reembolso automático) |
-| `PedidoListoDespacho` | `order.pedido.listo-despacho` | `pedidoId`, `codigo`, modalidad, destinatario, dirección, agencia, resumen de ítems | delivery (crear entrega) |
+| `PedidoListoDespacho` | `order.pedido.listo-despacho` | `pedidoId`, `codigo`, modalidad, destinatario, dirección, `agenciaId`, `agenciaNombre`, `resumenItems`, `bultos` | delivery (crear entrega) |
 | `ReembolsoSolicitado` ✅ **nuevo** | `order.reembolso.solicitado` | `pedidoId`, `codigo`, `solicitudId` (id de `pedido_reembolso`, clave de idempotencia), `monto`, `motivo` | payment (ejecuta el reembolso) |
 | `PedidoListoRecojo` ✅ **nuevo** | `order.pedido.listo-recojo` | `pedidoId`, `codigo`, destinatario | notification ("ya puedes recoger tu pedido") |
 | `PedidoRecogido` ✅ **nuevo** | `order.pedido.recogido` | `pedidoId`, `codigo`, destinatario | notification (confirmación de entrega) |
