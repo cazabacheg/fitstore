@@ -1,0 +1,2754 @@
+openapi: 3.0.3
+info:
+  title: FitStore — catalog-service
+  version: 1.0.0
+  description: |
+    Catálogo (categorías, productos, variantes, imágenes, maestros, guía de tallas, descuentos por volumen, cotización,
+    carga masiva) e inventario (stock, kardex, entradas, ajustes, reservas).
+
+    Fuente: micro `docs/analisis/micro/catalog-service.md` (sección 4) y `docs/specs/SPEC-2-catalogo-inventario.md`.
+    Convenciones: `contracts/README.md`. Rol requerido en cada operación: extensión `x-roles`.
+
+    **Privacidad del stock:** las rutas públicas nunca devuelven el stock exacto; usan niveles (`DISPONIBLE`, `ULTIMAS`, `AGOTADO`)
+    y el cotizador solo informa cuántas quedan cuando lo pedido no alcanza (micro 4.8).
+  license:
+    name: Uso académico
+servers:
+  - url: http://localhost:8080
+    description: Gateway en local (docker compose)
+  - url: https://{app}.{sub}.duckdns.org
+    description: Nube (demo); cada frontend llama a /api en su propio dominio
+    variables:
+      app:
+        enum: [tienda, admin]
+        default: tienda
+      sub:
+        default: fitstore
+        description: Subdominio de DuckDNS
+tags:
+  - name: tienda
+    description: Catálogo público (menú, listado, detalle, filtros)
+  - name: cotizacion
+    description: Precios, descuentos por volumen y disponibilidad para el carrito y el checkout
+  - name: categorias-admin
+    description: Árbol de categorías y guía de tallas (ADMIN)
+  - name: productos-admin
+    description: Productos, variantes, imágenes, destacados y carga masiva
+  - name: maestros-admin
+    description: Tallas, colores y política de descuentos (ADMIN)
+  - name: inventario
+    description: Stock, kardex, entradas, ajustes y configuración
+  - name: interno
+    description: Rutas internas entre servicios (el gateway no las expone, K3)
+
+paths:
+  /api/v1/categorias:
+    get:
+      tags: [tienda]
+      operationId: obtenerArbolCategorias
+      summary: Árbol de categorías activas
+      description: Menú de la tienda (2 niveles, en su orden). Caché de 10 min.
+      x-roles: [PUBLICO]
+      security: []
+      responses:
+        '200':
+          description: Categorías raíz con sus hijas.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RespuestaArbolCategorias'
+        '429':
+          $ref: './comun.yaml#/components/responses/DemasiadosIntentos'
+
+  /api/v1/categorias/{slug}/guia-tallas:
+    get:
+      tags: [tienda]
+      operationId: obtenerGuiaTallas
+      summary: Guía de tallas de una categoría
+      description: La de la categoría o, si no tiene, la de su padre (CA-2-20). Sin guía → 404.
+      x-roles: [PUBLICO]
+      security: []
+      parameters:
+        - $ref: '#/components/parameters/Slug'
+      responses:
+        '200':
+          description: Guía de tallas.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RespuestaGuiaTallas'
+        '404':
+          $ref: './comun.yaml#/components/responses/NoEncontrado'
+        '429':
+          $ref: './comun.yaml#/components/responses/DemasiadosIntentos'
+
+  /api/v1/productos:
+    get:
+      tags: [tienda]
+      operationId: listarProductos
+      summary: Listado de productos con búsqueda y filtros
+      description: |
+        Solo productos ACTIVO con al menos una variante activa; `q` sin importar tildes; `categoria` incluye a sus hijas;
+        `talla` y `color` admiten varios valores (micro 4.3, CA-2-01 a 07). `size` máximo 48, por defecto 24.
+      x-roles: [PUBLICO]
+      security: []
+      parameters:
+        - name: q
+          in: query
+          schema:
+            type: string
+            maxLength: 80
+        - name: categoria
+          in: query
+          description: Slug de la categoría.
+          schema:
+            type: string
+        - name: talla
+          in: query
+          description: Código de talla; se puede repetir.
+          schema:
+            type: array
+            items:
+              type: string
+          style: form
+          explode: true
+        - name: color
+          in: query
+          description: Id de color; se puede repetir.
+          schema:
+            type: array
+            items:
+              type: integer
+              format: int64
+          style: form
+          explode: true
+        - name: precioMin
+          in: query
+          schema:
+            $ref: './comun.yaml#/components/schemas/Monto'
+        - name: precioMax
+          in: query
+          schema:
+            $ref: './comun.yaml#/components/schemas/Monto'
+        - name: disponible
+          in: query
+          description: true = solo con stock disponible.
+          schema:
+            type: boolean
+        - name: page
+          in: query
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+        - name: size
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 48
+            default: 24
+        - name: sort
+          in: query
+          schema:
+            type: string
+            enum: [novedad, 'precio,asc', 'precio,desc', nombre]
+            default: novedad
+      responses:
+        '200':
+          description: Página de productos.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RespuestaPaginaProductos'
+        '400':
+          $ref: './comun.yaml#/components/responses/ErrorValidacion'
+        '429':
+          $ref: './comun.yaml#/components/responses/DemasiadosIntentos'
+
+  /api/v1/productos/destacados:
+    get:
+      tags: [tienda]
+      operationId: listarDestacados
+      summary: Destacados de la landing
+      description: Máximo 8, en su orden (SPEC-3 CA-3-04).
+      x-roles: [PUBLICO]
+      security: []
+      responses:
+        '200':
+          description: Tarjetas de los destacados.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RespuestaListaTarjetas'
+        '429':
+          $ref: './comun.yaml#/components/responses/DemasiadosIntentos'
+
+  /api/v1/productos/{slug}:
+    get:
+      tags: [tienda]
+      operationId: obtenerProducto
+      summary: Detalle de un producto
+      description: Variantes con su nivel de disponibilidad, imágenes por color, tramos de descuento y categorías (CA-2-08 a 12). Un producto no ACTIVO → 404.
+      x-roles: [PUBLICO]
+      security: []
+      parameters:
+        - $ref: '#/components/parameters/Slug'
+      responses:
+        '200':
+          description: Detalle del producto.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RespuestaProductoDetalle'
+        '404':
+          $ref: './comun.yaml#/components/responses/NoEncontrado'
+        '429':
+          $ref: './comun.yaml#/components/responses/DemasiadosIntentos'
+
+  /api/v1/tallas:
+    get:
+      tags: [tienda]
+      operationId: listarTallas
+      summary: Tallas activas (para filtros)
+      x-roles: [PUBLICO]
+      security: []
+      responses:
+        '200':
+          description: Tallas en su orden.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RespuestaTallas'
+        '429':
+          $ref: './comun.yaml#/components/responses/DemasiadosIntentos'
+
+  /api/v1/colores:
+    get:
+      tags: [tienda]
+      operationId: listarColores
+      summary: Colores activos (para filtros)
+      x-roles: [PUBLICO]
+      security: []
+      responses:
+        '200':
+          description: Colores.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RespuestaColores'
+        '429':
+          $ref: './comun.yaml#/components/responses/DemasiadosIntentos'
+
+  /api/v1/precios/cotizar:
+    post:
+      tags: [cotizacion]
+      operationId: cotizarLineas
+      summary: Cotizar líneas de carrito
+      description: |
+        Precio vigente, descuento por volumen (agrupado por producto, tramo más alto, half-up por línea), estado de cada línea
+        y cuánto falta para el siguiente tramo (micro 4.5, CA-2-13 a 16). Lo llaman order (carrito, resumen y checkout) y el frontend.
+        Más de 50 líneas → 400.
+      x-roles: [PUBLICO]
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CotizarRequest'
+            example:
+              lineas:
+                - varianteId: 101
+                  cantidad: 4
+                - varianteId: 102
+                  cantidad: 2
+                - varianteId: 230
+                  cantidad: 1
+      responses:
+        '200':
+          description: Cotización.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RespuestaCotizacion'
+        '400':
+          $ref: './comun.yaml#/components/responses/ErrorValidacion'
+        '429':
+          $ref: './comun.yaml#/components/responses/DemasiadosIntentos'
+
+  /api/v1/admin/categorias:
+    get:
+      tags: [categorias-admin]
+      operationId: listarCategoriasAdmin
+      summary: Todas las categorías (activas e inactivas)
+      x-roles: [ADMIN]
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Árbol completo con conteo de productos.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RespuestaCategoriasAdmin'
+        '401':
+          $ref: './comun.yaml#/components/responses/NoAutenticado'
+        '403':
+          $ref: './comun.yaml#/components/responses/SinPermiso'
+    post:
+      tags: [categorias-admin]
+      operationId: crearCategoria
+      summary: Crear una categoría raíz o hija
+      description: Máximo 2 niveles; nombre único entre hermanas; slug generado (CA-2-17).
+      x-roles: [ADMIN]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CategoriaRequest'
+      responses:
+        '201':
+          $ref: '#/components/responses/CategoriaGuardada'
+        '400':
+          $ref: './comun.yaml#/components/responses/ErrorValidacion'
+        '401':
+          $ref: './comun.yaml#/components/responses/NoAutenticado'
+        '403':
+          $ref: './comun.yaml#/components/responses/SinPermiso'
+        '409':
+          $ref: './comun.yaml#/components/responses/Conflicto'
+
+  /api/v1/admin/categorias/{id}:
+    parameters:
+      - $ref: '#/components/parameters/Id'
+    put:
+      tags: [categorias-admin]
+      operationId: editarCategoria
+      summary: Editar una categoría
+      x-roles: [ADMIN]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CategoriaRequest'
+      responses:
+        '200':
+          $ref: '#/components/responses/CategoriaGuardada'
+        '400':
+          $ref: './comun.yaml#/components/responses/ErrorValidacion'
+        '401':
+          $ref: './comun.yaml#/components/responses/NoAutenticado'
+        '404':
+          $ref: './comun.yaml#/components/responses/NoEncontrado'
+        '409':
+          $ref: './comun.yaml#/components/responses/Conflicto'
+    delete:
+      tags: [categorias-admin]
+      operationId: eliminarCategoria
+      summary: Eliminar una categoría
+      description: Con hijas o productos → 409 `CATEGORIA_EN_USO` y se sugiere desactivarla (CA-2-19).
+      x-roles: [ADMIN]
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          $ref: './comun.yaml#/components/responses/Ok'
+        '401':
+          $ref: './comun.yaml#/components/responses/NoAutenticado'
+        '404':
+          $ref: './comun.yaml#/components/responses/NoEncontrado'
+        '409':
+          $ref: './comun.yaml#/components/responses/Conflicto'
+
+  /api/v1/admin/categorias/{id}/desactivar:
+    parameters:
+      - $ref: '#/components/parameters/Id'
+    patch:
+      tags: [categorias-admin]
+      operationId: desactivarCategoria
+      summary: Desactivar una categoría
+      x-roles: [ADMIN]
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          $ref: '#/components/responses/CategoriaGuardada'
+        '401':
+          $ref: './comun.yaml#/components/responses/NoAutenticado'
+        '404':
+          $ref: './comun.yaml#/components/responses/NoEncontrado'
+
+  /api/v1/admin/categorias/{id}/activar:
+    parameters:
+      - $ref: '#/components/parameters/Id'
+    patch:
+      tags: [categorias-admin]
+      operationId: activarCategoria
+      summary: Activar una categoría
+      x-roles: [ADMIN]
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          $ref: '#/components/responses/CategoriaGuardada'
+        '401':
+          $ref: './comun.yaml#/components/responses/NoAutenticado'
+        '404':
+          $ref: './comun.yaml#/components/responses/NoEncontrado'
+
+  /api/v1/admin/categorias/{id}/orden:
+    parameters:
+      - $ref: '#/components/parameters/Id'
+    patch:
+      tags: [categorias-admin]
+      operationId: ordenarCategoria
+      summary: Mover una categoría (arrastrar)
+      description: Nueva posición entre sus hermanas; invalida la caché del menú (CA-2-18).
+      x-roles: [ADMIN]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrdenRequest'
+      responses:
+        '200':
+          description: Árbol actualizado.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RespuestaCategoriasAdmin'
+        '400':
+          $ref: './comun.yaml#/components/responses/ErrorValidacion'
+        '401':
+          $ref: './comun.yaml#/components/responses/NoAutenticado'
+        '404':
+          $ref: './comun.yaml#/components/responses/NoEncontrado'
+
+  /api/v1/admin/categorias/{id}/guia-tallas:
+    parameters:
+      - $ref: '#/components/parameters/Id'
+    put:
+      tags: [categorias-admin]
+      operationId: guardarGuiaTallas
+      summary: Guardar la guía de tallas
+      x-roles: [ADMIN]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GuiaTallas'
+      responses:
+        '200':
+          description: Guía guardada.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RespuestaGuiaTallas'
+        '400':
+          $ref: './comun.yaml#/components/responses/ErrorValidacion'
+        '401':
+          $ref: './comun.yaml#/components/responses/NoAutenticado'
+        '404':
+          $ref: './comun.yaml#/components/responses/NoEncontrado'
+
+  /api/v1/admin/productos:
+    get:
+      tags: [productos-admin]
+      operationId: listarProductosAdmin
+      summary: Productos en todos los estados
+      x-roles: [OPERADOR, ADMIN]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: q
+          in: query
+          description: Nombre o código.
+          schema:
+            type: string
+            maxLength: 80
+        - name: estado
+          in: query
+          schema:
+            $ref: '#/components/schemas/EstadoProducto'
+        - name: categoriaId
+          in: query
+          schema:
+            type: integer
+            format: int64
+        - name: destacado
+          in: query
+          schema:
+            type: boolean
+        - $ref: './comun.yaml#/components/parameters/page'
+        - $ref: './comun.yaml#/components/parameters/size'
+        - $ref: './comun.yaml#/components/parameters/sort'
+      responses:
+        '200':
+          description: Página de productos.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RespuestaPaginaProductosAdmin'
+        '401':
+          $ref: './comun.yaml#/components/responses/NoAutenticado'
+        '403':
+          $ref: './comun.yaml#/components/responses/SinPermiso'
+    post:
+      tags: [productos-admin]
+      operationId: crearProducto
+      summary: Crear un producto en BORRADOR
+      x-roles: [ADMIN]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProductoRequest'
+            example:
+              codigo: LEG01
+              nombre: Legging Pro Compresión
+              descripcion: Tela de compresión, tiro alto, secado rápido.
+              precioBase: 59.9
+              categoriaIds: [12]
+      responses:
+        '201':
+          $ref: '#/components/responses/ProductoGuardado'
+        '400':
+          $ref: './comun.yaml#/components/responses/ErrorValidacion'
+        '401':
+          $ref: './comun.yaml#/components/responses/NoAutenticado'
+        '403':
+          $ref: './comun.yaml#/components/responses/SinPermiso'
+        '409':
+          $ref: './comun.yaml#/components/responses/Conflicto'
+
+  /api/v1/admin/productos/{id}:
+    parameters:
+      - $ref: '#/components/parameters/Id'
+    get:
+      tags: [productos-admin]
+      operationId: obtenerProductoAdmin
+      summary: Producto completo (formulario)
+      description: El OPERADOR lo ve en solo lectura (SPEC-2 P-2-04).
+      x-roles: [OPERADOR, ADMIN]
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          $ref: '#/components/responses/ProductoGuardado'
+        '401':
+          $ref: './comun.yaml#/components/responses/NoAutenticado'
+        '403':
+          $ref: './comun.yaml#/components/responses/SinPermiso'
+        '404':
+          $ref: './comun.yaml#/components/responses/NoEncontrado'
+    put:
+      tags: [productos-admin]
+      operationId: editarProducto
+      summary: Editar los datos del producto
+      x-roles: [ADMIN]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProductoRequest'
+      responses:
+        '200':
+          $ref: '#/components/responses/ProductoGuardado'
+        '400':
+          $ref: './comun.yaml#/components/responses/ErrorValidacion'
+        '401':
+          $ref: './comun.yaml#/components/responses/NoAutenticado'
+        '403':
+          $ref: './comun.yaml#/components/responses/SinPermiso'
+        '404':
+          $ref: './comun.yaml#/components/responses/NoEncontrado'
+        '409':
+          $ref: './comun.yaml#/components/responses/Conflicto'
+    delete:
+      tags: [productos-admin]
+      operationId: eliminarProducto
+      summary: Eliminar un producto
+      description: Solo BORRADOR sin movimientos; si no → 409 y se usa desactivar (CA-2-26).
+      x-roles: [ADMIN]
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          $ref: './comun.yaml#/components/responses/Ok'
+        '401':
+          $ref: './comun.yaml#/components/responses/NoAutenticado'
+        '403':
+          $ref: './comun.yaml#/components/responses/SinPermiso'
+        '404':
+          $ref: './comun.yaml#/components/responses/NoEncontrado'
+        '409':
+          $ref: './comun.yaml#/components/responses/Conflicto'
+
+  /api/v1/admin/productos/{id}/publicar:
+    parameters:
+      - $ref: '#/components/parameters/Id'
+    patch:
+      tags: [productos-admin]
+      operationId: publicarProducto
+      summary: Publicar (ACTIVO)
+      description: |
+        Exige categoría, precio > 0, al menos una variante activa e imagen por cada color activo (invariante 4, CA-2-24, 25).
+        Si falta algo → 409 `NO_PUBLICABLE` con `detalles.faltantes[]`.
+      x-roles: [ADMIN]
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          $ref: '#/components/responses/ProductoGuardado'
+        '401':
+          $ref: './comun.yaml#/components/responses/NoAutenticado'
+        '403':
+          $ref: './comun.yaml#/components/responses/SinPermiso'
+        '404':
+          $ref: './comun.yaml#/components/responses/NoEncontrado'
+        '409':
+          description: No cumple las condiciones para publicarse.
+          content:
+            application/json:
+              schema:
+                $ref: './comun.yaml#/components/schemas/ApiError'
+              example:
+                success: false
+                mensaje: Falta completar el producto para publicarlo
+                codigo: NO_PUBLICABLE
+                detalles:
+                  faltantes: ['Imagen del color Rojo']
+
+  /api/v1/admin/productos/{id}/desactivar:
+    parameters:
+      - $ref: '#/components/parameters/Id'
+    patch:
+      tags: [productos-admin]
+      operationId: desactivarProducto
+      summary: Desactivar (INACTIVO)
+      x-roles: [ADMIN]
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          $ref: '#/components/responses/ProductoGuardado'
+        '401':
+          $ref: './comun.yaml#/components/responses/NoAutenticado'
+        '403':
+          $ref: './comun.yaml#/components/responses/SinPermiso'
+        '404':
+          $ref: './comun.yaml#/components/responses/NoEncontrado'
+
+  /api/v1/admin/productos/{id}/categorias:
+    parameters:
+      - $ref: '#/components/parameters/Id'
+    put:
+      tags: [productos-admin]
+      operationId: asignarCategoriasProducto
+      summary: Reemplazar las categorías asignadas
+      x-roles: [ADMIN]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CategoriasProductoRequest'
+      responses:
+        '200':
+          $ref: '#/components/responses/ProductoGuardado'
+        '400':
+          $ref: './comun.yaml#/components/responses/ErrorValidacion'
+        '401':
+          $ref: './comun.yaml#/components/responses/NoAutenticado'
+        '404':
+          $ref: './comun.yaml#/components/responses/NoEncontrado'
+
+  /api/v1/admin/productos/{id}/destacado:
+    parameters:
+      - $ref: '#/components/parameters/Id'
+    patch:
+      tags: [productos-admin]
+      operationId: marcarDestacado
+      summary: Marcar o desmarcar como destacado
+      x-roles: [ADMIN]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DestacadoRequest'
+      responses:
+        '200':
+          $ref: '#/components/responses/ProductoGuardado'
+        '400':
+          $ref: './comun.yaml#/components/responses/ErrorValidacion'
+        '401':
+          $ref: './comun.yaml#/components/responses/NoAutenticado'
+        '404':
+          $ref: './comun.yaml#/components/responses/NoEncontrado'
+
+  /api/v1/admin/productos/{id}/descuento:
+    parameters:
+      - $ref: '#/components/parameters/Id'
+    put:
+      tags: [productos-admin]
+      operationId: configurarDescuentoProducto
+      summary: Modo de descuento y tramos propios
+      x-roles: [ADMIN]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DescuentoProductoRequest'
+      responses:
+        '200':
+          $ref: '#/components/responses/ProductoGuardado'
+        '400':
+          $ref: './comun.yaml#/components/responses/ErrorValidacion'
+        '401':
+          $ref: './comun.yaml#/components/responses/NoAutenticado'
+        '404':
+          $ref: './comun.yaml#/components/responses/NoEncontrado'
+
+  /api/v1/admin/productos/{id}/variantes:
+    parameters:
+      - $ref: '#/components/parameters/Id'
+    post:
+      tags: [productos-admin]
+      operationId: crearVariante
+      summary: Crear una variante
+      description: SKU `{CODIGO}-{COL}-{TALLA}` sugerido y editable (C2); combinación talla × color única.
+      x-roles: [ADMIN]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VarianteRequest'
+      responses:
+        '201':
+          $ref: '#/components/responses/ProductoGuardado'
+        '400':
+          $ref: './comun.yaml#/components/responses/ErrorValidacion'
+        '401':
+          $ref: './comun.yaml#/components/responses/NoAutenticado'
+        '404':
+          $ref: './comun.yaml#/components/responses/NoEncontrado'
+        '409':
+          $ref: './comun.yaml#/components/responses/Conflicto'
+
+  /api/v1/admin/productos/{id}/variantes/matriz:
+    parameters:
+      - $ref: '#/components/parameters/Id'
+    post:
+      tags: [productos-admin]
+      operationId: generarMatrizVariantes
+      summary: Generar variantes por talla × color
+      description: Omite las combinaciones que ya existen (CA-2-22).
+      x-roles: [ADMIN]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MatrizRequest'
+      responses:
+        '201':
+          $ref: '#/components/responses/ProductoGuardado'
+        '400':
+          $ref: './comun.yaml#/components/responses/ErrorValidacion'
+        '401':
+          $ref: './comun.yaml#/components/responses/NoAutenticado'
+        '404':
+          $ref: './comun.yaml#/components/responses/NoEncontrado'
+
+  /api/v1/admin/productos/{id}/imagenes:
+    parameters:
+      - $ref: '#/components/parameters/Id'
+    post:
+      tags: [productos-admin]
+      operationId: subirImagenProducto
+      summary: Subir una imagen de producto
+      description: JPG, PNG o WebP hasta 5 MB (tipo real validado); se redimensiona a 1200 y 400 px; color obligatorio (CA-2-29 a 32).
+      x-roles: [ADMIN]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/SubirImagenProductoRequest'
+      responses:
+        '201':
+          $ref: '#/components/responses/ProductoGuardado'
+        '400':
+          $ref: './comun.yaml#/components/responses/ErrorValidacion'
+        '401':
+          $ref: './comun.yaml#/components/responses/NoAutenticado'
+        '404':
+          $ref: './comun.yaml#/components/responses/NoEncontrado'
+
+  /api/v1/admin/productos/carga-masiva/plantilla:
+    get:
+      tags: [productos-admin]
+      operationId: descargarPlantillaCargaMasiva
+      summary: Descargar la plantilla de carga masiva
+      description: Una fila por variante (micro 4.4.1). Archivo, sin envoltorio ApiResponse (K4).
+      x-roles: [ADMIN]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: formato
+          in: query
+          required: true
+          schema:
+            type: string
+            enum: [xlsx, csv]
+      responses:
+        '200':
+          description: Plantilla.
+          content:
+            application/vnd.openxmlformats-officedocument.spreadsheetml.sheet:
+              schema:
+                type: string
+                format: binary
+            text/csv:
+              schema:
+                type: string
+                format: binary
+        '401':
+          $ref: './comun.yaml#/components/responses/NoAutenticado'
+        '403':
+          $ref: './comun.yaml#/components/responses/SinPermiso'
+
+  /api/v1/admin/productos/carga-masiva/validar:
+    post:
+      tags: [productos-admin]
+      operationId: validarCargaMasiva
+      summary: Validar un archivo de carga masiva
+      description: No crea nada; el resultado se guarda 30 min. Máximo 2000 filas y 5 MB (CA-2-58 a 61).
+      x-roles: [ADMIN]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ArchivoCargaRequest'
+      responses:
+        '200':
+          description: Informe de validación (con o sin errores).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RespuestaValidacionCarga'
+        '400':
+          $ref: './comun.yaml#/components/responses/ErrorValidacion'
+        '401':
+          $ref: './comun.yaml#/components/responses/NoAutenticado'
+        '403':
+          $ref: './comun.yaml#/components/responses/SinPermiso'
+
+  /api/v1/admin/productos/carga-masiva/{validacionId}/confirmar:
+    post:
+      tags: [productos-admin]
+      operationId: confirmarCargaMasiva
+      summary: Crear todo lo validado
+      description: Todo o nada; validación vencida o con errores → 409.
+      x-roles: [ADMIN]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: validacionId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '201':
+          description: Productos creados en BORRADOR.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RespuestaResultadoCarga'
+        '401':
+          $ref: './comun.yaml#/components/responses/NoAutenticado'
+        '403':
+          $ref: './comun.yaml#/components/responses/SinPermiso'
+        '409':
+          $ref: './comun.yaml#/components/responses/Conflicto'
+
+  /api/v1/admin/variantes/{id}:
+    parameters:
+      - $ref: '#/components/parameters/Id'
+    put:
+      tags: [productos-admin]
+      operationId: editarVariante
+      summary: Editar una variante (SKU y precio propio)
+      x-roles: [ADMIN]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EditarVarianteRequest'
+      responses:
+        '200':
+          $ref: '#/components/responses/ProductoGuardado'
+        '400':
+          $ref: './comun.yaml#/components/responses/ErrorValidacion'
+        '401':
+          $ref: './comun.yaml#/components/responses/NoAutenticado'
+        '404':
+          $ref: './comun.yaml#/components/responses/NoEncontrado'
+        '409':
+          $ref: './comun.yaml#/components/responses/Conflicto'
+    delete:
+      tags: [productos-admin]
+      operationId: eliminarVariante
+      summary: Eliminar una variante
+      description: Solo sin movimientos ni reservas; si no → 409 (se desactiva).
+      x-roles: [ADMIN]
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          $ref: './comun.yaml#/components/responses/Ok'
+        '401':
+          $ref: './comun.yaml#/components/responses/NoAutenticado'
+        '404':
+          $ref: './comun.yaml#/components/responses/NoEncontrado'
+        '409':
+          $ref: './comun.yaml#/components/responses/Conflicto'
+
+  /api/v1/admin/variantes/{id}/desactivar:
+    parameters:
+      - $ref: '#/components/parameters/Id'
+    patch:
+      tags: [productos-admin]
+      operationId: desactivarVariante
+      summary: Desactivar una variante
+      x-roles: [ADMIN]
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          $ref: '#/components/responses/ProductoGuardado'
+        '401':
+          $ref: './comun.yaml#/components/responses/NoAutenticado'
+        '404':
+          $ref: './comun.yaml#/components/responses/NoEncontrado'
+
+  /api/v1/admin/variantes/{id}/activar:
+    parameters:
+      - $ref: '#/components/parameters/Id'
+    patch:
+      tags: [productos-admin]
+      operationId: activarVariante
+      summary: Activar una variante
+      x-roles: [ADMIN]
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          $ref: '#/components/responses/ProductoGuardado'
+        '401':
+          $ref: './comun.yaml#/components/responses/NoAutenticado'
+        '404':
+          $ref: './comun.yaml#/components/responses/NoEncontrado'
+
+  /api/v1/admin/imagenes/{id}:
+    parameters:
+      - $ref: '#/components/parameters/Id'
+    put:
+      tags: [productos-admin]
+      operationId: editarImagenProducto
+      summary: Cambiar orden, principal o color
+      x-roles: [ADMIN]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ImagenProductoRequest'
+      responses:
+        '200':
+          $ref: '#/components/responses/ProductoGuardado'
+        '400':
+          $ref: './comun.yaml#/components/responses/ErrorValidacion'
+        '401':
+          $ref: './comun.yaml#/components/responses/NoAutenticado'
+        '404':
+          $ref: './comun.yaml#/components/responses/NoEncontrado'
+    delete:
+      tags: [productos-admin]
+      operationId: eliminarImagenProducto
+      summary: Eliminar una imagen
+      description: Si era la principal, pasa a serlo la siguiente.
+      x-roles: [ADMIN]
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          $ref: '#/components/responses/ProductoGuardado'
+        '401':
+          $ref: './comun.yaml#/components/responses/NoAutenticado'
+        '404':
+          $ref: './comun.yaml#/components/responses/NoEncontrado'
+
+  /api/v1/admin/tallas:
+    get:
+      tags: [maestros-admin]
+      operationId: listarTallasAdmin
+      summary: Todas las tallas
+      x-roles: [ADMIN]
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Tallas.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RespuestaTallas'
+        '401':
+          $ref: './comun.yaml#/components/responses/NoAutenticado'
+        '403':
+          $ref: './comun.yaml#/components/responses/SinPermiso'
+    post:
+      tags: [maestros-admin]
+      operationId: crearTalla
+      summary: Crear una talla
+      x-roles: [ADMIN]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TallaRequest'
+      responses:
+        '201':
+          $ref: '#/components/responses/TallaGuardada'
+        '400':
+          $ref: './comun.yaml#/components/responses/ErrorValidacion'
+        '401':
+          $ref: './comun.yaml#/components/responses/NoAutenticado'
+        '409':
+          $ref: './comun.yaml#/components/responses/Conflicto'
+
+  /api/v1/admin/tallas/{id}:
+    parameters:
+      - $ref: '#/components/parameters/Id'
+    put:
+      tags: [maestros-admin]
+      operationId: editarTalla
+      summary: Editar una talla (código, orden, activa)
+      x-roles: [ADMIN]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TallaRequest'
+      responses:
+        '200':
+          $ref: '#/components/responses/TallaGuardada'
+        '400':
+          $ref: './comun.yaml#/components/responses/ErrorValidacion'
+        '401':
+          $ref: './comun.yaml#/components/responses/NoAutenticado'
+        '404':
+          $ref: './comun.yaml#/components/responses/NoEncontrado'
+        '409':
+          $ref: './comun.yaml#/components/responses/Conflicto'
+    delete:
+      tags: [maestros-admin]
+      operationId: eliminarTalla
+      summary: Eliminar una talla
+      description: Solo si no está en uso; si no → 409 (CA-2-33 a 35).
+      x-roles: [ADMIN]
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          $ref: './comun.yaml#/components/responses/Ok'
+        '401':
+          $ref: './comun.yaml#/components/responses/NoAutenticado'
+        '404':
+          $ref: './comun.yaml#/components/responses/NoEncontrado'
+        '409':
+          $ref: './comun.yaml#/components/responses/Conflicto'
+
+  /api/v1/admin/colores:
+    get:
+      tags: [maestros-admin]
+      operationId: listarColoresAdmin
+      summary: Todos los colores
+      x-roles: [ADMIN]
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Colores.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RespuestaColores'
+        '401':
+          $ref: './comun.yaml#/components/responses/NoAutenticado'
+        '403':
+          $ref: './comun.yaml#/components/responses/SinPermiso'
+    post:
+      tags: [maestros-admin]
+      operationId: crearColor
+      summary: Crear un color
+      x-roles: [ADMIN]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ColorRequest'
+      responses:
+        '201':
+          $ref: '#/components/responses/ColorGuardado'
+        '400':
+          $ref: './comun.yaml#/components/responses/ErrorValidacion'
+        '401':
+          $ref: './comun.yaml#/components/responses/NoAutenticado'
+        '409':
+          $ref: './comun.yaml#/components/responses/Conflicto'
+
+  /api/v1/admin/colores/{id}:
+    parameters:
+      - $ref: '#/components/parameters/Id'
+    put:
+      tags: [maestros-admin]
+      operationId: editarColor
+      summary: Editar un color (nombre, hex, activo)
+      x-roles: [ADMIN]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ColorRequest'
+      responses:
+        '200':
+          $ref: '#/components/responses/ColorGuardado'
+        '400':
+          $ref: './comun.yaml#/components/responses/ErrorValidacion'
+        '401':
+          $ref: './comun.yaml#/components/responses/NoAutenticado'
+        '404':
+          $ref: './comun.yaml#/components/responses/NoEncontrado'
+        '409':
+          $ref: './comun.yaml#/components/responses/Conflicto'
+    delete:
+      tags: [maestros-admin]
+      operationId: eliminarColor
+      summary: Eliminar un color
+      description: Solo si no está en uso; si no → 409.
+      x-roles: [ADMIN]
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          $ref: './comun.yaml#/components/responses/Ok'
+        '401':
+          $ref: './comun.yaml#/components/responses/NoAutenticado'
+        '404':
+          $ref: './comun.yaml#/components/responses/NoEncontrado'
+        '409':
+          $ref: './comun.yaml#/components/responses/Conflicto'
+
+  /api/v1/admin/descuentos:
+    get:
+      tags: [maestros-admin]
+      operationId: obtenerPoliticaDescuentos
+      summary: Política global de descuentos por volumen
+      x-roles: [ADMIN]
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          $ref: '#/components/responses/PoliticaDescuentosGuardada'
+        '401':
+          $ref: './comun.yaml#/components/responses/NoAutenticado'
+        '403':
+          $ref: './comun.yaml#/components/responses/SinPermiso'
+    put:
+      tags: [maestros-admin]
+      operationId: guardarPoliticaDescuentos
+      summary: Guardar la política global
+      description: Hasta 10 tramos, unidades crecientes y porcentaje de 0 a 50 (CA-2-36 a 38).
+      x-roles: [ADMIN]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PoliticaDescuentos'
+      responses:
+        '200':
+          $ref: '#/components/responses/PoliticaDescuentosGuardada'
+        '400':
+          $ref: './comun.yaml#/components/responses/ErrorValidacion'
+        '401':
+          $ref: './comun.yaml#/components/responses/NoAutenticado'
+        '403':
+          $ref: './comun.yaml#/components/responses/SinPermiso'
+
+  /api/v1/admin/inventario:
+    get:
+      tags: [inventario]
+      operationId: listarStock
+      summary: Stock por variante
+      description: Números exactos (solo staff). El dashboard pide `soloStockBajo=true&size=5` (SPEC-8).
+      x-roles: [OPERADOR, ADMIN]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: q
+          in: query
+          description: SKU o nombre de producto.
+          schema:
+            type: string
+            maxLength: 80
+        - name: productoId
+          in: query
+          schema:
+            type: integer
+            format: int64
+        - name: soloStockBajo
+          in: query
+          schema:
+            type: boolean
+        - name: soloAgotados
+          in: query
+          schema:
+            type: boolean
+        - $ref: './comun.yaml#/components/parameters/page'
+        - $ref: './comun.yaml#/components/parameters/size'
+        - $ref: './comun.yaml#/components/parameters/sort'
+      responses:
+        '200':
+          description: Página de stock.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RespuestaPaginaStock'
+        '401':
+          $ref: './comun.yaml#/components/responses/NoAutenticado'
+        '403':
+          $ref: './comun.yaml#/components/responses/SinPermiso'
+
+  /api/v1/admin/inventario/{varianteId}/movimientos:
+    parameters:
+      - $ref: '#/components/parameters/VarianteId'
+    get:
+      tags: [inventario]
+      operationId: obtenerKardex
+      summary: Kardex de una variante
+      description: Stock actual y movimientos paginados, del más reciente al más antiguo (CA-2-39, 40).
+      x-roles: [OPERADOR, ADMIN]
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: './comun.yaml#/components/parameters/page'
+        - $ref: './comun.yaml#/components/parameters/size'
+      responses:
+        '200':
+          description: Kardex.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RespuestaKardex'
+        '401':
+          $ref: './comun.yaml#/components/responses/NoAutenticado'
+        '403':
+          $ref: './comun.yaml#/components/responses/SinPermiso'
+        '404':
+          $ref: './comun.yaml#/components/responses/NoEncontrado'
+
+  /api/v1/admin/inventario/entradas:
+    post:
+      tags: [inventario]
+      operationId: registrarEntrada
+      summary: Ingreso de mercadería (varias líneas)
+      x-roles: [OPERADOR, ADMIN]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EntradaRequest'
+      responses:
+        '201':
+          description: Stock actualizado de las variantes afectadas.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RespuestaListaStock'
+        '400':
+          $ref: './comun.yaml#/components/responses/ErrorValidacion'
+        '401':
+          $ref: './comun.yaml#/components/responses/NoAutenticado'
+        '403':
+          $ref: './comun.yaml#/components/responses/SinPermiso'
+        '404':
+          $ref: './comun.yaml#/components/responses/NoEncontrado'
+
+  /api/v1/admin/inventario/ajustes:
+    post:
+      tags: [inventario]
+      operationId: registrarAjuste
+      summary: Ajuste +/− con motivo
+      description: No puede dejar el físico por debajo de lo reservado → 409 `AJUSTE_BAJO_RESERVADO` (CA-2-41).
+      x-roles: [OPERADOR, ADMIN]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AjusteRequest'
+      responses:
+        '201':
+          description: Stock actualizado.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RespuestaStock'
+        '400':
+          $ref: './comun.yaml#/components/responses/ErrorValidacion'
+        '401':
+          $ref: './comun.yaml#/components/responses/NoAutenticado'
+        '403':
+          $ref: './comun.yaml#/components/responses/SinPermiso'
+        '404':
+          $ref: './comun.yaml#/components/responses/NoEncontrado'
+        '409':
+          $ref: './comun.yaml#/components/responses/Conflicto'
+
+  /api/v1/admin/inventario/{varianteId}/minimo:
+    parameters:
+      - $ref: '#/components/parameters/VarianteId'
+    patch:
+      tags: [inventario]
+      operationId: cambiarMinimoVariante
+      summary: Umbral de stock bajo propio
+      description: null = usar el mínimo por defecto de la tienda (CA-2-43).
+      x-roles: [OPERADOR, ADMIN]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MinimoRequest'
+      responses:
+        '200':
+          description: Stock con el nuevo mínimo.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RespuestaStock'
+        '400':
+          $ref: './comun.yaml#/components/responses/ErrorValidacion'
+        '401':
+          $ref: './comun.yaml#/components/responses/NoAutenticado'
+        '404':
+          $ref: './comun.yaml#/components/responses/NoEncontrado'
+
+  /api/v1/admin/inventario/configuracion:
+    get:
+      tags: [inventario]
+      operationId: obtenerConfiguracionInventario
+      summary: Stock mínimo por defecto y margen de reserva
+      description: Se edita desde la pestaña Parámetros de la configuración de tienda (SPEC-3 P-3-04, CA-3-38).
+      x-roles: [ADMIN]
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          $ref: '#/components/responses/ConfiguracionInventarioGuardada'
+        '401':
+          $ref: './comun.yaml#/components/responses/NoAutenticado'
+        '403':
+          $ref: './comun.yaml#/components/responses/SinPermiso'
+    put:
+      tags: [inventario]
+      operationId: guardarConfiguracionInventario
+      summary: Guardar la configuración de inventario
+      x-roles: [ADMIN]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ConfiguracionInventario'
+      responses:
+        '200':
+          $ref: '#/components/responses/ConfiguracionInventarioGuardada'
+        '400':
+          $ref: './comun.yaml#/components/responses/ErrorValidacion'
+        '401':
+          $ref: './comun.yaml#/components/responses/NoAutenticado'
+        '403':
+          $ref: './comun.yaml#/components/responses/SinPermiso'
+
+  /internal/v1/inventario/reservas:
+    post:
+      tags: [interno]
+      operationId: reservarStock
+      summary: Reservar stock para un pedido (interno, order-service)
+      description: |
+        Idempotente por `pedidoId` (si ya existe, 200 con la misma reserva); todo o nada en una transacción; vence
+        `expiraEnPedido + margenReservaMinutos` (micro 4.6, CA-2-45 a 53). Sin stock → 409 `SIN_STOCK` con `detalles.faltantes[]`.
+        No pasa por el gateway: lo llama order con su JWT propagado.
+      x-roles: [INTERNO]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReservaRequest'
+      responses:
+        '200':
+          $ref: '#/components/responses/ReservaCreada'
+        '201':
+          $ref: '#/components/responses/ReservaCreada'
+        '400':
+          $ref: './comun.yaml#/components/responses/ErrorValidacion'
+        '409':
+          description: Alguna línea no alcanza; no se reservó nada.
+          content:
+            application/json:
+              schema:
+                $ref: './comun.yaml#/components/schemas/ApiError'
+              example:
+                success: false
+                mensaje: Sin stock para algunos productos
+                codigo: SIN_STOCK
+                detalles:
+                  faltantes:
+                    - varianteId: 230
+                      solicitado: 2
+                      disponible: 1
+
+components:
+  securitySchemes:
+    bearerAuth:
+      $ref: './comun.yaml#/components/securitySchemes/bearerAuth'
+
+  parameters:
+    Id:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: integer
+        format: int64
+    VarianteId:
+      name: varianteId
+      in: path
+      required: true
+      schema:
+        type: integer
+        format: int64
+    Slug:
+      name: slug
+      in: path
+      required: true
+      schema:
+        type: string
+        pattern: '^[a-z0-9]+(-[a-z0-9]+)*$'
+        example: legging-pro-compresion
+
+  responses:
+    CategoriaGuardada:
+      description: Categoría.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/RespuestaCategoriaAdmin'
+    ProductoGuardado:
+      description: Producto completo (con variantes, imágenes y descuento).
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/RespuestaProductoAdmin'
+    TallaGuardada:
+      description: Talla.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/RespuestaTalla'
+    ColorGuardado:
+      description: Color.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/RespuestaColor'
+    PoliticaDescuentosGuardada:
+      description: Política global de descuentos.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/RespuestaPoliticaDescuentos'
+    ConfiguracionInventarioGuardada:
+      description: Configuración de inventario.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/RespuestaConfiguracionInventario'
+    ReservaCreada:
+      description: Reserva activa (201 nueva, 200 si ya existía).
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/RespuestaReserva'
+
+  schemas:
+    EstadoProducto:
+      type: string
+      enum: [BORRADOR, ACTIVO, INACTIVO]
+    ModoDescuento:
+      type: string
+      enum: [GLOBAL, PERSONALIZADO, SIN_DESCUENTO]
+    Disponibilidad:
+      type: string
+      enum: [DISPONIBLE, ULTIMAS, AGOTADO]
+      description: AGOTADO (0), ULTIMAS (1 a 5, umbral configurable) o DISPONIBLE (más de 5).
+    EstadoStock:
+      type: string
+      enum: [OK, BAJO, AGOTADO]
+    TipoMovimiento:
+      type: string
+      enum: [ENTRADA, AJUSTE, VENTA, REINGRESO]
+
+    Talla:
+      type: object
+      required: [id, codigo, orden, activo]
+      properties:
+        id:
+          type: integer
+          format: int64
+        codigo:
+          type: string
+          maxLength: 10
+          example: M
+        orden:
+          type: integer
+        activo:
+          type: boolean
+    Color:
+      type: object
+      required: [id, nombre, hex, activo]
+      properties:
+        id:
+          type: integer
+          format: int64
+        nombre:
+          type: string
+          maxLength: 40
+          example: Negro
+        hex:
+          type: string
+          pattern: '^#[0-9A-Fa-f]{6}$'
+          example: '#111111'
+        activo:
+          type: boolean
+    Tramo:
+      type: object
+      required: [unidadesMinimas, porcentaje]
+      properties:
+        unidadesMinimas:
+          type: integer
+          minimum: 2
+          example: 3
+        porcentaje:
+          type: number
+          multipleOf: 0.01
+          minimum: 0
+          maximum: 50
+          example: 5
+
+    CategoriaNodo:
+      type: object
+      required: [id, nombre, slug, hijas]
+      properties:
+        id:
+          type: integer
+          format: int64
+        nombre:
+          type: string
+          example: Leggings y pantalones
+        slug:
+          type: string
+        hijas:
+          type: array
+          items:
+            $ref: '#/components/schemas/CategoriaHija'
+    CategoriaHija:
+      type: object
+      required: [id, nombre, slug]
+      properties:
+        id:
+          type: integer
+          format: int64
+        nombre:
+          type: string
+          example: Leggings
+        slug:
+          type: string
+
+    GuiaTallas:
+      type: object
+      required: [columnas, filas]
+      properties:
+        columnas:
+          type: array
+          minItems: 2
+          items:
+            type: string
+          example: [Talla, Cintura (cm), Cadera (cm), Largo (cm)]
+        filas:
+          type: array
+          items:
+            type: array
+            items:
+              type: string
+          example: [[S, '64-68', '90-94', '86'], [M, '68-72', '94-98', '88']]
+        nota:
+          type: string
+          nullable: true
+          maxLength: 300
+
+    ProductoTarjeta:
+      type: object
+      required: [id, slug, nombre, precioDesde, colores, agotado]
+      properties:
+        id:
+          type: integer
+          format: int64
+        slug:
+          type: string
+        nombre:
+          type: string
+        imagenUrl:
+          type: string
+          nullable: true
+          description: Miniatura de 400 px de la imagen principal.
+        precioDesde:
+          $ref: './comun.yaml#/components/schemas/Monto'
+        colores:
+          type: array
+          description: Muestras de los colores con stock.
+          items:
+            $ref: '#/components/schemas/Color'
+        etiquetaDescuento:
+          type: string
+          nullable: true
+          example: Desde 3 un. −5 %
+        agotado:
+          type: boolean
+
+    ImagenProducto:
+      type: object
+      required: [id, colorId, url, urlMiniatura, orden, principal]
+      properties:
+        id:
+          type: integer
+          format: int64
+        colorId:
+          type: integer
+          format: int64
+        url:
+          type: string
+          description: 1200 px.
+        urlMiniatura:
+          type: string
+          description: 400 px.
+        orden:
+          type: integer
+        principal:
+          type: boolean
+        ancho:
+          type: integer
+        alto:
+          type: integer
+
+    VariantePublica:
+      type: object
+      required: [id, sku, tallaId, colorId, precio, disponibilidad]
+      properties:
+        id:
+          type: integer
+          format: int64
+        sku:
+          type: string
+          example: LEG01-NEG-M
+        tallaId:
+          type: integer
+          format: int64
+        colorId:
+          type: integer
+          format: int64
+        precio:
+          $ref: './comun.yaml#/components/schemas/Monto'
+        disponibilidad:
+          $ref: '#/components/schemas/Disponibilidad'
+        ultimasUnidades:
+          type: integer
+          nullable: true
+          minimum: 1
+          description: Solo cuando la disponibilidad es ULTIMAS ("¡Últimas 3 unidades!").
+
+    ProductoDetalle:
+      type: object
+      required: [id, slug, nombre, descripcion, precioDesde, categorias, tallas, colores, variantes, imagenes, tramos]
+      properties:
+        id:
+          type: integer
+          format: int64
+        slug:
+          type: string
+        nombre:
+          type: string
+        descripcion:
+          type: string
+        precioDesde:
+          $ref: './comun.yaml#/components/schemas/Monto'
+        categorias:
+          type: array
+          description: Para la ruta de migas y la guía de tallas.
+          items:
+            $ref: '#/components/schemas/CategoriaHija'
+        tallas:
+          type: array
+          items:
+            $ref: '#/components/schemas/Talla'
+        colores:
+          type: array
+          items:
+            $ref: '#/components/schemas/ColorDetalle'
+        variantes:
+          type: array
+          items:
+            $ref: '#/components/schemas/VariantePublica'
+        imagenes:
+          type: array
+          items:
+            $ref: '#/components/schemas/ImagenProducto'
+        tramos:
+          type: array
+          description: Tramos vigentes según el modo de descuento (vacío si no hay).
+          items:
+            $ref: '#/components/schemas/Tramo'
+        tieneGuiaTallas:
+          type: boolean
+
+    ColorDetalle:
+      allOf:
+        - $ref: '#/components/schemas/Color'
+        - type: object
+          required: [conStock]
+          properties:
+            conStock:
+              type: boolean
+              description: false = sin stock en ninguna talla (se muestra tachado y no seleccionable, CA-2-09).
+
+    LineaCotizar:
+      type: object
+      required: [varianteId, cantidad]
+      properties:
+        varianteId:
+          type: integer
+          format: int64
+        cantidad:
+          type: integer
+          minimum: 1
+          maximum: 100
+    CotizarRequest:
+      type: object
+      required: [lineas]
+      properties:
+        lineas:
+          type: array
+          minItems: 1
+          maxItems: 50
+          items:
+            $ref: '#/components/schemas/LineaCotizar'
+
+    LineaCotizada:
+      type: object
+      required: [varianteId, cantidad, estado]
+      properties:
+        varianteId:
+          type: integer
+          format: int64
+        productoId:
+          type: integer
+          format: int64
+          nullable: true
+        sku:
+          type: string
+          nullable: true
+        producto:
+          type: string
+          nullable: true
+        slug:
+          type: string
+          nullable: true
+        talla:
+          type: string
+          nullable: true
+        color:
+          type: string
+          nullable: true
+        imagenUrl:
+          type: string
+          nullable: true
+        precioUnitario:
+          $ref: './comun.yaml#/components/schemas/Monto'
+        cantidad:
+          type: integer
+        subtotal:
+          $ref: './comun.yaml#/components/schemas/Monto'
+        descuentoPorcentaje:
+          type: number
+          multipleOf: 0.01
+        descuentoMonto:
+          $ref: './comun.yaml#/components/schemas/Monto'
+        total:
+          $ref: './comun.yaml#/components/schemas/Monto'
+        estado:
+          type: string
+          enum: [OK, STOCK_INSUFICIENTE, NO_DISPONIBLE]
+          description: NO_DISPONIBLE = variante inactiva o producto no ACTIVO (montos en 0, CA-2-15).
+        disponible:
+          type: integer
+          nullable: true
+          minimum: 0
+          description: Solo cuando el estado es STOCK_INSUFICIENTE ("Solo quedan 3 unidades").
+
+    ProductoCotizado:
+      type: object
+      required: [productoId, nombre, unidades]
+      properties:
+        productoId:
+          type: integer
+          format: int64
+        nombre:
+          type: string
+        unidades:
+          type: integer
+        tramoAlcanzado:
+          type: object
+          nullable: true
+          allOf:
+            - $ref: '#/components/schemas/Tramo'
+        siguienteTramo:
+          type: object
+          nullable: true
+          allOf:
+            - $ref: '#/components/schemas/SiguienteTramo'
+    SiguienteTramo:
+      allOf:
+        - $ref: '#/components/schemas/Tramo'
+        - type: object
+          required: [faltan]
+          properties:
+            faltan:
+              type: integer
+              minimum: 1
+              description: Unidades que faltan ("Agrega 2 más y ahorra 15 %").
+
+    Cotizacion:
+      type: object
+      required: [lineas, productos, subtotal, descuentoTotal, total]
+      properties:
+        lineas:
+          type: array
+          items:
+            $ref: '#/components/schemas/LineaCotizada'
+        productos:
+          type: array
+          items:
+            $ref: '#/components/schemas/ProductoCotizado'
+        subtotal:
+          $ref: './comun.yaml#/components/schemas/Monto'
+        descuentoTotal:
+          $ref: './comun.yaml#/components/schemas/Monto'
+        total:
+          $ref: './comun.yaml#/components/schemas/Monto'
+
+    CategoriaAdmin:
+      type: object
+      required: [id, nombre, slug, orden, activo, cantidadProductos, hijas]
+      properties:
+        id:
+          type: integer
+          format: int64
+        padreId:
+          type: integer
+          format: int64
+          nullable: true
+        nombre:
+          type: string
+        slug:
+          type: string
+        orden:
+          type: integer
+        activo:
+          type: boolean
+        cantidadProductos:
+          type: integer
+        tieneGuiaTallas:
+          type: boolean
+        hijas:
+          type: array
+          items:
+            $ref: '#/components/schemas/CategoriaAdminHija'
+    CategoriaAdminHija:
+      type: object
+      required: [id, nombre, slug, orden, activo, cantidadProductos]
+      properties:
+        id:
+          type: integer
+          format: int64
+        padreId:
+          type: integer
+          format: int64
+        nombre:
+          type: string
+        slug:
+          type: string
+        orden:
+          type: integer
+        activo:
+          type: boolean
+        cantidadProductos:
+          type: integer
+        tieneGuiaTallas:
+          type: boolean
+    CategoriaRequest:
+      type: object
+      required: [nombre]
+      properties:
+        padreId:
+          type: integer
+          format: int64
+          nullable: true
+          description: null = categoría raíz.
+        nombre:
+          type: string
+          minLength: 2
+          maxLength: 60
+    OrdenRequest:
+      type: object
+      required: [orden]
+      properties:
+        orden:
+          type: integer
+          minimum: 0
+
+    ProductoAdminResumen:
+      type: object
+      required: [id, codigo, nombre, slug, estado, destacado, precioDesde, cantidadVariantes, stockDisponible]
+      properties:
+        id:
+          type: integer
+          format: int64
+        codigo:
+          type: string
+        nombre:
+          type: string
+        slug:
+          type: string
+        estado:
+          $ref: '#/components/schemas/EstadoProducto'
+        destacado:
+          type: boolean
+        precioDesde:
+          $ref: './comun.yaml#/components/schemas/Monto'
+        cantidadVariantes:
+          type: integer
+        stockDisponible:
+          type: integer
+        imagenUrl:
+          type: string
+          nullable: true
+
+    VarianteAdmin:
+      type: object
+      required: [id, sku, tallaId, talla, colorId, color, activo, fisico, reservado, disponible]
+      properties:
+        id:
+          type: integer
+          format: int64
+        sku:
+          type: string
+        tallaId:
+          type: integer
+          format: int64
+        talla:
+          type: string
+        colorId:
+          type: integer
+          format: int64
+        color:
+          type: string
+        precio:
+          type: number
+          multipleOf: 0.01
+          minimum: 0
+          nullable: true
+          description: null = usa el precio base.
+        activo:
+          type: boolean
+        fisico:
+          type: integer
+        reservado:
+          type: integer
+        disponible:
+          type: integer
+
+    ProductoAdmin:
+      type: object
+      required: [id, codigo, nombre, slug, descripcion, precioBase, estado, destacado, modoDescuento, categoriaIds, variantes, imagenes, version]
+      properties:
+        id:
+          type: integer
+          format: int64
+        codigo:
+          type: string
+        nombre:
+          type: string
+        slug:
+          type: string
+        descripcion:
+          type: string
+        precioBase:
+          $ref: './comun.yaml#/components/schemas/Monto'
+        estado:
+          $ref: '#/components/schemas/EstadoProducto'
+        destacado:
+          type: boolean
+        ordenDestacado:
+          type: integer
+          nullable: true
+        modoDescuento:
+          $ref: '#/components/schemas/ModoDescuento'
+        tramosPropios:
+          type: array
+          items:
+            $ref: '#/components/schemas/Tramo'
+        categoriaIds:
+          type: array
+          items:
+            type: integer
+            format: int64
+        variantes:
+          type: array
+          items:
+            $ref: '#/components/schemas/VarianteAdmin'
+        imagenes:
+          type: array
+          items:
+            $ref: '#/components/schemas/ImagenProducto'
+        version:
+          type: integer
+
+    ProductoRequest:
+      type: object
+      required: [codigo, nombre, descripcion, precioBase]
+      properties:
+        codigo:
+          type: string
+          pattern: '^[A-Z0-9]{2,20}$'
+          description: Base del SKU.
+        nombre:
+          type: string
+          minLength: 3
+          maxLength: 120
+        descripcion:
+          type: string
+          maxLength: 5000
+        precioBase:
+          type: number
+          multipleOf: 0.01
+          minimum: 0
+        categoriaIds:
+          type: array
+          items:
+            type: integer
+            format: int64
+        version:
+          type: integer
+          nullable: true
+          description: Obligatoria al editar (bloqueo optimista).
+    CategoriasProductoRequest:
+      type: object
+      required: [categoriaIds]
+      properties:
+        categoriaIds:
+          type: array
+          items:
+            type: integer
+            format: int64
+    DestacadoRequest:
+      type: object
+      required: [destacado]
+      properties:
+        destacado:
+          type: boolean
+        orden:
+          type: integer
+          nullable: true
+          minimum: 0
+    DescuentoProductoRequest:
+      type: object
+      required: [modo]
+      properties:
+        modo:
+          $ref: '#/components/schemas/ModoDescuento'
+        tramos:
+          type: array
+          maxItems: 10
+          description: Obligatorio si el modo es PERSONALIZADO.
+          items:
+            $ref: '#/components/schemas/Tramo'
+    VarianteRequest:
+      type: object
+      required: [tallaId, colorId]
+      properties:
+        tallaId:
+          type: integer
+          format: int64
+        colorId:
+          type: integer
+          format: int64
+        sku:
+          type: string
+          nullable: true
+          maxLength: 40
+          description: Si no viene, se genera `{CODIGO}-{COL}-{TALLA}` (C2).
+        precio:
+          type: number
+          multipleOf: 0.01
+          minimum: 0
+          nullable: true
+    EditarVarianteRequest:
+      type: object
+      required: [sku]
+      properties:
+        sku:
+          type: string
+          maxLength: 40
+        precio:
+          type: number
+          multipleOf: 0.01
+          minimum: 0
+          nullable: true
+    MatrizRequest:
+      type: object
+      required: [tallaIds, colorIds]
+      properties:
+        tallaIds:
+          type: array
+          minItems: 1
+          items:
+            type: integer
+            format: int64
+        colorIds:
+          type: array
+          minItems: 1
+          items:
+            type: integer
+            format: int64
+    SubirImagenProductoRequest:
+      type: object
+      required: [archivo, colorId]
+      properties:
+        archivo:
+          type: string
+          format: binary
+        colorId:
+          type: integer
+          format: int64
+        principal:
+          type: boolean
+    ImagenProductoRequest:
+      type: object
+      required: [orden, principal, colorId]
+      properties:
+        orden:
+          type: integer
+          minimum: 0
+        principal:
+          type: boolean
+        colorId:
+          type: integer
+          format: int64
+
+    ArchivoCargaRequest:
+      type: object
+      required: [archivo]
+      properties:
+        archivo:
+          type: string
+          format: binary
+          description: CSV o XLSX, máximo 5 MB.
+    ErrorFila:
+      type: object
+      required: [fila, mensaje]
+      properties:
+        fila:
+          type: integer
+          minimum: 2
+        columna:
+          type: string
+          nullable: true
+        mensaje:
+          type: string
+          example: El color "Morado" no existe
+    ValidacionCarga:
+      type: object
+      required: [validacionId, valida, filas, productos, variantes, errores, expiraEn]
+      properties:
+        validacionId:
+          type: string
+          format: uuid
+        valida:
+          type: boolean
+        filas:
+          type: integer
+        productos:
+          type: integer
+        variantes:
+          type: integer
+        errores:
+          type: array
+          items:
+            $ref: '#/components/schemas/ErrorFila'
+        expiraEn:
+          type: string
+          format: date-time
+    ProductoCreado:
+      type: object
+      required: [id, codigo, nombre]
+      properties:
+        id:
+          type: integer
+          format: int64
+        codigo:
+          type: string
+        nombre:
+          type: string
+    ResultadoCarga:
+      type: object
+      required: [productosCreados, variantesCreadas, entradasStock]
+      properties:
+        productosCreados:
+          type: array
+          items:
+            $ref: '#/components/schemas/ProductoCreado'
+        variantesCreadas:
+          type: integer
+        entradasStock:
+          type: integer
+
+    TallaRequest:
+      type: object
+      required: [codigo, orden]
+      properties:
+        codigo:
+          type: string
+          minLength: 1
+          maxLength: 10
+        orden:
+          type: integer
+          minimum: 0
+        activo:
+          type: boolean
+          default: true
+    ColorRequest:
+      type: object
+      required: [nombre, hex]
+      properties:
+        nombre:
+          type: string
+          minLength: 2
+          maxLength: 40
+        hex:
+          type: string
+          pattern: '^#[0-9A-Fa-f]{6}$'
+        activo:
+          type: boolean
+          default: true
+    PoliticaDescuentos:
+      type: object
+      required: [activo, tramos]
+      properties:
+        activo:
+          type: boolean
+          description: Interruptor global; apagado = sin descuentos en toda la tienda.
+        tramos:
+          type: array
+          maxItems: 10
+          items:
+            $ref: '#/components/schemas/Tramo'
+
+    Stock:
+      type: object
+      required: [varianteId, sku, productoId, producto, talla, color, fisico, reservado, disponible, minimo, minimoPropio, estado]
+      properties:
+        varianteId:
+          type: integer
+          format: int64
+        sku:
+          type: string
+        productoId:
+          type: integer
+          format: int64
+        producto:
+          type: string
+        talla:
+          type: string
+        color:
+          type: string
+        fisico:
+          type: integer
+          minimum: 0
+        reservado:
+          type: integer
+          minimum: 0
+        disponible:
+          type: integer
+          minimum: 0
+        minimo:
+          type: integer
+          minimum: 0
+          description: El efectivo (propio o el por defecto de la tienda).
+        minimoPropio:
+          type: boolean
+        estado:
+          $ref: '#/components/schemas/EstadoStock'
+    Movimiento:
+      type: object
+      required: [id, tipo, cantidad, saldoFisico, creadoEn]
+      properties:
+        id:
+          type: integer
+          format: int64
+        tipo:
+          $ref: '#/components/schemas/TipoMovimiento'
+        cantidad:
+          type: integer
+          description: Con signo.
+        saldoFisico:
+          type: integer
+        motivo:
+          type: string
+          nullable: true
+        referencia:
+          type: string
+          nullable: true
+          description: Código de pedido en VENTA y REINGRESO.
+        usuarioNombre:
+          type: string
+          nullable: true
+          description: null = sistema.
+        creadoEn:
+          type: string
+          format: date-time
+    LineaEntrada:
+      type: object
+      required: [varianteId, cantidad]
+      properties:
+        varianteId:
+          type: integer
+          format: int64
+        cantidad:
+          type: integer
+          minimum: 1
+          maximum: 10000
+    EntradaRequest:
+      type: object
+      required: [lineas]
+      properties:
+        lineas:
+          type: array
+          minItems: 1
+          maxItems: 100
+          items:
+            $ref: '#/components/schemas/LineaEntrada'
+        motivo:
+          type: string
+          nullable: true
+          maxLength: 200
+    AjusteRequest:
+      type: object
+      required: [varianteId, cantidad, motivo]
+      properties:
+        varianteId:
+          type: integer
+          format: int64
+        cantidad:
+          type: integer
+          description: Positiva o negativa, distinta de 0.
+          not:
+            enum: [0]
+        motivo:
+          type: string
+          minLength: 3
+          maxLength: 200
+    MinimoRequest:
+      type: object
+      required: [minimo]
+      properties:
+        minimo:
+          type: integer
+          nullable: true
+          minimum: 0
+          maximum: 999
+    ConfiguracionInventario:
+      type: object
+      required: [stockMinimoPorDefecto, margenReservaMinutos]
+      properties:
+        stockMinimoPorDefecto:
+          type: integer
+          minimum: 0
+          maximum: 999
+        margenReservaMinutos:
+          type: integer
+          minimum: 0
+          maximum: 30
+
+    ItemReserva:
+      type: object
+      required: [varianteId, cantidad]
+      properties:
+        varianteId:
+          type: integer
+          format: int64
+        cantidad:
+          type: integer
+          minimum: 1
+          maximum: 100
+    ReservaRequest:
+      type: object
+      required: [pedidoId, expiraEnPedido, items]
+      properties:
+        pedidoId:
+          type: string
+          format: uuid
+        expiraEnPedido:
+          type: string
+          format: date-time
+        items:
+          type: array
+          minItems: 1
+          maxItems: 50
+          items:
+            $ref: '#/components/schemas/ItemReserva'
+    Reserva:
+      type: object
+      required: [pedidoId, estado, expiraEn, items]
+      properties:
+        pedidoId:
+          type: string
+          format: uuid
+        estado:
+          type: string
+          enum: [ACTIVA, CONFIRMADA, LIBERADA]
+        expiraEn:
+          type: string
+          format: date-time
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/ItemReserva'
+
+    PaginaProductos:
+      allOf:
+        - $ref: './comun.yaml#/components/schemas/PaginaMeta'
+        - type: object
+          required: [contenido]
+          properties:
+            contenido:
+              type: array
+              items:
+                $ref: '#/components/schemas/ProductoTarjeta'
+    PaginaProductosAdmin:
+      allOf:
+        - $ref: './comun.yaml#/components/schemas/PaginaMeta'
+        - type: object
+          required: [contenido]
+          properties:
+            contenido:
+              type: array
+              items:
+                $ref: '#/components/schemas/ProductoAdminResumen'
+    PaginaStock:
+      allOf:
+        - $ref: './comun.yaml#/components/schemas/PaginaMeta'
+        - type: object
+          required: [contenido]
+          properties:
+            contenido:
+              type: array
+              items:
+                $ref: '#/components/schemas/Stock'
+    PaginaMovimientos:
+      allOf:
+        - $ref: './comun.yaml#/components/schemas/PaginaMeta'
+        - type: object
+          required: [contenido]
+          properties:
+            contenido:
+              type: array
+              items:
+                $ref: '#/components/schemas/Movimiento'
+    Kardex:
+      type: object
+      required: [stock, movimientos]
+      properties:
+        stock:
+          $ref: '#/components/schemas/Stock'
+        movimientos:
+          $ref: '#/components/schemas/PaginaMovimientos'
+
+    # Respuestas envueltas (K4)
+    RespuestaArbolCategorias:
+      allOf:
+        - $ref: './comun.yaml#/components/schemas/ApiResponse'
+        - type: object
+          properties:
+            data:
+              type: array
+              items:
+                $ref: '#/components/schemas/CategoriaNodo'
+    RespuestaGuiaTallas:
+      allOf:
+        - $ref: './comun.yaml#/components/schemas/ApiResponse'
+        - type: object
+          properties:
+            data:
+              $ref: '#/components/schemas/GuiaTallas'
+    RespuestaPaginaProductos:
+      allOf:
+        - $ref: './comun.yaml#/components/schemas/ApiResponse'
+        - type: object
+          properties:
+            data:
+              $ref: '#/components/schemas/PaginaProductos'
+    RespuestaListaTarjetas:
+      allOf:
+        - $ref: './comun.yaml#/components/schemas/ApiResponse'
+        - type: object
+          properties:
+            data:
+              type: array
+              maxItems: 8
+              items:
+                $ref: '#/components/schemas/ProductoTarjeta'
+    RespuestaProductoDetalle:
+      allOf:
+        - $ref: './comun.yaml#/components/schemas/ApiResponse'
+        - type: object
+          properties:
+            data:
+              $ref: '#/components/schemas/ProductoDetalle'
+    RespuestaTallas:
+      allOf:
+        - $ref: './comun.yaml#/components/schemas/ApiResponse'
+        - type: object
+          properties:
+            data:
+              type: array
+              items:
+                $ref: '#/components/schemas/Talla'
+    RespuestaTalla:
+      allOf:
+        - $ref: './comun.yaml#/components/schemas/ApiResponse'
+        - type: object
+          properties:
+            data:
+              $ref: '#/components/schemas/Talla'
+    RespuestaColores:
+      allOf:
+        - $ref: './comun.yaml#/components/schemas/ApiResponse'
+        - type: object
+          properties:
+            data:
+              type: array
+              items:
+                $ref: '#/components/schemas/Color'
+    RespuestaColor:
+      allOf:
+        - $ref: './comun.yaml#/components/schemas/ApiResponse'
+        - type: object
+          properties:
+            data:
+              $ref: '#/components/schemas/Color'
+    RespuestaCotizacion:
+      allOf:
+        - $ref: './comun.yaml#/components/schemas/ApiResponse'
+        - type: object
+          properties:
+            data:
+              $ref: '#/components/schemas/Cotizacion'
+    RespuestaCategoriasAdmin:
+      allOf:
+        - $ref: './comun.yaml#/components/schemas/ApiResponse'
+        - type: object
+          properties:
+            data:
+              type: array
+              items:
+                $ref: '#/components/schemas/CategoriaAdmin'
+    RespuestaCategoriaAdmin:
+      allOf:
+        - $ref: './comun.yaml#/components/schemas/ApiResponse'
+        - type: object
+          properties:
+            data:
+              $ref: '#/components/schemas/CategoriaAdmin'
+    RespuestaPaginaProductosAdmin:
+      allOf:
+        - $ref: './comun.yaml#/components/schemas/ApiResponse'
+        - type: object
+          properties:
+            data:
+              $ref: '#/components/schemas/PaginaProductosAdmin'
+    RespuestaProductoAdmin:
+      allOf:
+        - $ref: './comun.yaml#/components/schemas/ApiResponse'
+        - type: object
+          properties:
+            data:
+              $ref: '#/components/schemas/ProductoAdmin'
+    RespuestaValidacionCarga:
+      allOf:
+        - $ref: './comun.yaml#/components/schemas/ApiResponse'
+        - type: object
+          properties:
+            data:
+              $ref: '#/components/schemas/ValidacionCarga'
+    RespuestaResultadoCarga:
+      allOf:
+        - $ref: './comun.yaml#/components/schemas/ApiResponse'
+        - type: object
+          properties:
+            data:
+              $ref: '#/components/schemas/ResultadoCarga'
+    RespuestaPoliticaDescuentos:
+      allOf:
+        - $ref: './comun.yaml#/components/schemas/ApiResponse'
+        - type: object
+          properties:
+            data:
+              $ref: '#/components/schemas/PoliticaDescuentos'
+    RespuestaPaginaStock:
+      allOf:
+        - $ref: './comun.yaml#/components/schemas/ApiResponse'
+        - type: object
+          properties:
+            data:
+              $ref: '#/components/schemas/PaginaStock'
+    RespuestaStock:
+      allOf:
+        - $ref: './comun.yaml#/components/schemas/ApiResponse'
+        - type: object
+          properties:
+            data:
+              $ref: '#/components/schemas/Stock'
+    RespuestaListaStock:
+      allOf:
+        - $ref: './comun.yaml#/components/schemas/ApiResponse'
+        - type: object
+          properties:
+            data:
+              type: array
+              items:
+                $ref: '#/components/schemas/Stock'
+    RespuestaKardex:
+      allOf:
+        - $ref: './comun.yaml#/components/schemas/ApiResponse'
+        - type: object
+          properties:
+            data:
+              $ref: '#/components/schemas/Kardex'
+    RespuestaConfiguracionInventario:
+      allOf:
+        - $ref: './comun.yaml#/components/schemas/ApiResponse'
+        - type: object
+          properties:
+            data:
+              $ref: '#/components/schemas/ConfiguracionInventario'
+    RespuestaReserva:
+      allOf:
+        - $ref: './comun.yaml#/components/schemas/ApiResponse'
+        - type: object
+          properties:
+            data:
+              $ref: '#/components/schemas/Reserva'

@@ -1,0 +1,1480 @@
+openapi: 3.0.3
+info:
+  title: FitStore — settings-service
+  version: 1.0.0
+  description: |
+    Configuración de la tienda (white-label), imágenes, políticas versionadas, ubigeo y Libro de Reclamaciones.
+
+    Fuente: micro `docs/analisis/micro/settings-service.md` (sección 4) y `docs/specs/SPEC-3-tienda-reclamos.md`.
+    Convenciones: `contracts/README.md`. Rol requerido en cada operación: extensión `x-roles`.
+  license:
+    name: Uso académico
+servers:
+  - url: http://localhost:8080
+    description: Gateway en local (docker compose)
+  - url: https://{app}.{sub}.duckdns.org
+    description: Nube (demo); cada frontend llama a /api en su propio dominio
+    variables:
+      app:
+        enum: [tienda, admin]
+        default: tienda
+      sub:
+        default: fitstore
+        description: Subdominio de DuckDNS
+tags:
+  - name: configuracion-publica
+    description: Marca, contenido y parámetros públicos de la tienda
+  - name: politicas
+    description: Políticas versionadas (términos, privacidad, cambios y devoluciones, envíos)
+  - name: ubigeo
+    description: Departamentos, provincias y distritos (INEI)
+  - name: reclamos
+    description: Libro de Reclamaciones (registro público y atención en el backoffice)
+  - name: configuracion-admin
+    description: Edición de la configuración y de las imágenes (ADMIN)
+
+paths:
+  /api/v1/settings/public:
+    get:
+      tags: [configuracion-publica]
+      operationId: obtenerConfiguracionPublica
+      summary: Configuración pública de la tienda
+      description: |
+        La cargan ambos frontends al iniciar (tema por variables CSS, SPEC-0b R4) y la cachean order, payment y notification (5 min).
+        Responde desde Redis y nunca incluye correos para alertas, autores, IPs ni secretos (CA-3-35 a 37).
+      x-roles: [PUBLICO]
+      security: []
+      responses:
+        '200':
+          description: Configuración pública.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RespuestaConfiguracionPublica'
+        '429':
+          $ref: './comun.yaml#/components/responses/DemasiadosIntentos'
+
+  /api/v1/settings/politicas/{tipo}:
+    parameters:
+      - $ref: '#/components/parameters/TipoPolitica'
+    get:
+      tags: [politicas]
+      operationId: obtenerPolitica
+      summary: Texto de una política
+      description: La vigente, o una anterior con `?version=N` (CA-3-21). El Markdown se sanitiza en el frontend (S3).
+      x-roles: [PUBLICO]
+      security: []
+      parameters:
+        - name: version
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+      responses:
+        '200':
+          description: Política.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RespuestaPolitica'
+        '404':
+          $ref: './comun.yaml#/components/responses/NoEncontrado'
+        '429':
+          $ref: './comun.yaml#/components/responses/DemasiadosIntentos'
+
+  /api/v1/ubigeo/departamentos:
+    get:
+      tags: [ubigeo]
+      operationId: listarDepartamentos
+      summary: Departamentos
+      description: Ordenados por nombre, con caché de 24 h (CA-3-32).
+      x-roles: [PUBLICO]
+      security: []
+      responses:
+        '200':
+          $ref: '#/components/responses/ListaUbigeo'
+        '429':
+          $ref: './comun.yaml#/components/responses/DemasiadosIntentos'
+
+  /api/v1/ubigeo/departamentos/{codigo}/provincias:
+    get:
+      tags: [ubigeo]
+      operationId: listarProvincias
+      summary: Provincias de un departamento
+      x-roles: [PUBLICO]
+      security: []
+      parameters:
+        - name: codigo
+          in: path
+          required: true
+          schema:
+            type: string
+            pattern: '^[0-9]{2}$'
+      responses:
+        '200':
+          $ref: '#/components/responses/ListaUbigeo'
+        '404':
+          $ref: './comun.yaml#/components/responses/NoEncontrado'
+        '429':
+          $ref: './comun.yaml#/components/responses/DemasiadosIntentos'
+
+  /api/v1/ubigeo/provincias/{codigo}/distritos:
+    get:
+      tags: [ubigeo]
+      operationId: listarDistritos
+      summary: Distritos de una provincia
+      x-roles: [PUBLICO]
+      security: []
+      parameters:
+        - name: codigo
+          in: path
+          required: true
+          schema:
+            type: string
+            pattern: '^[0-9]{4}$'
+      responses:
+        '200':
+          $ref: '#/components/responses/ListaUbigeo'
+        '404':
+          $ref: './comun.yaml#/components/responses/NoEncontrado'
+        '429':
+          $ref: './comun.yaml#/components/responses/DemasiadosIntentos'
+
+  /api/v1/ubigeo/distritos:
+    get:
+      tags: [ubigeo]
+      operationId: buscarDistritos
+      summary: Buscar distritos por nombre
+      description: Sin importar tildes; devuelve la provincia y el departamento (CA-3-33). Máximo 20 resultados.
+      x-roles: [PUBLICO]
+      security: []
+      parameters:
+        - name: q
+          in: query
+          required: true
+          schema:
+            type: string
+            minLength: 3
+            maxLength: 60
+          example: miraf
+      responses:
+        '200':
+          description: Distritos que coinciden.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RespuestaDistritosEncontrados'
+        '400':
+          $ref: './comun.yaml#/components/responses/ErrorValidacion'
+        '429':
+          $ref: './comun.yaml#/components/responses/DemasiadosIntentos'
+
+  /api/v1/ubigeo/{codigo}:
+    get:
+      tags: [ubigeo]
+      operationId: obtenerUbigeo
+      summary: Nombre completo de un código
+      description: Acepta 2, 4 o 6 dígitos; "Miraflores, Lima, Lima" (CA-3-34). Lo usa order para copiar los nombres en el pedido.
+      x-roles: [PUBLICO]
+      security: []
+      parameters:
+        - name: codigo
+          in: path
+          required: true
+          schema:
+            type: string
+            pattern: '^([0-9]{2}|[0-9]{4}|[0-9]{6})$'
+      responses:
+        '200':
+          description: Nombre del ubigeo.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RespuestaUbigeoNombre'
+        '404':
+          $ref: './comun.yaml#/components/responses/NoEncontrado'
+        '429':
+          $ref: './comun.yaml#/components/responses/DemasiadosIntentos'
+
+  /api/v1/reclamos:
+    post:
+      tags: [reclamos]
+      operationId: registrarReclamo
+      summary: Registrar un reclamo o una queja
+      description: |
+        Hoja de Reclamación virtual (visitante o cliente). Recibe el siguiente número del año y una fecha límite de 15 días hábiles
+        (CA-3-23 a 27). Rate limit 3/min por IP.
+      x-roles: [PUBLICO]
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReclamoRequest'
+            example:
+              tipo: RECLAMO
+              consumidor:
+                nombres: Rosa
+                apellidos: Díaz
+                tipoDocumento: DNI
+                numeroDocumento: '87654321'
+                domicilio: Calle Mercaderes 456, Cercado, Arequipa
+                telefono: '912345678'
+                email: rosa.diaz@correo.com
+                esMenor: false
+              bien:
+                tipo: PRODUCTO
+                descripcion: Casaca Wind talla M negra
+                montoReclamado: 89.9
+                pedidoCodigo: FS-000118
+              detalle: La casaca llegó con el cierre roto.
+              pedidoConsumidor: Cambio por una nueva o devolución del dinero.
+      responses:
+        '201':
+          description: Reclamo registrado.
+          headers:
+            Location:
+              $ref: './comun.yaml#/components/headers/Location'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RespuestaReclamoRegistrado'
+              example:
+                success: true
+                mensaje: Registramos tu reclamo
+                data:
+                  numero: RC-2026-000015
+                  fechaLimite: '2026-11-09'
+                  creadoEn: '2026-10-19T15:20:00Z'
+        '400':
+          $ref: './comun.yaml#/components/responses/ErrorValidacion'
+        '429':
+          $ref: './comun.yaml#/components/responses/DemasiadosIntentos'
+
+  /api/v1/admin/settings:
+    get:
+      tags: [configuracion-admin]
+      operationId: obtenerConfiguracionAdmin
+      summary: Configuración completa (incluye lo no público)
+      x-roles: [ADMIN]
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Configuración completa.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RespuestaConfiguracionAdmin'
+        '401':
+          $ref: './comun.yaml#/components/responses/NoAutenticado'
+        '403':
+          $ref: './comun.yaml#/components/responses/SinPermiso'
+
+  /api/v1/admin/settings/identidad:
+    put:
+      tags: [configuracion-admin]
+      operationId: guardarIdentidad
+      summary: Guardar la identidad
+      description: RUC de 11 dígitos (CA-3-06); `version` evita pisar cambios de otro admin → 409 `CONFLICTO_VERSION` (CA-3-08). Publica ConfiguracionActualizada.
+      x-roles: [ADMIN]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/IdentidadRequest'
+      responses:
+        '200':
+          $ref: '#/components/responses/ConfiguracionGuardada'
+        '400':
+          $ref: './comun.yaml#/components/responses/ErrorValidacion'
+        '401':
+          $ref: './comun.yaml#/components/responses/NoAutenticado'
+        '403':
+          $ref: './comun.yaml#/components/responses/SinPermiso'
+        '409':
+          $ref: './comun.yaml#/components/responses/Conflicto'
+
+  /api/v1/admin/settings/tema:
+    put:
+      tags: [configuracion-admin]
+      operationId: guardarTema
+      summary: Guardar el tema
+      description: El contraste bajo se advierte pero no bloquea (CA-3-10); la respuesta incluye `advertencias`.
+      x-roles: [ADMIN]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TemaRequest'
+      responses:
+        '200':
+          $ref: '#/components/responses/ConfiguracionGuardada'
+        '400':
+          $ref: './comun.yaml#/components/responses/ErrorValidacion'
+        '401':
+          $ref: './comun.yaml#/components/responses/NoAutenticado'
+        '403':
+          $ref: './comun.yaml#/components/responses/SinPermiso'
+        '409':
+          $ref: './comun.yaml#/components/responses/Conflicto'
+
+  /api/v1/admin/settings/contenido:
+    put:
+      tags: [configuracion-admin]
+      operationId: guardarContenido
+      summary: Guardar el contenido (hero, beneficios, contacto, redes, tienda física)
+      description: Enlace del hero solo `/…` o `https://…` (S5); beneficios de 0 a 3 (CA-3-13 a 16).
+      x-roles: [ADMIN]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ContenidoRequest'
+      responses:
+        '200':
+          $ref: '#/components/responses/ConfiguracionGuardada'
+        '400':
+          $ref: './comun.yaml#/components/responses/ErrorValidacion'
+        '401':
+          $ref: './comun.yaml#/components/responses/NoAutenticado'
+        '403':
+          $ref: './comun.yaml#/components/responses/SinPermiso'
+        '409':
+          $ref: './comun.yaml#/components/responses/Conflicto'
+
+  /api/v1/admin/settings/parametros:
+    put:
+      tags: [configuracion-admin]
+      operationId: guardarParametros
+      summary: Guardar los parámetros del negocio
+      description: |
+        Al menos un medio de pago y una modalidad; expiración 10–120 min; 1–5 correos para alertas; días de reembolso 0–365 (0 = sin límite) (CA-3-17).
+        El stock mínimo y el margen de reserva se guardan aparte en catalog (CA-3-38).
+      x-roles: [ADMIN]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ParametrosRequest'
+      responses:
+        '200':
+          $ref: '#/components/responses/ConfiguracionGuardada'
+        '400':
+          $ref: './comun.yaml#/components/responses/ErrorValidacion'
+        '401':
+          $ref: './comun.yaml#/components/responses/NoAutenticado'
+        '403':
+          $ref: './comun.yaml#/components/responses/SinPermiso'
+        '409':
+          $ref: './comun.yaml#/components/responses/Conflicto'
+
+  /api/v1/admin/settings/imagenes:
+    post:
+      tags: [configuracion-admin]
+      operationId: subirImagenTienda
+      summary: Subir una imagen de la tienda
+      description: |
+        Logos y favicon: PNG o WebP (favicon también ICO) hasta 2 MB, reemplazan al anterior (CA-3-07).
+        Landing: JPG o WebP hasta 5 MB, se redimensionan a 1600 px, máximo 5 (CA-3-14). SVG rechazado.
+      x-roles: [ADMIN]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/SubirImagenRequest'
+      responses:
+        '201':
+          description: Imagen guardada.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RespuestaImagen'
+        '400':
+          $ref: './comun.yaml#/components/responses/ErrorValidacion'
+        '401':
+          $ref: './comun.yaml#/components/responses/NoAutenticado'
+        '403':
+          $ref: './comun.yaml#/components/responses/SinPermiso'
+        '409':
+          description: Ya hay 5 imágenes de landing (`LIMITE_IMAGENES`).
+          content:
+            application/json:
+              schema:
+                $ref: './comun.yaml#/components/schemas/ApiError'
+
+  /api/v1/admin/settings/imagenes/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+    put:
+      tags: [configuracion-admin]
+      operationId: actualizarImagenTienda
+      summary: Cambiar orden, texto alternativo o enlace
+      x-roles: [ADMIN]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ImagenRequest'
+      responses:
+        '200':
+          description: Imagen actualizada.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RespuestaImagen'
+        '400':
+          $ref: './comun.yaml#/components/responses/ErrorValidacion'
+        '401':
+          $ref: './comun.yaml#/components/responses/NoAutenticado'
+        '404':
+          $ref: './comun.yaml#/components/responses/NoEncontrado'
+    delete:
+      tags: [configuracion-admin]
+      operationId: eliminarImagenTienda
+      summary: Eliminar una imagen
+      x-roles: [ADMIN]
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          $ref: './comun.yaml#/components/responses/Ok'
+        '401':
+          $ref: './comun.yaml#/components/responses/NoAutenticado'
+        '404':
+          $ref: './comun.yaml#/components/responses/NoEncontrado'
+
+  /api/v1/admin/settings/politicas/{tipo}/versiones:
+    parameters:
+      - $ref: '#/components/parameters/TipoPolitica'
+    get:
+      tags: [politicas]
+      operationId: listarVersionesPolitica
+      summary: Historial de versiones de una política
+      x-roles: [ADMIN]
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Versiones, la más reciente primero (sin el texto).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RespuestaVersionesPolitica'
+        '401':
+          $ref: './comun.yaml#/components/responses/NoAutenticado'
+        '403':
+          $ref: './comun.yaml#/components/responses/SinPermiso'
+
+  /api/v1/admin/settings/politicas/{tipo}:
+    parameters:
+      - $ref: '#/components/parameters/TipoPolitica'
+    post:
+      tags: [politicas]
+      operationId: publicarPolitica
+      summary: Publicar una nueva versión
+      description: Crea la versión siguiente y pasa a ser la vigente; las anteriores no se editan (CA-3-20).
+      x-roles: [ADMIN]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PublicarPoliticaRequest'
+      responses:
+        '201':
+          description: Versión publicada.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RespuestaPolitica'
+        '400':
+          $ref: './comun.yaml#/components/responses/ErrorValidacion'
+        '401':
+          $ref: './comun.yaml#/components/responses/NoAutenticado'
+        '403':
+          $ref: './comun.yaml#/components/responses/SinPermiso'
+
+  /api/v1/admin/reclamos:
+    get:
+      tags: [reclamos]
+      operationId: listarReclamos
+      summary: Bandeja de reclamos
+      description: |
+        "Por vencer" = 3 días hábiles o menos para la fecha límite y sin responder; "vencido" = fecha límite pasada sin responder (CA-3-28).
+        El dashboard pide los totales con `size=1` (SPEC-8 I2).
+      x-roles: [OPERADOR, ADMIN]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: estado
+          in: query
+          schema:
+            $ref: '#/components/schemas/EstadoReclamo'
+        - name: tipo
+          in: query
+          schema:
+            $ref: '#/components/schemas/TipoReclamo'
+        - name: porVencer
+          in: query
+          schema:
+            type: boolean
+        - name: vencidos
+          in: query
+          schema:
+            type: boolean
+        - name: q
+          in: query
+          description: Número, nombre o documento del consumidor.
+          schema:
+            type: string
+            maxLength: 60
+        - name: desde
+          in: query
+          schema:
+            type: string
+            format: date
+        - name: hasta
+          in: query
+          schema:
+            type: string
+            format: date
+        - $ref: './comun.yaml#/components/parameters/page'
+        - $ref: './comun.yaml#/components/parameters/size'
+        - $ref: './comun.yaml#/components/parameters/sort'
+      responses:
+        '200':
+          description: Página de reclamos.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RespuestaPaginaReclamos'
+        '401':
+          $ref: './comun.yaml#/components/responses/NoAutenticado'
+        '403':
+          $ref: './comun.yaml#/components/responses/SinPermiso'
+
+  /api/v1/admin/reclamos/{id}:
+    parameters:
+      - $ref: '#/components/parameters/ReclamoId'
+    get:
+      tags: [reclamos]
+      operationId: obtenerReclamo
+      summary: Detalle de un reclamo
+      x-roles: [OPERADOR, ADMIN]
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          $ref: '#/components/responses/ReclamoDetalle'
+        '401':
+          $ref: './comun.yaml#/components/responses/NoAutenticado'
+        '403':
+          $ref: './comun.yaml#/components/responses/SinPermiso'
+        '404':
+          $ref: './comun.yaml#/components/responses/NoEncontrado'
+
+  /api/v1/admin/reclamos/{id}/en-atencion:
+    parameters:
+      - $ref: '#/components/parameters/ReclamoId'
+    patch:
+      tags: [reclamos]
+      operationId: tomarReclamo
+      summary: Marcar en atención
+      description: Paso opcional (CA-3-29). Solo desde REGISTRADO; si no, 409.
+      x-roles: [ADMIN]
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          $ref: '#/components/responses/ReclamoDetalle'
+        '401':
+          $ref: './comun.yaml#/components/responses/NoAutenticado'
+        '403':
+          $ref: './comun.yaml#/components/responses/SinPermiso'
+        '404':
+          $ref: './comun.yaml#/components/responses/NoEncontrado'
+        '409':
+          $ref: './comun.yaml#/components/responses/Conflicto'
+
+  /api/v1/admin/reclamos/{id}/respuesta:
+    parameters:
+      - $ref: '#/components/parameters/ReclamoId'
+    post:
+      tags: [reclamos]
+      operationId: responderReclamo
+      summary: Responder un reclamo
+      description: Pasa a RESPONDIDO, publica ReclamoRespondido y ya no se modifica (CA-3-30). Ya respondido → 409.
+      x-roles: [ADMIN]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ResponderReclamoRequest'
+      responses:
+        '200':
+          $ref: '#/components/responses/ReclamoDetalle'
+        '400':
+          $ref: './comun.yaml#/components/responses/ErrorValidacion'
+        '401':
+          $ref: './comun.yaml#/components/responses/NoAutenticado'
+        '403':
+          $ref: './comun.yaml#/components/responses/SinPermiso'
+        '404':
+          $ref: './comun.yaml#/components/responses/NoEncontrado'
+        '409':
+          $ref: './comun.yaml#/components/responses/Conflicto'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      $ref: './comun.yaml#/components/securitySchemes/bearerAuth'
+
+  parameters:
+    TipoPolitica:
+      name: tipo
+      in: path
+      required: true
+      schema:
+        type: string
+        enum: [terminos, privacidad, cambios-devoluciones, envios]
+    ReclamoId:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: integer
+        format: int64
+
+  responses:
+    ListaUbigeo:
+      description: Lista de ubigeos ordenada por nombre.
+      headers:
+        Cache-Control:
+          schema:
+            type: string
+            example: 'public, max-age=86400'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/RespuestaListaUbigeo'
+    ConfiguracionGuardada:
+      description: Sección guardada; devuelve la configuración completa con la nueva `version`.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/RespuestaConfiguracionAdmin'
+    ReclamoDetalle:
+      description: Reclamo completo.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/RespuestaReclamo'
+
+  schemas:
+    ColorHex:
+      type: string
+      pattern: '^#[0-9A-Fa-f]{6}$'
+      example: '#0D9488'
+    EnlaceTienda:
+      type: string
+      nullable: true
+      maxLength: 300
+      pattern: '^(/[^\s]*|https://[^\s]+)$'
+      description: Ruta interna que empieza con `/` o URL `https://` (S5).
+      example: /productos?categoria=leggings
+    TipoImagen:
+      type: string
+      enum: [LOGO_CLARO, LOGO_OSCURO, FAVICON, LANDING]
+    MetodoPago:
+      type: string
+      enum: [CULQI, YAPE, MERCADO_PAGO]
+    ModalidadEntrega:
+      type: string
+      enum: [DELIVERY_LOCAL, AGENCIA, RECOJO]
+    Tipografia:
+      type: string
+      enum: [Inter, Poppins, Montserrat, Roboto, Nunito, Lato]
+    TipoReclamo:
+      type: string
+      enum: [RECLAMO, QUEJA]
+    EstadoReclamo:
+      type: string
+      enum: [REGISTRADO, EN_ATENCION, RESPONDIDO]
+
+    Identidad:
+      type: object
+      required: [nombre, razonSocial, ruc, direccionFiscal]
+      properties:
+        nombre:
+          type: string
+          maxLength: 60
+          example: Moda Activa
+        eslogan:
+          type: string
+          nullable: true
+          maxLength: 120
+        razonSocial:
+          type: string
+          maxLength: 150
+        ruc:
+          type: string
+          pattern: '^[0-9]{11}$'
+          example: '20123456789'
+        direccionFiscal:
+          type: string
+          maxLength: 200
+        logoClaroUrl:
+          type: string
+          nullable: true
+          description: URL pública (/media/...).
+        logoOscuroUrl:
+          type: string
+          nullable: true
+        faviconUrl:
+          type: string
+          nullable: true
+
+    Tema:
+      type: object
+      required: [colorPrimario, colorSecundario, colorAcento, colorFondo, colorTexto, tipografia, radioBordes]
+      properties:
+        colorPrimario:
+          $ref: '#/components/schemas/ColorHex'
+        colorSecundario:
+          $ref: '#/components/schemas/ColorHex'
+        colorAcento:
+          $ref: '#/components/schemas/ColorHex'
+        colorFondo:
+          $ref: '#/components/schemas/ColorHex'
+        colorTexto:
+          $ref: '#/components/schemas/ColorHex'
+        tipografia:
+          $ref: '#/components/schemas/Tipografia'
+        radioBordes:
+          type: integer
+          minimum: 0
+          maximum: 24
+
+    Beneficio:
+      type: object
+      required: [icono, texto]
+      properties:
+        icono:
+          type: string
+          maxLength: 8
+          description: Emoji o nombre corto de icono.
+          example: 🚚
+        texto:
+          type: string
+          maxLength: 60
+          example: Envíos a todo el Perú
+
+    ImagenTienda:
+      type: object
+      required: [id, tipo, url, orden]
+      properties:
+        id:
+          type: integer
+          format: int64
+        tipo:
+          $ref: '#/components/schemas/TipoImagen'
+        url:
+          type: string
+          example: /media/tienda/landing-1.webp
+        orden:
+          type: integer
+          minimum: 0
+        textoAlternativo:
+          type: string
+          nullable: true
+        enlace:
+          $ref: '#/components/schemas/EnlaceTienda'
+
+    TiendaFisica:
+      type: object
+      nullable: true
+      required: [direccion, ubigeo]
+      properties:
+        direccion:
+          type: string
+          maxLength: 200
+        ubigeo:
+          $ref: './comun.yaml#/components/schemas/Ubigeo'
+        ubigeoNombre:
+          type: string
+          readOnly: true
+          example: La Victoria, Lima, Lima
+        referencia:
+          type: string
+          nullable: true
+          maxLength: 200
+
+    Contenido:
+      type: object
+      required: [heroTitulo, beneficios, imagenesLanding]
+      properties:
+        heroTitulo:
+          type: string
+          maxLength: 80
+          example: Muévete con estilo
+        heroSubtitulo:
+          type: string
+          nullable: true
+          maxLength: 160
+        heroCtaTexto:
+          type: string
+          nullable: true
+          maxLength: 30
+        heroCtaEnlace:
+          $ref: '#/components/schemas/EnlaceTienda'
+        beneficios:
+          type: array
+          maxItems: 3
+          description: Opcional (0 a 3); vacío = la landing oculta la franja (S1).
+          items:
+            $ref: '#/components/schemas/Beneficio'
+        email:
+          type: string
+          format: email
+          nullable: true
+        telefono:
+          type: string
+          nullable: true
+          maxLength: 15
+        whatsapp:
+          type: string
+          nullable: true
+          pattern: '^9[0-9]{8}$'
+        instagramUrl:
+          type: string
+          nullable: true
+          pattern: '^https://'
+        facebookUrl:
+          type: string
+          nullable: true
+          pattern: '^https://'
+        tiktokUrl:
+          type: string
+          nullable: true
+          pattern: '^https://'
+        horario:
+          type: string
+          nullable: true
+          maxLength: 120
+          example: Lun–Sáb 9:00–19:00
+        tiendaFisica:
+          $ref: '#/components/schemas/TiendaFisica'
+        imagenesLanding:
+          type: array
+          maxItems: 5
+          readOnly: true
+          items:
+            $ref: '#/components/schemas/ImagenTienda'
+
+    ParametrosPublicos:
+      type: object
+      required: [metodosPago, modalidadesEntrega, expiracionPedidoMinutos, diasReembolsoPostventa, moneda]
+      properties:
+        metodosPago:
+          type: array
+          minItems: 1
+          uniqueItems: true
+          items:
+            $ref: '#/components/schemas/MetodoPago'
+        modalidadesEntrega:
+          type: array
+          minItems: 1
+          uniqueItems: true
+          items:
+            $ref: '#/components/schemas/ModalidadEntrega'
+        expiracionPedidoMinutos:
+          type: integer
+          minimum: 10
+          maximum: 120
+        diasReembolsoPostventa:
+          type: integer
+          minimum: 0
+          maximum: 365
+          description: 0 = sin límite.
+        moneda:
+          type: string
+          enum: [PEN]
+
+    VersionesPoliticas:
+      type: object
+      description: Versión vigente de cada política (la usa el registro de la spec 1, CA-3-22).
+      required: [terminos, privacidad, cambiosDevoluciones, envios]
+      properties:
+        terminos:
+          type: integer
+          minimum: 1
+        privacidad:
+          type: integer
+          minimum: 1
+        cambiosDevoluciones:
+          type: integer
+          minimum: 1
+        envios:
+          type: integer
+          minimum: 1
+
+    ConfiguracionPublica:
+      type: object
+      required: [identidad, tema, contenido, parametros, politicas]
+      properties:
+        identidad:
+          $ref: '#/components/schemas/Identidad'
+        tema:
+          $ref: '#/components/schemas/Tema'
+        contenido:
+          $ref: '#/components/schemas/Contenido'
+        parametros:
+          $ref: '#/components/schemas/ParametrosPublicos'
+        politicas:
+          $ref: '#/components/schemas/VersionesPoliticas'
+
+    ConfiguracionAdmin:
+      allOf:
+        - $ref: '#/components/schemas/ConfiguracionPublica'
+        - type: object
+          required: [correosAlertas, version, actualizadoEn]
+          properties:
+            correosAlertas:
+              type: array
+              minItems: 1
+              maxItems: 5
+              items:
+                type: string
+                format: email
+            version:
+              type: integer
+            actualizadoEn:
+              type: string
+              format: date-time
+            actualizadoPor:
+              type: string
+              nullable: true
+              description: Nombre del admin que guardó por última vez.
+            advertencias:
+              type: array
+              description: Avisos no bloqueantes (p. ej. contraste menor a 4.5:1, CA-3-10).
+              items:
+                type: string
+              example: ['Contraste texto/fondo 3.1:1 (recomendado ≥ 4.5:1)']
+
+    IdentidadRequest:
+      type: object
+      required: [nombre, razonSocial, ruc, direccionFiscal, version]
+      properties:
+        nombre:
+          type: string
+          minLength: 2
+          maxLength: 60
+        eslogan:
+          type: string
+          nullable: true
+          maxLength: 120
+        razonSocial:
+          type: string
+          minLength: 2
+          maxLength: 150
+        ruc:
+          type: string
+          pattern: '^[0-9]{11}$'
+        direccionFiscal:
+          type: string
+          minLength: 5
+          maxLength: 200
+        version:
+          type: integer
+
+    TemaRequest:
+      allOf:
+        - $ref: '#/components/schemas/Tema'
+        - type: object
+          required: [version]
+          properties:
+            version:
+              type: integer
+
+    ContenidoRequest:
+      type: object
+      required: [heroTitulo, beneficios, version]
+      properties:
+        heroTitulo:
+          type: string
+          minLength: 2
+          maxLength: 80
+        heroSubtitulo:
+          type: string
+          nullable: true
+          maxLength: 160
+        heroCtaTexto:
+          type: string
+          nullable: true
+          maxLength: 30
+        heroCtaEnlace:
+          $ref: '#/components/schemas/EnlaceTienda'
+        beneficios:
+          type: array
+          maxItems: 3
+          items:
+            $ref: '#/components/schemas/Beneficio'
+        email:
+          type: string
+          format: email
+          nullable: true
+        telefono:
+          type: string
+          nullable: true
+          maxLength: 15
+        whatsapp:
+          type: string
+          nullable: true
+          pattern: '^9[0-9]{8}$'
+        instagramUrl:
+          type: string
+          nullable: true
+          pattern: '^https://'
+        facebookUrl:
+          type: string
+          nullable: true
+          pattern: '^https://'
+        tiktokUrl:
+          type: string
+          nullable: true
+          pattern: '^https://'
+        horario:
+          type: string
+          nullable: true
+          maxLength: 120
+        tiendaFisica:
+          $ref: '#/components/schemas/TiendaFisica'
+        version:
+          type: integer
+
+    ParametrosRequest:
+      type: object
+      required: [metodosPago, modalidadesEntrega, expiracionPedidoMinutos, diasReembolsoPostventa, correosAlertas, version]
+      properties:
+        metodosPago:
+          type: array
+          minItems: 1
+          uniqueItems: true
+          items:
+            $ref: '#/components/schemas/MetodoPago'
+        modalidadesEntrega:
+          type: array
+          minItems: 1
+          uniqueItems: true
+          items:
+            $ref: '#/components/schemas/ModalidadEntrega'
+        expiracionPedidoMinutos:
+          type: integer
+          minimum: 10
+          maximum: 120
+        diasReembolsoPostventa:
+          type: integer
+          minimum: 0
+          maximum: 365
+        correosAlertas:
+          type: array
+          minItems: 1
+          maxItems: 5
+          items:
+            type: string
+            format: email
+        version:
+          type: integer
+
+    PublicarPoliticaRequest:
+      type: object
+      required: [contenido]
+      properties:
+        contenido:
+          type: string
+          minLength: 50
+          maxLength: 50000
+          description: Markdown.
+    ResponderReclamoRequest:
+      type: object
+      required: [respuesta]
+      properties:
+        respuesta:
+          type: string
+          minLength: 10
+          maxLength: 3000
+    SubirImagenRequest:
+      type: object
+      required: [archivo, tipo]
+      properties:
+        archivo:
+          type: string
+          format: binary
+        tipo:
+          $ref: '#/components/schemas/TipoImagen'
+        textoAlternativo:
+          type: string
+          maxLength: 150
+        enlace:
+          $ref: '#/components/schemas/EnlaceTienda'
+    ImagenRequest:
+      type: object
+      required: [orden]
+      properties:
+        orden:
+          type: integer
+          minimum: 0
+        textoAlternativo:
+          type: string
+          nullable: true
+          maxLength: 150
+        enlace:
+          $ref: '#/components/schemas/EnlaceTienda'
+
+    Politica:
+      type: object
+      required: [tipo, version, contenido, publicadaEn]
+      properties:
+        tipo:
+          type: string
+          enum: [terminos, privacidad, cambios-devoluciones, envios]
+        version:
+          type: integer
+          minimum: 1
+        contenido:
+          type: string
+          description: Markdown (se sanitiza en el frontend).
+        publicadaEn:
+          type: string
+          format: date-time
+
+    VersionPolitica:
+      type: object
+      required: [version, publicadaEn]
+      properties:
+        version:
+          type: integer
+        publicadaEn:
+          type: string
+          format: date-time
+        publicadaPor:
+          type: string
+          nullable: true
+        vigente:
+          type: boolean
+
+    UbigeoItem:
+      type: object
+      required: [codigo, nombre]
+      properties:
+        codigo:
+          type: string
+          pattern: '^([0-9]{2}|[0-9]{4}|[0-9]{6})$'
+        nombre:
+          type: string
+
+    DistritoEncontrado:
+      type: object
+      required: [codigo, nombre, provincia, departamento]
+      properties:
+        codigo:
+          $ref: './comun.yaml#/components/schemas/Ubigeo'
+        nombre:
+          type: string
+          example: Miraflores
+        provincia:
+          type: string
+          example: Lima
+        departamento:
+          type: string
+          example: Lima
+
+    UbigeoNombre:
+      type: object
+      required: [codigo, nombre, nombreCompleto]
+      properties:
+        codigo:
+          type: string
+        nombre:
+          type: string
+          example: Miraflores
+        departamento:
+          type: string
+          nullable: true
+        provincia:
+          type: string
+          nullable: true
+        distrito:
+          type: string
+          nullable: true
+        nombreCompleto:
+          type: string
+          example: Miraflores, Lima, Lima
+
+    Consumidor:
+      type: object
+      required: [nombres, apellidos, tipoDocumento, numeroDocumento, domicilio, telefono, email, esMenor]
+      properties:
+        nombres:
+          type: string
+          minLength: 2
+          maxLength: 80
+        apellidos:
+          type: string
+          minLength: 2
+          maxLength: 80
+        tipoDocumento:
+          type: string
+          enum: [DNI, CE]
+        numeroDocumento:
+          type: string
+          pattern: '^[0-9A-Za-z]{8,12}$'
+          description: DNI de 8 dígitos o carné de extranjería.
+        domicilio:
+          type: string
+          maxLength: 200
+        telefono:
+          type: string
+          maxLength: 15
+        email:
+          type: string
+          format: email
+        esMenor:
+          type: boolean
+        apoderadoNombre:
+          type: string
+          nullable: true
+          maxLength: 160
+          description: Obligatorio si `esMenor` es true (CA-3-24).
+
+    BienContratado:
+      type: object
+      required: [tipo, descripcion]
+      properties:
+        tipo:
+          type: string
+          enum: [PRODUCTO, SERVICIO]
+        descripcion:
+          type: string
+          maxLength: 300
+        montoReclamado:
+          type: number
+          multipleOf: 0.01
+          minimum: 0
+          nullable: true
+        pedidoCodigo:
+          type: string
+          nullable: true
+          pattern: '^FS-[0-9]{6}$'
+
+    ReclamoRequest:
+      type: object
+      required: [tipo, consumidor, bien, detalle, pedidoConsumidor]
+      properties:
+        tipo:
+          $ref: '#/components/schemas/TipoReclamo'
+        consumidor:
+          $ref: '#/components/schemas/Consumidor'
+        bien:
+          $ref: '#/components/schemas/BienContratado'
+        detalle:
+          type: string
+          minLength: 10
+          maxLength: 3000
+        pedidoConsumidor:
+          type: string
+          minLength: 5
+          maxLength: 1000
+
+    ReclamoRegistrado:
+      type: object
+      required: [numero, fechaLimite, creadoEn]
+      properties:
+        numero:
+          type: string
+          pattern: '^RC-[0-9]{4}-[0-9]{6}$'
+        fechaLimite:
+          type: string
+          format: date
+        creadoEn:
+          type: string
+          format: date-time
+
+    ReclamoResumen:
+      type: object
+      required: [id, numero, tipo, estado, consumidorNombre, creadoEn, fechaLimite, porVencer, vencido]
+      properties:
+        id:
+          type: integer
+          format: int64
+        numero:
+          type: string
+        tipo:
+          $ref: '#/components/schemas/TipoReclamo'
+        estado:
+          $ref: '#/components/schemas/EstadoReclamo'
+        consumidorNombre:
+          type: string
+        creadoEn:
+          type: string
+          format: date-time
+        fechaLimite:
+          type: string
+          format: date
+        porVencer:
+          type: boolean
+        vencido:
+          type: boolean
+
+    Reclamo:
+      allOf:
+        - $ref: '#/components/schemas/ReclamoResumen'
+        - type: object
+          required: [consumidor, bien, detalle, pedidoConsumidor]
+          properties:
+            consumidor:
+              $ref: '#/components/schemas/Consumidor'
+            bien:
+              $ref: '#/components/schemas/BienContratado'
+            detalle:
+              type: string
+            pedidoConsumidor:
+              type: string
+            respuesta:
+              type: string
+              nullable: true
+            respondidoEn:
+              type: string
+              format: date-time
+              nullable: true
+            respondidoPor:
+              type: string
+              nullable: true
+
+    PaginaReclamos:
+      allOf:
+        - $ref: './comun.yaml#/components/schemas/PaginaMeta'
+        - type: object
+          required: [contenido]
+          properties:
+            contenido:
+              type: array
+              items:
+                $ref: '#/components/schemas/ReclamoResumen'
+
+    # Respuestas envueltas (K4)
+    RespuestaConfiguracionPublica:
+      allOf:
+        - $ref: './comun.yaml#/components/schemas/ApiResponse'
+        - type: object
+          properties:
+            data:
+              $ref: '#/components/schemas/ConfiguracionPublica'
+    RespuestaConfiguracionAdmin:
+      allOf:
+        - $ref: './comun.yaml#/components/schemas/ApiResponse'
+        - type: object
+          properties:
+            data:
+              $ref: '#/components/schemas/ConfiguracionAdmin'
+    RespuestaImagen:
+      allOf:
+        - $ref: './comun.yaml#/components/schemas/ApiResponse'
+        - type: object
+          properties:
+            data:
+              $ref: '#/components/schemas/ImagenTienda'
+    RespuestaPolitica:
+      allOf:
+        - $ref: './comun.yaml#/components/schemas/ApiResponse'
+        - type: object
+          properties:
+            data:
+              $ref: '#/components/schemas/Politica'
+    RespuestaVersionesPolitica:
+      allOf:
+        - $ref: './comun.yaml#/components/schemas/ApiResponse'
+        - type: object
+          properties:
+            data:
+              type: array
+              items:
+                $ref: '#/components/schemas/VersionPolitica'
+    RespuestaListaUbigeo:
+      allOf:
+        - $ref: './comun.yaml#/components/schemas/ApiResponse'
+        - type: object
+          properties:
+            data:
+              type: array
+              items:
+                $ref: '#/components/schemas/UbigeoItem'
+    RespuestaDistritosEncontrados:
+      allOf:
+        - $ref: './comun.yaml#/components/schemas/ApiResponse'
+        - type: object
+          properties:
+            data:
+              type: array
+              maxItems: 20
+              items:
+                $ref: '#/components/schemas/DistritoEncontrado'
+    RespuestaUbigeoNombre:
+      allOf:
+        - $ref: './comun.yaml#/components/schemas/ApiResponse'
+        - type: object
+          properties:
+            data:
+              $ref: '#/components/schemas/UbigeoNombre'
+    RespuestaReclamoRegistrado:
+      allOf:
+        - $ref: './comun.yaml#/components/schemas/ApiResponse'
+        - type: object
+          properties:
+            data:
+              $ref: '#/components/schemas/ReclamoRegistrado'
+    RespuestaReclamo:
+      allOf:
+        - $ref: './comun.yaml#/components/schemas/ApiResponse'
+        - type: object
+          properties:
+            data:
+              $ref: '#/components/schemas/Reclamo'
+    RespuestaPaginaReclamos:
+      allOf:
+        - $ref: './comun.yaml#/components/schemas/ApiResponse'
+        - type: object
+          properties:
+            data:
+              $ref: '#/components/schemas/PaginaReclamos'

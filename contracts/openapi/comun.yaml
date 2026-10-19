@@ -127,6 +127,10 @@ components:
         requestId:
           type: string
           format: uuid
+        detalles:
+          type: object
+          additionalProperties: true
+          description: Datos estructurados opcionales según el `codigo` (p. ej. `SIN_STOCK` → `faltantes[]`); cada operación documenta los suyos.
 
     ErrorCampo:
       title: ErrorCampo
