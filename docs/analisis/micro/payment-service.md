@@ -1,9 +1,10 @@
 # FitStore — Análisis micro: `payment-service`
 
-> Versión: **v6 (aprobado)** — 2026-10-18. Fuente: [`01-analisis-macro.md`](../01-analisis-macro.md) v13.
+> Versión: **v7 (aprobado)** — 2026-10-19. Fuente: [`01-analisis-macro.md`](../01-analisis-macro.md) v13.
 > Estados: ✅ decidido · 🟡 propuesto · ❓ abierto · 🕓 diferido
 
 **Historial:**
+- v7 (2026-10-19): D4 menciona también los pedidos devueltos a la tienda (SPEC-6); el flujo no cambia.
 - v6 (2026-10-18): **reembolso postventa** (decidido en la SPEC-5): D4 amplía el origen de los reembolsos (cancelación o postventa, siempre desde el pedido); varios reembolsos por intención, parciales, sin superar lo cobrado; la intención pasa a `REEMBOLSADA_PARCIAL` / `REEMBOLSADA` y el estado en curso o fallido vive en cada reembolso; consume `ReembolsoSolicitado`.
 - v5 (2026-10-18): sección 10 aprobada → **documento completo aprobado**.
 - v4 (2026-10-18): sección 10 (diseño técnico) redactada: C3, código de las partes críticas, paquetes, dependencias, configuración e infraestructura.
@@ -112,7 +113,7 @@ classDiagram
 | D1 | **Una intención por pedido y varias transacciones (intentos)**: cada intento de cobro es una transacción; como máximo **una aprobada** por intención | El cliente puede fallar con una tarjeta y reintentar con otra o con otro proveedor (ADR-009); queda registro de cada intento (RF-PAY-05) | Un solo registro de pago que se sobrescribe |
 | D2 | **Mercado Pago con Payment Brick** (formulario embebido que tokeniza en el navegador), no Checkout Pro (redirección al sitio de MP) | Mismo flujo que Culqi: el navegador da un token y el backend cobra. La Strategy queda uniforme y el cliente no sale de la tienda | Checkout Pro: menos código en el frontend, pero otro flujo (redirección y retorno) |
 | D3 | **El estado real del pago siempre se confirma consultando la API de la pasarela** (`consultarEstado`), aunque llegue un webhook | No se confía en el contenido de un mensaje que llega de internet; la consulta con la clave secreta es la fuente de verdad. Mercado Pago además firma sus webhooks (`x-signature`) y se valida la firma | Confiar en el cuerpo del webhook |
-| D4 | **Los reembolsos siempre nacen del pedido:** de una cancelación de un pedido pagado (total), de `PagoNoAplicable` (total) o de un **reembolso postventa** de un pedido entregado (total o parcial, order 4.8). No hay botón "Reembolsar" suelto en la pantalla de pagos. Ahí el admin puede **reintentar** un reembolso fallido o **marcarlo como resuelto manualmente** | Pedido y pago nunca quedan desalineados (un pedido "pagado" con el dinero devuelto) | Botón "Reembolsar" independiente en la pantalla de pagos |
+| D4 | **Los reembolsos siempre nacen del pedido:** de una cancelación de un pedido pagado (total), de `PagoNoAplicable` (total) o de un **reembolso postventa** de un pedido entregado o devuelto a la tienda (total o parcial, order 4.8). No hay botón "Reembolsar" suelto en la pantalla de pagos. Ahí el admin puede **reintentar** un reembolso fallido o **marcarlo como resuelto manualmente** | Pedido y pago nunca quedan desalineados (un pedido "pagado" con el dinero devuelto) | Botón "Reembolsar" independiente en la pantalla de pagos |
 | D5 | **Boleta generada con Thymeleaf + OpenHTMLtoPDF** (HTML → PDF) | Misma tecnología de plantillas que los correos (ADR-014); el diseño se hace en HTML/CSS con la marca de la tienda | OpenPDF / iText (se dibuja el PDF por código) |
 | D6 | **La boleta es privada:** se guarda en Garage sin acceso público y se descarga por un endpoint autenticado | Contiene nombre y DNI del cliente | URL pública |
 | D7 | **`SimuladoProvider` solo se habilita por configuración técnica** (config-server), nunca desde el backoffice | Es para la demo; en una tienda real no debe poder activarse por error | Siempre disponible |

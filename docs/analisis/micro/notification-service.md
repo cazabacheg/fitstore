@@ -1,9 +1,10 @@
 # FitStore — Análisis micro: `notification-service`
 
-> Versión: **v6 (aprobado)** — 2026-10-18. Fuente: [`01-analisis-macro.md`](../01-analisis-macro.md) v15.
+> Versión: **v7 (aprobado)** — 2026-10-19. Fuente: [`01-analisis-macro.md`](../01-analisis-macro.md) v15.
 > Estados: ✅ decidido · 🟡 propuesto · ❓ abierto · 🕓 diferido
 
 **Historial:**
+- v7 (2026-10-19): nuevo correo **C14 "Tu pedido regresó a la tienda"** (`EntregaActualizada` → `DEVUELTA`), decidido en la SPEC-6: 14 al cliente + 4 a la tienda.
 - v6 (2026-10-18): el correo C7 (reembolso realizado) distingue el reembolso parcial postventa (SPEC-5).
 - v5 (2026-10-18): sección 10 aprobada → **documento completo aprobado**.
 - v4 (2026-10-18): sección 10 (diseño técnico) redactada: C3, código de las partes críticas, paquetes, dependencias, configuración e infraestructura.
@@ -129,7 +130,7 @@ classDiagram
 
 ## 4. Casos de uso internos
 
-### 4.1 Catálogo de correos ✅ (13 al cliente + 4 a la tienda)
+### 4.1 Catálogo de correos ✅ (14 al cliente + 4 a la tienda)
 
 **Al cliente**
 
@@ -148,6 +149,7 @@ classDiagram
 | C11 | `EntregaActualizada` → `ENTREGADA` o `PedidoRecogido` | ¡Pedido entregado! | Confirmación de entrega y agradecimiento | |
 | C12 | `ReclamoRegistrado` | Copia de tu reclamo | Todos los datos de la hoja de reclamación, número y fecha límite (obligatorio por ley) | ✔ |
 | C13 | `ReclamoRespondido` | Respuesta a tu reclamo | Número y respuesta | ✔ |
+| C14 | `EntregaActualizada` → `DEVUELTA` | Tu pedido regresó a la tienda | Motivo; "nos comunicaremos contigo para coordinar la devolución de tu dinero"; datos de contacto de la tienda. Solo para entregas (local o agencia); en un recojo no recogido la tienda contacta al cliente | |
 
 **A la tienda** (a los "correos para alertas", D5)
 
@@ -348,6 +350,7 @@ classDiagram
         ENTREGADO
         RECLAMO_COPIA
         RECLAMO_RESPUESTA
+        PEDIDO_DEVUELTO
         ALERTA_STOCK_BAJO
         ALERTA_SIN_STOCK
         ALERTA_REEMBOLSO_FALLIDO
