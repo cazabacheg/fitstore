@@ -48,6 +48,37 @@ public class RateLimitingFilter implements WebFilter, Ordered {
             return {c, redis.call('TTL', KEYS[1])}
             """, List.class);
 
+    /**
+     * Token bucket: repone {@code ARGV[1]} tokens por segundo hasta una capacidad de {@code ARGV[2]} y cobra 1 por
+     * petición. Usa el reloj de Redis. Devuelve {permitido (1/0), milisegundos hasta el próximo token}.
+     */
+    @SuppressWarnings({"rawtypes", "unchecked"})
+    private static final DefaultRedisScript<List> TOKEN_BUCKET = new DefaultRedisScript<>("""
+            local tiempo = redis.call('TIME')
+            local ahora = tonumber(tiempo[1]) * 1000 + math.floor(tonumber(tiempo[2]) / 1000)
+            local ritmo = tonumber(ARGV[1])
+            local capacidad = tonumber(ARGV[2])
+            local datos = redis.call('HMGET', KEYS[1], 'tokens', 'ts')
+            local tokens = tonumber(datos[1])
+            local ts = tonumber(datos[2])
+            if tokens == nil then
+              tokens = capacidad
+              ts = ahora
+            end
+            tokens = math.min(capacidad, tokens + math.max(0, ahora - ts) * ritmo / 1000)
+            local permitido = 0
+            local espera = 0
+            if tokens >= 1 then
+              tokens = tokens - 1
+              permitido = 1
+            else
+              espera = math.ceil((1 - tokens) * 1000 / ritmo)
+            end
+            redis.call('HSET', KEYS[1], 'tokens', tostring(tokens), 'ts', tostring(ahora))
+            redis.call('PEXPIRE', KEYS[1], math.ceil(capacidad * 1000 / ritmo) + 1000)
+            return {permitido, espera}
+            """, List.class);
+
     private record ReglaCompilada(Regla regla, List<PathPattern> patrones) {
     }
 
@@ -58,7 +89,7 @@ public class RateLimitingFilter implements WebFilter, Ordered {
     private final ReactiveStringRedisTemplate redis;
     private final JsonMapper json;
     private final List<ReglaCompilada> reglas;
-    private final Regla resto;
+    private final GatewayProperties.Resto resto;
 
     public RateLimitingFilter(ReactiveStringRedisTemplate redis, JsonMapper json, GatewayProperties propiedades) {
         this.redis = redis;
@@ -67,8 +98,7 @@ public class RateLimitingFilter implements WebFilter, Ordered {
         this.reglas = propiedades.rateLimit().reglas().stream()
                 .map(r -> new ReglaCompilada(r, r.rutas().stream().map(parser::parse).toList()))
                 .toList();
-        var r = propiedades.rateLimit().resto();
-        this.resto = new Regla("resto", null, List.of(), r.limite(), r.ventanaSegundos(), Clave.IP);
+        this.resto = propiedades.rateLimit().resto();
     }
 
     @Override
@@ -77,8 +107,8 @@ public class RateLimitingFilter implements WebFilter, Ordered {
             return cadena.filter(intercambio); // el preflight de CORS no cuenta
         }
         Regla regla = elegirRegla(intercambio.getRequest());
-        return claveDe(regla, intercambio)
-                .flatMap(clave -> consultar(regla, clave))
+        return claveDe(regla == null ? Clave.IP : regla.clave(), intercambio)
+                .flatMap(clave -> regla == null ? consultarTokenBucket(clave) : consultar(regla, clave))
                 .onErrorResume(error -> {
                     LOG.warn("Redis no está disponible; se omite el rate limiting y la petición pasa: {}", error.toString());
                     return Mono.just(Veredicto.PERMITIDO);
@@ -97,12 +127,12 @@ public class RateLimitingFilter implements WebFilter, Ordered {
                 return compilada.regla();
             }
         }
-        return resto;
+        return null; // sin regla propia: aplica el token bucket del resto
     }
 
-    private Mono<String> claveDe(Regla regla, ServerWebExchange intercambio) {
+    private Mono<String> claveDe(Clave tipo, ServerWebExchange intercambio) {
         Mono<String> ip = Mono.fromSupplier(() -> ipDe(intercambio.getRequest()));
-        if (regla.clave() == Clave.USUARIO) {
+        if (tipo == Clave.USUARIO) {
             return ReactiveSecurityContextHolder.getContext()
                     .map(SecurityContext::getAuthentication)
                     .filter(Authentication::isAuthenticated)
@@ -133,6 +163,18 @@ public class RateLimitingFilter implements WebFilter, Ordered {
                     long contador = valores.get(0);
                     long restantes = Math.max(1, valores.get(1));
                     return contador <= regla.limite() ? Veredicto.PERMITIDO : new Veredicto(false, restantes);
+                });
+    }
+
+    @SuppressWarnings("unchecked")
+    private Mono<Veredicto> consultarTokenBucket(String clave) {
+        return redis.execute(TOKEN_BUCKET, List.of("rl:resto:" + clave),
+                        List.of(String.valueOf(resto.reposicionPorSegundo()), String.valueOf(resto.capacidad())))
+                .next()
+                .map(resultado -> {
+                    List<Long> valores = (List<Long>) resultado;
+                    long esperaMs = valores.get(1);
+                    return valores.get(0) == 1L ? Veredicto.PERMITIDO : new Veredicto(false, Math.max(1, (esperaMs + 999) / 1000));
                 });
     }
 

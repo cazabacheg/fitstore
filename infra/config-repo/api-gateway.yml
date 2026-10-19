@@ -130,10 +130,10 @@ fitstore:
           limite: 10
           ventana-segundos: 60
           clave: USUARIO
-      # "50 por segundo (ráfaga 100)": hasta 100 peticiones por IP en una ventana de 2 segundos
+      # Token bucket por IP: "50 por segundo (ráfaga 100)" = reposición de 50 tokens/s con capacidad 100
       resto:
-        limite: 100
-        ventana-segundos: 2
+        reposicion-por-segundo: 50
+        capacidad: 100
     cors:
       origenes:
         - ${STOREFRONT_URL}

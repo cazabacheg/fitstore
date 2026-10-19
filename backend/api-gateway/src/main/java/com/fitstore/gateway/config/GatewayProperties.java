@@ -24,7 +24,7 @@ public record GatewayProperties(RateLimit rateLimit, Cors cors) {
     public record RateLimit(List<Regla> reglas, Resto resto) {
         public RateLimit {
             reglas = reglas == null ? List.of() : List.copyOf(reglas);
-            resto = resto == null ? new Resto(100, 2) : resto;
+            resto = resto == null ? new Resto(50, 100) : resto;
         }
     }
 
@@ -43,8 +43,11 @@ public record GatewayProperties(RateLimit rateLimit, Cors cors) {
         }
     }
 
-    /** "50 por segundo (ráfaga 100)": ventana de {@code ventanaSegundos} con tope {@code limite} por IP. */
-    public record Resto(int limite, int ventanaSegundos) {
+    /**
+     * Token bucket por IP para el resto de las rutas: "50 por segundo (ráfaga 100)" es
+     * {@code reposicionPorSegundo = 50} y {@code capacidad = 100}.
+     */
+    public record Resto(int reposicionPorSegundo, int capacidad) {
     }
 
     public enum Clave {

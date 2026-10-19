@@ -16,7 +16,7 @@ import org.springframework.test.web.reactive.server.WebTestClient;
 
 /**
  * CA-0a-11: "50 por segundo (ráfaga 100)" es un token bucket (infraestructura 4.4): capacidad = ráfaga y reposición
- * continua. Aquí con capacidad 5 y reposición 20/s para comprobarlo en milisegundos.
+ * continua. Aquí con capacidad 5 y reposición 5/s para comprobarlo en milisegundos.
  */
 @PruebaGateway
 class GatewayTokenBucketTest {
@@ -25,7 +25,7 @@ class GatewayTokenBucketTest {
     static void propiedades(DynamicPropertyRegistry registro) {
         EntornoGateway.registrar(registro);
         registro.add("fitstore.gateway.rate-limit.resto.capacidad", () -> "5");
-        registro.add("fitstore.gateway.rate-limit.resto.reposicion-por-segundo", () -> "20");
+        registro.add("fitstore.gateway.rate-limit.resto.reposicion-por-segundo", () -> "5");
     }
 
     @LocalServerPort
@@ -63,7 +63,7 @@ class GatewayTokenBucketTest {
         }
         assertThat(rechazados).isGreaterThanOrEqualTo(2);
 
-        Thread.sleep(400); // a 20/s se reponen ~8 tokens, topados en la capacidad (5)
+        Thread.sleep(1100); // a 5/s se reponen ~5 tokens, topados en la capacidad (5)
 
         int aceptados = 0;
         for (int i = 0; i < 8; i++) {
@@ -71,8 +71,8 @@ class GatewayTokenBucketTest {
                 aceptados++;
             }
         }
-        // una ventana fija de 2 s no repondría nada a los 400 ms; el token bucket repuso la capacidad entera
-        assertThat(aceptados).isBetween(5, 6);
+        // una ventana fija de 2 s no repondría nada a 1,1 s; el token bucket repuso la capacidad entera
+        assertThat(aceptados).isBetween(5, 7);
     }
 
     @Test
@@ -84,8 +84,7 @@ class GatewayTokenBucketTest {
         }
         var respuesta = cliente.get().uri("/api/v1/categorias").header("X-Forwarded-For", ip)
                 .exchange().returnResult(String.class);
-        if (respuesta.getStatus().value() == 429) {
-            assertThat(Long.parseLong(respuesta.getResponseHeaders().getFirst("Retry-After"))).isGreaterThanOrEqualTo(1);
-        }
+        assertThat(respuesta.getStatus().value()).isEqualTo(429);
+        assertThat(Long.parseLong(respuesta.getResponseHeaders().getFirst("Retry-After"))).isBetween(1L, 2L);
     }
 }
