@@ -1,9 +1,10 @@
 # FitStore — Estrategia multiagente de implementación
 
-> Versión: **v4 (aprobado)** — 2026-10-19 · Estados: ✅ decidido · 🟡 propuesto · ❓ abierto
+> Versión: **v5 (aprobado)** — 2026-10-19 · Estados: ✅ decidido · 🟡 propuesto · ❓ abierto
 > Etapa: specs ✅ → contratos ✅ → diseño ✅ → **estrategia multiagente** → implementación.
 
 **Historial:**
+- v5 (2026-10-19): **spec primero** en toda validación (V-c); **terminado = 100 % del alcance de la spec**, sin agregados ni adelantos (V0b, V11). La cobertura de 80 % es un piso de calidad, no la medida de terminado.
 - v4 (2026-10-19): **checkpoints de base** (sección 2.1): revisión exhaustiva del lead antes de arrancar agentes en paralelo (tras 0a.1 y tras 0a + 0b).
 - v3 (2026-10-19): cobertura mínima 80 % con el núcleo cubierto (V10); rojo por historia confirmado (F3); la ola 0 se parte en 0a.1 → 0a.2 (los 7 esqueletos, 3 a la vez) → 0a.3 → **estrategia aprobada**.
 - v2 (2026-10-19): respuestas del autor: 3 agentes a la vez (O1 ✅), el lead integra tras la aprobación (C1 ✅), tablero en archivo ✅, pantallas revisadas en el navegador o en el chat (V6 ✅). Nuevo: los implementadores leen la spec **y el micro** de su servicio (B1), corren con **Sonnet** (M1), y TDD *test first* como barrera durante toda la construcción (F2–F4, V3).
@@ -47,7 +48,7 @@ Antes de arrancar agentes en paralelo sobre una base, el lead la revisa **comple
 **Qué revisa el lead en cada checkpoint:**
 
 1. **Desde cero:** clona `dev` en una carpeta limpia, `./mvnw verify` (y `npm ci && npm test` en CK2) y levanta el compose de dev; todo en verde y *healthy*.
-2. **Código completo de la base, archivo por archivo**, contra el micro (infraestructura 2–10 en CK1; además 0b R1–R11 en CK2): paquetes y nombres como en 10.3, nada de lógica de negocio en `fitstore-common`, cada filtro del gateway en el orden de 10.1.
+2. **Código completo de la base, archivo por archivo**, contra **la spec primero** (SPEC-0a en CK1; además SPEC-0b en CK2) **y luego el micro** (infraestructura 2–10): paquetes y nombres como en 10.3, nada de lógica de negocio en `fitstore-common`, cada filtro del gateway en el orden de 10.1.
 3. **Contratos:** `ApiResponse`, `ApiError`, página y sobre de eventos idénticos a K5, K6 y K12 (los usarán todos los servicios).
 4. **Pruebas y cobertura:** informe completo de JaCoCo (y Vitest en CK2), todo el núcleo cubierto; lectura de todas las pruebas de la base, no de una muestra.
 5. **Seguridad:** sin secretos versionados, la clave JWKS de prueba marcada como tal, todo cerrado salvo `health` y la documentación (I3).
@@ -121,7 +122,11 @@ Un mensaje con: rama y último commit; tabla **CA → archivo de prueba** comple
 
 El lead pasa esta lista **en el worktree del agente, con sus propios comandos**, antes de abrir el PR a `dev`:
 
-**V0 ✅ Cobertura: 80 % mínimo, con todo lo esencial cubierto.** No se persigue el 100 %: el umbral de 80 % de líneas por módulo lo hace cumplir el CI (SPEC-0a, SPEC-0b), y además el **núcleo** debe estar cubierto por completo. Núcleo = lo que decide el negocio: entidades con reglas e invariantes, servicios de aplicación (casos de uso), máquinas de estado, calculadoras (descuentos, montos, tarifas), consumidores y publicadores de eventos, adaptadores de pasarela y de almacenamiento, filtros de seguridad del gateway. Cada spec lo hace explícito en su sección 7 y el brief lo lista.
+**V-c ✅ Spec primero.** Toda validación del lead (verificaciones V1–V11, checkpoints, respuestas a dudas) se contrasta **primero contra la spec y luego contra el micro**. Si difieren, manda la spec (es la decisión más reciente y aprobada) y el lead anota la diferencia para corregir el micro en un PR de documentación, con barrido.
+
+**V0b ✅ Terminado = 100 % del alcance de la spec.** Un agente está terminado solo cuando cumple **todo** lo que su spec define (o el paso que le tocó del brief): cada criterio de aceptación, cada punto de "Incluye" de la sección 1, cada archivo de la sección 8 y cada casilla de la sección 9 que no sea del autor. Y **nada más**: ni funciones de otras specs, ni adelantos de lo que viene, ni extras "por si acaso". Lo que la spec deja fuera ("No incluye") no se construye.
+
+**V0 ✅ Cobertura: 80 % mínimo, con todo lo esencial cubierto.** Es un piso de calidad de las pruebas, no la medida de terminado (esa es V0b). No se persigue el 100 %: el umbral de 80 % de líneas por módulo lo hace cumplir el CI (SPEC-0a, SPEC-0b), y además el **núcleo** debe estar cubierto por completo. Núcleo = lo que decide el negocio: entidades con reglas e invariantes, servicios de aplicación (casos de uso), máquinas de estado, calculadoras (descuentos, montos, tarifas), consumidores y publicadores de eventos, adaptadores de pasarela y de almacenamiento, filtros de seguridad del gateway. Cada spec lo hace explícito en su sección 7 y el brief lo lista.
 
 
 | # | Verificación | Cómo |
@@ -134,11 +139,12 @@ El lead pasa esta lista **en el worktree del agente, con sus propios comandos**,
 | V6 | **Diseño respetado** (specs con pantallas) | Compara las pantallas clave con [`docs/diseno/`](../diseno/) con capturas de Playwright a 1280 y 390 px, y **te las muestra en el chat**; si prefieres, abres la app levantada en Lyanna en tu navegador |
 | V7 | **Higiene** | gitleaks limpio, sin secretos en `application*.yml`, commits sin atribución de IA y con autor `cazabacheg`, migraciones con el nombre convenido |
 | V8 | **CI en verde** | `ci.yml` del PR a `dev` |
+| V11 | **Alcance exacto (V0b)** | El lead recorre la spec sección por sección (1 "Incluye", 3 criterios, 5 decisiones, 6 datos, 8 archivos) y marca cada punto como hecho con su evidencia; cualquier punto faltante es un rechazo. Revisa también el diff en busca de lo que **sobra** (endpoints, pantallas, tablas o dependencias que la spec no pide, o que pertenecen a otra spec): se quita |
 | V10 | **Cobertura** | Informe de JaCoCo (backend) y de Vitest (frontend): **al menos 80 % de líneas** en cada módulo que tocó (sin contar configuración, DTOs, clases `Application` ni código generado), y el **núcleo cubierto**: el lead abre el informe del núcleo y cada línea o rama sin cubrir debe estar justificada en el PR |
 | V9 | **Resto de la sección 9** | Cada casilla del DoD de la spec, salvo la del autor; las que requieren `stage` (Postman completo, k6) se marcan pendientes de la promoción |
 
 - **V-a ✅ Si algo falla,** el lead devuelve al agente la lista concreta de lo que no se cumple. Máximo **2 rondas**; a la tercera, el lead se lo plantea al autor con el diagnóstico.
-- **V-b ✅ El PR a `dev`** lleva la lista V1–V10 marcada con la evidencia (salida de los comandos, enlaces). El autor revisa, hace la demostración de la sección 9 y aprueba; recién ahí se integra.
+- **V-b ✅ El PR a `dev`** lleva la lista V1–V11 marcada con la evidencia (salida de los comandos, enlaces). El autor revisa, hace la demostración de la sección 9 y aprueba; recién ahí se integra.
 
 ## 7. Puntos de control del autor
 

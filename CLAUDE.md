@@ -13,7 +13,7 @@ La forma de trabajo completa está en [`docs/implementacion/estrategia-multiagen
 5. Si tienes pantallas: el **diseño** (`docs/diseno/`) y los componentes de `ui/`.
 6. Las versiones de [`docs/arquitectura/stack-versiones.md`](docs/arquitectura/stack-versiones.md). No agregues dependencias ni cambies versiones que no estén ahí.
 
-Si un dato no está en la spec, el micro, los contratos ni el diseño, **no lo inventes: detente y pregunta al lead.** En tu primer mensaje confirma qué leíste y resume en 5–10 líneas lo que vas a construir.
+**La spec manda:** léela primero y, si algo del micro la contradice, sigue la spec y avisa al lead. Si un dato no está en la spec, el micro, los contratos ni el diseño, **no lo inventes: detente y pregunta al lead.** En tu primer mensaje confirma qué leíste y resume en 5–10 líneas lo que vas a construir.
 
 ## 2. TDD *test first*: las pruebas son la barrera
 
@@ -32,7 +32,10 @@ Reglas que no se rompen:
 - **Cobertura:** mínimo **80 % de líneas** por módulo (lo exige el build) y el **núcleo** de tu spec cubierto por completo (lo lista tu brief). No se persigue el 100 % con pruebas vacías.
 - Las pruebas verifican el **resultado** del criterio (estado, respuesta, evento publicado), no solo que "no lanza error".
 
-## 3. Alcance: solo tus carpetas
+## 3. Alcance: todo lo de tu spec, nada más
+
+- **Terminado = 100 % del alcance de tu spec** (o del paso de tu brief): cada criterio de aceptación, cada punto de "Incluye", cada archivo de la sección 8 y cada casilla de la sección 9 que no sea del autor. La cobertura de 80 % es un piso de calidad, no la medida de terminado.
+- **Nada fuera de la spec:** ni funciones de otras specs, ni adelantos de lo que viene, ni extras "por si acaso". Lo que la spec pone en "No incluye" no se construye.
 
 - Toca **solo** las rutas que tu brief y la sección 8 de tu spec te asignan. El lead lo verifica con `scripts/fuera-de-alcance.sh`.
 - **Congelados** (no se tocan sin aprobación del autor y PR aparte): `backend/fitstore-common`, `backend/api-gateway`, `backend/config-server`, `backend/discovery-server`, `pom.xml` padre, `infra/config-repo/application.yml`, `infra/docker-compose*.yml`, `.github/workflows/`, `frontend/projects/shared`, `ui/`, `layout/`, rutas y menús generales, `scripts/contrato.sh`.
@@ -65,4 +68,4 @@ Corre y guarda la salida de:
 - Contrato (desde que tu servicio tiene endpoints): `scripts/contrato.sh <servicio>`.
 - `scripts/ca-cobertura.sh <spec>` sin faltantes.
 
-Luego reporta al lead: rama y último commit, tabla **CA → archivo de prueba**, comandos con su resultado, lo que no pudiste cumplir y por qué, y tus preguntas abiertas. "Listo" sin evidencia no es una entrega.
+Luego reporta al lead: rama y último commit, tabla **CA → archivo de prueba**, la lista de "Incluye" y de la sección 8 marcada punto por punto, comandos con su resultado, lo que no pudiste cumplir y por qué, y tus preguntas abiertas. "Listo" sin evidencia no es una entrega.
