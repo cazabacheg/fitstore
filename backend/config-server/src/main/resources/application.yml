@@ -1,0 +1,25 @@
+server:
+  port: 8888
+
+spring:
+  application:
+    name: config-server
+  profiles:
+    active: native
+  cloud:
+    config:
+      server:
+        native:
+          # En el contenedor se monta infra/config-repo en /config-repo
+          search-locations: file:/config-repo
+  security:
+    user:
+      # Sin valores por defecto: salen del entorno (.env), nunca de un archivo versionado
+      name: ${CONFIG_USER}
+      password: ${CONFIG_PASSWORD}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info

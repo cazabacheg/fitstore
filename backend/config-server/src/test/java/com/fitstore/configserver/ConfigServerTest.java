@@ -14,11 +14,12 @@ import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.WebApplicationType;
-import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.context.ConfigurableApplicationContext;
+import org.springframework.context.annotation.Configuration;
 
 /** CA-0a-04: configuración centralizada. Un cliente con perfil dev toma su configuración del config-server. */
 @SpringBootTest(
@@ -38,25 +39,35 @@ class ConfigServerTest {
     int puerto;
 
     /** Aplicación cliente mínima, sin web, que arranca con spring.config.import=configserver:. */
-    @SpringBootApplication(exclude = org.springframework.boot.security.autoconfigure.SecurityAutoConfiguration.class)
+    @Configuration
+    @EnableAutoConfiguration(exclude = org.springframework.boot.security.autoconfigure.SecurityAutoConfiguration.class)
     static class ClienteDePrueba {
     }
 
-    private SpringApplicationBuilder cliente(String urlConfigServer) {
+    /** Argumentos de línea de comandos (máxima prioridad) para que el application.yml del propio módulo no los pise. */
+    private static String[] argumentosCliente(String urlConfigServer, String... extra) {
+        java.util.List<String> args = new java.util.ArrayList<>(java.util.List.of(
+                "--spring.application.name=servicio-prueba",
+                "--spring.profiles.active=dev",
+                "--spring.config.import=configserver:" + urlConfigServer,
+                "--CONFIG_USER=" + USUARIO, "--CONFIG_PASSWORD=" + CLAVE, // el application.yml del módulo los exige
+                "--spring.cloud.config.enabled=true", // el jar del config-server la desactiva por defecto en este classpath
+                "--spring.cloud.config.username=" + USUARIO,
+                "--spring.cloud.config.password=" + CLAVE));
+        args.addAll(java.util.List.of(extra));
+        return args.toArray(String[]::new);
+    }
+
+    private static ConfigurableApplicationContext arrancarCliente(String urlConfigServer, String... extra) {
         return new SpringApplicationBuilder(ClienteDePrueba.class)
                 .web(WebApplicationType.NONE)
-                .properties(
-                        "spring.application.name=servicio-prueba",
-                        "spring.profiles.active=dev",
-                        "spring.config.import=configserver:" + urlConfigServer,
-                        "spring.cloud.config.username=" + USUARIO,
-                        "spring.cloud.config.password=" + CLAVE);
+                .run(argumentosCliente(urlConfigServer, extra));
     }
 
     @Test
     @DisplayName("CA-0a-04 un servicio con perfil dev toma su configuración del config-server")
     void tomaLaConfiguracionDelConfigServer() {
-        try (ConfigurableApplicationContext contexto = cliente("http://localhost:" + puerto).run()) {
+        try (ConfigurableApplicationContext contexto = arrancarCliente("http://localhost:" + puerto)) {
             assertThat(contexto.getEnvironment().getProperty("prueba.mensaje")).isEqualTo("valor-de-dev");
             assertThat(contexto.getEnvironment().getProperty("prueba.solo-comun")).isEqualTo("presente");
         }
@@ -96,14 +107,13 @@ class ConfigServerTest {
         });
         caido.start();
         try {
-            SpringApplicationBuilder constructor = cliente("http://127.0.0.1:" + caido.getAddress().getPort())
-                    .properties(
-                            "spring.cloud.config.fail-fast=true",
-                            "spring.cloud.config.retry.max-attempts=3",
-                            "spring.cloud.config.retry.initial-interval=50",
-                            "spring.cloud.config.retry.multiplier=1.5");
+            String url = "http://127.0.0.1:" + caido.getAddress().getPort();
 
-            assertThatThrownBy(constructor::run).isInstanceOf(Exception.class);
+            assertThatThrownBy(() -> arrancarCliente(url,
+                    "--spring.cloud.config.fail-fast=true",
+                    "--spring.cloud.config.retry.max-attempts=3",
+                    "--spring.cloud.config.retry.initial-interval=50",
+                    "--spring.cloud.config.retry.multiplier=1.5")).isInstanceOf(Exception.class);
             assertThat(peticiones.get()).isGreaterThanOrEqualTo(3);
         } finally {
             caido.stop(0);
