@@ -9,13 +9,13 @@
 |---|---|---|---|---|---|---|
 | 0a.1 Monorepo, común e infraestructura | — | `spec/0a-1-plataforma` | 📝 brief listo | — | — | Esperando la aprobación del autor para lanzar |
 | **CK1** Checkpoint de base (revisión exhaustiva del lead) | lead | — | ⏳ | — | — | Tras 0a.1; el autor lo aprueba antes de lanzar 0a.2 |
-| 0a.2 auth | — | `spec/0a-2-auth` | ⏳ | — | — | Tras 0a.1 |
-| 0a.2 catalog | — | `spec/0a-2-catalog` | ⏳ | — | — | Tras 0a.1 |
-| 0a.2 settings | — | `spec/0a-2-settings` | ⏳ | — | — | Tras 0a.1 |
-| 0a.2 order | — | `spec/0a-2-order` | ⏳ | — | — | Tras 0a.1 |
-| 0a.2 payment | — | `spec/0a-2-payment` | ⏳ | — | — | Tras 0a.1 |
-| 0a.2 delivery | — | `spec/0a-2-delivery` | ⏳ | — | — | Tras 0a.1 |
-| 0a.2 notification | — | `spec/0a-2-notification` | ⏳ | — | — | Tras 0a.1 |
+| 0a.2 auth | — | `spec/0a-2-auth` | ⏳ | — | — | Tras CK1 |
+| 0a.2 catalog | — | `spec/0a-2-catalog` | ⏳ | — | — | Tras CK1 |
+| 0a.2 settings | — | `spec/0a-2-settings` | ⏳ | — | — | Tras CK1 |
+| 0a.2 order | — | `spec/0a-2-order` | ⏳ | — | — | Tras CK1 |
+| 0a.2 payment | — | `spec/0a-2-payment` | ⏳ | — | — | Tras CK1 |
+| 0a.2 delivery | — | `spec/0a-2-delivery` | ⏳ | — | — | Tras CK1 |
+| 0a.2 notification | — | `spec/0a-2-notification` | ⏳ | — | — | Tras CK1 |
 | 0a.3 CI, humo y Postman | — | `spec/0a-3-ci` | ⏳ | — | — | Tras los 7 esqueletos |
 
 ## Próximas olas
