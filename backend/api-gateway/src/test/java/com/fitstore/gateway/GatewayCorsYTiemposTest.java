@@ -10,14 +10,14 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.springframework.boot.test.context.SpringBootTest;
+import com.fitstore.gateway.pruebas.PruebaGateway;
 import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.web.reactive.server.WebTestClient;
 
 /** CORS (solo storefront y backoffice) y tiempos (respuesta 10 s → 503), infraestructura 4.3 y 4.5. */
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@PruebaGateway
 class GatewayCorsYTiemposTest {
 
     @DynamicPropertySource

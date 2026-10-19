@@ -17,14 +17,14 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
-import org.springframework.boot.test.context.SpringBootTest;
+import com.fitstore.gateway.pruebas.PruebaGateway;
 import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.web.reactive.server.WebTestClient;
 
 /** CA-0a-08, CA-0a-09, CA-0a-12 y CA-0a-13: enrutamiento, rutas internas, servicio caído y correlación. */
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@PruebaGateway
 class GatewayRutasTest {
 
     @DynamicPropertySource
@@ -200,10 +200,10 @@ class GatewayRutasTest {
     @Test
     @DisplayName("CA-0a-13 un X-Request-Id enviado por el cliente se reemplaza por uno generado por el gateway")
     void requestIdDelClienteSeReemplaza() {
-        var respuesta = cliente.get().uri("/api/v1/categorias").header("X-Request-Id", "inyectado\nmal")
+        var respuesta = cliente.get().uri("/api/v1/categorias").header("X-Request-Id", "id-inyectado-por-el-cliente")
                 .exchange().expectStatus().isOk().returnResult(String.class);
 
-        assertThat(respuesta.getResponseHeaders().getFirst("X-Request-Id")).isNotEqualTo("inyectado\nmal");
+        assertThat(respuesta.getResponseHeaders().getFirst("X-Request-Id")).isNotEqualTo("id-inyectado-por-el-cliente");
     }
 
     @Test
@@ -221,9 +221,20 @@ class GatewayRutasTest {
         var resultado = cliente.get().uri("/internal/x").exchange().expectStatus().isNotFound()
                 .returnResult(String.class);
         String cabecera = resultado.getResponseHeaders().getFirst("X-Request-Id");
+        String cuerpo = resultado.getResponseBody().blockFirst();
 
-        cliente.get().uri("/internal/x").exchange().expectBody().jsonPath("$.requestId").isNotEmpty();
         assertThat(cabecera).isNotBlank();
+        assertThat(cuerpo).contains("\"requestId\":\"" + cabecera + "\"");
+    }
+
+    @Test
+    @DisplayName("FallbackController responde 503 con el mensaje de servicio no disponible")
+    void fallback() {
+        cliente.get().uri("/fallback/servicio-no-disponible").exchange()
+                .expectStatus().isEqualTo(503)
+                .expectBody()
+                .jsonPath("$.success").isEqualTo(false)
+                .jsonPath("$.mensaje").isEqualTo("Servicio no disponible, inténtalo en un momento");
     }
 
     @Test

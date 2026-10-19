@@ -6,7 +6,7 @@ import com.fitstore.gateway.pruebas.EntornoGateway;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.springframework.boot.test.context.SpringBootTest;
+import com.fitstore.gateway.pruebas.PruebaGateway;
 import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.boot.test.system.CapturedOutput;
 import org.springframework.boot.test.system.OutputCaptureExtension;
@@ -15,7 +15,7 @@ import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.web.reactive.server.WebTestClient;
 
 /** CA-0a-11 (parte 2): si Redis no está disponible, el gateway deja pasar y registra una advertencia (infraestructura 4.4). */
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@PruebaGateway
 @ExtendWith(OutputCaptureExtension.class)
 class GatewayRedisCaidoTest {
 

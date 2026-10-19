@@ -1,0 +1,152 @@
+# api-gateway: rutas (infraestructura 4.2), tiempos (4.5), rate limiting (4.4), CORS (4.3) y Swagger agregado (4.6).
+server:
+  port: 8080
+
+spring:
+  cloud:
+    gateway:
+      server:
+        webflux:
+          httpclient:
+            connect-timeout: 2000
+            response-timeout: 10s
+          routes:
+            - id: auth
+              uri: lb://auth-service
+              predicates:
+                - Path=/api/v1/auth/**,/api/v1/clientes/**,/api/v1/staff/**,/.well-known/jwks.json
+            - id: catalog
+              uri: lb://catalog-service
+              predicates:
+                - Path=/api/v1/categorias/**,/api/v1/productos/**,/api/v1/tallas,/api/v1/colores,/api/v1/precios/**,/api/v1/admin/categorias/**,/api/v1/admin/productos/**,/api/v1/admin/variantes/**,/api/v1/admin/imagenes/**,/api/v1/admin/tallas/**,/api/v1/admin/colores/**,/api/v1/admin/descuentos/**,/api/v1/admin/inventario/**
+            - id: order
+              uri: lb://order-service
+              predicates:
+                - Path=/api/v1/carrito/**,/api/v1/checkout/**,/api/v1/pedidos/**,/api/v1/admin/pedidos/**
+            - id: payment
+              uri: lb://payment-service
+              predicates:
+                - Path=/api/v1/pagos/**,/api/v1/admin/pagos/**,/api/v1/admin/reembolsos/**
+            - id: delivery
+              uri: lb://delivery-service
+              predicates:
+                - Path=/api/v1/envios/**,/api/v1/agencias,/api/v1/admin/entregas/**,/api/v1/admin/repartidores/**,/api/v1/admin/tarifas/**,/api/v1/admin/agencias/**
+            - id: notification
+              uri: lb://notification-service
+              predicates:
+                - Path=/api/v1/admin/notificaciones/**
+            - id: settings
+              uri: lb://settings-service
+              predicates:
+                - Path=/api/v1/settings/**,/api/v1/ubigeo/**,/api/v1/reclamos,/api/v1/admin/settings/**,/api/v1/admin/reclamos/**
+            # Documentación OpenAPI de cada servicio, para el selector de Swagger UI del gateway
+            - id: openapi-auth
+              uri: lb://auth-service
+              predicates:
+                - Path=/auth-service/v3/api-docs
+              filters:
+                - RewritePath=/auth-service/(?<ruta>.*), /$\{ruta}
+            - id: openapi-catalog
+              uri: lb://catalog-service
+              predicates:
+                - Path=/catalog-service/v3/api-docs
+              filters:
+                - RewritePath=/catalog-service/(?<ruta>.*), /$\{ruta}
+            - id: openapi-order
+              uri: lb://order-service
+              predicates:
+                - Path=/order-service/v3/api-docs
+              filters:
+                - RewritePath=/order-service/(?<ruta>.*), /$\{ruta}
+            - id: openapi-payment
+              uri: lb://payment-service
+              predicates:
+                - Path=/payment-service/v3/api-docs
+              filters:
+                - RewritePath=/payment-service/(?<ruta>.*), /$\{ruta}
+            - id: openapi-delivery
+              uri: lb://delivery-service
+              predicates:
+                - Path=/delivery-service/v3/api-docs
+              filters:
+                - RewritePath=/delivery-service/(?<ruta>.*), /$\{ruta}
+            - id: openapi-notification
+              uri: lb://notification-service
+              predicates:
+                - Path=/notification-service/v3/api-docs
+              filters:
+                - RewritePath=/notification-service/(?<ruta>.*), /$\{ruta}
+            - id: openapi-settings
+              uri: lb://settings-service
+              predicates:
+                - Path=/settings-service/v3/api-docs
+              filters:
+                - RewritePath=/settings-service/(?<ruta>.*), /$\{ruta}
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          # JWKS de auth (spec 1). En dev, mientras auth no firma, se usa FITSTORE_SECURITY_JWKS_ARCHIVO (SPEC-0a I2).
+          jwk-set-uri: http://auth-service:8081/.well-known/jwks.json
+
+fitstore:
+  gateway:
+    rate-limit:
+      # Se aplica la primera regla que coincide con el método y la ruta; el resto cae en "resto"
+      reglas:
+        - nombre: login
+          metodo: POST
+          rutas: [/api/v1/auth/login, /api/v1/auth/staff/login]
+          limite: 5
+          ventana-segundos: 60
+          clave: IP
+        - nombre: registro
+          metodo: POST
+          rutas: [/api/v1/auth/registro]
+          limite: 3
+          ventana-segundos: 60
+          clave: IP
+        - nombre: olvido-password
+          metodo: POST
+          rutas: [/api/v1/auth/password/olvido, /api/v1/auth/staff/password/olvido]
+          limite: 3
+          ventana-segundos: 60
+          clave: IP
+        - nombre: reclamos
+          metodo: POST
+          rutas: [/api/v1/reclamos]
+          limite: 3
+          ventana-segundos: 60
+          clave: IP
+        - nombre: checkout
+          metodo: POST
+          rutas: [/api/v1/pedidos]
+          limite: 10
+          ventana-segundos: 60
+          clave: USUARIO
+        - nombre: cargos
+          metodo: POST
+          rutas: ["/api/v1/pagos/*/cargos"]
+          limite: 10
+          ventana-segundos: 60
+          clave: USUARIO
+      # "50 por segundo (ráfaga 100)": hasta 100 peticiones por IP en una ventana de 2 segundos
+      resto:
+        limite: 100
+        ventana-segundos: 2
+    cors:
+      origenes:
+        - ${STOREFRONT_URL}
+        - ${BACKOFFICE_URL}
+
+springdoc:
+  swagger-ui:
+    path: /swagger-ui
+    urls:
+      - { name: auth-service, url: /auth-service/v3/api-docs }
+      - { name: catalog-service, url: /catalog-service/v3/api-docs }
+      - { name: order-service, url: /order-service/v3/api-docs }
+      - { name: payment-service, url: /payment-service/v3/api-docs }
+      - { name: delivery-service, url: /delivery-service/v3/api-docs }
+      - { name: notification-service, url: /notification-service/v3/api-docs }
+      - { name: settings-service, url: /settings-service/v3/api-docs }

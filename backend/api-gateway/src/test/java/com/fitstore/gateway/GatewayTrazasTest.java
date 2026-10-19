@@ -20,7 +20,7 @@ import java.util.List;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.springframework.boot.test.context.SpringBootTest;
+import com.fitstore.gateway.pruebas.PruebaGateway;
 import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
@@ -30,7 +30,7 @@ import org.springframework.test.web.reactive.server.WebTestClient;
  * CA-0a-13 (trazas): el gateway exporta la traza por OTLP y propaga el contexto al servicio destino.
  * Un WireMock hace de receptor OTLP (en lugar de Jaeger); la verificación en Jaeger real la cubre el humo de 0a.3.
  */
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@PruebaGateway
 class GatewayTrazasTest {
 
     static final WireMockServer OTLP = new WireMockServer(WireMockConfiguration.options().dynamicPort());
