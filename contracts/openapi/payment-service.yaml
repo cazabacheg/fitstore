@@ -1,0 +1,884 @@
+openapi: 3.0.3
+info:
+  title: FitStore — payment-service
+  version: 1.0.0
+  description: |
+    Página de pago (Culqi con tarjeta y Yape, Mercado Pago Payment Brick, proveedor simulado), cobros idempotentes,
+    webhooks, boleta simulada, y backoffice de pagos y reembolsos.
+
+    Fuente: micro `docs/analisis/micro/payment-service.md` (sección 4) y `docs/specs/SPEC-5-pagos.md`.
+    Convenciones: `contracts/README.md`. Rol requerido en cada operación: extensión `x-roles`.
+
+    El backend **nunca recibe datos de tarjeta** (solo el token de la pasarela) ni un monto del navegador (RF-PAY-00, RNF-06).
+  license:
+    name: Uso académico
+servers:
+  - url: http://localhost:8080
+    description: Gateway en local (docker compose)
+  - url: https://{app}.{sub}.duckdns.org
+    description: Nube (demo); cada frontend llama a /api en su propio dominio
+    variables:
+      app:
+        enum: [tienda, admin]
+        default: tienda
+      sub:
+        default: fitstore
+        description: Subdominio de DuckDNS
+tags:
+  - name: pago
+    description: Página de pago, cobro y boleta del cliente
+  - name: webhooks
+    description: Avisos de las pasarelas (públicos, verificados)
+  - name: pagos-admin
+    description: Pagos, intentos, reembolsos y boletas en el backoffice (ADMIN)
+  - name: interno
+    description: Rutas internas entre servicios (el gateway no las expone, K3)
+
+paths:
+  /api/v1/pagos/{codigoPedido}:
+    parameters:
+      - $ref: '#/components/parameters/CodigoPedido'
+    get:
+      tags: [pago]
+      operationId: obtenerPaginaPago
+      summary: Datos para la página de pago
+      description: |
+        Monto, vencimiento, medios disponibles (habilitados en la tienda ∩ con credenciales, P7), tope de Yape, intentos
+        rechazados y estado (CA-5-03 a 08). Si la intención aún no existe → 404 `PREPARANDO_PAGO` y la página reintenta (CA-5-04).
+        Pedido ajeno → 404 `NO_ENCONTRADO`. También se consulta tras un 202 para conocer el resultado (P4).
+      x-roles: [CLIENTE]
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Página de pago.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RespuestaPaginaPago'
+        '401':
+          $ref: './comun.yaml#/components/responses/NoAutenticado'
+        '404':
+          description: Pedido ajeno o inexistente (`NO_ENCONTRADO`), o intención aún no creada (`PREPARANDO_PAGO`).
+          content:
+            application/json:
+              schema:
+                $ref: './comun.yaml#/components/schemas/ApiError'
+              example:
+                success: false
+                mensaje: Preparando tu pago…
+                codigo: PREPARANDO_PAGO
+
+  /api/v1/pagos/{codigoPedido}/cargos:
+    parameters:
+      - $ref: '#/components/parameters/CodigoPedido'
+    post:
+      tags: [pago]
+      operationId: cobrarPedido
+      summary: Cobrar el pedido con el token de la pasarela
+      description: |
+        Cobra siempre el monto de la intención. Bloquea la intención: dos cobros a la vez → uno aprobado y el otro 409 `YA_PAGADO`
+        (CA-5-16). Misma Idempotency-Key → mismo resultado (CA-5-17). Sin respuesta de la pasarela en 10 s → 202, sin reintento (CA-5-18).
+        Rate limit 10/min por usuario.
+      x-roles: [CLIENTE]
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: './comun.yaml#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CargoRequest'
+            examples:
+              tarjetaCulqi:
+                value:
+                  proveedor: CULQI
+                  medio: TARJETA
+                  token: tkn_test_9aB3cD4eF5
+                  email: ana.quispe@correo.com
+              simulado:
+                value:
+                  proveedor: SIMULADO
+                  medio: TARJETA
+                  token: sim_1111
+      responses:
+        '200':
+          description: Pago aprobado.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RespuestaResultadoCargo'
+              example:
+                success: true
+                mensaje: ¡Pago aprobado!
+                data:
+                  estado: APROBADA
+                  codigoPedido: FS-000124
+                  monto: 373.36
+                  proveedor: CULQI
+                  medio: TARJETA
+                  descripcionMedio: Visa ****1111
+        '202':
+          description: La pasarela no respondió a tiempo; la página consulta el estado cada 3 s (P4).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RespuestaResultadoCargo'
+              example:
+                success: true
+                mensaje: Estamos confirmando tu pago
+                data:
+                  estado: PROCESANDO
+                  codigoPedido: FS-000124
+                  monto: 373.36
+                  proveedor: CULQI
+                  medio: TARJETA
+        '400':
+          description: Datos inválidos, medio no habilitado o proveedor simulado deshabilitado (CA-5-24).
+          content:
+            application/json:
+              schema:
+                $ref: './comun.yaml#/components/schemas/ApiError'
+        '401':
+          $ref: './comun.yaml#/components/responses/NoAutenticado'
+        '402':
+          description: Pago rechazado con motivo legible (`PAGO_RECHAZADO`); se puede reintentar mientras no venza (CA-5-11, 14).
+          content:
+            application/json:
+              schema:
+                $ref: './comun.yaml#/components/schemas/ApiError'
+              example:
+                success: false
+                mensaje: Fondos insuficientes
+                codigo: PAGO_RECHAZADO
+        '404':
+          $ref: './comun.yaml#/components/responses/NoEncontrado'
+        '409':
+          description: Ya pagado (`YA_PAGADO`), vencido (`PAGO_VENCIDO`) o anulado (`PAGO_ANULADO`).
+          content:
+            application/json:
+              schema:
+                $ref: './comun.yaml#/components/schemas/ApiError'
+              example:
+                success: false
+                mensaje: Este pedido ya fue pagado
+                codigo: YA_PAGADO
+        '429':
+          $ref: './comun.yaml#/components/responses/DemasiadosIntentos'
+        '503':
+          description: La pasarela elegida no está disponible por el momento (circuito abierto, CA-5-23).
+          content:
+            application/json:
+              schema:
+                $ref: './comun.yaml#/components/schemas/ApiError'
+
+  /api/v1/pagos/{codigoPedido}/boleta:
+    parameters:
+      - $ref: '#/components/parameters/CodigoPedido'
+    get:
+      tags: [pago]
+      operationId: descargarMiBoleta
+      summary: Descargar mi boleta (PDF)
+      description: Solo el dueño del pedido; no hay URL pública del archivo (CA-5-29). Sin envoltorio (K4).
+      x-roles: [CLIENTE]
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          $ref: '#/components/responses/BoletaPdf'
+        '401':
+          $ref: './comun.yaml#/components/responses/NoAutenticado'
+        '404':
+          $ref: './comun.yaml#/components/responses/NoEncontrado'
+
+  /api/v1/pagos/webhooks/culqi:
+    post:
+      tags: [webhooks]
+      operationId: recibirWebhookCulqi
+      summary: Webhook de Culqi
+      description: |
+        Se guarda (idempotente por id del evento) y responde 200 de inmediato; el estado se confirma consultando la API de Culqi (D3, CA-5-20).
+        El cuerpo es el formato de Culqi y no se valida aquí.
+      x-roles: [PUBLICO]
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WebhookPasarela'
+      responses:
+        '200':
+          $ref: './comun.yaml#/components/responses/Ok'
+        '400':
+          $ref: './comun.yaml#/components/responses/ErrorValidacion'
+
+  /api/v1/pagos/webhooks/mercadopago:
+    post:
+      tags: [webhooks]
+      operationId: recibirWebhookMercadoPago
+      summary: Webhook de Mercado Pago
+      description: Firma `x-signature` inválida → 401 y no se procesa (CA-5-21); si es válida, igual que Culqi.
+      x-roles: [PUBLICO]
+      security: []
+      parameters:
+        - name: x-signature
+          in: header
+          required: true
+          schema:
+            type: string
+        - name: x-request-id
+          in: header
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WebhookPasarela'
+      responses:
+        '200':
+          $ref: './comun.yaml#/components/responses/Ok'
+        '401':
+          description: Firma inválida (`FIRMA_INVALIDA`).
+          content:
+            application/json:
+              schema:
+                $ref: './comun.yaml#/components/schemas/ApiError'
+
+  /api/v1/admin/pagos:
+    get:
+      tags: [pagos-admin]
+      operationId: listarPagos
+      summary: Pagos (intenciones) con filtros
+      x-roles: [ADMIN]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: estado
+          in: query
+          schema:
+            $ref: '#/components/schemas/EstadoIntencion'
+        - name: proveedor
+          in: query
+          schema:
+            $ref: '#/components/schemas/Proveedor'
+        - name: codigo
+          in: query
+          description: Código de pedido.
+          schema:
+            type: string
+        - name: desde
+          in: query
+          schema:
+            type: string
+            format: date
+        - name: hasta
+          in: query
+          schema:
+            type: string
+            format: date
+        - $ref: './comun.yaml#/components/parameters/page'
+        - $ref: './comun.yaml#/components/parameters/size'
+        - $ref: './comun.yaml#/components/parameters/sort'
+      responses:
+        '200':
+          description: Página de pagos.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RespuestaPaginaPagos'
+        '401':
+          $ref: './comun.yaml#/components/responses/NoAutenticado'
+        '403':
+          $ref: './comun.yaml#/components/responses/SinPermiso'
+
+  /api/v1/admin/pagos/{id}:
+    parameters:
+      - $ref: '#/components/parameters/IntencionId'
+    get:
+      tags: [pagos-admin]
+      operationId: obtenerPago
+      summary: Detalle de un pago
+      description: Intentos, reembolsos, boleta y montos (CA-5-34). Nunca datos de tarjeta.
+      x-roles: [ADMIN]
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Detalle del pago.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RespuestaPagoDetalle'
+        '401':
+          $ref: './comun.yaml#/components/responses/NoAutenticado'
+        '403':
+          $ref: './comun.yaml#/components/responses/SinPermiso'
+        '404':
+          $ref: './comun.yaml#/components/responses/NoEncontrado'
+
+  /api/v1/admin/pagos/{id}/boleta:
+    parameters:
+      - $ref: '#/components/parameters/IntencionId'
+    get:
+      tags: [pagos-admin]
+      operationId: descargarBoletaAdmin
+      summary: Descargar la boleta de un pago
+      x-roles: [ADMIN]
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          $ref: '#/components/responses/BoletaPdf'
+        '401':
+          $ref: './comun.yaml#/components/responses/NoAutenticado'
+        '403':
+          $ref: './comun.yaml#/components/responses/SinPermiso'
+        '404':
+          $ref: './comun.yaml#/components/responses/NoEncontrado'
+
+  /api/v1/admin/reembolsos:
+    get:
+      tags: [pagos-admin]
+      operationId: listarReembolsos
+      summary: Reembolsos (fallidos y pendientes por defecto)
+      description: El menú muestra el número de FALLIDO con `estado=FALLIDO&size=1` (CONTADOR_MENU, SPEC-0b R3).
+      x-roles: [ADMIN]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: estado
+          in: query
+          description: Uno o varios; por defecto FALLIDO y PENDIENTE.
+          schema:
+            type: array
+            items:
+              $ref: '#/components/schemas/EstadoReembolso'
+          style: form
+          explode: true
+        - $ref: './comun.yaml#/components/parameters/page'
+        - $ref: './comun.yaml#/components/parameters/size'
+        - $ref: './comun.yaml#/components/parameters/sort'
+      responses:
+        '200':
+          description: Página de reembolsos.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RespuestaPaginaReembolsos'
+        '401':
+          $ref: './comun.yaml#/components/responses/NoAutenticado'
+        '403':
+          $ref: './comun.yaml#/components/responses/SinPermiso'
+
+  /api/v1/admin/reembolsos/{id}/reintentar:
+    parameters:
+      - $ref: '#/components/parameters/ReembolsoId'
+    post:
+      tags: [pagos-admin]
+      operationId: reintentarReembolso
+      summary: Reintentar un reembolso fallido
+      description: Vuelve a PENDIENTE y se ejecuta de inmediato (CA-5-37). Si no está FALLIDO → 409.
+      x-roles: [ADMIN]
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          $ref: '#/components/responses/ReembolsoActual'
+        '401':
+          $ref: './comun.yaml#/components/responses/NoAutenticado'
+        '403':
+          $ref: './comun.yaml#/components/responses/SinPermiso'
+        '404':
+          $ref: './comun.yaml#/components/responses/NoEncontrado'
+        '409':
+          $ref: './comun.yaml#/components/responses/Conflicto'
+
+  /api/v1/admin/reembolsos/{id}/resuelto-manual:
+    parameters:
+      - $ref: '#/components/parameters/ReembolsoId'
+    patch:
+      tags: [pagos-admin]
+      operationId: resolverReembolsoManual
+      summary: Marcar como resuelto fuera del sistema
+      description: Nota obligatoria; cuenta como completado y publica PagoReembolsado con `manual = true` (CA-5-38).
+      x-roles: [ADMIN]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ResolverManualRequest'
+      responses:
+        '200':
+          $ref: '#/components/responses/ReembolsoActual'
+        '400':
+          $ref: './comun.yaml#/components/responses/ErrorValidacion'
+        '401':
+          $ref: './comun.yaml#/components/responses/NoAutenticado'
+        '403':
+          $ref: './comun.yaml#/components/responses/SinPermiso'
+        '404':
+          $ref: './comun.yaml#/components/responses/NoEncontrado'
+        '409':
+          $ref: './comun.yaml#/components/responses/Conflicto'
+
+  /internal/v1/boletas/{numero}:
+    get:
+      tags: [interno]
+      operationId: obtenerBoletaInterna
+      summary: PDF de una boleta (interno, notification-service)
+      description: Para adjuntarla al correo "¡Pedido confirmado!" (notification 4.3). No pasa por el gateway.
+      x-roles: [INTERNO]
+      security: []
+      parameters:
+        - name: numero
+          in: path
+          required: true
+          schema:
+            type: string
+            pattern: '^B001-[0-9]{8}$'
+      responses:
+        '200':
+          $ref: '#/components/responses/BoletaPdf'
+        '404':
+          $ref: './comun.yaml#/components/responses/NoEncontrado'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      $ref: './comun.yaml#/components/securitySchemes/bearerAuth'
+
+  parameters:
+    CodigoPedido:
+      name: codigoPedido
+      in: path
+      required: true
+      schema:
+        type: string
+        pattern: '^FS-[0-9]{6}$'
+        example: FS-000124
+    IntencionId:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    ReembolsoId:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+
+  responses:
+    BoletaPdf:
+      description: Boleta simulada en PDF.
+      headers:
+        Content-Disposition:
+          schema:
+            type: string
+            example: 'attachment; filename="Boleta-B001-00000046.pdf"'
+      content:
+        application/pdf:
+          schema:
+            type: string
+            format: binary
+    ReembolsoActual:
+      description: Reembolso.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/RespuestaReembolso'
+
+  schemas:
+    Proveedor:
+      type: string
+      enum: [CULQI, MERCADO_PAGO, SIMULADO]
+    Medio:
+      type: string
+      enum: [TARJETA, YAPE, SALDO_MP]
+    EstadoIntencion:
+      type: string
+      enum: [PENDIENTE, PAGADA, ANULADA, REEMBOLSADA_PARCIAL, REEMBOLSADA]
+    EstadoTransaccion:
+      type: string
+      enum: [PROCESANDO, APROBADA, RECHAZADA, ERROR]
+    EstadoReembolso:
+      type: string
+      enum: [PENDIENTE, COMPLETADO, FALLIDO, RESUELTO_MANUAL]
+    MotivoReembolso:
+      type: string
+      enum: [CANCELACION, PAGO_NO_APLICABLE, POSTVENTA]
+
+    MedioDisponible:
+      type: object
+      required: [proveedor, medio, disponible]
+      properties:
+        proveedor:
+          $ref: '#/components/schemas/Proveedor'
+        medio:
+          $ref: '#/components/schemas/Medio'
+        clavePublica:
+          type: string
+          nullable: true
+          description: Clave pública de la pasarela para su librería en el navegador (null en el simulado).
+        disponible:
+          type: boolean
+        motivoNoDisponible:
+          type: string
+          nullable: true
+          example: Yape permite hasta S/ 500 por día
+
+    ItemPago:
+      type: object
+      required: [producto, cantidad, total]
+      properties:
+        producto:
+          type: string
+        talla:
+          type: string
+          nullable: true
+        color:
+          type: string
+          nullable: true
+        cantidad:
+          type: integer
+        total:
+          $ref: './comun.yaml#/components/schemas/Monto'
+
+    IntentoRechazado:
+      type: object
+      required: [fecha, proveedor, medio, motivo]
+      properties:
+        fecha:
+          type: string
+          format: date-time
+        proveedor:
+          $ref: '#/components/schemas/Proveedor'
+        medio:
+          $ref: '#/components/schemas/Medio'
+        motivo:
+          type: string
+          example: Fondos insuficientes
+
+    PaginaPago:
+      type: object
+      required: [codigoPedido, estado, monto, items, costoEnvio, expiraEn, medios, topeYape, intentosRechazados, procesando, boletaDisponible, simuladoHabilitado]
+      properties:
+        codigoPedido:
+          type: string
+        estado:
+          $ref: '#/components/schemas/EstadoIntencion'
+        monto:
+          $ref: './comun.yaml#/components/schemas/Monto'
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/ItemPago'
+        costoEnvio:
+          $ref: './comun.yaml#/components/schemas/Monto'
+        expiraEn:
+          type: string
+          format: date-time
+        medios:
+          type: array
+          items:
+            $ref: '#/components/schemas/MedioDisponible'
+        topeYape:
+          $ref: './comun.yaml#/components/schemas/Monto'
+        intentosRechazados:
+          type: array
+          items:
+            $ref: '#/components/schemas/IntentoRechazado'
+        procesando:
+          type: boolean
+          description: true si hay una transacción PROCESANDO (tras un 202).
+        boletaDisponible:
+          type: boolean
+        simuladoHabilitado:
+          type: boolean
+
+    CargoRequest:
+      type: object
+      required: [proveedor, medio, token]
+      properties:
+        proveedor:
+          $ref: '#/components/schemas/Proveedor'
+        medio:
+          $ref: '#/components/schemas/Medio'
+        token:
+          type: string
+          minLength: 4
+          maxLength: 200
+          description: Token de un solo uso de la pasarela (`sim_<últimos 4>` en el simulado, P2). Nunca datos de tarjeta.
+        email:
+          type: string
+          format: email
+          nullable: true
+          description: Correo del pagador (lo pide Culqi).
+        datosAdicionales:
+          type: object
+          nullable: true
+          additionalProperties: true
+          description: Campos extra que pide el Payment Brick de Mercado Pago (método, cuotas, emisor).
+
+    ResultadoCargo:
+      type: object
+      required: [estado, codigoPedido, monto, proveedor, medio]
+      properties:
+        estado:
+          $ref: '#/components/schemas/EstadoTransaccion'
+        codigoPedido:
+          type: string
+        monto:
+          $ref: './comun.yaml#/components/schemas/Monto'
+        proveedor:
+          $ref: '#/components/schemas/Proveedor'
+        medio:
+          $ref: '#/components/schemas/Medio'
+        descripcionMedio:
+          type: string
+          nullable: true
+          example: Visa ****1111
+
+    WebhookPasarela:
+      type: object
+      additionalProperties: true
+      description: Cuerpo tal como lo envía la pasarela.
+
+    PagoResumen:
+      type: object
+      required: [id, codigoPedido, clienteNombre, monto, intentos, estado, creadoEn, tieneReembolsoFallido]
+      properties:
+        id:
+          type: string
+          format: uuid
+        codigoPedido:
+          type: string
+        clienteNombre:
+          type: string
+        monto:
+          $ref: './comun.yaml#/components/schemas/Monto'
+        proveedor:
+          type: string
+          nullable: true
+          enum: [CULQI, MERCADO_PAGO, SIMULADO, null]
+          description: Del cargo aprobado (null si aún no se paga).
+        medio:
+          type: string
+          nullable: true
+          enum: [TARJETA, YAPE, SALDO_MP, null]
+        intentos:
+          type: integer
+        estado:
+          $ref: '#/components/schemas/EstadoIntencion'
+        creadoEn:
+          type: string
+          format: date-time
+        tieneReembolsoFallido:
+          type: boolean
+
+    Transaccion:
+      type: object
+      required: [id, proveedor, medio, estado, monto, creadoEn]
+      properties:
+        id:
+          type: string
+          format: uuid
+        proveedor:
+          $ref: '#/components/schemas/Proveedor'
+        medio:
+          $ref: '#/components/schemas/Medio'
+        estado:
+          $ref: '#/components/schemas/EstadoTransaccion'
+        monto:
+          $ref: './comun.yaml#/components/schemas/Monto'
+        idProveedor:
+          type: string
+          nullable: true
+        codigoRespuesta:
+          type: string
+          nullable: true
+        mensaje:
+          type: string
+          nullable: true
+        creadoEn:
+          type: string
+          format: date-time
+
+    Reembolso:
+      type: object
+      required: [id, intencionId, codigoPedido, monto, motivo, estado, intentos, creadoEn]
+      properties:
+        id:
+          type: string
+          format: uuid
+        intencionId:
+          type: string
+          format: uuid
+        codigoPedido:
+          type: string
+        clienteNombre:
+          type: string
+          nullable: true
+        monto:
+          $ref: './comun.yaml#/components/schemas/Monto'
+        motivo:
+          $ref: '#/components/schemas/MotivoReembolso'
+        estado:
+          $ref: '#/components/schemas/EstadoReembolso'
+        intentos:
+          type: integer
+        ultimoError:
+          type: string
+          nullable: true
+        proximoIntentoEn:
+          type: string
+          format: date-time
+          nullable: true
+        resueltoPor:
+          type: string
+          nullable: true
+        nota:
+          type: string
+          nullable: true
+        creadoEn:
+          type: string
+          format: date-time
+
+    BoletaInfo:
+      type: object
+      nullable: true
+      description: null mientras la boleta no se emite.
+      required: [numero, emitidaEn]
+      properties:
+        numero:
+          type: string
+          pattern: '^B001-[0-9]{8}$'
+          example: B001-00000046
+        emitidaEn:
+          type: string
+          format: date-time
+
+    ClientePago:
+      type: object
+      required: [nombre, email]
+      properties:
+        nombre:
+          type: string
+        dni:
+          $ref: './comun.yaml#/components/schemas/Dni'
+        email:
+          type: string
+          format: email
+
+    PagoDetalle:
+      allOf:
+        - $ref: '#/components/schemas/PagoResumen'
+        - type: object
+          required: [pedidoId, cliente, transacciones, reembolsos, montoReembolsado, neto]
+          properties:
+            pedidoId:
+              type: string
+              format: uuid
+            cliente:
+              $ref: '#/components/schemas/ClientePago'
+            transacciones:
+              type: array
+              items:
+                $ref: '#/components/schemas/Transaccion'
+            reembolsos:
+              type: array
+              items:
+                $ref: '#/components/schemas/Reembolso'
+            boleta:
+              $ref: '#/components/schemas/BoletaInfo'
+            montoReembolsado:
+              $ref: './comun.yaml#/components/schemas/Monto'
+            neto:
+              $ref: './comun.yaml#/components/schemas/Monto'
+
+    ResolverManualRequest:
+      type: object
+      required: [nota]
+      properties:
+        nota:
+          type: string
+          minLength: 5
+          maxLength: 500
+          example: Devuelto por transferencia BCP, op. 123456, 18/10
+
+    PaginaPagos:
+      allOf:
+        - $ref: './comun.yaml#/components/schemas/PaginaMeta'
+        - type: object
+          required: [contenido]
+          properties:
+            contenido:
+              type: array
+              items:
+                $ref: '#/components/schemas/PagoResumen'
+    PaginaReembolsos:
+      allOf:
+        - $ref: './comun.yaml#/components/schemas/PaginaMeta'
+        - type: object
+          required: [contenido]
+          properties:
+            contenido:
+              type: array
+              items:
+                $ref: '#/components/schemas/Reembolso'
+
+    # Respuestas envueltas (K4)
+    RespuestaPaginaPago:
+      allOf:
+        - $ref: './comun.yaml#/components/schemas/ApiResponse'
+        - type: object
+          properties:
+            data:
+              $ref: '#/components/schemas/PaginaPago'
+    RespuestaResultadoCargo:
+      allOf:
+        - $ref: './comun.yaml#/components/schemas/ApiResponse'
+        - type: object
+          properties:
+            data:
+              $ref: '#/components/schemas/ResultadoCargo'
+    RespuestaPaginaPagos:
+      allOf:
+        - $ref: './comun.yaml#/components/schemas/ApiResponse'
+        - type: object
+          properties:
+            data:
+              $ref: '#/components/schemas/PaginaPagos'
+    RespuestaPagoDetalle:
+      allOf:
+        - $ref: './comun.yaml#/components/schemas/ApiResponse'
+        - type: object
+          properties:
+            data:
+              $ref: '#/components/schemas/PagoDetalle'
+    RespuestaPaginaReembolsos:
+      allOf:
+        - $ref: './comun.yaml#/components/schemas/ApiResponse'
+        - type: object
+          properties:
+            data:
+              $ref: '#/components/schemas/PaginaReembolsos'
+    RespuestaReembolso:
+      allOf:
+        - $ref: './comun.yaml#/components/schemas/ApiResponse'
+        - type: object
+          properties:
+            data:
+              $ref: '#/components/schemas/Reembolso'

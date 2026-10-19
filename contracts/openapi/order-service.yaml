@@ -1,0 +1,1399 @@
+openapi: 3.0.3
+info:
+  title: FitStore — order-service
+  version: 1.0.0
+  description: |
+    Carrito (anónimo y de cliente), checkout con idempotencia, pedidos del cliente, gestión de pedidos en el backoffice,
+    reembolso postventa y resumen de ventas para el dashboard.
+
+    Fuente: micro `docs/analisis/micro/order-service.md` (sección 4) y `docs/specs/SPEC-4-pedidos.md`.
+    Convenciones: `contracts/README.md`. Rol requerido en cada operación: extensión `x-roles`.
+  license:
+    name: Uso académico
+servers:
+  - url: http://localhost:8080
+    description: Gateway en local (docker compose)
+  - url: https://{app}.{sub}.duckdns.org
+    description: Nube (demo); cada frontend llama a /api en su propio dominio
+    variables:
+      app:
+        enum: [tienda, admin]
+        default: tienda
+      sub:
+        default: fitstore
+        description: Subdominio de DuckDNS
+tags:
+  - name: carrito
+    description: Carrito anónimo (X-Carrito-Id) o de cliente (JWT)
+  - name: checkout
+    description: Resumen y confirmación del pedido
+  - name: mis-pedidos
+    description: Pedidos del cliente, seguimiento y cancelación
+  - name: pedidos-admin
+    description: Gestión de pedidos en el backoffice
+  - name: ventas
+    description: Resumen de ventas para el dashboard (ADMIN)
+
+paths:
+  /api/v1/carrito:
+    get:
+      tags: [carrito]
+      operationId: obtenerCarrito
+      summary: Ver el carrito con la cotización actual
+      description: |
+        Cotiza con catalog en cada consulta. Si catalog no responde, devuelve la última cotización con
+        `preciosPorConfirmar = true` (CA-4-02, 06, 07). Sin token y sin X-Carrito-Id → carrito vacío.
+      x-roles: [PUBLICO, CLIENTE]
+      security:
+        - {}
+        - bearerAuth: []
+      parameters:
+        - $ref: './comun.yaml#/components/parameters/XCarritoId'
+      responses:
+        '200':
+          $ref: '#/components/responses/CarritoActual'
+        '429':
+          $ref: './comun.yaml#/components/responses/DemasiadosIntentos'
+    delete:
+      tags: [carrito]
+      operationId: vaciarCarrito
+      summary: Vaciar el carrito
+      x-roles: [PUBLICO, CLIENTE]
+      security:
+        - {}
+        - bearerAuth: []
+      parameters:
+        - $ref: './comun.yaml#/components/parameters/XCarritoId'
+      responses:
+        '200':
+          $ref: '#/components/responses/CarritoActual'
+        '429':
+          $ref: './comun.yaml#/components/responses/DemasiadosIntentos'
+
+  /api/v1/carrito/items:
+    post:
+      tags: [carrito]
+      operationId: agregarAlCarrito
+      summary: Agregar una variante
+      description: |
+        Si ya existe la línea, suma (CA-4-01). Límites: 50 líneas y 100 unidades por línea → 400 `LIMITE_CARRITO` (CA-4-05).
+        Sin stock suficiente → 409 `STOCK_INSUFICIENTE` con `detalles.disponible` (CA-4-04). Lo usa el detalle de producto (SPEC-2 C1).
+      x-roles: [PUBLICO, CLIENTE]
+      security:
+        - {}
+        - bearerAuth: []
+      parameters:
+        - $ref: './comun.yaml#/components/parameters/XCarritoId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AgregarItemRequest'
+            example:
+              varianteId: 101
+              cantidad: 2
+      responses:
+        '200':
+          $ref: '#/components/responses/CarritoActual'
+        '400':
+          $ref: './comun.yaml#/components/responses/ErrorValidacion'
+        '409':
+          $ref: '#/components/responses/StockInsuficiente'
+        '429':
+          $ref: './comun.yaml#/components/responses/DemasiadosIntentos'
+        '503':
+          $ref: './comun.yaml#/components/responses/NoDisponible'
+
+  /api/v1/carrito/items/{varianteId}:
+    parameters:
+      - name: varianteId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      - $ref: './comun.yaml#/components/parameters/XCarritoId'
+    put:
+      tags: [carrito]
+      operationId: cambiarCantidadCarrito
+      summary: Cambiar la cantidad de una línea
+      x-roles: [PUBLICO, CLIENTE]
+      security:
+        - {}
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CambiarCantidadRequest'
+      responses:
+        '200':
+          $ref: '#/components/responses/CarritoActual'
+        '400':
+          $ref: './comun.yaml#/components/responses/ErrorValidacion'
+        '404':
+          $ref: './comun.yaml#/components/responses/NoEncontrado'
+        '409':
+          $ref: '#/components/responses/StockInsuficiente'
+        '429':
+          $ref: './comun.yaml#/components/responses/DemasiadosIntentos'
+    delete:
+      tags: [carrito]
+      operationId: quitarDelCarrito
+      summary: Quitar una línea
+      x-roles: [PUBLICO, CLIENTE]
+      security:
+        - {}
+        - bearerAuth: []
+      responses:
+        '200':
+          $ref: '#/components/responses/CarritoActual'
+        '404':
+          $ref: './comun.yaml#/components/responses/NoEncontrado'
+        '429':
+          $ref: './comun.yaml#/components/responses/DemasiadosIntentos'
+
+  /api/v1/carrito/fusionar:
+    post:
+      tags: [carrito]
+      operationId: fusionarCarrito
+      summary: Fusionar el carrito anónimo con el del cliente
+      description: |
+        Se llama una sola vez al iniciar sesión, con el JWT y el X-Carrito-Id: suma por variante (tope de 100, con aviso),
+        borra el anónimo y devuelve el carrito resultante (CA-4-10, 12).
+      x-roles: [CLIENTE]
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: './comun.yaml#/components/parameters/XCarritoId'
+      responses:
+        '200':
+          $ref: '#/components/responses/CarritoActual'
+        '401':
+          $ref: './comun.yaml#/components/responses/NoAutenticado'
+        '429':
+          $ref: './comun.yaml#/components/responses/DemasiadosIntentos'
+
+  /api/v1/checkout/resumen:
+    post:
+      tags: [checkout]
+      operationId: resumirCheckout
+      summary: Resumen del pedido (no crea nada)
+      description: Ítems, descuentos, costo y plazo de envío y total para la dirección, modalidad y agencia elegidas (CA-4-13 a 18).
+      x-roles: [CLIENTE]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EntregaElegida'
+            example:
+              modalidad: DELIVERY_LOCAL
+              direccionId: 7
+      responses:
+        '200':
+          description: Resumen.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RespuestaResumenCheckout'
+        '400':
+          description: Datos inválidos, modalidad deshabilitada (`MODALIDAD_NO_DISPONIBLE`) o delivery local fuera de Lima y Callao (`FUERA_DE_COBERTURA`).
+          content:
+            application/json:
+              schema:
+                $ref: './comun.yaml#/components/schemas/ApiError'
+        '401':
+          $ref: './comun.yaml#/components/responses/NoAutenticado'
+        '404':
+          $ref: './comun.yaml#/components/responses/NoEncontrado'
+        '422':
+          description: No hay tarifa de envío para ese destino (`SIN_COBERTURA`).
+          content:
+            application/json:
+              schema:
+                $ref: './comun.yaml#/components/schemas/ApiError'
+        '429':
+          $ref: './comun.yaml#/components/responses/DemasiadosIntentos'
+        '503':
+          $ref: './comun.yaml#/components/responses/NoDisponible'
+
+  /api/v1/pedidos:
+    get:
+      tags: [mis-pedidos]
+      operationId: listarMisPedidos
+      summary: Mis pedidos
+      description: Del más reciente al más antiguo, 10 por página (CA-4-33).
+      x-roles: [CLIENTE]
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: './comun.yaml#/components/parameters/page'
+        - name: size
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 50
+            default: 10
+      responses:
+        '200':
+          description: Página de pedidos.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RespuestaPaginaMisPedidos'
+        '401':
+          $ref: './comun.yaml#/components/responses/NoAutenticado'
+        '403':
+          $ref: './comun.yaml#/components/responses/SinPermiso'
+    post:
+      tags: [checkout]
+      operationId: confirmarPedido
+      summary: Confirmar el pedido
+      description: |
+        Crea el pedido en PENDIENTE_PAGO con copia congelada, reserva el stock y publica PedidoCreado (CA-4-19 a 26).
+        Misma Idempotency-Key → mismo pedido (200). Total distinto al visto → 409 `PRECIO_CAMBIADO`; sin stock → 409 `SIN_STOCK`
+        con `detalles.faltantes[]`; dependencia caída → 503 sin pedido. Rate limit 10/min por usuario.
+      x-roles: [CLIENTE]
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: './comun.yaml#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ConfirmarPedidoRequest'
+            example:
+              modalidad: DELIVERY_LOCAL
+              direccionId: 7
+              notas: Tocar el timbre 2 veces
+              totalEsperado: 373.36
+      responses:
+        '200':
+          $ref: '#/components/responses/PedidoConfirmado'
+        '201':
+          $ref: '#/components/responses/PedidoConfirmado'
+        '400':
+          $ref: './comun.yaml#/components/responses/ErrorValidacion'
+        '401':
+          $ref: './comun.yaml#/components/responses/NoAutenticado'
+        '409':
+          description: Precios cambiados o sin stock; no se creó nada.
+          content:
+            application/json:
+              schema:
+                $ref: './comun.yaml#/components/schemas/ApiError'
+              examples:
+                precioCambiado:
+                  value:
+                    success: false
+                    mensaje: Los precios cambiaron, revisa tu pedido
+                    codigo: PRECIO_CAMBIADO
+                sinStock:
+                  value:
+                    success: false
+                    mensaje: 'Sin stock para: Top Flex M Rojo'
+                    codigo: SIN_STOCK
+                    detalles:
+                      faltantes:
+                        - varianteId: 230
+                          solicitado: 1
+                          disponible: 0
+        '422':
+          description: Sin cobertura de envío (`SIN_COBERTURA`).
+          content:
+            application/json:
+              schema:
+                $ref: './comun.yaml#/components/schemas/ApiError'
+        '429':
+          $ref: './comun.yaml#/components/responses/DemasiadosIntentos'
+        '503':
+          $ref: './comun.yaml#/components/responses/NoDisponible'
+
+  /api/v1/pedidos/{codigo}:
+    parameters:
+      - $ref: '#/components/parameters/Codigo'
+    get:
+      tags: [mis-pedidos]
+      operationId: obtenerMiPedido
+      summary: Detalle y seguimiento de mi pedido
+      description: Historial para la línea de tiempo, entrega, montos, boleta y reembolsos (CA-4-34 a 37). Pedido ajeno → 404.
+      x-roles: [CLIENTE]
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          $ref: '#/components/responses/MiPedido'
+        '401':
+          $ref: './comun.yaml#/components/responses/NoAutenticado'
+        '404':
+          $ref: './comun.yaml#/components/responses/NoEncontrado'
+
+  /api/v1/pedidos/{codigo}/cancelar:
+    parameters:
+      - $ref: '#/components/parameters/Codigo'
+    patch:
+      tags: [mis-pedidos]
+      operationId: cancelarMiPedido
+      summary: Cancelar mi pedido
+      description: Solo en PENDIENTE_PAGO o PAGADO; después → 409 `NO_CANCELABLE` (CA-4-38, 39).
+      x-roles: [CLIENTE]
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          $ref: '#/components/responses/MiPedido'
+        '401':
+          $ref: './comun.yaml#/components/responses/NoAutenticado'
+        '404':
+          $ref: './comun.yaml#/components/responses/NoEncontrado'
+        '409':
+          $ref: './comun.yaml#/components/responses/Conflicto'
+
+  /api/v1/admin/pedidos:
+    get:
+      tags: [pedidos-admin]
+      operationId: listarPedidosAdmin
+      summary: Pedidos del backoffice con filtros
+      description: |
+        Los más antiguos por preparar primero; `contadores` por estado; `clienteId` para el historial de un cliente (O3).
+        El dashboard pide los contadores con `size=1` (SPEC-8).
+      x-roles: [OPERADOR, ADMIN]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: estado
+          in: query
+          schema:
+            $ref: '#/components/schemas/EstadoPedido'
+        - name: modalidad
+          in: query
+          schema:
+            $ref: '#/components/schemas/Modalidad'
+        - name: desde
+          in: query
+          schema:
+            type: string
+            format: date
+        - name: hasta
+          in: query
+          schema:
+            type: string
+            format: date
+        - name: codigo
+          in: query
+          schema:
+            type: string
+            pattern: '^FS-[0-9]{1,6}$'
+        - name: cliente
+          in: query
+          description: Nombre, correo o DNI del cliente.
+          schema:
+            type: string
+            maxLength: 80
+        - name: clienteId
+          in: query
+          schema:
+            type: string
+            format: uuid
+        - $ref: './comun.yaml#/components/parameters/page'
+        - $ref: './comun.yaml#/components/parameters/size'
+        - $ref: './comun.yaml#/components/parameters/sort'
+      responses:
+        '200':
+          description: Página de pedidos con contadores.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RespuestaPaginaPedidosAdmin'
+        '401':
+          $ref: './comun.yaml#/components/responses/NoAutenticado'
+        '403':
+          $ref: './comun.yaml#/components/responses/SinPermiso'
+
+  /api/v1/admin/pedidos/resumen:
+    get:
+      tags: [ventas]
+      operationId: obtenerResumenVentas
+      summary: Resumen de ventas para el dashboard
+      description: |
+        Ventas de hoy, la semana y el mes por fecha de pago, sin cancelados ni expirados y netas de reembolsos postventa;
+        pedidos por estado; top 5 productos del período (por defecto, el mes actual) (CA-4-51 a 53).
+      x-roles: [ADMIN]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: desde
+          in: query
+          schema:
+            type: string
+            format: date
+        - name: hasta
+          in: query
+          schema:
+            type: string
+            format: date
+      responses:
+        '200':
+          description: Resumen de ventas.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RespuestaResumenVentas'
+        '401':
+          $ref: './comun.yaml#/components/responses/NoAutenticado'
+        '403':
+          $ref: './comun.yaml#/components/responses/SinPermiso'
+
+  /api/v1/admin/pedidos/{id}:
+    parameters:
+      - $ref: '#/components/parameters/PedidoId'
+    get:
+      tags: [pedidos-admin]
+      operationId: obtenerPedidoAdmin
+      summary: Detalle completo del pedido
+      description: Incluye `transicionesPermitidas` (O4), `reembolsoPostventa` y `version` (O5).
+      x-roles: [OPERADOR, ADMIN]
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          $ref: '#/components/responses/PedidoAdminDetalle'
+        '401':
+          $ref: './comun.yaml#/components/responses/NoAutenticado'
+        '403':
+          $ref: './comun.yaml#/components/responses/SinPermiso'
+        '404':
+          $ref: './comun.yaml#/components/responses/NoEncontrado'
+
+  /api/v1/admin/pedidos/{id}/estado:
+    parameters:
+      - $ref: '#/components/parameters/PedidoId'
+    patch:
+      tags: [pedidos-admin]
+      operationId: avanzarEstadoPedido
+      summary: Avanzar el estado del pedido
+      description: |
+        EN_PREPARACION, LISTO_DESPACHO, LISTO_RECOJO, ENTREGADO (recojo, con `dniVerificado`) o DEVUELTO (recojo no recogido,
+        con motivo en `comentario`) (CA-4-44, 46, 47, 60). Transición no permitida → 409 `TRANSICION_INVALIDA`; versión vieja → 409 `CONFLICTO_VERSION`.
+      x-roles: [OPERADOR, ADMIN]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AvanzarEstadoRequest'
+      responses:
+        '200':
+          $ref: '#/components/responses/PedidoAdminDetalle'
+        '400':
+          $ref: './comun.yaml#/components/responses/ErrorValidacion'
+        '401':
+          $ref: './comun.yaml#/components/responses/NoAutenticado'
+        '403':
+          $ref: './comun.yaml#/components/responses/SinPermiso'
+        '404':
+          $ref: './comun.yaml#/components/responses/NoEncontrado'
+        '409':
+          $ref: './comun.yaml#/components/responses/Conflicto'
+
+  /api/v1/admin/pedidos/{id}/cancelar:
+    parameters:
+      - $ref: '#/components/parameters/PedidoId'
+    patch:
+      tags: [pedidos-admin]
+      operationId: cancelarPedidoStaff
+      summary: Cancelar un pedido (staff)
+      description: Hasta EN_PREPARACION, con motivo obligatorio; publica PedidoCancelado (CA-4-49, 50).
+      x-roles: [OPERADOR, ADMIN]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CancelarStaffRequest'
+      responses:
+        '200':
+          $ref: '#/components/responses/PedidoAdminDetalle'
+        '400':
+          $ref: './comun.yaml#/components/responses/ErrorValidacion'
+        '401':
+          $ref: './comun.yaml#/components/responses/NoAutenticado'
+        '403':
+          $ref: './comun.yaml#/components/responses/SinPermiso'
+        '404':
+          $ref: './comun.yaml#/components/responses/NoEncontrado'
+        '409':
+          $ref: './comun.yaml#/components/responses/Conflicto'
+
+  /api/v1/admin/pedidos/{id}/reembolsos:
+    parameters:
+      - $ref: '#/components/parameters/PedidoId'
+    post:
+      tags: [pedidos-admin]
+      operationId: registrarReembolsoPostventa
+      summary: Registrar un reembolso postventa
+      description: |
+        Pedido ENTREGADO dentro del plazo o DEVUELTO (sin plazo); la suma de reembolsos nunca supera lo cobrado → 409 `SUPERA_COBRADO`
+        con `detalles.maximo`; fuera de plazo o estado → 409 `REEMBOLSO_NO_PERMITIDO`. Publica ReembolsoSolicitado (CA-4-54 a 59).
+      x-roles: [ADMIN]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReembolsoPostventaRequest'
+            example:
+              items:
+                - varianteId: 101
+                  cantidad: 1
+              monto: 59.9
+              motivo: DEFECTUOSO
+              nota: Costura abierta en la pierna derecha
+      responses:
+        '201':
+          $ref: '#/components/responses/PedidoAdminDetalle'
+        '400':
+          $ref: './comun.yaml#/components/responses/ErrorValidacion'
+        '401':
+          $ref: './comun.yaml#/components/responses/NoAutenticado'
+        '403':
+          $ref: './comun.yaml#/components/responses/SinPermiso'
+        '404':
+          $ref: './comun.yaml#/components/responses/NoEncontrado'
+        '409':
+          $ref: './comun.yaml#/components/responses/Conflicto'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      $ref: './comun.yaml#/components/securitySchemes/bearerAuth'
+
+  parameters:
+    Codigo:
+      name: codigo
+      in: path
+      required: true
+      schema:
+        type: string
+        pattern: '^FS-[0-9]{6}$'
+        example: FS-000124
+    PedidoId:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+
+  responses:
+    CarritoActual:
+      description: Carrito cotizado.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/RespuestaCarrito'
+    StockInsuficiente:
+      description: No alcanza el stock para la cantidad pedida; la línea conserva su cantidad anterior.
+      content:
+        application/json:
+          schema:
+            $ref: './comun.yaml#/components/schemas/ApiError'
+          example:
+            success: false
+            mensaje: Solo quedan 3 unidades
+            codigo: STOCK_INSUFICIENTE
+            detalles:
+              disponible: 3
+    PedidoConfirmado:
+      description: Pedido creado (201) o el mismo pedido de una confirmación anterior con esa clave (200).
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/RespuestaPedidoConfirmado'
+          example:
+            success: true
+            mensaje: Pedido creado
+            data:
+              codigo: FS-000124
+              total: 373.36
+              expiraEn: '2026-10-22T15:30:00Z'
+    MiPedido:
+      description: Pedido del cliente.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/RespuestaPedidoDetalle'
+    PedidoAdminDetalle:
+      description: Pedido para el backoffice.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/RespuestaPedidoAdmin'
+
+  schemas:
+    EstadoPedido:
+      type: string
+      enum: [PENDIENTE_PAGO, PAGADO, EN_PREPARACION, LISTO_DESPACHO, LISTO_RECOJO, ENVIADO, ENTREGADO, CANCELADO, EXPIRADO, DEVUELTO]
+    Modalidad:
+      type: string
+      enum: [DELIVERY_LOCAL, AGENCIA, RECOJO]
+    EstadoReembolsoPedido:
+      type: string
+      enum: [NINGUNO, PARCIAL, TOTAL]
+      description: Según `montoReembolsado` frente al total ("Reembolso parcial" / "Reembolsado").
+    MotivoReembolso:
+      type: string
+      enum: [DEFECTUOSO, TALLA_MODELO_EQUIVOCADO, NO_CONFORME, NO_ENTREGADO, OTRO]
+
+    AgregarItemRequest:
+      type: object
+      required: [varianteId, cantidad]
+      properties:
+        varianteId:
+          type: integer
+          format: int64
+        cantidad:
+          type: integer
+          minimum: 1
+          maximum: 100
+    CambiarCantidadRequest:
+      type: object
+      required: [cantidad]
+      properties:
+        cantidad:
+          type: integer
+          minimum: 1
+          maximum: 100
+
+    Tramo:
+      type: object
+      required: [unidadesMinimas, porcentaje]
+      properties:
+        unidadesMinimas:
+          type: integer
+        porcentaje:
+          type: number
+          multipleOf: 0.01
+
+    LineaCarrito:
+      type: object
+      required: [varianteId, cantidad, estado]
+      properties:
+        varianteId:
+          type: integer
+          format: int64
+        productoId:
+          type: integer
+          format: int64
+          nullable: true
+        slug:
+          type: string
+          nullable: true
+        sku:
+          type: string
+          nullable: true
+        producto:
+          type: string
+          nullable: true
+        talla:
+          type: string
+          nullable: true
+        color:
+          type: string
+          nullable: true
+        imagenUrl:
+          type: string
+          nullable: true
+        precioUnitario:
+          $ref: './comun.yaml#/components/schemas/Monto'
+        cantidad:
+          type: integer
+          minimum: 1
+          maximum: 100
+        descuentoPorcentaje:
+          type: number
+          multipleOf: 0.01
+        descuentoMonto:
+          $ref: './comun.yaml#/components/schemas/Monto'
+        total:
+          $ref: './comun.yaml#/components/schemas/Monto'
+        estado:
+          type: string
+          enum: [OK, STOCK_INSUFICIENTE, NO_DISPONIBLE]
+          description: NO_DISPONIBLE → la línea se atenúa y bloquea el checkout (CA-4-06).
+        disponible:
+          type: integer
+          nullable: true
+          description: Solo con STOCK_INSUFICIENTE.
+
+    AvisoTramo:
+      type: object
+      required: [productoId, producto, unidades]
+      properties:
+        productoId:
+          type: integer
+          format: int64
+        producto:
+          type: string
+        unidades:
+          type: integer
+        tramoAlcanzado:
+          type: object
+          nullable: true
+          allOf:
+            - $ref: '#/components/schemas/Tramo'
+        siguienteTramo:
+          type: object
+          nullable: true
+          description: '"Agrega N más y ahorra X %" (`faltan` = N).'
+          allOf:
+            - $ref: '#/components/schemas/SiguienteTramo'
+    SiguienteTramo:
+      allOf:
+        - $ref: '#/components/schemas/Tramo'
+        - type: object
+          required: [faltan]
+          properties:
+            faltan:
+              type: integer
+              minimum: 1
+
+    Carrito:
+      type: object
+      required: [lineas, avisosTramo, subtotal, descuentoTotal, total, cantidadTotal, preciosPorConfirmar, puedeIrAlCheckout]
+      properties:
+        lineas:
+          type: array
+          maxItems: 50
+          items:
+            $ref: '#/components/schemas/LineaCarrito'
+        avisosTramo:
+          type: array
+          items:
+            $ref: '#/components/schemas/AvisoTramo'
+        subtotal:
+          $ref: './comun.yaml#/components/schemas/Monto'
+        descuentoTotal:
+          $ref: './comun.yaml#/components/schemas/Monto'
+        total:
+          $ref: './comun.yaml#/components/schemas/Monto'
+        cantidadTotal:
+          type: integer
+          minimum: 0
+          description: Unidades totales; alimenta el contador de la cabecera (O7, SPEC-0b R8).
+        preciosPorConfirmar:
+          type: boolean
+          description: true = catalog no respondió y se muestra la última cotización (CA-4-07).
+        puedeIrAlCheckout:
+          type: boolean
+          description: false si hay líneas NO_DISPONIBLE o precios por confirmar.
+        avisos:
+          type: array
+          description: Mensajes informativos (p. ej. "La cantidad de Legging Pro M se ajustó a 100" tras fusionar).
+          items:
+            type: string
+
+    EntregaElegida:
+      type: object
+      required: [modalidad]
+      properties:
+        modalidad:
+          $ref: '#/components/schemas/Modalidad'
+        direccionId:
+          type: integer
+          format: int64
+          nullable: true
+          description: Obligatoria salvo en RECOJO.
+        agenciaId:
+          type: integer
+          format: int64
+          nullable: true
+          description: Obligatoria en AGENCIA.
+
+    ConfirmarPedidoRequest:
+      allOf:
+        - $ref: '#/components/schemas/EntregaElegida'
+        - type: object
+          required: [totalEsperado]
+          properties:
+            notas:
+              type: string
+              nullable: true
+              maxLength: 300
+            totalEsperado:
+              $ref: './comun.yaml#/components/schemas/Monto'
+
+    ItemPedido:
+      type: object
+      required: [varianteId, sku, producto, talla, color, precioUnitario, cantidad, descuentoPorcentaje, descuentoMonto, total]
+      properties:
+        varianteId:
+          type: integer
+          format: int64
+        productoId:
+          type: integer
+          format: int64
+        sku:
+          type: string
+        producto:
+          type: string
+        talla:
+          type: string
+        color:
+          type: string
+        imagenUrl:
+          type: string
+          nullable: true
+        precioUnitario:
+          $ref: './comun.yaml#/components/schemas/Monto'
+        cantidad:
+          type: integer
+        descuentoPorcentaje:
+          type: number
+          multipleOf: 0.01
+        descuentoMonto:
+          $ref: './comun.yaml#/components/schemas/Monto'
+        total:
+          $ref: './comun.yaml#/components/schemas/Monto'
+
+    Envio:
+      type: object
+      required: [modalidad, costo]
+      properties:
+        modalidad:
+          $ref: '#/components/schemas/Modalidad'
+        costo:
+          $ref: './comun.yaml#/components/schemas/Monto'
+        plazoDiasMin:
+          type: integer
+          nullable: true
+        plazoDiasMax:
+          type: integer
+          nullable: true
+        agenciaId:
+          type: integer
+          format: int64
+          nullable: true
+        agenciaNombre:
+          type: string
+          nullable: true
+        codigoSeguimiento:
+          type: string
+          nullable: true
+        urlSeguimiento:
+          type: string
+          nullable: true
+        tiendaDireccion:
+          type: string
+          nullable: true
+          description: Solo en RECOJO (dirección y horario de la tienda física).
+
+    DireccionPedido:
+      type: object
+      required: [ubigeo, departamento, provincia, distrito, direccion]
+      properties:
+        ubigeo:
+          $ref: './comun.yaml#/components/schemas/Ubigeo'
+        departamento:
+          type: string
+        provincia:
+          type: string
+        distrito:
+          type: string
+        direccion:
+          type: string
+        referencia:
+          type: string
+          nullable: true
+
+    Destinatario:
+      type: object
+      required: [nombres, apellidos, dni, telefono, email]
+      properties:
+        nombres:
+          type: string
+        apellidos:
+          type: string
+        dni:
+          $ref: './comun.yaml#/components/schemas/Dni'
+        telefono:
+          type: string
+        email:
+          type: string
+          format: email
+
+    ResumenCheckout:
+      type: object
+      required: [items, subtotal, descuentoTotal, costoEnvio, total, envio, expiracionMinutos]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/ItemPedido'
+        subtotal:
+          $ref: './comun.yaml#/components/schemas/Monto'
+        descuentoTotal:
+          $ref: './comun.yaml#/components/schemas/Monto'
+        costoEnvio:
+          $ref: './comun.yaml#/components/schemas/Monto'
+        total:
+          $ref: './comun.yaml#/components/schemas/Monto'
+        envio:
+          $ref: '#/components/schemas/Envio'
+        direccion:
+          type: object
+          nullable: true
+          allOf:
+            - $ref: '#/components/schemas/DireccionPedido'
+        expiracionMinutos:
+          type: integer
+          description: Minutos que tendrá para pagar ("Apartamos tu stock por 30 minutos").
+
+    PedidoCreado:
+      type: object
+      required: [codigo, total, expiraEn]
+      properties:
+        codigo:
+          type: string
+        total:
+          $ref: './comun.yaml#/components/schemas/Monto'
+        expiraEn:
+          type: string
+          format: date-time
+
+    HistorialEntrada:
+      type: object
+      required: [fecha, tipo, actorTipo]
+      properties:
+        fecha:
+          type: string
+          format: date-time
+        tipo:
+          type: string
+          enum: [CAMBIO_ESTADO, PAGO_RECHAZADO, INTENTO_FALLIDO, REEMBOLSO_SOLICITADO, REEMBOLSO_COMPLETADO]
+        estadoNuevo:
+          type: string
+          nullable: true
+          description: Solo en CAMBIO_ESTADO.
+          enum: [PENDIENTE_PAGO, PAGADO, EN_PREPARACION, LISTO_DESPACHO, LISTO_RECOJO, ENVIADO, ENTREGADO, CANCELADO, EXPIRADO, DEVUELTO, null]
+        comentario:
+          type: string
+          nullable: true
+          description: Motivo, observación del intento, agencia y código de seguimiento, etc.
+        actorTipo:
+          type: string
+          enum: [CLIENTE, STAFF, SISTEMA]
+        actorNombre:
+          type: string
+          nullable: true
+          description: Solo en el backoffice.
+
+    PagoPedido:
+      type: object
+      nullable: true
+      description: Con qué se pagó (lo guarda order desde PagoConfirmado), para mostrarlo sin acceso a la API de pagos.
+      properties:
+        proveedor:
+          type: string
+          enum: [CULQI, MERCADO_PAGO, SIMULADO]
+        medio:
+          type: string
+          enum: [TARJETA, YAPE, SALDO_MP]
+        pagadoEn:
+          type: string
+          format: date-time
+
+    PedidoResumen:
+      type: object
+      required: [codigo, creadoEn, estado, total, modalidad, cantidadProductos]
+      properties:
+        codigo:
+          type: string
+        creadoEn:
+          type: string
+          format: date-time
+        estado:
+          $ref: '#/components/schemas/EstadoPedido'
+        total:
+          $ref: './comun.yaml#/components/schemas/Monto'
+        modalidad:
+          $ref: '#/components/schemas/Modalidad'
+        cantidadProductos:
+          type: integer
+        miniaturaUrl:
+          type: string
+          nullable: true
+        expiraEn:
+          type: string
+          format: date-time
+          nullable: true
+          description: Solo en PENDIENTE_PAGO (cuenta regresiva y "Pagar ahora").
+        estadoReembolso:
+          $ref: '#/components/schemas/EstadoReembolsoPedido'
+
+    PedidoDetalle:
+      type: object
+      required: [codigo, estado, modalidad, creadoEn, items, subtotal, descuentoTotal, costoEnvio, total, montoReembolsado, estadoReembolso, destinatario, envio, historial, puedeCancelar, puedePagar]
+      properties:
+        codigo:
+          type: string
+        estado:
+          $ref: '#/components/schemas/EstadoPedido'
+        modalidad:
+          $ref: '#/components/schemas/Modalidad'
+        creadoEn:
+          type: string
+          format: date-time
+        expiraEn:
+          type: string
+          format: date-time
+          nullable: true
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/ItemPedido'
+        subtotal:
+          $ref: './comun.yaml#/components/schemas/Monto'
+        descuentoTotal:
+          $ref: './comun.yaml#/components/schemas/Monto'
+        costoEnvio:
+          $ref: './comun.yaml#/components/schemas/Monto'
+        total:
+          $ref: './comun.yaml#/components/schemas/Monto'
+        montoReembolsado:
+          $ref: './comun.yaml#/components/schemas/Monto'
+        estadoReembolso:
+          $ref: '#/components/schemas/EstadoReembolsoPedido'
+        destinatario:
+          $ref: '#/components/schemas/Destinatario'
+        direccion:
+          type: object
+          nullable: true
+          allOf:
+            - $ref: '#/components/schemas/DireccionPedido'
+        envio:
+          $ref: '#/components/schemas/Envio'
+        notas:
+          type: string
+          nullable: true
+        boletaUrl:
+          type: string
+          nullable: true
+          description: Descarga autenticada en payment (`/api/v1/pagos/{codigo}/boleta`).
+        pago:
+          $ref: '#/components/schemas/PagoPedido'
+        historial:
+          type: array
+          description: Del más antiguo al más reciente; el frontend arma la línea de tiempo y sus descripciones (O9).
+          items:
+            $ref: '#/components/schemas/HistorialEntrada'
+        puedeCancelar:
+          type: boolean
+        puedePagar:
+          type: boolean
+
+    TransicionPermitida:
+      type: object
+      required: [estado, etiqueta]
+      properties:
+        estado:
+          $ref: '#/components/schemas/EstadoPedido'
+        etiqueta:
+          type: string
+          example: Empezar a preparar
+        requiereComentario:
+          type: boolean
+          description: true en DEVUELTO (motivo).
+        requiereDni:
+          type: boolean
+          description: true en ENTREGADO de un recojo.
+
+    ReembolsoPostventaInfo:
+      type: object
+      required: [permitido, maximo]
+      properties:
+        permitido:
+          type: boolean
+        maximo:
+          $ref: './comun.yaml#/components/schemas/Monto'
+        venceEl:
+          type: string
+          format: date
+          nullable: true
+          description: null = sin límite (plazo 0 o pedido DEVUELTO).
+
+    ReembolsoDelPedido:
+      type: object
+      required: [id, monto, motivo, estado, creadoEn]
+      properties:
+        id:
+          type: string
+          format: uuid
+        monto:
+          $ref: './comun.yaml#/components/schemas/Monto'
+        motivo:
+          $ref: '#/components/schemas/MotivoReembolso'
+        nota:
+          type: string
+          nullable: true
+        estado:
+          type: string
+          enum: [SOLICITADO, COMPLETADO]
+        solicitadoPor:
+          type: string
+          nullable: true
+        creadoEn:
+          type: string
+          format: date-time
+        completadoEn:
+          type: string
+          format: date-time
+          nullable: true
+
+    PedidoAdmin:
+      allOf:
+        - $ref: '#/components/schemas/PedidoDetalle'
+        - type: object
+          required: [id, clienteId, transicionesPermitidas, reembolsoPostventa, reembolsos, version]
+          properties:
+            id:
+              type: string
+              format: uuid
+            clienteId:
+              type: string
+              format: uuid
+            transicionesPermitidas:
+              type: array
+              items:
+                $ref: '#/components/schemas/TransicionPermitida'
+            puedeCancelarStaff:
+              type: boolean
+            reembolsoPostventa:
+              $ref: '#/components/schemas/ReembolsoPostventaInfo'
+            reembolsos:
+              type: array
+              items:
+                $ref: '#/components/schemas/ReembolsoDelPedido'
+            version:
+              type: integer
+
+    PedidoAdminResumen:
+      type: object
+      required: [id, codigo, creadoEn, clienteNombre, modalidad, estado, total]
+      properties:
+        id:
+          type: string
+          format: uuid
+        codigo:
+          type: string
+        creadoEn:
+          type: string
+          format: date-time
+        clienteNombre:
+          type: string
+        modalidad:
+          $ref: '#/components/schemas/Modalidad'
+        agenciaNombre:
+          type: string
+          nullable: true
+        estado:
+          $ref: '#/components/schemas/EstadoPedido'
+        total:
+          $ref: './comun.yaml#/components/schemas/Monto'
+        estadoReembolso:
+          $ref: '#/components/schemas/EstadoReembolsoPedido'
+
+    AvanzarEstadoRequest:
+      type: object
+      required: [nuevoEstado, version]
+      properties:
+        nuevoEstado:
+          type: string
+          enum: [EN_PREPARACION, LISTO_DESPACHO, LISTO_RECOJO, ENTREGADO, DEVUELTO]
+        comentario:
+          type: string
+          nullable: true
+          maxLength: 300
+          description: Obligatorio en DEVUELTO (motivo).
+        dniVerificado:
+          type: boolean
+          nullable: true
+          description: Obligatorio y true en ENTREGADO de un recojo (CA-4-46).
+        version:
+          type: integer
+    CancelarStaffRequest:
+      type: object
+      required: [motivo, version]
+      properties:
+        motivo:
+          type: string
+          minLength: 3
+          maxLength: 300
+        version:
+          type: integer
+    ItemReembolso:
+      type: object
+      required: [varianteId, cantidad]
+      properties:
+        varianteId:
+          type: integer
+          format: int64
+        cantidad:
+          type: integer
+          minimum: 1
+    ReembolsoPostventaRequest:
+      type: object
+      required: [items, monto, motivo]
+      properties:
+        items:
+          type: array
+          minItems: 1
+          items:
+            $ref: '#/components/schemas/ItemReembolso'
+        monto:
+          type: number
+          multipleOf: 0.01
+          minimum: 0.01
+        motivo:
+          $ref: '#/components/schemas/MotivoReembolso'
+        nota:
+          type: string
+          nullable: true
+          maxLength: 300
+
+    VentasPeriodo:
+      type: object
+      required: [monto, cantidad]
+      properties:
+        monto:
+          $ref: './comun.yaml#/components/schemas/Monto'
+        cantidad:
+          type: integer
+    TopProducto:
+      type: object
+      required: [productoId, nombre, unidades]
+      properties:
+        productoId:
+          type: integer
+          format: int64
+        nombre:
+          type: string
+        unidades:
+          type: integer
+    ResumenVentas:
+      type: object
+      required: [hoy, semana, mes, reembolsadoMes, porEstado, topProductos, generadoEn]
+      properties:
+        hoy:
+          $ref: '#/components/schemas/VentasPeriodo'
+        semana:
+          $ref: '#/components/schemas/VentasPeriodo'
+        mes:
+          $ref: '#/components/schemas/VentasPeriodo'
+        reembolsadoMes:
+          $ref: './comun.yaml#/components/schemas/Monto'
+        porEstado:
+          $ref: './comun.yaml#/components/schemas/Contadores'
+        topProductos:
+          type: array
+          maxItems: 5
+          items:
+            $ref: '#/components/schemas/TopProducto'
+        generadoEn:
+          type: string
+          format: date-time
+
+    PaginaMisPedidos:
+      allOf:
+        - $ref: './comun.yaml#/components/schemas/PaginaMeta'
+        - type: object
+          required: [contenido]
+          properties:
+            contenido:
+              type: array
+              items:
+                $ref: '#/components/schemas/PedidoResumen'
+    PaginaPedidosAdmin:
+      allOf:
+        - $ref: './comun.yaml#/components/schemas/PaginaMeta'
+        - type: object
+          required: [contenido, contadores]
+          properties:
+            contenido:
+              type: array
+              items:
+                $ref: '#/components/schemas/PedidoAdminResumen'
+            contadores:
+              $ref: './comun.yaml#/components/schemas/Contadores'
+
+    # Respuestas envueltas (K4)
+    RespuestaCarrito:
+      allOf:
+        - $ref: './comun.yaml#/components/schemas/ApiResponse'
+        - type: object
+          properties:
+            data:
+              $ref: '#/components/schemas/Carrito'
+    RespuestaResumenCheckout:
+      allOf:
+        - $ref: './comun.yaml#/components/schemas/ApiResponse'
+        - type: object
+          properties:
+            data:
+              $ref: '#/components/schemas/ResumenCheckout'
+    RespuestaPedidoConfirmado:
+      allOf:
+        - $ref: './comun.yaml#/components/schemas/ApiResponse'
+        - type: object
+          properties:
+            data:
+              $ref: '#/components/schemas/PedidoCreado'
+    RespuestaPaginaMisPedidos:
+      allOf:
+        - $ref: './comun.yaml#/components/schemas/ApiResponse'
+        - type: object
+          properties:
+            data:
+              $ref: '#/components/schemas/PaginaMisPedidos'
+    RespuestaPedidoDetalle:
+      allOf:
+        - $ref: './comun.yaml#/components/schemas/ApiResponse'
+        - type: object
+          properties:
+            data:
+              $ref: '#/components/schemas/PedidoDetalle'
+    RespuestaPaginaPedidosAdmin:
+      allOf:
+        - $ref: './comun.yaml#/components/schemas/ApiResponse'
+        - type: object
+          properties:
+            data:
+              $ref: '#/components/schemas/PaginaPedidosAdmin'
+    RespuestaPedidoAdmin:
+      allOf:
+        - $ref: './comun.yaml#/components/schemas/ApiResponse'
+        - type: object
+          properties:
+            data:
+              $ref: '#/components/schemas/PedidoAdmin'
+    RespuestaResumenVentas:
+      allOf:
+        - $ref: './comun.yaml#/components/schemas/ApiResponse'
+        - type: object
+          properties:
+            data:
+              $ref: '#/components/schemas/ResumenVentas'
