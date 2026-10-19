@@ -1,15 +1,16 @@
 # SPEC-6 — Envíos
 
-> Versión: **v2 (borrador)** — 2026-10-19 · Estados: ✅ decidido · 🟡 propuesto · ❓ abierto
+> Versión: **v3 (aprobado)** — 2026-10-19 · Estados: ✅ decidido · 🟡 propuesto · ❓ abierto
 > **Dueña de:** `backend/delivery-service` (tarifas, cotización, agencias, repartidores, entregas) · backoffice: `features/entregas`, `features/maestros-envio`.
 > **Depende de:** 0a, 0b, 1 (sesión de staff) · usa el evento `PedidoListoDespacho` de order y `/ubigeo` de settings (en el frontend) · **Habilita:** 4 (cotización y opciones de envío en el checkout; el pedido pasa a `ENVIADO` y `ENTREGADO`), 7 (correos de la entrega), 8 (entregas del día en el dashboard).
 > **Contratos:** `contracts/openapi/delivery-service.yaml`; evento que publica `EntregaActualizada`; consume `PedidoListoDespacho`.
 
 **Historial:**
+- v3 (2026-10-19): revisada por el autor → **spec aprobada**.
 - v2 (2026-10-19): **devolución a tienda** (estado final `DEVUELTA`, CA-6-33 y 34; order pasa el pedido a `DEVUELTO` y permite reembolsar); E2 ✅ selector de ubigeo con nivel agregado a la SPEC-0b (v5). Cambios propagados: macro v21, micros de delivery v6, order v7, payment v7 y notification v7 (correo C14), SPEC-4 v6, SPEC-5 v5.
 - v1 (2026-10-18): borrador inicial.
 
-**Estado de revisión por sección:** 1 ⏳ · 2 ⏳ · 3 ⏳ · 4 ⏳ · 5 ⏳ · 6 ⏳ · 7 ⏳ · 8 ⏳ · 9 ⏳
+**Estado de revisión por sección:** 1 ✅ · 2 ✅ · 3 ✅ · 4 ✅ · 5 ✅ · 6 ✅ · 7 ✅ · 8 ✅ · 9 ✅
 
 ---
 
