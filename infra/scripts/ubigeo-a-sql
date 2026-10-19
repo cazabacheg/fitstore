@@ -1,0 +1,135 @@
+#!/usr/bin/env python3
+"""Genera la migración V2__ubigeo_inei.sql de settings-service desde el CSV del INEI (SPEC-0a sección 6).
+
+La salida es determinista (sin fechas, ordenada por código) para poder regenerarla y comparar con `git diff`.
+
+Formato esperado del CSV (la primera fila es el encabezado; las columnas se buscan por nombre, sin importar
+mayúsculas, tildes ni el orden; el delimitador `,`, `;`, tabulador o `|` se detecta solo):
+
+    UBIGEO,DEPARTAMENTO,PROVINCIA,DISTRITO
+    150122,Lima,Lima,Miraflores
+
+UBIGEO es el código INEI de 6 dígitos (2 departamento + 2 provincia + 2 distrito). Los códigos de departamento
+(2 dígitos) y de provincia (4 dígitos) se derivan de él; los nombres de cada nivel deben ser coherentes en
+todas las filas que lo comparten.
+
+Uso:
+    infra/scripts/ubigeo-a-sql ENTRADA.csv [--salida backend/settings-service/src/main/resources/db/migration/V2__ubigeo_inei.sql]
+                                           [--codificacion utf-8]
+Sin --salida escribe en la salida estándar. Termina con código distinto de 0 y un mensaje en la salida de
+errores si el CSV es inválido.
+"""
+import argparse
+import csv
+import io
+import pathlib
+import re
+import sys
+import unicodedata
+
+COLUMNAS = ("ubigeo", "departamento", "provincia", "distrito")
+
+
+class CsvInvalido(Exception):
+    pass
+
+
+def normalizar(texto):
+    sin_tildes = unicodedata.normalize("NFD", texto)
+    sin_tildes = "".join(c for c in sin_tildes if unicodedata.category(c) != "Mn")
+    return sin_tildes.strip().lower()
+
+
+def leer(ruta, codificacion):
+    try:
+        texto = pathlib.Path(ruta).read_text(encoding=codificacion)
+    except FileNotFoundError:
+        raise CsvInvalido(f"No existe el archivo: {ruta}")
+    except UnicodeDecodeError as error:
+        raise CsvInvalido(f"No se pudo leer {ruta} como {codificacion}: {error}")
+    texto = texto.lstrip("﻿")
+    if not texto.strip():
+        raise CsvInvalido("El CSV está vacío")
+    try:
+        dialecto = csv.Sniffer().sniff(texto.splitlines()[0], delimiters=",;\t|")
+    except csv.Error:
+        dialecto = csv.excel
+    filas = list(csv.reader(io.StringIO(texto), dialecto))
+    encabezado = [normalizar(c) for c in filas[0]]
+    faltan = [c for c in COLUMNAS if c not in encabezado]
+    if faltan:
+        raise CsvInvalido("Faltan columnas: " + ", ".join(c.upper() for c in faltan)
+                          + f" (encabezado encontrado: {', '.join(filas[0])})")
+    posicion = {c: encabezado.index(c) for c in COLUMNAS}
+    return [(numero, fila, posicion) for numero, fila in enumerate(filas[1:], start=2) if any(x.strip() for x in fila)]
+
+
+def construir(filas):
+    departamentos, provincias, distritos = {}, {}, {}
+    for numero, fila, pos in filas:
+        try:
+            ubigeo, departamento, provincia, distrito = (fila[pos[c]].strip() for c in COLUMNAS)
+        except IndexError:
+            raise CsvInvalido(f"Línea {numero}: faltan columnas")
+        if not re.fullmatch(r"[0-9]{6}", ubigeo):
+            raise CsvInvalido(f"Línea {numero}: el ubigeo '{ubigeo}' no tiene 6 dígitos")
+        if not (departamento and provincia and distrito):
+            raise CsvInvalido(f"Línea {numero}: el ubigeo {ubigeo} tiene un nombre vacío")
+        if ubigeo in distritos:
+            raise CsvInvalido(f"Línea {numero}: el ubigeo {ubigeo} está repetido")
+        cod_dep, cod_prov = ubigeo[:2], ubigeo[:4]
+        for tabla, codigo, nombre, nivel in ((departamentos, cod_dep, departamento, "departamento"),
+                                             (provincias, cod_prov, provincia, "provincia")):
+            if tabla.setdefault(codigo, nombre) != nombre:
+                raise CsvInvalido(f"Línea {numero}: el {nivel} {codigo} aparece como '{tabla[codigo]}' y como '{nombre}'")
+        distritos[ubigeo] = (cod_prov, distrito)
+    if not distritos:
+        raise CsvInvalido("El CSV no tiene filas de datos")
+    return departamentos, provincias, distritos
+
+
+def literal(texto):
+    return "'" + texto.replace("'", "''") + "'"
+
+
+def generar(entrada, departamentos, provincias, distritos):
+    sql = [
+        "-- GENERADO por infra/scripts/ubigeo-a-sql desde " + pathlib.Path(entrada).name + ". No editar a mano:",
+        "-- para actualizar el ubigeo, regenerar este archivo (o agregar una migración nueva).",
+        "-- Codificación del INEI: departamento (2), provincia (4) y distrito (6 dígitos).",
+        f"-- departamentos: {len(departamentos)}, provincias: {len(provincias)}, distritos: {len(distritos)}",
+        "",
+        "INSERT INTO departamento (codigo, nombre) VALUES",
+        ",\n".join(f"    ({literal(c)}, {literal(n)})" for c, n in sorted(departamentos.items())) + ";",
+        "",
+        "INSERT INTO provincia (codigo, departamento_codigo, nombre) VALUES",
+        ",\n".join(f"    ({literal(c)}, {literal(c[:2])}, {literal(n)})" for c, n in sorted(provincias.items())) + ";",
+        "",
+        "INSERT INTO distrito (codigo, provincia_codigo, nombre) VALUES",
+        ",\n".join(f"    ({literal(c)}, {literal(p)}, {literal(n)})" for c, (p, n) in sorted(distritos.items())) + ";",
+        "",
+    ]
+    return "\n".join(sql)
+
+
+def main(argumentos):
+    analizador = argparse.ArgumentParser(description="Convierte el CSV de ubigeo del INEI en la migración V2 de settings.")
+    analizador.add_argument("entrada", help="CSV del INEI (UBIGEO, DEPARTAMENTO, PROVINCIA, DISTRITO)")
+    analizador.add_argument("--salida", help="archivo SQL de salida (por defecto, la salida estándar)")
+    analizador.add_argument("--codificacion", default="utf-8", help="codificación del CSV (por defecto utf-8)")
+    opciones = analizador.parse_args(argumentos)
+    try:
+        departamentos, provincias, distritos = construir(leer(opciones.entrada, opciones.codificacion))
+    except CsvInvalido as error:
+        print(f"ubigeo-a-sql: {error}", file=sys.stderr)
+        return 1
+    sql = generar(opciones.entrada, departamentos, provincias, distritos)
+    if opciones.salida:
+        pathlib.Path(opciones.salida).write_text(sql, encoding="utf-8", newline="\n")
+    else:
+        sys.stdout.buffer.write(sql.encode("utf-8"))
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main(sys.argv[1:]))
