@@ -28,3 +28,4 @@ infra/config-repo/application.yml
 infra/config-repo/config-server*.yml
 infra/config-repo/discovery-server*.yml
 infra/config-repo/api-gateway*.yml
+.dockerignore
