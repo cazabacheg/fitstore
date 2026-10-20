@@ -34,7 +34,11 @@ describe('Paginador de ui/', () => {
 
   it('CA-0b-25 anterior y siguiente respetan los extremos', async () => {
     const { el } = await montar(FsPaginador, { pagina: 0, totalPaginas: 3 });
-    expect((el.querySelector('[aria-label="Página anterior"]') as HTMLButtonElement).disabled).toBe(true);
-    expect((el.querySelector('[aria-label="Página siguiente"]') as HTMLButtonElement).disabled).toBe(false);
+    expect((el.querySelector('[aria-label="Página anterior"]') as HTMLButtonElement).disabled).toBe(
+      true,
+    );
+    expect(
+      (el.querySelector('[aria-label="Página siguiente"]') as HTMLButtonElement).disabled,
+    ).toBe(false);
   });
 });

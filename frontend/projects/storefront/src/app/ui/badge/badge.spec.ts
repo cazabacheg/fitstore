@@ -7,10 +7,11 @@ describe('Badge de ui/', () => {
     expect(el.querySelector('.fs-insignia')!.className.trim()).toBe('fs-insignia');
   });
 
-  it('CA-0b-25 cada variante usa su clase semántica', async () => {
-    for (const v of ['exito', 'aviso', 'error', 'info', 'marca', 'acento']) {
+  it.each(['exito', 'aviso', 'error', 'info', 'marca', 'acento'])(
+    'CA-0b-25 la variante %s usa su clase semántica',
+    async (v) => {
       const { el } = await montar(FsBadge, { variante: v });
       expect(el.querySelector('.fs-insignia')!.classList).toContain(`fs-insignia--${v}`);
-    }
-  });
+    },
+  );
 });

@@ -17,26 +17,29 @@ describe('Toast de ui/', () => {
   });
 
   it('CA-0b-13 los de éxito e información son role=status y se van a los 5 s', async () => {
-    vi.useFakeTimers();
-    const { el, estabilizar } = await montar(FsToast);
+    const { fixture, el } = await montar(FsToast);
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
     TestBed.inject(ToastService).mostrar('exito', 'Guardado');
-    await estabilizar();
+    fixture.detectChanges();
     expect(el.querySelector('.fs-aviso')!.getAttribute('role')).toBe('status');
-    vi.advanceTimersByTime(5000);
-    await estabilizar();
+    vi.advanceTimersByTime(4999);
+    fixture.detectChanges();
+    expect(el.querySelector('.fs-aviso')).not.toBeNull();
+    vi.advanceTimersByTime(1);
+    fixture.detectChanges();
     expect(el.querySelector('.fs-aviso')).toBeNull();
   });
 
   it('CA-0b-13 los de error se quedan hasta cerrarlos', async () => {
-    vi.useFakeTimers();
-    const { el, estabilizar } = await montar(FsToast);
+    const { fixture, el } = await montar(FsToast);
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
     TestBed.inject(ToastService).mostrar('error', 'Sin conexión');
-    await estabilizar();
+    fixture.detectChanges();
     vi.advanceTimersByTime(60000);
-    await estabilizar();
+    fixture.detectChanges();
     expect(el.querySelector('.fs-aviso')).not.toBeNull();
     (el.querySelector('.fs-aviso button') as HTMLButtonElement).click();
-    await estabilizar();
+    fixture.detectChanges();
     expect(el.querySelector('.fs-aviso')).toBeNull();
   });
 

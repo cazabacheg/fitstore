@@ -23,7 +23,10 @@ describe('Select de ui/', () => {
   });
 
   it('CA-0b-25 elegir una opción actualiza el valor', async () => {
-    const { el, comp, estabilizar } = await montar(FsSelect, { etiqueta: 'Talla', opciones: OPCIONES });
+    const { el, comp, estabilizar } = await montar(FsSelect, {
+      etiqueta: 'Talla',
+      opciones: OPCIONES,
+    });
     const select = el.querySelector('select')!;
     select.value = 'M';
     select.dispatchEvent(new Event('change'));
@@ -32,7 +35,11 @@ describe('Select de ui/', () => {
   });
 
   it('CA-0b-25 con error lo marca y lo enlaza', async () => {
-    const { el } = await montar(FsSelect, { etiqueta: 'Talla', opciones: OPCIONES, error: 'Elige una talla' });
+    const { el } = await montar(FsSelect, {
+      etiqueta: 'Talla',
+      opciones: OPCIONES,
+      error: 'Elige una talla',
+    });
     const select = el.querySelector('select')!;
     expect(select.getAttribute('aria-invalid')).toBe('true');
     expect(select.getAttribute('aria-describedby')).toBe(el.querySelector('.fs-campo__error')!.id);

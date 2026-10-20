@@ -9,10 +9,15 @@ describe('Diálogo de ui/', () => {
   });
 
   it('CA-0b-25 abierto es modal, tiene título accesible y Esc lo cierra', async () => {
-    const { el, comp, estabilizar } = await montar(FsDialogo, { titulo: 'Nueva dirección', abierto: true });
+    const { el, comp, estabilizar } = await montar(FsDialogo, {
+      titulo: 'Nueva dirección',
+      abierto: true,
+    });
     const d = el.querySelector('[role="dialog"]')!;
     expect(d.getAttribute('aria-modal')).toBe('true');
-    expect(document.getElementById(d.getAttribute('aria-labelledby')!)!.textContent).toContain('Nueva dirección');
+    expect(el.querySelector('#' + d.getAttribute('aria-labelledby'))!.textContent).toContain(
+      'Nueva dirección',
+    );
     const cierres: number[] = [];
     comp.cerrado.subscribe(() => cierres.push(1));
     d.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
@@ -38,7 +43,7 @@ describe('Diálogo de confirmación', () => {
   const entradas = {
     titulo: '¿Cancelar el pedido FS-000124?',
     texto: 'Esta acción no se puede deshacer.',
-    confirmar: 'Cancelar pedido',
+    textoConfirmar: 'Cancelar pedido',
     peligro: true,
     abierto: true,
   };

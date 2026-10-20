@@ -20,14 +20,19 @@ export const SESION_STAFF: authApi.Sesion = {
   cuenta: { ...SESION_CLIENTE.cuenta, tipo: 'STAFF', rol: 'ADMIN', email: 'admin@fitstore.pe' },
 };
 
-import { Provider, Type, provideZonelessChangeDetection } from '@angular/core';
+import {
+  EnvironmentProviders,
+  Provider,
+  Type,
+  provideZonelessChangeDetection,
+} from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 
 /** Monta un componente sin zona con sus entradas y espera a que se estabilice. */
 export async function montar<T>(
   tipo: Type<T>,
   entradas: Record<string, unknown> = {},
-  proveedores: Provider[] = [],
+  proveedores: (Provider | EnvironmentProviders)[] = [],
 ) {
   TestBed.configureTestingModule({
     providers: [provideZonelessChangeDetection(), ...proveedores],

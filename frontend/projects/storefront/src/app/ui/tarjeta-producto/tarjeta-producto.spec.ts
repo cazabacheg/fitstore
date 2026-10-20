@@ -30,11 +30,9 @@ describe('Tarjeta de producto de ui/', () => {
   });
 
   it('CA-0b-25 agotado atenúa la imagen y dice "Agotado"', async () => {
-    const { el } = await montar(
-      FsTarjetaProducto,
-      { producto: { ...PRODUCTO, agotado: true } },
-      [provideRouter([])],
-    );
+    const { el } = await montar(FsTarjetaProducto, { producto: { ...PRODUCTO, agotado: true } }, [
+      provideRouter([]),
+    ]);
     expect(el.querySelector('a')!.classList).toContain('fs-tarjeta-producto--agotado');
     expect(el.textContent).toContain('Agotado');
   });

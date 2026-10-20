@@ -91,7 +91,9 @@ describe('Selector de ubigeo de ui/', () => {
     const u = await iniciar({ hasta: 'provincia' });
     await u.responder('/api/v1/ubigeo/departamentos', DEPARTAMENTOS);
     await u.elegir(0, '04');
-    await u.responder('/api/v1/ubigeo/departamentos/04/provincias', [{ codigo: '0401', nombre: 'Arequipa' }]);
+    await u.responder('/api/v1/ubigeo/departamentos/04/provincias', [
+      { codigo: '0401', nombre: 'Arequipa' },
+    ]);
     expect(u.selects()).toHaveLength(2);
     await u.elegir(1, '0401');
     expect(u.emitidos.at(-1)).toBe('0401');
@@ -113,7 +115,9 @@ describe('Selector de ubigeo de ui/', () => {
     await u.estabilizar();
     const peticion = u.ctrl.expectOne((r) => r.url === '/api/v1/ubigeo/distritos');
     expect(peticion.request.params.get('q')).toBe('miraf');
-    peticion.flush(ok([{ codigo: '150122', nombre: 'Miraflores', provincia: 'Lima', departamento: 'Lima' }]));
+    peticion.flush(
+      ok([{ codigo: '150122', nombre: 'Miraflores', provincia: 'Lima', departamento: 'Lima' }]),
+    );
     await u.estabilizar();
     const resultado = u.el.querySelector('[role="option"]') as HTMLElement;
     expect(resultado.textContent).toContain('Miraflores');

@@ -1,4 +1,6 @@
-import estilos from '../styles.css?raw';
+import { readFileSync } from 'node:fs';
+
+const estilos = readFileSync(`${process.cwd()}/projects/storefront/src/styles.css`, 'utf8');
 
 describe('Tema de Tailwind de la tienda', () => {
   it('CA-0b-05 el @theme toma los colores de marca de las variables de settings', () => {
@@ -25,7 +27,9 @@ describe('Tema de Tailwind de la tienda', () => {
 
   it('CA-0b-05 los botones usan el color primario de la marca y no un color literal', () => {
     expect(estilos).toMatch(/\.fs-btn--primario\s*\{[^}]*var\(--fs-color-primario\)/);
-    const sinTokens = estilos.split('\n').filter((l: string) => !l.includes('@import') && /#[0-9a-fA-F]{3,6}\b/.test(l));
+    const sinTokens = estilos
+      .split('\n')
+      .filter((l: string) => !l.includes('@import') && /#[0-9a-fA-F]{3,6}\b/.test(l));
     expect(sinTokens).toEqual([]);
   });
 });
