@@ -1,0 +1,25 @@
+# Falsos positivos de gitleaks excluidos por huella exacta (commit:archivo:regla:línea), decisión del autor (SPEC-0a CA-0a-18).
+# Ninguno es un secreto real: son valores de desarrollo o de prueba, o ejemplos de contrato. No se excluye ninguna ruta completa,
+# así que un secreto nuevo en estos mismos archivos sí se detecta.
+
+# infra/.env.example (commits f669713 y 25991c8): S3_SECRET_KEY de desarrollo local (valor de relleno 0123456789abcdef…); sirve solo para que el compose de dev arranque.
+f6697136a385d0ba1e852f1abc36bfe9ec83aca0:infra/.env.example:generic-api-key:38
+25991c8670abd7005622b22822657735a041bd24:infra/.env.example:generic-api-key:38
+
+# infra/.env.example (commits f669713 y 25991c8): GARAGE_RPC_SECRET de desarrollo local (valor de relleno fedcba9876543210…); solo dev, nunca la nube.
+f6697136a385d0ba1e852f1abc36bfe9ec83aca0:infra/.env.example:generic-api-key:41
+25991c8670abd7005622b22822657735a041bd24:infra/.env.example:generic-api-key:41
+
+# GarageDePrueba.java (commits f669713 y 3abf18b): ACCESS_KEY de prueba para el Garage de Testcontainers (GK0123456789abcdef…); contenedor efímero de las pruebas.
+f6697136a385d0ba1e852f1abc36bfe9ec83aca0:backend/fitstore-common/src/test/java/com/fitstore/common/storage/GarageDePrueba.java:generic-api-key:21
+3abf18b8ea7f4af3fb4fd8beefee4145709b834c:backend/fitstore-common/src/test/java/com/fitstore/common/storage/GarageDePrueba.java:generic-api-key:21
+
+# GarageDePrueba.java (commits f669713 y 3abf18b): SECRET_KEY de prueba para el Garage de Testcontainers (0123456789abcdef…); contenedor efímero de las pruebas.
+f6697136a385d0ba1e852f1abc36bfe9ec83aca0:backend/fitstore-common/src/test/java/com/fitstore/common/storage/GarageDePrueba.java:generic-api-key:22
+3abf18b8ea7f4af3fb4fd8beefee4145709b834c:backend/fitstore-common/src/test/java/com/fitstore/common/storage/GarageDePrueba.java:generic-api-key:22
+
+# contracts/openapi/payment-service.yaml (commit 2150f97), línea 99: ejemplo de contrato (token: tkn_test_9aB3cD4eF5), un token de pasarela ficticio de la documentación.
+2150f97c983f47575a0229fda1895e3e918504da:contracts/openapi/payment-service.yaml:generic-api-key:99
+
+# contracts/openapi/auth-service.yaml (commit 2150f97), línea 967: ejemplo de contrato (accessToken: eyJhbGciOi….firma), un JWT ficticio con la firma literal "firma".
+2150f97c983f47575a0229fda1895e3e918504da:contracts/openapi/auth-service.yaml:generic-api-key:967

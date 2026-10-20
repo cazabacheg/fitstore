@@ -1,0 +1,135 @@
+# CI de integración diaria (ADR-021): PR y push a dev. SPEC-0a HU-0a-06.
+# El job de frontend lo agrega 0b; el despliegue es de deploy.yml (spec 8).
+name: ci
+
+on:
+  pull_request:
+    branches: [dev]
+  push:
+    branches: [dev]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # CA-0a-20 Filtros por ruta: decide qué módulos compilar según los archivos que cambiaron.
+  # Cambios en fitstore-common, pom.xml, mvnw, .mvn o ci.yml => todos los módulos; si no, solo los módulos cambiados
+  # (con -am, que arrastra fitstore-common); si solo cambió documentación u otras carpetas => no compila.
+  cambios:
+    runs-on: ubuntu-latest
+    outputs:
+      compilar: ${{ steps.filtro.outputs.compilar }}
+      modulos: ${{ steps.filtro.outputs.modulos }}
+    steps:
+      - uses: actions/checkout@v7.0.1
+        with:
+          fetch-depth: 0
+      - id: filtro
+        env:
+          EVENTO: ${{ github.event_name }}
+          BASE_PR: ${{ github.base_ref }}
+          ANTES_PUSH: ${{ github.event.before }}
+        run: |
+          # CA-0a-20
+          set -euo pipefail
+          if [[ "$EVENTO" == "pull_request" ]]; then
+            archivos="$(git diff --name-only "origin/${BASE_PR}...HEAD")"
+          elif [[ "$ANTES_PUSH" =~ ^0+$ ]] || ! git cat-file -e "$ANTES_PUSH^{commit}" 2>/dev/null; then
+            archivos="pom.xml"   # sin punto de comparación (primer push o rama nueva): se compila todo
+          else
+            archivos="$(git diff --name-only "$ANTES_PUSH" HEAD)"
+          fi
+          echo "Archivos cambiados:"; echo "$archivos" | sed 's/^/  /'
+          if echo "$archivos" | grep -qE '^(pom\.xml|mvnw|mvnw\.cmd|\.mvn/|backend/fitstore-common/|\.github/workflows/ci\.yml)'; then
+            compilar=true; modulos=""
+          else
+            modulos="$(echo "$archivos" | sed -nE 's#^(backend/[^/]+)/.*#\1#p' | sort -u | paste -sd ',' -)"
+            if [[ -n "$modulos" ]]; then compilar=true; else compilar=false; fi
+          fi
+          echo "compilar=$compilar"; echo "modulos=${modulos:-todos}"
+          echo "compilar=$compilar" >> "$GITHUB_OUTPUT"
+          echo "modulos=$modulos" >> "$GITHUB_OUTPUT"
+
+  backend:
+    needs: cambios
+    if: needs.cambios.outputs.compilar == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7.0.1
+      # CA-0a-20 Caché de Maven
+      - uses: actions/setup-java@v6.0.1
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+      # CA-0a-01 Compilación y pruebas de los módulos (JaCoCo exige 80 % por módulo, CA-0a-21). Docker ya está en el runner
+      # (Testcontainers).
+      - name: Compilar y probar
+        env:
+          MODULOS: ${{ needs.cambios.outputs.modulos }}
+        run: |
+          # CA-0a-01, CA-0a-20, CA-0a-21
+          if [[ -z "$MODULOS" ]]; then
+            ./mvnw -B verify
+          else
+            ./mvnw -B verify -pl "$MODULOS" -am
+          fi
+
+  # CA-0a-18 Sin secretos: gitleaks sobre todo el historial, y .env ignorado con solo .env.example versionado.
+  secretos:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7.0.1
+        with:
+          fetch-depth: 0
+      - name: .env ignorado y solo .env.example versionado
+        run: |
+          # CA-0a-18
+          set -euo pipefail
+          git check-ignore -q infra/.env || { echo "infra/.env no está en .gitignore"; exit 1; }
+          versionados="$(git ls-files | grep -E '(^|/)\.env($|\.)' | grep -vE '(^|/)\.env\.example$' || true)"
+          if [[ -n "$versionados" ]]; then echo "Archivos .env versionados:"; echo "$versionados"; exit 1; fi
+      - name: gitleaks v8.30.1
+        run: |
+          # CA-0a-18
+          set -euo pipefail
+          curl -fsSL -o gitleaks.tar.gz https://github.com/gitleaks/gitleaks/releases/download/v8.30.1/gitleaks_8.30.1_linux_x64.tar.gz
+          echo "551f6fc83ea457d62a0d98237cbad105af8d557003051f41f3e7ca7b3f2470eb  gitleaks.tar.gz" | sha256sum -c -
+          mkdir -p "$RUNNER_TEMP/gitleaks" && tar -xzf gitleaks.tar.gz -C "$RUNNER_TEMP/gitleaks" gitleaks
+          "$RUNNER_TEMP/gitleaks/gitleaks" detect --source . --config .gitleaks.toml --no-banner --redact -v
+
+  # CA-0a-22 Contratos: Redocly y AsyncAPI CLI en cada PR; oasdiff para los servicios de implementados.txt
+  contratos:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - uses: actions/setup-node@v7.0.0
+        with:
+          node-version: '22'
+      - name: Redocly sobre los OpenAPI
+        run: |
+          # CA-0a-22
+          npx --yes @redocly/cli@2.57.0 lint --config contracts/redocly.yaml contracts/openapi/*-service.yaml
+      - name: AsyncAPI CLI sobre fitstore-eventos.yaml
+        run: |
+          # CA-0a-22
+          npx --yes @asyncapi/cli@6.2.0 validate contracts/asyncapi/fitstore-eventos.yaml
+      - uses: actions/setup-java@v6.0.1
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+      - name: oasdiff de los servicios de implementados.txt
+        run: |
+          # CA-0a-22
+          set -euo pipefail
+          servicios="$(grep -vE '^\s*(#|$)' contracts/implementados.txt || true)"
+          if [[ -z "$servicios" ]]; then echo "implementados.txt no lista servicios: no hay nada que comparar"; exit 0; fi
+          for servicio in $servicios; do
+            echo "== oasdiff: $servicio =="
+            scripts/contrato.sh "$servicio"
+          done
