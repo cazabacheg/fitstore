@@ -9,6 +9,8 @@ mayúsculas, tildes ni el orden; el delimitador `,`, `;`, tabulador o `|` se det
     UBIGEO,DEPARTAMENTO,PROVINCIA,DISTRITO
     150122,Lima,Lima,Miraflores
 
+La columna del código también puede llamarse INEI (así viene en el CSV versionado en ubigeo-a-sql-datos/);
+las columnas que sobren se ignoran.
 UBIGEO es el código INEI de 6 dígitos (2 departamento + 2 provincia + 2 distrito). Los códigos de departamento
 (2 dígitos) y de provincia (4 dígitos) se derivan de él; los nombres de cada nivel deben ser coherentes en
 todas las filas que lo comparten.
@@ -56,6 +58,8 @@ def leer(ruta, codificacion):
         dialecto = csv.excel
     filas = list(csv.reader(io.StringIO(texto), dialecto))
     encabezado = [normalizar(c) for c in filas[0]]
+    if "ubigeo" not in encabezado and "inei" in encabezado:
+        encabezado[encabezado.index("inei")] = "ubigeo"  # el CSV derivado del INEI llama "inei" a su código
     faltan = [c for c in COLUMNAS if c not in encabezado]
     if faltan:
         raise CsvInvalido("Faltan columnas: " + ", ".join(c.upper() for c in faltan)

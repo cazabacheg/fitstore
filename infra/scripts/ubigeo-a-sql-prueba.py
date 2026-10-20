@@ -15,6 +15,7 @@ AQUI = pathlib.Path(__file__).resolve().parent
 SCRIPT = AQUI / "ubigeo-a-sql"
 MUESTRA = AQUI / "ubigeo-a-sql-muestra.csv"
 DATOS = AQUI / "ubigeo-a-sql-datos" / "ubigeo_distrito.csv"
+CORRECCIONES = AQUI / "ubigeo-a-sql-datos" / "correcciones.csv"
 
 
 def ejecutar(*argumentos):
@@ -144,11 +145,26 @@ class UbigeoASqlTest(unittest.TestCase):
 
     # CA-0a-05: conteos del INEI sobre los datos versionados
     def test_datos_versionados_tienen_los_conteos_del_inei(self):
-        r = ejecutar(DATOS)
+        r = ejecutar(DATOS, "--correcciones", CORRECCIONES)
         self.assertEqual(r.returncode, 0, r.stderr)
+        self.assertIn("('180107', '1801', 'SAN ANTONIO')", r.stdout)
         self.assertIn("-- departamentos: 25, provincias: 196, distritos: 1895", r.stdout)
         self.assertIn("('150122', '1501', 'MIRAFLORES')", r.stdout)
         self.assertIn("('150115', '1501', 'LA VICTORIA')", r.stdout)
+
+    # CA-0a-05: un código faltante en la fuente se completa solo con una corrección explícita
+    def test_sin_correccion_un_codigo_faltante_se_rechaza(self):
+        r = ejecutar(DATOS)
+        self.assertNotEqual(r.returncode, 0)
+        self.assertIn("SAN ANTONIO", r.stderr)
+
+    # CA-0a-05
+    def test_aplica_la_correccion_por_nombres(self):
+        ruta = csv_temporal("inei,departamento,provincia,distrito\nNA,MOQUEGUA,MARISCAL NIETO,SAN ANTONIO\n")
+        corr = csv_temporal("departamento,provincia,distrito,inei\nMOQUEGUA,MARISCAL NIETO,SAN ANTONIO,180107\n")
+        r = ejecutar(ruta, "--correcciones", corr)
+        self.assertEqual(r.returncode, 0, r.stderr)
+        self.assertIn("('180107', '1801', 'SAN ANTONIO')", r.stdout)
 
 
 if __name__ == "__main__":
