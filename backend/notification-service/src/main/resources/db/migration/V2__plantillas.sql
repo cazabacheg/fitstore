@@ -6,7 +6,7 @@ INSERT INTO plantilla (codigo, asunto, titulo, mensaje, texto_boton, activa, obl
 
 -- Al cliente
 ('BIENVENIDA',
- 'Bienvenida a {{nombreTienda}}, {{nombre}}',
+ 'Te damos la bienvenida a {{nombreTienda}}, {{nombre}}',
  'Qué gusto tenerte con nosotros',
  E'Hola {{nombre}}, tu cuenta en {{nombreTienda}} ya está lista.\nCuando quieras, entra a la tienda y encuentra tu próxima prenda deportiva.',
  NULL, true, false, now()),
