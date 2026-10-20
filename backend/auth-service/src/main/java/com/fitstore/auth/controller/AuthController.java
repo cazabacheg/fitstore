@@ -1,10 +1,13 @@
 package com.fitstore.auth.controller;
 
+import com.fitstore.auth.dto.request.LoginRequest;
 import com.fitstore.auth.dto.request.RegistroRequest;
 import com.fitstore.auth.dto.response.SesionResponse;
+import com.fitstore.auth.model.TipoCuenta;
 import com.fitstore.auth.security.CookieRefresh;
-import com.fitstore.auth.service.RegistroService;
 import com.fitstore.auth.security.SesionEmitida;
+import com.fitstore.auth.service.AutenticacionService;
+import com.fitstore.auth.service.RegistroService;
 import com.fitstore.common.api.ApiResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import jakarta.servlet.http.HttpServletRequest;
@@ -23,10 +26,12 @@ import org.springframework.web.bind.annotation.RestController;
 public class AuthController {
 
     private final RegistroService registro;
+    private final AutenticacionService autenticacion;
     private final CookieRefresh cookie;
 
-    public AuthController(RegistroService registro, CookieRefresh cookie) {
+    public AuthController(RegistroService registro, AutenticacionService autenticacion, CookieRefresh cookie) {
         this.registro = registro;
+        this.autenticacion = autenticacion;
         this.cookie = cookie;
     }
 
@@ -39,6 +44,39 @@ public class AuthController {
                 .header(HttpHeaders.LOCATION, "/api/v1/clientes/me")
                 .header(HttpHeaders.SET_COOKIE, cookie.crear(sesion.tokens()))
                 .body(ApiResponse.ok("Cuenta creada", SesionResponse.de(sesion)));
+    }
+
+    @PostMapping("/login")
+    @Operation(operationId = "loginCliente", summary = "Iniciar sesión como cliente (tienda)")
+    public ResponseEntity<ApiResponse<SesionResponse>> login(@Valid @RequestBody LoginRequest solicitud) {
+        return sesion(autenticacion.iniciarSesion(TipoCuenta.CLIENTE, solicitud.email(), solicitud.password()));
+    }
+
+    @PostMapping("/staff/login")
+    @Operation(operationId = "loginStaff", summary = "Iniciar sesión como staff (backoffice)")
+    public ResponseEntity<ApiResponse<SesionResponse>> loginStaff(@Valid @RequestBody LoginRequest solicitud) {
+        return sesion(autenticacion.iniciarSesion(TipoCuenta.STAFF, solicitud.email(), solicitud.password()));
+    }
+
+    @PostMapping("/refresh")
+    @Operation(operationId = "refrescarSesion", summary = "Renovar el access token")
+    public ResponseEntity<ApiResponse<SesionResponse>> refrescar(HttpServletRequest peticion) {
+        return sesion(autenticacion.refrescar(cookie.leer(peticion)));
+    }
+
+    @PostMapping("/logout")
+    @Operation(operationId = "cerrarSesion", summary = "Cerrar la sesión")
+    public ResponseEntity<ApiResponse<Void>> cerrarSesion(HttpServletRequest peticion) {
+        autenticacion.cerrarSesion(cookie.leer(peticion));
+        return ResponseEntity.ok()
+                .header(HttpHeaders.SET_COOKIE, cookie.borrar())
+                .body(ApiResponse.ok("Sesión cerrada"));
+    }
+
+    private ResponseEntity<ApiResponse<SesionResponse>> sesion(SesionEmitida sesion) {
+        return ResponseEntity.ok()
+                .header(HttpHeaders.SET_COOKIE, cookie.crear(sesion.tokens()))
+                .body(ApiResponse.ok("Sesión iniciada", SesionResponse.de(sesion)));
     }
 
     /** IP del cliente: la primera de {@code X-Forwarded-For} (la pone el gateway) o la del socket. Máximo 45 caracteres. */

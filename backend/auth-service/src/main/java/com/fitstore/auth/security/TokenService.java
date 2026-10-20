@@ -1,16 +1,27 @@
 package com.fitstore.auth.security;
 
 import com.fitstore.auth.config.PropiedadesAuth;
+import com.fitstore.auth.exception.SesionInvalidaException;
 import com.fitstore.auth.model.Cuenta;
+import com.fitstore.auth.model.TipoCuenta;
 import java.time.Clock;
+import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.UUID;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.security.oauth2.core.DelegatingOAuth2TokenValidator;
 import org.springframework.security.oauth2.jose.jws.SignatureAlgorithm;
-import org.springframework.security.oauth2.jwt.JwsHeader;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.jwt.JwtClaimsSet;
 import org.springframework.security.oauth2.jwt.JwtEncoder;
 import org.springframework.security.oauth2.jwt.JwtEncoderParameters;
+import org.springframework.security.oauth2.jwt.JwtException;
+import org.springframework.security.oauth2.jwt.JwtIssuerValidator;
+import org.springframework.security.oauth2.jwt.JwtTimestampValidator;
+import org.springframework.security.oauth2.jwt.JwsHeader;
+import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
 import org.springframework.stereotype.Service;
 
 /**
@@ -19,6 +30,8 @@ import org.springframework.stereotype.Service;
  */
 @Service
 public class TokenService {
+
+    private static final Logger LOG = LoggerFactory.getLogger(TokenService.class);
 
     /** Claim que distingue al refresh token del access token. */
     static final String CLAIM_TIPO_TOKEN = "typ";
@@ -30,6 +43,9 @@ public class TokenService {
     private final String kid;
     private final PropiedadesAuth propiedades;
     private final Clock reloj;
+    private final NimbusJwtDecoder decoder;
+    private final RegistroRefreshRevocados revocados;
+    private final CuentaLookup cuentas;
 
     public TokenService(ProveedorClavesRsa claves, PropiedadesAuth propiedades, Clock reloj,
             RegistroRefreshRevocados revocados, CuentaLookup cuentas) {
@@ -37,16 +53,73 @@ public class TokenService {
         this.kid = claves.kid();
         this.propiedades = propiedades;
         this.reloj = reloj;
+        this.revocados = revocados;
+        this.cuentas = cuentas;
+        this.decoder = claves.jwtDecoder();
+        JwtTimestampValidator vigencia = new JwtTimestampValidator(Duration.ZERO);
+        vigencia.setClock(reloj);
+        this.decoder.setJwtValidator(new DelegatingOAuth2TokenValidator<>(vigencia, new JwtIssuerValidator(propiedades.issuer())));
     }
 
-    /** Valida el refresh token, lo revoca (rotación) y emite un par nuevo. */
+    /**
+     * Refresco (micro 10.2): verifica firma y vigencia y exige {@code typ = refresh}; un {@code jti} ya revocado es un
+     * posible robo; la cuenta debe existir, estar activa y no haber cambiado sus credenciales después de emitirse el
+     * token. Revoca el {@code jti} usado y emite un par nuevo (rotación).
+     */
     public SesionEmitida refrescar(String refreshToken) {
-        throw new UnsupportedOperationException("pendiente");
+        Jwt jwt = decodificarRefresh(refreshToken);
+        if (revocados.estaRevocado(jwt.getId())) {
+            LOG.warn("Posible robo de sesión: se usó un refresh token ya revocado (cuenta {}, jti {})", jwt.getSubject(), jwt.getId());
+            throw new SesionInvalidaException();
+        }
+        Cuenta cuenta = buscarCuenta(jwt);
+        Long marca = jwt.getClaim(CLAIM_CREDENCIALES);
+        if (!cuenta.isActivo() || marca == null || marca < cuenta.getCredencialesActualizadasEn().toEpochMilli()) {
+            throw new SesionInvalidaException();
+        }
+        if (!revocados.revocar(jwt.getId(), vidaRestante(jwt))) {
+            LOG.warn("Posible robo de sesión: dos usos simultáneos del refresh token {} (cuenta {})", jwt.getId(), jwt.getSubject());
+            throw new SesionInvalidaException();
+        }
+        return new SesionEmitida(cuenta, emitir(cuenta));
     }
 
-    /** Revoca el refresh token (logout). */
+    /** Revoca el refresh token (logout). Si ya no es válido no hace nada. */
     public void revocar(String refreshToken) {
-        throw new UnsupportedOperationException("pendiente");
+        try {
+            Jwt jwt = decodificarRefresh(refreshToken);
+            revocados.revocar(jwt.getId(), vidaRestante(jwt));
+        } catch (SesionInvalidaException e) {
+            LOG.debug("Logout con un refresh token que ya no es válido");
+        }
+    }
+
+    private Jwt decodificarRefresh(String refreshToken) {
+        if (refreshToken == null || refreshToken.isBlank()) {
+            throw new SesionInvalidaException();
+        }
+        try {
+            Jwt jwt = decoder.decode(refreshToken);
+            if (!VALOR_REFRESH.equals(jwt.getClaimAsString(CLAIM_TIPO_TOKEN)) || jwt.getId() == null) {
+                throw new SesionInvalidaException();
+            }
+            return jwt;
+        } catch (JwtException | IllegalArgumentException e) {
+            throw new SesionInvalidaException();
+        }
+    }
+
+    private Cuenta buscarCuenta(Jwt jwt) {
+        try {
+            TipoCuenta tipo = TipoCuenta.valueOf(jwt.getClaimAsString("tipo"));
+            return cuentas.buscar(tipo, UUID.fromString(jwt.getSubject())).orElseThrow(SesionInvalidaException::new);
+        } catch (IllegalArgumentException | NullPointerException e) {
+            throw new SesionInvalidaException();
+        }
+    }
+
+    private Duration vidaRestante(Jwt jwt) {
+        return Duration.between(reloj.instant(), jwt.getExpiresAt());
     }
 
     /** Emite un par nuevo de tokens para la cuenta. */
