@@ -21,6 +21,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
 
 /** CA-0a-06: capa de datos del carrito, con Redis en Testcontainers (micro 3.2: hash por carrito, TTL, fusión). */
@@ -34,6 +35,7 @@ import org.springframework.test.context.ContextConfiguration;
     "fitstore.order.expirador-cron=0 * * * * *",
     "fitstore.order.defaults.expiracion-pedido-minutos=30"
 })
+@ActiveProfiles("sin-config-server")
 @ContextConfiguration(initializers = EntornoPrueba.class)
 class CarritoRepositoryTest {
 
