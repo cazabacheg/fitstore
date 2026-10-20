@@ -1,0 +1,248 @@
+{
+  "info": {
+    "name": "FitStore - Base (SPEC-0a)",
+    "description": "Salud de la plataforma a través del gateway: /actuator/health del gateway y /<servicio>/v3/api-docs de los 7 servicios (prueba que cada servicio está arriba, registrado y enrutado). Cada spec agrega su colección.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "CA-0a-02 Gateway: GET /actuator/health",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('CA-0a-02 el gateway responde 200', function () { pm.response.to.have.status(200); });",
+              "pm.test('CA-0a-02 el estado del gateway es UP', function () { pm.expect(pm.response.json().status).to.eql('UP'); });"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/actuator/health",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "actuator",
+            "health"
+          ]
+        }
+      }
+    },
+    {
+      "name": "CA-0a-17 auth-service: GET /auth-service/v3/api-docs",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('CA-0a-17 auth-service responde 200 a través del gateway', function () { pm.response.to.have.status(200); });",
+              "pm.test('CA-0a-17 auth-service entrega un OpenAPI 3.0', function () { pm.expect(pm.response.json().openapi).to.match(/^3\\.0/); });"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/auth-service/v3/api-docs",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "auth-service",
+            "v3",
+            "api-docs"
+          ]
+        }
+      }
+    },
+    {
+      "name": "CA-0a-17 catalog-service: GET /catalog-service/v3/api-docs",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('CA-0a-17 catalog-service responde 200 a través del gateway', function () { pm.response.to.have.status(200); });",
+              "pm.test('CA-0a-17 catalog-service entrega un OpenAPI 3.0', function () { pm.expect(pm.response.json().openapi).to.match(/^3\\.0/); });"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/catalog-service/v3/api-docs",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "catalog-service",
+            "v3",
+            "api-docs"
+          ]
+        }
+      }
+    },
+    {
+      "name": "CA-0a-17 order-service: GET /order-service/v3/api-docs",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('CA-0a-17 order-service responde 200 a través del gateway', function () { pm.response.to.have.status(200); });",
+              "pm.test('CA-0a-17 order-service entrega un OpenAPI 3.0', function () { pm.expect(pm.response.json().openapi).to.match(/^3\\.0/); });"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/order-service/v3/api-docs",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "order-service",
+            "v3",
+            "api-docs"
+          ]
+        }
+      }
+    },
+    {
+      "name": "CA-0a-17 payment-service: GET /payment-service/v3/api-docs",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('CA-0a-17 payment-service responde 200 a través del gateway', function () { pm.response.to.have.status(200); });",
+              "pm.test('CA-0a-17 payment-service entrega un OpenAPI 3.0', function () { pm.expect(pm.response.json().openapi).to.match(/^3\\.0/); });"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/payment-service/v3/api-docs",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "payment-service",
+            "v3",
+            "api-docs"
+          ]
+        }
+      }
+    },
+    {
+      "name": "CA-0a-17 delivery-service: GET /delivery-service/v3/api-docs",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('CA-0a-17 delivery-service responde 200 a través del gateway', function () { pm.response.to.have.status(200); });",
+              "pm.test('CA-0a-17 delivery-service entrega un OpenAPI 3.0', function () { pm.expect(pm.response.json().openapi).to.match(/^3\\.0/); });"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/delivery-service/v3/api-docs",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "delivery-service",
+            "v3",
+            "api-docs"
+          ]
+        }
+      }
+    },
+    {
+      "name": "CA-0a-17 notification-service: GET /notification-service/v3/api-docs",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('CA-0a-17 notification-service responde 200 a través del gateway', function () { pm.response.to.have.status(200); });",
+              "pm.test('CA-0a-17 notification-service entrega un OpenAPI 3.0', function () { pm.expect(pm.response.json().openapi).to.match(/^3\\.0/); });"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/notification-service/v3/api-docs",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "notification-service",
+            "v3",
+            "api-docs"
+          ]
+        }
+      }
+    },
+    {
+      "name": "CA-0a-17 settings-service: GET /settings-service/v3/api-docs",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('CA-0a-17 settings-service responde 200 a través del gateway', function () { pm.response.to.have.status(200); });",
+              "pm.test('CA-0a-17 settings-service entrega un OpenAPI 3.0', function () { pm.expect(pm.response.json().openapi).to.match(/^3\\.0/); });"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/settings-service/v3/api-docs",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "settings-service",
+            "v3",
+            "api-docs"
+          ]
+        }
+      }
+    }
+  ]
+}
