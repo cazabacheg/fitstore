@@ -1,0 +1,5 @@
+# auth-service, perfil cloud (micro auth, 10.5): todo lo de auth-service.yml es obligatorio (falla al arrancar si falta
+# alguna variable) y solo se aplican las migraciones del esquema, sin datos de demostración.
+spring:
+  flyway:
+    locations: classpath:db/migration

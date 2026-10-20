@@ -1,0 +1,32 @@
+# Propiedades de las pruebas: sustituyen a las del config-server (infra/config-repo/auth-service*.yml).
+spring:
+  cloud:
+    config:
+      enabled: false
+  jpa:
+    hibernate:
+      ddl-auto: validate
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          # Nunca se consulta: las pruebas no validan tokens. Evita que falle la creación del JwtDecoder.
+          jwk-set-uri: http://localhost:9/.well-known/jwks.json
+eureka:
+  client:
+    enabled: false
+fitstore:
+  eventos:
+    servicio: auth
+  outbox:
+    habilitado: false
+springdoc:
+  api-docs:
+    version: openapi_3_0
+management:
+  health:
+    # Las pruebas de arranque no levantan Redis ni RabbitMQ: su salud no es lo que se verifica
+    redis:
+      enabled: false
+    rabbit:
+      enabled: false

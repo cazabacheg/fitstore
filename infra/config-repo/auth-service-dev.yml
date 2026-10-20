@@ -1,0 +1,12 @@
+# auth-service, perfil dev (micro auth, 10.5): cookie sin Secure (HTTP local), claves autogeneradas si faltan,
+# logs SQL y datos de demostración (CA-0a-05: db/dev solo con los perfiles dev o demo).
+spring:
+  flyway:
+    locations: classpath:db/migration,classpath:db/dev
+  jpa:
+    show-sql: true
+
+fitstore:
+  auth:
+    cookie:
+      secure: false
