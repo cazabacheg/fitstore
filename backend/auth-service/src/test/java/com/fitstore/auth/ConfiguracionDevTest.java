@@ -18,7 +18,7 @@ import org.springframework.test.context.ContextConfiguration;
  */
 @SpringBootTest(properties = {
     "spring.config.import=file:../../infra/config-repo/auth-service.yml,file:../../infra/config-repo/auth-service-dev.yml",
-    "fitstore.outbox.habilitado=false",
+    "fitstore.outbox.intervalo-ms=3600000",
     "fitstore.auth.issuer=http://localhost:8080"
 })
 @ActiveProfiles({"sin-config-server", "dev"})
