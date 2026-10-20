@@ -40,7 +40,8 @@ Reglas que no se rompen:
 - Toca **solo** las rutas que tu brief y la sección 8 de tu spec te asignan. El lead lo verifica con `scripts/fuera-de-alcance.sh`.
 - **Congelados** (no se tocan sin aprobación del autor y PR aparte): `backend/fitstore-common`, `backend/api-gateway`, `backend/config-server`, `backend/discovery-server`, `pom.xml` padre, `infra/config-repo/application.yml`, `infra/docker-compose*.yml`, `.github/workflows/`, `frontend/projects/shared`, `ui/`, `layout/`, rutas y menús generales, `scripts/contrato.sh`.
 - **Nunca** cambies una spec, un micro, un contrato ni otro documento de `docs/` o `contracts/`. Si crees que hace falta, detente y pregunta.
-- Migraciones nuevas: `VAAAAMMDD_HHMM__descripcion.sql` (la `V1` es de 0a).
+- Migraciones nuevas: `VAAAAMMDD_HHMM__descripcion.sql` (las `V1`–`V3` son de 0a).
+- `contracts/implementados.txt` no lo tocas: el lead agrega tu servicio en tu PR al verificar el contrato (V5).
 - Clientes de API del frontend: siempre generados desde OpenAPI en `frontend/projects/shared/src/lib/api`; nunca a mano.
 
 ## 4. Cuándo detenerte y preguntar al lead

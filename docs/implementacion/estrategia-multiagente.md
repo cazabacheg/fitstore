@@ -1,9 +1,10 @@
 # FitStore — Estrategia multiagente de implementación
 
-> Versión: **v6 (aprobado)** — 2026-10-19 · Estados: ✅ decidido · 🟡 propuesto · ❓ abierto
+> Versión: **v7 (aprobado)** — 2026-10-20 · Estados: ✅ decidido · 🟡 propuesto · ❓ abierto
 > Etapa: specs ✅ → contratos ✅ → diseño ✅ → **estrategia multiagente** → implementación.
 
 **Historial:**
+- v7 (2026-10-20): por CK2, el lead agrega el servicio a `contracts/implementados.txt` al verificar V5 (los agentes no tocan `contracts/`).
 - v6 (2026-10-19): **validación del brief contra la spec** antes de lanzar cada agente (B2), tras detectar en 0a.1 criterios asignados al paso equivocado.
 - v5 (2026-10-19): **spec primero** en toda validación (V-c); **terminado = 100 % del alcance de la spec**, sin agregados ni adelantos (V0b, V11). La cobertura de 80 % es un piso de calidad, no la medida de terminado.
 - v4 (2026-10-19): **checkpoints de base** (sección 2.1): revisión exhaustiva del lead antes de arrancar agentes en paralelo (tras 0a.1 y tras 0a + 0b).
@@ -146,7 +147,7 @@ El lead pasa esta lista **en el worktree del agente, con sus propios comandos**,
 | V2 | **Las pruebas pasan** | El lead corre de nuevo los comandos de 4.2 (no copia la salida del agente) |
 | V3 | **Las pruebas prueban algo y nadie las aflojó** | Revisa una muestra de criterios por historia: que la prueba verifique el resultado del criterio (no solo que "no falle") y que exista el commit en rojo antes del de código. Busca pruebas borradas, deshabilitadas o con aserciones quitadas (`git diff dev...` sobre los archivos de prueba, `@Disabled`, `xit`, `.skip`) |
 | V4 | **Solo tocó lo suyo** | `git diff --name-only dev...` contra la sección 8 de la spec; cualquier archivo fuera de la lista es un rechazo |
-| V5 | **Contratos respetados** | `oasdiff` sin cambios incompatibles; los eventos publicados y consumidos coinciden con el AsyncAPI |
+| V5 | **Contratos respetados** | `oasdiff` sin cambios incompatibles; los eventos publicados y consumidos coinciden con el AsyncAPI. El lead agrega el servicio a `contracts/implementados.txt` en el PR, para que el CI compare su contrato desde entonces |
 | V6 | **Diseño respetado** (specs con pantallas) | Compara las pantallas clave con [`docs/diseno/`](../diseno/) con capturas de Playwright a 1280 y 390 px, y **te las muestra en el chat**; si prefieres, abres la app levantada en Lyanna en tu navegador |
 | V7 | **Higiene** | gitleaks limpio, sin secretos en `application*.yml`, commits sin atribución de IA y con autor `cazabacheg`, migraciones con el nombre convenido |
 | V8 | **CI en verde** | `ci.yml` del PR a `dev` |
