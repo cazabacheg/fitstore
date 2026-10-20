@@ -34,7 +34,12 @@ const rutasDelShell: Routes = [
   { path: '', pathMatch: 'full', loadChildren: carga.dashboard, data: datos('Dashboard') },
   { path: 'perfil', loadChildren: carga.perfil, data: datos('Mi perfil') },
   { path: 'staff', canActivate: ADMIN, loadChildren: carga.usuarios, data: datos('Staff') },
-  { path: 'clientes', canActivate: OPERADOR, loadChildren: carga.usuarios, data: datos('Clientes') },
+  {
+    path: 'clientes',
+    canActivate: OPERADOR,
+    loadChildren: carga.usuarios,
+    data: datos('Clientes'),
+  },
   {
     path: 'catalogo/productos/carga-masiva',
     canActivate: ADMIN,
@@ -65,29 +70,80 @@ const rutasDelShell: Routes = [
     loadChildren: carga.catalogo,
     data: datos('Productos', 'Catálogo', 'Productos'),
   },
-  { path: 'inventario', canActivate: OPERADOR, loadChildren: carga.inventario, data: datos('Inventario') },
+  {
+    path: 'inventario',
+    canActivate: OPERADOR,
+    loadChildren: carga.inventario,
+    data: datos('Inventario'),
+  },
   { path: 'pedidos', canActivate: OPERADOR, loadChildren: carga.pedidos, data: datos('Pedidos') },
-  { path: 'entregas/dia', canActivate: OPERADOR, loadChildren: carga.entregas, data: datos('Entregas del día', 'Entregas', 'Del día') },
-  { path: 'entregas', canActivate: OPERADOR, loadChildren: carga.entregas, data: datos('Entregas') },
-  { path: 'repartidores', canActivate: OPERADOR, loadChildren: carga.entregas, data: datos('Repartidores') },
-  { path: 'tarifas', canActivate: ADMIN, loadChildren: carga.maestrosEnvio, data: datos('Tarifas', 'Tarifas y agencias', 'Tarifas') },
-  { path: 'agencias', canActivate: ADMIN, loadChildren: carga.maestrosEnvio, data: datos('Agencias', 'Tarifas y agencias', 'Agencias') },
-  { path: 'pagos', canActivate: ADMIN, loadChildren: carga.pagos, data: datos('Pagos', 'Pagos', 'Pagos') },
-  { path: 'reembolsos', canActivate: ADMIN, loadChildren: carga.pagos, data: datos('Reembolsos', 'Pagos', 'Reembolsos') },
-  { path: 'notificaciones', canActivate: ADMIN, loadChildren: carga.notificaciones, data: datos('Notificaciones') },
+  {
+    path: 'entregas/dia',
+    canActivate: OPERADOR,
+    loadChildren: carga.entregas,
+    data: datos('Entregas del día', 'Entregas', 'Del día'),
+  },
+  {
+    path: 'entregas',
+    canActivate: OPERADOR,
+    loadChildren: carga.entregas,
+    data: datos('Entregas'),
+  },
+  {
+    path: 'repartidores',
+    canActivate: OPERADOR,
+    loadChildren: carga.entregas,
+    data: datos('Repartidores'),
+  },
+  {
+    path: 'tarifas',
+    canActivate: ADMIN,
+    loadChildren: carga.maestrosEnvio,
+    data: datos('Tarifas', 'Tarifas y agencias', 'Tarifas'),
+  },
+  {
+    path: 'agencias',
+    canActivate: ADMIN,
+    loadChildren: carga.maestrosEnvio,
+    data: datos('Agencias', 'Tarifas y agencias', 'Agencias'),
+  },
+  {
+    path: 'pagos',
+    canActivate: ADMIN,
+    loadChildren: carga.pagos,
+    data: datos('Pagos', 'Pagos', 'Pagos'),
+  },
+  {
+    path: 'reembolsos',
+    canActivate: ADMIN,
+    loadChildren: carga.pagos,
+    data: datos('Reembolsos', 'Pagos', 'Reembolsos'),
+  },
+  {
+    path: 'notificaciones',
+    canActivate: ADMIN,
+    loadChildren: carga.notificaciones,
+    data: datos('Notificaciones'),
+  },
   {
     path: 'configuracion',
     canActivate: ADMIN,
     loadChildren: carga.configuracion,
     data: datos('Configuración de tienda', 'Configuración de tienda'),
   },
-  { path: 'reclamos', canActivate: OPERADOR, loadChildren: carga.reclamos, data: datos('Reclamos') },
+  {
+    path: 'reclamos',
+    canActivate: OPERADOR,
+    loadChildren: carga.reclamos,
+    data: datos('Reclamos'),
+  },
   { path: '403', component: Pagina403 },
 ];
 
 /** Rutas públicas de `features/acceso`. El `canMatch` evita que `/` caiga en esta carpeta (ruta vacía sin hijas). */
 const RUTAS_PUBLICAS = ['ingresar', 'recuperar', 'restablecer'];
-const esRutaPublica: CanMatchFn = (_ruta, segmentos) => RUTAS_PUBLICAS.includes(segmentos[0]?.path ?? '');
+const esRutaPublica: CanMatchFn = (_ruta, segmentos) =>
+  RUTAS_PUBLICAS.includes(segmentos[0]?.path ?? '');
 
 /** Hay una sesión del tipo que admite la app (STAFF): decide si la 404 se muestra dentro del shell. */
 const conSesionDeLaApp: CanMatchFn = () => {
@@ -107,7 +163,12 @@ export function crearRutas(_desarrollo: boolean): Routes {
       canMatch: [esRutaPublica],
       loadChildren: () => import('./features/acceso/acceso.routes'),
     },
-    { path: '', component: BackofficeShell, canActivate: [autenticadoGuard], children: rutasDelShell },
+    {
+      path: '',
+      component: BackofficeShell,
+      canActivate: [autenticadoGuard],
+      children: rutasDelShell,
+    },
     {
       path: '**',
       component: BackofficeShell,

@@ -98,12 +98,15 @@ describe('Rutas del backoffice', () => {
     },
   );
 
-  it.each(SOLO_ADMIN)('CA-0b-17 un OPERADOR que entra por URL a %s ve la página 403', async (ruta) => {
-    const harness = await arrancar(SESION_OPERADOR);
-    await harness.navigateByUrl(ruta);
-    expect(TestBed.inject(Router).url).toBe('/403');
-    expect(harness.routeNativeElement?.textContent).toContain('No tienes permiso');
-  });
+  it.each(SOLO_ADMIN)(
+    'CA-0b-17 un OPERADOR que entra por URL a %s ve la página 403',
+    async (ruta) => {
+      const harness = await arrancar(SESION_OPERADOR);
+      await harness.navigateByUrl(ruta);
+      expect(TestBed.inject(Router).url).toBe('/403');
+      expect(harness.routeNativeElement?.textContent).toContain('No tienes permiso');
+    },
+  );
 
   it.each(TAMBIEN_OPERADOR)('CA-0b-17 un OPERADOR sí entra a %s', async (ruta) => {
     const harness = await arrancar(SESION_OPERADOR);
@@ -132,8 +135,12 @@ describe('Rutas del backoffice', () => {
     await harness.navigateByUrl('/no-existe/nada');
     const el = harness.routeNativeElement as HTMLElement;
     expect(el.textContent).toContain('Página no encontrada');
-    expect(el.localName === 'fs-backoffice-shell' || el.querySelector('fs-backoffice-shell')).toBeTruthy();
-    const enlace = [...el.querySelectorAll('a')].find((a) => a.textContent?.includes('Volver al inicio'));
+    expect(
+      el.localName === 'fs-backoffice-shell' || el.querySelector('fs-backoffice-shell'),
+    ).toBeTruthy();
+    const enlace = [...el.querySelectorAll('a')].find((a) =>
+      a.textContent?.includes('Volver al inicio'),
+    );
     expect(enlace?.getAttribute('href')).toBe('/');
   });
 
@@ -144,6 +151,8 @@ describe('Rutas del backoffice', () => {
     expect(TestBed.inject(Router).url).toBe('/no-existe');
     expect(el.textContent).toContain('Página no encontrada');
     expect(el.textContent).toContain('Volver al inicio');
-    expect(el.localName === 'fs-backoffice-shell' || el.querySelector('fs-backoffice-shell')).toBeFalsy();
+    expect(
+      el.localName === 'fs-backoffice-shell' || el.querySelector('fs-backoffice-shell'),
+    ).toBeFalsy();
   });
 });

@@ -19,7 +19,13 @@ export const SESION_ADMIN: Sesion = {
 export const SESION_OPERADOR: Sesion = {
   ...SESION_ADMIN,
   accessToken: 'token-operador-de-prueba',
-  cuenta: { ...SESION_ADMIN.cuenta, rol: 'OPERADOR', email: 'operador@fitstore.pe', nombres: 'Omar', apellidos: 'Operador' },
+  cuenta: {
+    ...SESION_ADMIN.cuenta,
+    rol: 'OPERADOR',
+    email: 'operador@fitstore.pe',
+    nombres: 'Omar',
+    apellidos: 'Operador',
+  },
 };
 
 export const SESION_CLIENTE: Sesion = {

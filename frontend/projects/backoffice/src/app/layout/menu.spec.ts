@@ -4,7 +4,13 @@ import { MENU, hojasDelMenu, menuParaRol } from './menu';
 import { montar } from '../testing/montar';
 import { SESION_ADMIN, SESION_OPERADOR } from '../testing/sesiones';
 
-const ETIQUETAS_SOLO_ADMIN = ['Pagos', 'Tarifas y agencias', 'Staff', 'Notificaciones', 'Configuración de tienda'];
+const ETIQUETAS_SOLO_ADMIN = [
+  'Pagos',
+  'Tarifas y agencias',
+  'Staff',
+  'Notificaciones',
+  'Configuración de tienda',
+];
 
 describe('Menú del backoffice por rol (R3)', () => {
   it('CA-0b-17 el OPERADOR no ve Pagos, Tarifas y agencias, Staff, Notificaciones ni Configuración de tienda', () => {
@@ -44,9 +50,16 @@ describe('Menú del backoffice por rol (R3)', () => {
       'Reclamos',
       'Configuración de tienda',
     ]);
-    const subs = (clave: string) => menu.find((i) => i.clave === clave)?.subitems?.map((s) => s.etiqueta);
+    const subs = (clave: string) =>
+      menu.find((i) => i.clave === clave)?.subitems?.map((s) => s.etiqueta);
     expect(subs('entregas')).toEqual(['Lista', 'Del día']);
-    expect(subs('catalogo')).toEqual(['Productos', 'Categorías', 'Tallas y colores', 'Descuentos', 'Carga masiva']);
+    expect(subs('catalogo')).toEqual([
+      'Productos',
+      'Categorías',
+      'Tallas y colores',
+      'Descuentos',
+      'Carga masiva',
+    ]);
     expect(subs('pagos')).toEqual(['Pagos', 'Reembolsos']);
     expect(subs('tarifas-agencias')).toEqual(['Tarifas', 'Agencias']);
     expect(subs('notificaciones')).toEqual(['Registro', 'Plantillas']);

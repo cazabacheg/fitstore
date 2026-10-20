@@ -19,5 +19,6 @@ import { EncabezadoPagina } from '../../layout/encabezado-pagina';
   `,
 })
 export class Proximamente {
-  protected readonly titulo = (inject(ActivatedRoute).snapshot.data['titulo'] as string | undefined) ?? '';
+  protected readonly titulo =
+    (inject(ActivatedRoute).snapshot.data['titulo'] as string | undefined) ?? '';
 }

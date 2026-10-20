@@ -1,0 +1,35 @@
+<header class="fs-bo__barra">
+  @if (conBotonMenu()) {
+    <button
+      type="button"
+      class="fs-barra__menu"
+      aria-label="Abrir menú"
+      (click)="menuSolicitado.emit()"
+    >
+      <span class="fs-icono" aria-hidden="true">menu</span>
+    </button>
+  }
+  <nav class="fs-migas" aria-label="Migas">
+    <a routerLink="/">Inicio</a>
+    @for (miga of migas(); track $index) {
+      <span aria-hidden="true">/</span>
+      <span>{{ miga }}</span>
+    }
+  </nav>
+  <span class="fs-barra__espacio"></span>
+  <button
+    type="button"
+    class="fs-barra__usuario"
+    [matMenuTriggerFor]="menuUsuario"
+    aria-label="Menú de usuario"
+  >
+    <span class="fs-barra__avatar" aria-hidden="true">{{ iniciales() }}</span>
+    {{ nombre() }}
+    <span class="fs-icono" aria-hidden="true">expand_more</span>
+  </button>
+  <mat-menu #menuUsuario="matMenu" xPosition="before">
+    <a mat-menu-item routerLink="/perfil">Mi perfil</a>
+    <a mat-menu-item routerLink="/perfil">Cambiar contraseña</a>
+    <button mat-menu-item type="button" (click)="salir()">Salir</button>
+  </mat-menu>
+</header>
