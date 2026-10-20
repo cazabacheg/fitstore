@@ -184,7 +184,7 @@ class CargaMasivaServiceTest extends ApiBase {
         JsonNode informe = cuerpo(validar(csv(
                 "YAEXISTE,Repetido,Desc,30,Cargatops,S,negro,,1",                       // fila 2: código ya existente
                 "ERR2,Talla mala,Desc,30,Cargatops,ZZ,negro,,1",                         // fila 3: talla inexistente
-                "ERR3,Color malo,Desc,30,Cargatops,S,Morado,,1",                         // fila 4: color inexistente
+                "ERR3,Color malo,Desc,30,Cargatops,S,Turquesa,,1",                         // fila 4: color inexistente
                 "ERR4,Categoría mala,Desc,30,NoExiste,S,negro,,1",                       // fila 5: categoría inexistente
                 "ERR5,Precio malo,Desc,abc,Cargatops,S,negro,,1",                        // fila 6: precio inválido
                 "ERR6,Precio cero,Desc,0,Cargatops,S,negro,,1",                          // fila 7: precio inválido
@@ -202,7 +202,7 @@ class CargaMasivaServiceTest extends ApiBase {
         assertThat(mensajeDe(errores, 2)).contains("YAEXISTE").contains("ya existe");
         assertThat(columnaDe(errores, 3)).isEqualTo("talla");
         assertThat(mensajeDe(errores, 3)).contains("ZZ");
-        assertThat(mensajeDe(errores, 4)).contains("Morado");
+        assertThat(mensajeDe(errores, 4)).contains("Turquesa");
         assertThat(columnaDe(errores, 4)).isEqualTo("color");
         assertThat(mensajeDe(errores, 5)).contains("NoExiste");
         assertThat(columnaDe(errores, 5)).isEqualTo("categorias");

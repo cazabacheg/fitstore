@@ -13,9 +13,11 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
  * @param cotizacion máximo de líneas por cotización
  * @param cache      caché Redis: se puede apagar (pruebas) y fija el TTL (10 min)
  * @param demo       carga de las fotos de demostración a Garage (solo con los perfiles dev o demo)
+ * @param cargaMasiva vigencia de la validación y máximo de filas
  */
 @ConfigurationProperties(prefix = "fitstore.catalogo")
-public record CatalogoProperties(Imagenes imagenes, Descuentos descuentos, Cotizacion cotizacion, Cache cache, Demo demo) {
+public record CatalogoProperties(Imagenes imagenes, Descuentos descuentos, Cotizacion cotizacion, Cache cache, Demo demo,
+        CargaMasiva cargaMasiva) {
 
     public CatalogoProperties {
         imagenes = imagenes == null ? new Imagenes(null, null) : imagenes;
@@ -23,6 +25,7 @@ public record CatalogoProperties(Imagenes imagenes, Descuentos descuentos, Cotiz
         cotizacion = cotizacion == null ? new Cotizacion(null) : cotizacion;
         cache = cache == null ? new Cache(null, null) : cache;
         demo = demo == null ? new Demo(null) : demo;
+        cargaMasiva = cargaMasiva == null ? new CargaMasiva(null, null) : cargaMasiva;
     }
 
     public record Imagenes(Integer maxPorProducto, List<Integer> tamanos) {
@@ -59,6 +62,14 @@ public record CatalogoProperties(Imagenes imagenes, Descuentos descuentos, Cotiz
         public Cache {
             habilitado = habilitado == null || habilitado;
             ttl = ttl == null ? Duration.ofMinutes(10) : ttl;
+        }
+    }
+
+    /** Límites de la carga masiva (micro 4.4.1): 2 000 filas, 5 MB y la validación vale 30 minutos. */
+    public record CargaMasiva(Duration vigencia, Integer maxFilas) {
+        public CargaMasiva {
+            vigencia = vigencia == null ? Duration.ofMinutes(30) : vigencia;
+            maxFilas = maxFilas == null ? 2000 : maxFilas;
         }
     }
 
