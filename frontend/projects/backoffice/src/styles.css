@@ -556,11 +556,12 @@ textarea.fs-input {
 .fs-tabla tbody tr:hover {
   background: var(--fs-color-primario-suave);
 }
-.fs-tabla tr.fs-fila--aviso {
-  background: var(--fs-color-aviso-suave);
+/* Filas por vencer o vencidas: contorno izquierdo de color, sin relleno (las insignias del mismo color se ven) */
+.fs-tabla tr.fs-fila--aviso td:first-child {
+  box-shadow: inset 4px 0 0 var(--fs-color-aviso);
 }
-.fs-tabla tr.fs-fila--error {
-  background: var(--fs-color-error-suave);
+.fs-tabla tr.fs-fila--error td:first-child {
+  box-shadow: inset 4px 0 0 var(--fs-color-error);
 }
 .fs-tabla a {
   color: var(--fs-color-primario-texto);
