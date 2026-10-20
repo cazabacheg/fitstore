@@ -9,7 +9,11 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.convert.converter.Converter;
 import org.springframework.http.HttpMethod;
+import org.springframework.security.access.hierarchicalroles.RoleHierarchy;
 import org.springframework.security.authentication.AbstractAuthenticationToken;
+import org.springframework.security.authorization.AuthorizationDecision;
+import org.springframework.security.authorization.AuthorizationManager;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
@@ -25,9 +29,11 @@ import org.springframework.security.oauth2.jwt.JwtIssuerValidator;
 import org.springframework.security.oauth2.jwt.JwtTimestampValidator;
 import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
+import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 import org.springframework.security.oauth2.server.resource.web.BearerTokenResolver;
 import org.springframework.security.oauth2.server.resource.web.DefaultBearerTokenResolver;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.access.intercept.RequestAuthorizationContext;
 import tools.jackson.databind.json.JsonMapper;
 
 /**
@@ -88,14 +94,24 @@ public class SecurityConfig {
 
     @Bean
     SecurityFilterChain authSecurityFilterChain(HttpSecurity http, JsonMapper json, JwtAuthenticationConverter convertidor,
-            BearerTokenResolver resolver) throws Exception {
+            BearerTokenResolver resolver, RoleHierarchy jerarquia) throws Exception {
         RespuestasSeguridadAuth respuestas = new RespuestasSeguridadAuth(json);
+        // El rol y el tipo de cuenta se exigen primero por ruta (antes de leer y validar el cuerpo, así un 403 nunca
+        // se convierte en un 400) y otra vez en cada endpoint con SoloCliente, SoloStaff y SoloAdmin.
+        AuthorizationManager<RequestAuthorizationContext> cliente = sesion("CLIENTE", "CLIENTE", jerarquia);
+        AuthorizationManager<RequestAuthorizationContext> staff = sesion("STAFF", "OPERADOR", jerarquia);
+        AuthorizationManager<RequestAuthorizationContext> admin = sesion("STAFF", "ADMIN", jerarquia);
         return http
                 .csrf(AbstractHttpConfigurer::disable)
                 .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(a -> a
                         .requestMatchers(HttpMethod.POST, PUBLICOS_POST).permitAll()
                         .requestMatchers(HttpMethod.GET, PUBLICOS_GET).permitAll()
+                        .requestMatchers("/api/v1/clientes/me", "/api/v1/clientes/me/**").access(cliente)
+                        .requestMatchers("/api/v1/staff/me", "/api/v1/staff/me/**").access(staff)
+                        .requestMatchers("/api/v1/staff", "/api/v1/staff/**").access(admin)
+                        .requestMatchers(HttpMethod.PATCH, "/api/v1/clientes/*/desactivar", "/api/v1/clientes/*/activar").access(admin)
+                        .requestMatchers("/api/v1/clientes", "/api/v1/clientes/**").access(staff)
                         .anyRequest().authenticated())
                 .oauth2ResourceServer(o -> o
                         .bearerTokenResolver(resolver)
@@ -104,5 +120,18 @@ public class SecurityConfig {
                         .accessDeniedHandler(respuestas))
                 .exceptionHandling(e -> e.authenticationEntryPoint(respuestas).accessDeniedHandler(respuestas))
                 .build();
+    }
+
+    /** Autoriza solo una sesión del {@code tipo} de cuenta indicado cuyo rol alcance al pedido (ADMIN alcanza a OPERADOR). */
+    private static AuthorizationManager<RequestAuthorizationContext> sesion(String tipo, String rol, RoleHierarchy jerarquia) {
+        return (autenticacion, contexto) -> {
+            Authentication actual = autenticacion.get();
+            boolean permitido = actual instanceof JwtAuthenticationToken jwt
+                    && actual.isAuthenticated()
+                    && tipo.equals(jwt.getToken().getClaimAsString("tipo"))
+                    && jerarquia.getReachableGrantedAuthorities(actual.getAuthorities()).stream()
+                            .anyMatch(autoridad -> ("ROLE_" + rol).equals(autoridad.getAuthority()));
+            return new AuthorizationDecision(permitido);
+        };
     }
 }

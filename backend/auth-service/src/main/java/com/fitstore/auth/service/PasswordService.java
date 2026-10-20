@@ -1,5 +1,6 @@
 package com.fitstore.auth.service;
 
+import com.fitstore.auth.model.Staff;
 import com.fitstore.auth.model.TipoCuenta;
 import com.fitstore.auth.security.SesionEmitida;
 import java.util.UUID;
@@ -28,4 +29,10 @@ public interface PasswordService {
      * @throws com.fitstore.auth.exception.ErrorCamposException si la contraseña actual es incorrecta (campo {@code passwordActual})
      */
     SesionEmitida cambiar(TipoCuenta tipo, UUID cuentaId, String passwordActual, String nuevaPassword);
+
+    /**
+     * Invalida los enlaces anteriores del staff, genera uno de invitación (24 h) y publica {@code PasswordResetSolicitado}
+     * con motivo {@code INVITACION} y el enlace al backoffice.
+     */
+    void enviarInvitacion(Staff staff);
 }

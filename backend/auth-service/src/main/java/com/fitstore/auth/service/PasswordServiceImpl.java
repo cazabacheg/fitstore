@@ -60,6 +60,12 @@ public class PasswordServiceImpl implements PasswordService {
 
     @Override
     @Transactional
+    public void enviarInvitacion(Staff staff) {
+        emitirEnlace(staff, MotivoToken.INVITACION, propiedades.tokenInvitacionTtl());
+    }
+
+    @Override
+    @Transactional
     public void restablecer(String token, String nuevaPassword) {
         Instant ahora = reloj.instant();
         TokenPassword guardado = tokens.findByTokenHash(HashToken.sha256(token)).orElseThrow(TokenInvalidoException::new);
