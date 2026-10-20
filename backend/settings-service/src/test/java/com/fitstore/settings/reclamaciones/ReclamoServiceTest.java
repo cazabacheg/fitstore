@@ -82,6 +82,7 @@ class ReclamoServiceTest extends PruebaApi {
         sub(datos, "consumidor").put("nombres", nombres);
         long id = registrarYObtenerId(datos);
         jdbc.update("UPDATE reclamo SET fecha_limite = ?::date WHERE id = ?", fechaLimite, id);
+        em.clear(); // el cambio por JDBC se ve al volver a leer
         return id;
     }
 
@@ -235,6 +236,7 @@ class ReclamoServiceTest extends PruebaApi {
         registrar(reclamo()).andExpect(status().isCreated());
         em.flush();
         jdbc.update("UPDATE reclamo SET creado_en = creado_en - (interval '1 day' * (3 - correlativo))");
+        em.clear();
 
         mvc.perform(get(ADMIN_RECLAMOS).with(operador()).param("size", "2"))
                 .andExpect(status().isOk())
@@ -300,6 +302,7 @@ class ReclamoServiceTest extends PruebaApi {
         long viejo = registrarYObtenerId(reclamo());
         registrarYObtenerId(reclamo());
         jdbc.update("UPDATE reclamo SET creado_en = '2026-09-01T12:00:00Z' WHERE id = ?", viejo);
+        em.clear();
 
         mvc.perform(get(ADMIN_RECLAMOS).with(admin()).param("desde", "2026-10-01"))
                 .andExpect(jsonPath("$.data.contenido[*].numero", contains("RC-2026-000002")));
