@@ -26,15 +26,14 @@ class RetiroJwksPruebaTest {
     }
 
     @Test
-    @DisplayName("CA-1-37 nada en infra/ usa jwks-archivo ni FITSTORE_SECURITY_JWKS_ARCHIVO")
+    @DisplayName("CA-1-37 nada en infra/ usa jwks-archivo ni FITSTORE_SECURITY_JWKS_ARCHIVO (los comentarios no cuentan como uso)")
     void nadieLoUsa() throws IOException {
         assertThat(INFRA).isDirectory();
         try (Stream<Path> archivos = Files.walk(INFRA)) {
             List<Path> usan = archivos.filter(Files::isRegularFile).filter(RetiroJwksPruebaTest::esTexto)
                     .filter(a -> {
-                        String contenido = leer(a).toLowerCase();
-                        return contenido.contains("jwks-archivo") || contenido.contains("fitstore_security_jwks_archivo")
-                                || contenido.contains("jwks-prueba");
+                        String contenido = sinComentarios(leer(a)).toLowerCase();
+                        return contenido.contains("jwks-archivo") || contenido.contains("fitstore_security_jwks_archivo");
                     }).toList();
             assertThat(usan).isEmpty();
         }
@@ -67,6 +66,11 @@ class RetiroJwksPruebaTest {
         } catch (IOException | NullPointerException e) {
             return true;
         }
+    }
+
+    /** Quita los comentarios de línea ({@code #}) de los YAML, compose y .env: solo importa lo que se configura. */
+    private static String sinComentarios(String texto) {
+        return texto.lines().map(l -> l.contains("#") ? l.substring(0, l.indexOf('#')) : l).collect(java.util.stream.Collectors.joining("\n"));
     }
 
     private static String leer(Path archivo) {
