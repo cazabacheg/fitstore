@@ -19,3 +19,28 @@ export const SESION_STAFF: authApi.Sesion = {
   accessToken: 'token-staff-de-prueba',
   cuenta: { ...SESION_CLIENTE.cuenta, tipo: 'STAFF', rol: 'ADMIN', email: 'admin@fitstore.pe' },
 };
+
+import { Provider, Type, provideZonelessChangeDetection } from '@angular/core';
+import { TestBed } from '@angular/core/testing';
+
+/** Monta un componente sin zona con sus entradas y espera a que se estabilice. */
+export async function montar<T>(
+  tipo: Type<T>,
+  entradas: Record<string, unknown> = {},
+  proveedores: Provider[] = [],
+) {
+  TestBed.configureTestingModule({
+    providers: [provideZonelessChangeDetection(), ...proveedores],
+  });
+  const fixture = TestBed.createComponent(tipo);
+  for (const [nombre, valor] of Object.entries(entradas)) {
+    fixture.componentRef.setInput(nombre, valor);
+  }
+  await fixture.whenStable();
+  const el = fixture.nativeElement as HTMLElement;
+  const estabilizar = async () => {
+    fixture.detectChanges();
+    await fixture.whenStable();
+  };
+  return { fixture, el, comp: fixture.componentInstance, estabilizar };
+}
