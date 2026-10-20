@@ -11,14 +11,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import com.fitstore.settings.pruebas.PruebaApi;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.test.web.servlet.MockMvc;
 
 /** HU-3-09: ubigeo del INEI por API pública (CA-3-32 a CA-3-34), con los datos reales de la migración V2. */
 class UbigeoApiTest extends PruebaApi {
-
-    @Autowired
-    MockMvc mvc;
 
     @Test
     @DisplayName("CA-3-32 las provincias de un departamento vienen ordenadas por nombre y con caché de 24 h")
