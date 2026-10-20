@@ -146,4 +146,35 @@ public class StockConsultas {
                 rs.getString("talla"), rs.getString("color"), fisico, reservado, disponible, minimo,
                 rs.getBoolean("minimo_propio"), estado);
     }
+
+    /** Disponible actual de una variante; vacío si no tiene fila de stock. */
+    public Optional<Integer> disponible(Long varianteId) {
+        return jdbc.sql("SELECT fisico - reservado FROM stock WHERE variante_id = :id").param("id", varianteId)
+                .query(Integer.class).optional();
+    }
+
+    /**
+     * Bloquea las filas de stock (en orden de variante, igual que las reservas, para no cruzar bloqueos) y devuelve su
+     * disponible. Las variantes sin fila de stock no aparecen.
+     */
+    public java.util.Map<Long, Integer> bloquearDisponibles(java.util.Collection<Long> varianteIds) {
+        java.util.Map<Long, Integer> resultado = new java.util.LinkedHashMap<>();
+        if (varianteIds.isEmpty()) {
+            return resultado;
+        }
+        jdbc.sql("SELECT variante_id, fisico - reservado AS disponible FROM stock WHERE variante_id IN (:ids) "
+                        + "ORDER BY variante_id FOR UPDATE")
+                .param("ids", varianteIds)
+                .query((rs, n) -> {
+                    resultado.put(rs.getLong("variante_id"), rs.getInt("disponible"));
+                    return n;
+                }).list();
+        return resultado;
+    }
+
+    /** Físico y reservado actuales de una variante. */
+    public Optional<Saldo> saldo(Long varianteId) {
+        return jdbc.sql("SELECT fisico, reservado FROM stock WHERE variante_id = :id").param("id", varianteId)
+                .query((rs, n) -> new Saldo(rs.getInt("fisico"), rs.getInt("reservado"))).optional();
+    }
 }

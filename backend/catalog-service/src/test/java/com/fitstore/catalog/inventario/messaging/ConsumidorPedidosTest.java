@@ -75,7 +75,7 @@ class ConsumidorPedidosTest {
         datos = new DatosConfirmados(jdbc);
         TopicExchange exchange = new TopicExchange(EXCHANGE, true, false);
         admin.declareExchange(exchange);
-        Queue alertas = new Queue(COLA_ALERTAS, false, false, true);
+        Queue alertas = new Queue(COLA_ALERTAS, true, false, false);
         admin.declareQueue(alertas);
         admin.declareBinding(BindingBuilder.bind(alertas).to(exchange).with("catalog.stock.#"));
         admin.purgeQueue(COLA_ALERTAS, true);
