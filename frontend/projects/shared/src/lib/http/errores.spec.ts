@@ -25,7 +25,11 @@ describe('Interceptor de errores', () => {
 
     http.post('/api/v1/checkout', {}).subscribe({ error: (e) => (error = e) });
     ctrl.expectOne('/api/v1/checkout').flush(
-      { success: false, mensaje: 'Los precios cambiaron, revisa tu pedido', codigo: 'PRECIO_CAMBIADO' },
+      {
+        success: false,
+        mensaje: 'Los precios cambiaron, revisa tu pedido',
+        codigo: 'PRECIO_CAMBIADO',
+      },
       { status: 409, statusText: 'Conflict' },
     );
 
@@ -51,17 +55,21 @@ describe('Interceptor de errores', () => {
     );
 
     expect(toasts.toasts()).toHaveLength(0);
-    expect(camposConError(error)).toEqual([{ campo: 'dni', mensaje: 'El DNI debe tener 8 dígitos' }]);
+    expect(camposConError(error)).toEqual([
+      { campo: 'dni', mensaje: 'El DNI debe tener 8 dígitos' },
+    ]);
   });
 
   it('CA-0b-13 un 400 sin campos sí muestra su mensaje en un toast', () => {
     const { http, ctrl, toasts } = configurar();
 
     http.get('/api/v1/productos').subscribe({ error: () => undefined });
-    ctrl.expectOne('/api/v1/productos').flush(
-      { success: false, mensaje: 'Parámetro de orden inválido', codigo: 'VALIDACION' },
-      { status: 400, statusText: 'Bad Request' },
-    );
+    ctrl
+      .expectOne('/api/v1/productos')
+      .flush(
+        { success: false, mensaje: 'Parámetro de orden inválido', codigo: 'VALIDACION' },
+        { status: 400, statusText: 'Bad Request' },
+      );
 
     expect(toasts.toasts().map((t) => t.mensaje)).toEqual(['Parámetro de orden inválido']);
   });
@@ -71,7 +79,11 @@ describe('Interceptor de errores', () => {
 
     http.get('/api/v1/pedidos').subscribe({ error: () => undefined });
     ctrl.expectOne('/api/v1/pedidos').flush(
-      { success: false, mensaje: 'Servicio no disponible, inténtalo en un momento', codigo: 'SERVICIO_NO_DISPONIBLE' },
+      {
+        success: false,
+        mensaje: 'Servicio no disponible, inténtalo en un momento',
+        codigo: 'SERVICIO_NO_DISPONIBLE',
+      },
       { status: 503, statusText: 'Service Unavailable' },
     );
     expect(estado.noDisponible()).toBe(true);
@@ -87,7 +99,9 @@ describe('Interceptor de errores', () => {
     let error: HttpErrorResponse | undefined;
 
     http.get('/api/v1/productos').subscribe({ error: (e) => (error = e) });
-    ctrl.expectOne('/api/v1/productos').flush('<html>Bad gateway</html>', { status: 502, statusText: 'Bad Gateway' });
+    ctrl
+      .expectOne('/api/v1/productos')
+      .flush('<html>Bad gateway</html>', { status: 502, statusText: 'Bad Gateway' });
 
     expect(error?.status).toBe(502);
     expect(toasts.toasts()).toHaveLength(0);

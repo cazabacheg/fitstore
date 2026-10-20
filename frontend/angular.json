@@ -192,6 +192,7 @@
             "coverageInclude": ["projects/shared/src/**/*.ts"],
             "coverageExclude": [
               "projects/shared/src/lib/api/**",
+              "projects/shared/src/lib/testing/**",
               "projects/shared/src/**/*.spec.ts",
               "projects/shared/src/public-api.ts"
             ],

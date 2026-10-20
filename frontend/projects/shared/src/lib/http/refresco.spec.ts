@@ -97,7 +97,9 @@ describe('Interceptor de refresco de sesión', () => {
 
     http.get('/api/v1/pedidos').subscribe({ error: (e) => (error = e) });
     ctrl.expectOne('/api/v1/pedidos').flush(NO_AUTENTICADO, { status: 401, statusText: 'x' });
-    ctrl.expectOne('/api/v1/auth/refresh').flush({ success: true, mensaje: 'ok', data: SESION_NUEVA });
+    ctrl
+      .expectOne('/api/v1/auth/refresh')
+      .flush({ success: true, mensaje: 'ok', data: SESION_NUEVA });
     ctrl.expectOne('/api/v1/pedidos').flush(NO_AUTENTICADO, { status: 401, statusText: 'x' });
 
     expect(error?.status).toBe(401);
@@ -115,10 +117,12 @@ describe('Interceptor de refresco de sesión', () => {
     let error: HttpErrorResponse | undefined;
 
     http.post(ruta, {}).subscribe({ error: (e) => (error = e) });
-    ctrl.expectOne(ruta).flush(
-      { success: false, mensaje: 'Credenciales inválidas', codigo: 'CREDENCIALES_INVALIDAS' },
-      { status: 401, statusText: 'x' },
-    );
+    ctrl
+      .expectOne(ruta)
+      .flush(
+        { success: false, mensaje: 'Credenciales inválidas', codigo: 'CREDENCIALES_INVALIDAS' },
+        { status: 401, statusText: 'x' },
+      );
 
     expect(error?.status).toBe(401);
     expect(toasts.toasts()).toHaveLength(0);

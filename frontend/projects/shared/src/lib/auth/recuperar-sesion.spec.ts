@@ -43,7 +43,11 @@ describe('Recuperación de la sesión al arrancar', () => {
     const navegar = vi.spyOn(router, 'navigate');
 
     ctrl.expectOne('/api/v1/auth/refresh').flush(
-      { success: false, mensaje: 'Tu sesión venció, vuelve a ingresar', codigo: 'NO_AUTENTICADO' },
+      {
+        success: false,
+        mensaje: 'Tu sesión venció, vuelve a ingresar',
+        codigo: 'NO_AUTENTICADO',
+      },
       { status: 401, statusText: 'Unauthorized' },
     );
     await init.donePromise;

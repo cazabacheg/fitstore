@@ -1,6 +1,11 @@
 import { EnvironmentInjector, runInInjectionContext } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
-import { ActivatedRouteSnapshot, RouterStateSnapshot, UrlTree, provideRouter } from '@angular/router';
+import {
+  ActivatedRouteSnapshot,
+  RouterStateSnapshot,
+  UrlTree,
+  provideRouter,
+} from '@angular/router';
 import { SESION_CLIENTE, SESION_OPERADOR, SESION_STAFF } from '../testing/datos';
 import { autenticadoGuard, rolGuard } from './guards';
 import { provideSesionConfig } from './proveedores';
@@ -35,7 +40,10 @@ describe('autenticadoGuard', () => {
 describe('autenticadoGuard del backoffice (tipo STAFF)', () => {
   beforeEach(() =>
     TestBed.configureTestingModule({
-      providers: [provideRouter([]), provideSesionConfig({ tipo: 'STAFF', rutaLogin: '/ingresar' })],
+      providers: [
+        provideRouter([]),
+        provideSesionConfig({ tipo: 'STAFF', rutaLogin: '/ingresar' }),
+      ],
     }),
   );
 
@@ -54,7 +62,10 @@ describe('autenticadoGuard del backoffice (tipo STAFF)', () => {
 describe('rolGuard', () => {
   beforeEach(() =>
     TestBed.configureTestingModule({
-      providers: [provideRouter([]), provideSesionConfig({ tipo: 'STAFF', rutaLogin: '/ingresar' })],
+      providers: [
+        provideRouter([]),
+        provideSesionConfig({ tipo: 'STAFF', rutaLogin: '/ingresar' }),
+      ],
     }),
   );
 
