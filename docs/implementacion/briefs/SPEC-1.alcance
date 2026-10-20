@@ -1,0 +1,15 @@
+# Alcance de la SPEC-1 (sección 8 v6): un patrón por línea.
+backend/auth-service/*
+infra/config-repo/auth-service.yml
+infra/config-repo/auth-service-*.yml
+# A5: retiro del JWKS de prueba (excepción a los congelados, decisión del autor)
+infra/dev/jwks-prueba.json
+infra/dev/clave-privada-PRUEBA-solo-dev.jwk.json
+infra/docker-compose.dev.yml
+infra/config-repo/application.yml
+frontend/projects/storefront/src/app/features/acceso/*
+frontend/projects/storefront/src/app/features/cuenta/*
+frontend/projects/backoffice/src/app/features/acceso/*
+frontend/projects/backoffice/src/app/features/perfil/*
+frontend/projects/backoffice/src/app/features/usuarios/*
+postman/auth.postman_collection.json

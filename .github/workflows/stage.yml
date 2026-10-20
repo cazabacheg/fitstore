@@ -31,12 +31,17 @@ jobs:
         run: |
           # CA-0a-02
           infra/smoke.sh
-      # CA-0a-17 La colección base verifica el health del gateway y la documentación de los 7 servicios por el gateway
-      - name: Postman base con Newman 6.2.2
+      # CA-0a-17 La colección base verifica el health del gateway y la documentación de los 7 servicios por el gateway.
+      # Después corren las colecciones de cada spec (postman/<servicio>.postman_collection.json), que agregan las specs 1–7.
+      - name: Postman con Newman 6.2.2 (base y una colección por servicio)
         run: |
           # CA-0a-17
-          npx --yes newman@6.2.2 run postman/fitstore-base.postman_collection.json \
-            --environment postman/local.postman_environment.json
+          set -euo pipefail
+          for coleccion in postman/fitstore-base.postman_collection.json \
+            $(ls postman/*.postman_collection.json | grep -v fitstore-base); do
+            echo "== $coleccion =="
+            npx --yes newman@6.2.2 run "$coleccion" --environment postman/local.postman_environment.json
+          done
       - name: Registros de los contenedores si algo falló
         if: failure()
         run: |

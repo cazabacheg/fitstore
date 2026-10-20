@@ -1,0 +1,7 @@
+# Alcance de 2.1 (backend de la SPEC-2, sección 8 v9): un patrón por línea.
+backend/catalog-service/*
+infra/config-repo/catalog-service.yml
+infra/config-repo/catalog-service-*.yml
+infra/scripts/semilla-imagenes/*
+k6/catalogo.js
+postman/catalog.postman_collection.json

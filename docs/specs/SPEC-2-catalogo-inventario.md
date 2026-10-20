@@ -1,11 +1,12 @@
 # SPEC-2 — Catálogo e inventario
 
-> Versión: **v8 (aprobado)** — 2026-10-19 · Estados: ✅ decidido · 🟡 propuesto · ❓ abierto
+> Versión: **v9 (aprobado)** — 2026-10-20 · Estados: ✅ decidido · 🟡 propuesto · ❓ abierto
 > **Dueña de:** `backend/catalog-service` (módulos catálogo e inventario) · tienda: `features/catalogo` · backoffice: `features/catalogo`, `features/inventario`.
 > **Depende de:** 0a, 0b, 1 (sesión de staff) · **Habilita:** 3 (destacados de la landing), 4 (cotización y reserva), 8.
 > **Contratos:** `contracts/openapi/catalog-service.yaml` (incluye `/internal/v1/inventario/reservas`); usa el contrato de order (`POST /carrito/items`); eventos `StockBajo`, `StockNoConfirmado` (publica) y `PedidoPagado`, `PedidoCancelado`, `PedidoExpirado` (consume).
 
 **Historial:**
+- v9 (2026-10-20): al preparar la ola 2a (decisiones del autor): el WebP se lee con TwelveMonkeys (stack v10) y la salida es JPG; el script de fotos de demostración usa Python + Pillow; sus JPG se versionan en los recursos de catalog, que las sube a Garage al arrancar con `dev` o `demo`; IDs fijos de la demo en `docs/demo/ids-demo.md`. La spec se construye en dos pasos (backend y luego frontend).
 - v8 (2026-10-19): etapa de diseño cerrada: diseños de alta fidelidad enlazados (P-2-01, P-2-02, P-2-04).
 - v7 (2026-10-19): revisión de coherencia: P-2-07 ya no menciona la configuración de inventario (se movió a P-3-04 en la v4).
 - v6 (2026-10-19): los datos de demostración también se cargan en la nube con el perfil `demo` (SPEC-8 I7), con UUID fijos compartidos entre servicios (`docs/demo/ids-demo.md`).
@@ -430,7 +431,8 @@ Todo según el micro de catalog. Decisiones de implementación de esta spec:
   - árbol ✅: **Polos y tops** (Polos, Tops), **Leggings y pantalones** (Leggings, Joggers, Pantalones, Shorts, Faldas), **Casacas y polerones**, **Vestidos**, **Conjuntos**, **Nueva colección**; guía de tallas en "Polos y tops", "Leggings y pantalones" y "Vestidos";
   - color maestro adicional **"Variado"** (para estampados y surtidos);
   - unos 15 productos ACTIVO con 6–15 variantes cada uno, stock variado (incluye casos agotado y "últimas unidades") y 2 en BORRADOR;
-  - **imágenes de demostración** ✅: fotos de producto tomadas de bancos **con licencia libre que permite modificarlas** (Unsplash, Pexels), preferentemente con fondo blanco. Un script (`infra/scripts/semilla-imagenes`) **genera las variantes de color**: recolorea la prenda manteniendo sombras y fondo, de modo que cada color muestra la misma foto con la prenda en ese color. Las fuentes y créditos quedan en `infra/scripts/semilla-imagenes/CREDITOS.md`;
+  - **imágenes de demostración** ✅: fotos de producto tomadas de bancos **con licencia libre que permite modificarlas** (Unsplash, Pexels), preferentemente con fondo blanco. Un script (`infra/scripts/semilla-imagenes`) **genera las variantes de color**: recolorea la prenda manteniendo sombras y fondo, de modo que cada color muestra la misma foto con la prenda en ese color. Las fuentes y créditos quedan en `infra/scripts/semilla-imagenes/CREDITOS.md`. El script es Python 3.12 + Pillow (stack v10) y se corre una vez en Lyanna; deja una JPG por producto y color (1200 px, calidad 80) en `backend/catalog-service/src/main/resources/demo/imagenes/`, versionadas, y al arrancar con el perfil `dev` o `demo` catalog las sube a Garage con el mismo proceso que una subida del admin (versiones de 1200 y 400 px) si el bucket no las tiene, con las claves de `R__catalogo_demo.sql`;
+  - IDs explícitos de la demo (categorías, productos, variantes) en los rangos de `docs/demo/ids-demo.md`, con `setval` de cada secuencia al final del script;
 
 ## 7. Pruebas
 
@@ -458,7 +460,7 @@ Todo según el micro de catalog. Decisiones de implementación de esta spec:
 |---|---|
 | `backend/catalog-service/**` | modifica (es su dueña) |
 | `infra/config-repo/catalog-service*.yml` | modifica |
-| `infra/scripts/semilla-imagenes/` | crea |
+| `infra/scripts/semilla-imagenes/` (script, `requirements.txt`, `CREDITOS.md`, fotos fuente) | crea |
 | `frontend/projects/storefront/src/app/features/catalogo/` | modifica |
 | `frontend/projects/backoffice/src/app/features/{catalogo,inventario}/` | modifica |
 | `k6/catalogo.js`, `postman/catalog.postman_collection.json` | crea |

@@ -1,11 +1,12 @@
 # SPEC-1 — Identidad
 
-> Versión: **v5 (aprobado)** — 2026-10-19 · Estados: ✅ decidido · 🟡 propuesto · ❓ abierto
+> Versión: **v6 (aprobado)** — 2026-10-20 · Estados: ✅ decidido · 🟡 propuesto · ❓ abierto
 > **Dueña de:** `backend/auth-service` (lógica, controladores, emisión de JWT) · tienda: `features/acceso`, `features/cuenta` · backoffice: `features/acceso`, `features/perfil`, `features/usuarios`.
 > **Depende de:** 0a, 0b · **Habilita:** todas las pantallas protegidas; spec 4 (datos del destinatario en el checkout).
 > **Contratos:** `contracts/openapi/auth-service.yaml`; eventos `ClienteRegistrado`, `PasswordResetSolicitado`, `PasswordCambiado`.
 
 **Historial:**
+- v6 (2026-10-20): al preparar la ola 2a: la ruta de vuelta tras el login es `?returnUrl=` (la que pone el guard de la SPEC-0b; antes decía `?volver=`). Para retirar el JWKS de prueba (A5) la sección 8 agrega `infra/docker-compose.dev.yml` y `infra/config-repo/application.yml` (decisión del autor). Los UUID fijos de las cuentas demo están en `docs/demo/ids-demo.md`.
 - v5 (2026-10-19): por la SPEC-8 (I7), los datos de demostración también se cargan en la nube (perfil `demo`) con contraseña secreta (A7, CA-1-39); 4 clientes demo con UUID fijos (antes 2; la spec 4 necesitaba 4).
 - v4 (2026-10-18): P-1-08 y P-1-09 indican qué abre el enlace de cada fila y sus acciones, según la convención de tablas de la SPEC-0b (R11). Bocetos actualizados.
 - v3 (2026-10-18): por la SPEC-4 (O2), `DialogoDireccion` queda **reutilizable** (A6): el checkout lo abre para agregar una dirección sin salir de la página.
@@ -70,7 +71,7 @@ Como cliente, quiero iniciar sesión con mi correo y contraseña, para comprar c
 ```gherkin
 CA-1-04  Dado credenciales correctas de un cliente activo
          Cuando ingreso
-         Entonces recibo el access token (en memoria) y la cookie de refresh, y vuelvo a la ruta de origen (?volver=)
+         Entonces recibo el access token (en memoria) y la cookie de refresh, y vuelvo a la ruta de origen (?returnUrl=)
 
 CA-1-05  Dado un correo inexistente, una contraseña errada o una cuenta desactivada
          Cuando ingreso
@@ -349,7 +350,7 @@ Todo según el micro de auth. Decisiones de implementación de esta spec:
 | A2 | **Borrar la dirección predeterminada** ✅ | Pasa a predeterminada la **creada más recientemente** entre las que quedan (CA-1-19). El micro no lo definía |
 | A3 | **Enlaces de los correos** | Recuperación de cliente: `{STOREFRONT_URL}/restablecer?token=…` · de staff e invitación: `{BACKOFFICE_URL}/restablecer?token=…` |
 | A4 | **Cookie de refresh** | Una por app (cada app en su subdominio, auth 4.4); `HttpOnly`, `SameSite=Strict`, `Path=/api/v1/auth`. `POST /auth/refresh` y `/auth/logout` solo aceptan la cookie (sin cuerpo) |
-| A5 | **Retiro del JWKS de prueba** | Se borra `infra/dev/jwks-prueba.json` y su clave; el gateway y los servicios apuntan a `http://auth-service/.well-known/jwks.json` (excepción acordada a la regla de "0a congelada") |
+| A5 | **Retiro del JWKS de prueba** | Se borra `infra/dev/jwks-prueba.json` y su clave; el gateway y los servicios apuntan al JWKS de auth (`http://auth-service:8081/.well-known/jwks.json`, en `infra/config-repo/application.yml`), y `infra/docker-compose.dev.yml` deja de montar el archivo (excepción acordada a la regla de "0a congelada"). La *allowlist* de gitleaks se queda: la clave sigue en el historial de Git |
 | A6 | **`DialogoDireccion` reutilizable** ✅ | Componente *standalone* exportado desde `features/cuenta/direcciones/` con el `DialogoDireccionService.abrir(direccion?)`, que devuelve la dirección guardada (o nada si se cancela). Él mismo llama a `POST`/`PUT /clientes/me/direcciones` y respeta el límite de 10. Lo usa el checkout (SPEC-4); como es solo de la tienda, no va a `shared` |
 | A7 | **Cuentas demo en la nube** ✅ | Con el perfil `demo`, `DatosDemoNube` (al arrancar) reemplaza el hash de las cuentas de demostración por BCrypt de `DEMO_PASSWORD`, o las desactiva si falta. Así la nube tiene datos de demo sin exponer una contraseña pública (SPEC-8 I7) |
 
@@ -385,6 +386,7 @@ Todo según el micro de auth. Decisiones de implementación de esta spec:
 | `backend/auth-service/**` | modifica (es su dueña) |
 | `infra/config-repo/auth-service*.yml` | modifica |
 | `infra/dev/jwks-prueba.json` y su clave | **elimina** (A5) |
+| `infra/docker-compose.dev.yml` (variable y volumen del JWKS de prueba), `infra/config-repo/application.yml` (`jwk-set-uri` de auth para todos los servicios) | modifica (A5, excepción a los congelados) |
 | `frontend/projects/storefront/src/app/features/{acceso,cuenta}/` | modifica (reemplaza "Próximamente") |
 | `frontend/projects/backoffice/src/app/features/{acceso,perfil,usuarios}/` | modifica |
 | `postman/auth.postman_collection.json` | crea |

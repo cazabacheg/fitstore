@@ -25,13 +25,21 @@
 | 0b.1 Workspace, `shared` y CI | Sonnet | `spec/0b-1-base` | ✅ integrada | 1 | #33 | — |
 | 0b.2 Storefront | Sonnet | `spec/0b-2-storefront` | ✅ integrada | 1 | #35 | En paralelo con 0b.3 |
 | 0b.3 Backoffice | Sonnet | `spec/0b-3-backoffice` | ✅ integrada | 1 | #36 | En paralelo con 0b.2 |
-| **CK2** Checkpoint de base (0a + 0b) | lead | `fix/ck2-base`, `docs/ck2` | 👀 correcciones en revisión | — | — | [Informe](checkpoints/CK2.md): H1–H7 |
+| **CK2** Checkpoint de base (0a + 0b) | lead | `fix/ck2-base`, `docs/ck2`, `fix/rol-menu` | ✅ aprobado | — | #37, #38, #39 | [Informe](checkpoints/CK2.md): H1–H7 corregidos |
+
+## Ola en curso: 2a — SPEC-1, 2 y 3
+
+| Paso | Agente | Rama | Estado | Ronda | PR | Bloqueos / notas |
+|---|---|---|---|---|---|---|
+| SPEC-1 Identidad | Sonnet | `spec/1-identidad` | 📝 brief listo | — | — | [Brief](briefs/SPEC-1.md); retira el JWKS de prueba (A5) |
+| SPEC-2.1 Catálogo: backend | Sonnet | `spec/2-catalogo` | 📝 brief listo | — | — | [Brief](briefs/SPEC-2.md) |
+| SPEC-2.2 Catálogo: frontend | Sonnet | `spec/2-catalogo` | ⏳ | — | — | Tras 2.1, en la misma rama |
+| SPEC-3 Tienda y reclamos | Sonnet | `spec/3-tienda` | 📝 brief listo | — | — | [Brief](briefs/SPEC-3.md) |
 
 ## Próximas olas
 
 | Ola | Specs | Estado |
 |---|---|---|
-| 2a | 1, 2, 3 | ⏳ |
 | 2b | 4, 5, 6, 7 | ⏳ |
 | 3 | 8 | ⏳ |
 
@@ -39,6 +47,7 @@
 
 | Fecha | Evento |
 |---|---|
+| 2026-10-20 | CK2 corregido e integrado (#37, #38; rol en el menú, #39). Briefs de la ola 2a: SPEC-1, SPEC-2 en dos pasos y SPEC-3; stack v10 (WebP, Markdown, script de fotos). |
 | 2026-10-20 | SPEC-0b cerrada (#33, #35, #36). CK2: base desde cero en verde; 2 bloqueantes (rutas del backoffice por pantalla, `.env` del *smoke*) y 5 correcciones más, aprobadas por el autor; se corrigen en `fix/ck2-base`. |
 | 2026-10-20 | SPEC-0a cerrada (#29, primer CI real en verde). `.env.example` completado (#28). Brief de 0b listo. |
 | 2026-10-20 | Los 7 esqueletos de 0a.2 integrados (#20–#26; notification en 2 rondas, el resto en 1). Brief de 0a.3 listo. |

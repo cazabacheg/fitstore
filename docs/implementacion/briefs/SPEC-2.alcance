@@ -1,0 +1,10 @@
+# Alcance de la SPEC-2 completa (unión de 2.1 y 2.2), para verificar el PR a dev.
+backend/catalog-service/*
+infra/config-repo/catalog-service.yml
+infra/config-repo/catalog-service-*.yml
+infra/scripts/semilla-imagenes/*
+k6/catalogo.js
+postman/catalog.postman_collection.json
+frontend/projects/storefront/src/app/features/catalogo/*
+frontend/projects/backoffice/src/app/features/catalogo/*
+frontend/projects/backoffice/src/app/features/inventario/*
