@@ -1,11 +1,12 @@
 # SPEC-0a — Plataforma backend y esqueletos de servicios
 
-> Versión: **v8 (aprobado)** — 2026-10-19 · Estados: ✅ decidido · 🟡 propuesto · ❓ abierto
+> Versión: **v9 (aprobado)** — 2026-10-19 · Estados: ✅ decidido · 🟡 propuesto · ❓ abierto
 > **Dueña de:** monorepo, `fitstore-common`, `config-server`, `discovery-server`, `api-gateway`, `infra/` (entorno dev), CI, y el **esqueleto** de los 7 servicios de negocio.
 > **Depende de:** — · **Habilita:** todas las demás specs.
 > **Contratos:** los esqueletos exponen solo `actuator` y la documentación base; los endpoints de negocio llegan con cada spec.
 
 **Historial:**
+- v9 (2026-10-20): **spec implementada** (0a.1 #17, 0a.2 #20–#26, 0a.3 #29; 22 de 22 criterios). La sección 8 incluye `.gitleaksignore` (los 10 falsos positivos de gitleaks, excluidos por huella exacta; decisión del autor).
 - v8 (2026-10-20): brief de 0a.3: la sección 8 incluye `.gitleaks.toml` (allowlist de la clave de prueba de I2, CA-0a-18).
 - v7 (2026-10-19): checkpoint CK1: la sección 8 incluye `infra/scripts/ubigeo-a-sql` (ya lo pedía la sección 6) y `.dockerignore`.
 - v6 (2026-10-19): por la estrategia multiagente: cobertura mínima con JaCoCo (CA-0a-21), validación de contratos en CI con Redocly, AsyncAPI CLI y `oasdiff` v1.33.0 (CA-0a-22, K2), I1 con integración en `dev` y los esqueletos de 3 en 3, núcleo a cubrir en la sección 7.
@@ -282,7 +283,7 @@ Total: **29 repositorios** con pruebas de datos.
 | `infra/scripts/ubigeo-a-sql` (settings, sección 6) | crea | pasa a la spec 3 |
 | `.dockerignore` | crea | congelado |
 | `infra/docker-compose.yml`, `docker-compose.dev.yml`, `.env.example`, `postgres/`, `garage/`, `smoke.sh`, `dev/` | crea | congelados (spec 8 agrega `docker-compose.cloud.yml` y `caddy/`) |
-| `.gitleaks.toml` (allowlist de la clave de prueba, I2) | crea | congelado |
+| `.gitleaks.toml` (allowlist de la clave de prueba, I2) y `.gitleaksignore` (huellas de falsos positivos) | crea | congelados |
 | `scripts/contrato.sh`, `contracts/implementados.txt` | crea | `contrato.sh` congelado; `implementados.txt` lo amplía cada spec al cerrar |
 | `.github/workflows/ci.yml`, `.github/workflows/stage.yml`, `.github/pull_request_template.md` | crea | congelados (0b agrega el job de frontend; la spec 8 crea `deploy.yml`) |
 | `postman/fitstore-base.postman_collection.json`, `postman/local.postman_environment.json` | crea | cada spec agrega su colección |

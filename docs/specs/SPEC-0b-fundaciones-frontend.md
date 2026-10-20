@@ -1,10 +1,11 @@
 # SPEC-0b — Fundaciones del frontend
 
-> Versión: **v9 (aprobado)** — 2026-10-19 · Estados: ✅ decidido · 🟡 propuesto · ❓ abierto
+> Versión: **v10 (aprobado)** — 2026-10-19 · Estados: ✅ decidido · 🟡 propuesto · ❓ abierto
 > **Dueña de:** workspace Angular (`frontend/`), librería `shared`, *shells* (layouts) de storefront y backoffice, rutas y menús generales, tema white-label, carpetas `ui/` de cada app, job de frontend en CI.
 > **Depende de:** 0a (gateway y CI), la etapa de contratos (OpenAPI para generar los clientes) y la etapa de diseño (**sistema de diseño**: los componentes de `ui/` se construyen según él). · **Habilita:** pantallas de las specs 1–8.
 
 **Historial:**
+- v10 (2026-10-20): DoD ajustado (decisión del autor): `/settings/public`, `/categorias`, `/staff/me` y `/ubigeo` llegan con las specs 1–3, así que en 0b la marca se verifica con pruebas (respuesta simulada) y en vivo con el tema por defecto (CA-0b-07); la verificación en vivo con los datos semilla pasa a la SPEC-3.
 - v9 (2026-10-19): por la estrategia multiagente: cobertura mínima de 80 % con Vitest en el job `frontend` (R9).
 - v8 (2026-10-19): etapa de diseño cerrada: diseños de alta fidelidad enlazados (P-0b-02).
 - v7 (2026-10-19): etapa de diseño: el tema de settings trae solo los cinco colores; la tipografía y los radios son fijos (HU-0b-02, CA-0b-05, R4). Cabecera de la tienda: hasta 4 categorías raíz, atenuación al pasar el mouse (CA-0b-20, nuevo CA-0b-20c, CA-0b-21); diseño de P-0b-01 enlazado.
@@ -362,7 +363,7 @@ No aplica (no hay base de datos). En el navegador: `localStorage` solo para la c
 ## 9. Definición de terminado
 
 - [ ] CA-0b-01 a CA-0b-30 (y CA-0b-20b, CA-0b-20c, CA-0b-28b) cumplidos.
-- [ ] Las dos apps arrancan contra la plataforma 0a y muestran la marca de settings (con los datos semilla).
+- [ ] Las dos apps arrancan contra la plataforma 0a; en vivo muestran el tema FitStore por defecto (CA-0b-07, porque `/settings/public` llega con la SPEC-3) y la marca de settings queda verificada con pruebas que simulan su respuesta (CA-0b-05 a CA-0b-08). La verificación en vivo con los datos semilla es parte del DoD de la SPEC-3.
 - [ ] `/_ui` muestra todos los componentes de `ui/` en ambas apps.
 - [ ] Sin tokens en `localStorage`; sin atribución de IA en commits.
 - [ ] Revisado y aprobado por el autor.
