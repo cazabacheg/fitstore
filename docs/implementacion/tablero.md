@@ -3,7 +3,7 @@
 > Lo actualiza el lead en cada cambio de estado ([estrategia multiagente](estrategia-multiagente.md), sección 8).
 > Estados: ⏳ en espera · 📝 brief listo · 🔨 en curso · 🔍 en verificación (ronda N) · 👀 en revisión del autor · ✅ integrada · ⛔ bloqueada
 
-## Ola en curso: 0 — SPEC-0a
+## Ola 0 — SPEC-0a ✅ cerrada
 
 | Paso | Agente | Rama | Estado | Ronda | PR | Bloqueos / notas |
 |---|---|---|---|---|---|---|
@@ -16,13 +16,20 @@
 | 0a.2 payment | Sonnet | `spec/0a-2-payment` | ✅ integrada | 1 | #24 | — |
 | 0a.2 delivery | Sonnet | `spec/0a-2-delivery` | ✅ integrada | 1 | #25 | — |
 | 0a.2 notification | Sonnet | `spec/0a-2-notification` | ✅ integrada | 2 | #26 | — |
-| 0a.3 CI, humo y Postman | — | `spec/0a-3-ci` | 📝 brief listo | — | — | Esperando la aprobación del autor para lanzar |
+| 0a.3 CI, humo y Postman | Sonnet | `spec/0a-3-ci` | ✅ integrada | 2 | #29 | Primer CI real en verde |
+
+## Ola en curso: 1 — SPEC-0b
+
+| Paso | Agente | Rama | Estado | Ronda | PR | Bloqueos / notas |
+|---|---|---|---|---|---|---|
+| 0b.1 Workspace, `shared` y CI | — | `spec/0b-1-base` | 📝 brief listo | — | — | Esperando la aprobación del autor |
+| 0b.2 Storefront | — | `spec/0b-2-storefront` | ⏳ | — | — | Tras 0b.1 (en paralelo con 0b.3) |
+| 0b.3 Backoffice | — | `spec/0b-3-backoffice` | ⏳ | — | — | Tras 0b.1 (en paralelo con 0b.2) |
 
 ## Próximas olas
 
 | Ola | Specs | Estado |
 |---|---|---|
-| 1 | 0b | ⏳ |
 | — | **CK2** Checkpoint de base (0a + 0b) | ⏳ |
 | 2a | 1, 2, 3 | ⏳ |
 | 2b | 4, 5, 6, 7 | ⏳ |
@@ -32,6 +39,7 @@
 
 | Fecha | Evento |
 |---|---|
+| 2026-10-20 | SPEC-0a cerrada (#29, primer CI real en verde). `.env.example` completado (#28). Brief de 0b listo. |
 | 2026-10-20 | Los 7 esqueletos de 0a.2 integrados (#20–#26; notification en 2 rondas, el resto en 1). Brief de 0a.3 listo. |
 | 2026-10-19 | Estrategia aprobada (v3). Brief de 0a.1 listo. |
 | 2026-10-19 | 0a.1 integrada (#17, 2 rondas). CK1: informe con H1–H5; brief de 0a.2 completo. |

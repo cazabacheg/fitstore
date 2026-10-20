@@ -1,0 +1,4 @@
+# Alcance de 0b.1 (scripts/fuera-de-alcance.sh): un patrón por línea.
+# Workspace completo, librería shared y el esqueleto generado de las dos apps.
+frontend/*
+.github/workflows/ci.yml

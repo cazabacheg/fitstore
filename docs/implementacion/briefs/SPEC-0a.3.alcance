@@ -9,3 +9,4 @@ contracts/implementados.txt
 postman/fitstore-base.postman_collection.json
 postman/local.postman_environment.json
 README.md
+.gitleaksignore
