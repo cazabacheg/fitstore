@@ -1,0 +1,10 @@
+# Perfil cloud: Amazon SES por su interfaz SMTP (micro D1). Host, puerto (587), credenciales y STARTTLS salen de
+# SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASSWORD y SMTP_STARTTLS del entorno de la VM.
+# Flyway usa solo db/migration (sin datos de demostración).
+spring:
+  flyway:
+    locations: classpath:db/migration
+
+fitstore:
+  notificacion:
+    ritmo-por-segundo: 1        # límite de SES en sandbox (SPEC-7 N6)

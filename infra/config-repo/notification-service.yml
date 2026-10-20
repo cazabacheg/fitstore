@@ -1,0 +1,61 @@
+# notification-service (micro notification, 10.5). Sin secretos: solo ${VARIABLES} del entorno (.env fuera de Git).
+server:
+  port: 8086
+
+spring:
+  datasource:
+    url: jdbc:postgresql://${DB_HOST:postgres}:5432/notification_db
+    username: ${NOTIFICATION_DB_USER}
+    password: ${NOTIFICATION_DB_PASSWORD}
+  jpa:
+    hibernate:
+      ddl-auto: validate        # el esquema lo maneja Flyway
+  flyway:
+    locations: classpath:db/migration
+  mail:
+    host: ${SMTP_HOST}          # dev: mailpit · cloud: email-smtp.<region>.amazonaws.com
+    port: ${SMTP_PORT:1025}     # cloud: 587 con STARTTLS
+    username: ${SMTP_USER:}
+    password: ${SMTP_PASSWORD:}
+    properties:
+      mail.smtp.starttls.enable: ${SMTP_STARTTLS:false}
+
+springdoc:
+  api-docs:
+    version: openapi_3_0        # K2: oasdiff compara contra OpenAPI 3.0
+
+fitstore:
+  eventos:
+    servicio: notification      # cola notification.eventos y DLQ notification.eventos.dlq
+    # Las 17 routing keys que consume (micro 6 y 10.6); coinciden con los canales del AsyncAPI
+    enlaces:
+      - auth.cliente.registrado
+      - auth.password.reset-solicitado
+      - auth.password.cambiado
+      - catalog.stock.bajo
+      - catalog.stock.no-confirmado
+      - order.pedido.creado
+      - order.pedido.pagado
+      - order.pedido.cancelado
+      - order.pedido.listo-recojo
+      - order.pedido.recogido
+      - payment.boleta.emitida
+      - payment.reembolso.completado
+      - payment.reembolso.fallido
+      - delivery.entrega.actualizada
+      - settings.configuracion.actualizada
+      - settings.reclamo.registrado
+      - settings.reclamo.respondido
+  outbox:
+    habilitado: false           # notification no publica eventos (micro 6); la tabla outbox_evento existe igual
+    intervalo-ms: 1000
+    lote: 100
+  notificacion:
+    remitente: ${MAIL_FROM:}    # dirección verificada en SES
+    ritmo-por-segundo: 1
+    reintentos: [1m, 5m, 15m, 60m]
+    confirmacion-sin-boleta-tras: 10m
+    retencion: 180d
+    enlaces:
+      storefront: ${STOREFRONT_URL}
+      backoffice: ${BACKOFFICE_URL}
