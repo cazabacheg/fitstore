@@ -1,6 +1,6 @@
 # Brief — SPEC-0b Fundaciones del frontend
 
-> Preparado por el lead · 2026-10-20 · Spec: [SPEC-0b](../../specs/SPEC-0b-fundaciones-frontend.md) **v9** · Modelo de los implementadores: Sonnet
+> Preparado por el lead · 2026-10-20 · Spec: [SPEC-0b](../../specs/SPEC-0b-fundaciones-frontend.md) **v10** · Modelo de los implementadores: Sonnet
 > Reglas comunes: [`CLAUDE.md`](../../../CLAUDE.md) · Estrategia: [estrategia multiagente](../estrategia-multiagente.md)
 
 La SPEC-0b se construye en tres pasos. El primero deja el workspace y todo lo compartido; los otros dos son las dos aplicaciones, **en paralelo** porque viven en carpetas distintas y no comparten archivos.
@@ -16,7 +16,7 @@ La SPEC-0b se construye en tres pasos. El primero deja el workspace y todo lo co
 
 ### Validación del brief (estrategia B2)
 
-Copiada de la sección 7 de la SPEC-0b v9. Cuando la sección 7 prueba un criterio **por app** ("pruebas de rutas y guards por app", componentes de `ui/` de cada app), cada app es dueña de su parte, con su propio archivo de prueba.
+Copiada de la sección 7 de la SPEC-0b v10. Cuando la sección 7 prueba un criterio **por app** ("pruebas de rutas y guards por app", componentes de `ui/` de cada app), cada app es dueña de su parte, con su propio archivo de prueba.
 
 | CA | Sección 7: tipo · dónde | Dueño | Complementaria |
 |---|---|---|---|
@@ -70,6 +70,6 @@ Se completan al cerrar 0b.1 (como 0a.2), con lo aprendido: ejemplos reales de `s
 - **0b.2 Storefront:** `TiendaShell` (P-0b-01: cabecera clara con hasta 4 categorías y atenuación al pasar el mouse, menú lateral en móvil, pie al final del documento), `ui/` de la tienda con Tailwind (P-0b-04, columna izquierda), estados comunes (P-0b-03), rutas R2 de la tienda con "Próximamente", `/_ui` solo en desarrollo. Diseño: `docs/diseno/pantallas/TiendaCabecera.dc.html`, `TiendaPie.dc.html` y `marca.css`.
 - **0b.3 Backoffice:** `BackofficeShell` (P-0b-02: menú lateral R3 por rol con contadores, barra superior con migas y menú de usuario), `ui/` del backoffice con Angular Material (P-0b-04, columna derecha, con `FsTabla` según R11), estados comunes, rutas R2 del backoffice con "Próximamente" y página 403, `/_ui` solo en desarrollo. Diseño: `docs/diseno/pantallas/BoBarra.dc.html` y las barras superiores de las pantallas del backoffice.
 
-## Pendiente del autor
+## DoD de la marca (decisión del autor, 2026-10-20)
 
-**DoD "las dos apps arrancan contra la plataforma 0a y muestran la marca de settings (con los datos semilla)":** `/settings/public`, `/categorias`, `/staff/me` y `/ubigeo` los implementan las specs 1, 2 y 3, que vienen después. Con la plataforma 0a de hoy esos endpoints no existen. Propuesta del lead: en 0b se verifica con las pruebas (respuesta simulada con `HttpTestingController`) y en vivo con el tema por defecto (CA-0b-07); la verificación en vivo con los datos semilla se suma al DoD de la spec 3, cuando `/settings/public` exista.
+`/settings/public`, `/categorias`, `/staff/me` y `/ubigeo` los implementan las specs 1, 2 y 3. En 0b la marca se verifica con las pruebas (respuesta simulada con `HttpTestingController`) y en vivo con el tema FitStore por defecto (CA-0b-07); la verificación en vivo con los datos semilla está en el DoD de la SPEC-3 (SPEC-0b v10, SPEC-3 v9).
