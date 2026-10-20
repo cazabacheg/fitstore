@@ -1,11 +1,12 @@
 # SPEC-8 — Integración, nube y demo
 
-> Versión: **v4 (aprobado)** — 2026-10-19 · Estados: ✅ decidido · 🟡 propuesto · ❓ abierto
+> Versión: **v5 (aprobado)** — 2026-10-20 · Estados: ✅ decidido · 🟡 propuesto · ❓ abierto
 > **Dueña de:** dashboard del backoffice (`features/dashboard`), pruebas de punta a punta (`frontend/e2e/`), despliegue en la nube (`infra/docker-compose.cloud.yml`, `infra/caddy/`, `infra/scripts/`, `.github/workflows/deploy.yml`), guion de la demo (`docs/demo/`).
 > **Depende de:** 1 a 7 (todas integradas en `dev`) · usa los endpoints de resumen de order, catalog, delivery y settings · **Habilita:** la entrega final (demo en la nube, video y exposición).
 > **Contratos:** no crea endpoints; consume los ya definidos (sección 4).
 
 **Historial:**
+- v5 (2026-10-20): `docs/demo/ids-demo.md` lo crea el lead en la ola 2a (las specs 1–7 necesitan los UUID antes que esta); aquí se completa.
 - v4 (2026-10-19): etapa de diseño cerrada: diseños de alta fidelidad enlazados (P-8-01).
 - v3 (2026-10-19): revisión de coherencia: Mailpit corre en la nube sin publicar como respaldo de SES (CA-8-15, CA-8-30; micro de infraestructura v6 con `duckdns` y Mailpit en la tabla de memoria).
 - v2 (2026-10-19): I6 ✅ Garage en la VM (adaptador Azure Blob diferido); I7 ✅ la nube carga **todos** los datos de demostración, incluidos clientes y pedidos, con la contraseña de las cuentas demo desde un secreto (CA-8-31) → **spec aprobada**. Ajustes propagados: SPEC-0a v5, SPEC-1 v5, SPEC-2 a SPEC-7 (nota del perfil `demo`), micro de infraestructura v5, stack v3, macro v22 y ADR-013.
@@ -252,7 +253,8 @@ No agrega lógica de negocio. Decisiones de esta spec:
 | `.github/workflows/deploy.yml` | crea |
 | `.github/workflows/stage.yml` | modifica (agrega E2E y Lighthouse; ADR-021) |
 | `postman/entornos/cloud.json` | crea |
-| `docs/despliegue.md`, `docs/demo/guion.md`, `docs/demo/ids-demo.md` | crea |
+| `docs/despliegue.md`, `docs/demo/guion.md` | crea |
+| `docs/demo/ids-demo.md` | completa (lo crea el lead en la ola 2a y lo amplía con lo que reporta cada spec) |
 | `docs/analisis/micro/infraestructura.md` (I10) | modifica |
 | Servicios de negocio, `fitstore-common`, gateway, `shared` | solo lectura |
 

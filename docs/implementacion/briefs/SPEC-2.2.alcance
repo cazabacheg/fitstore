@@ -1,0 +1,4 @@
+# Alcance de 2.2 (frontend de la SPEC-2, sección 8 v9): un patrón por línea.
+frontend/projects/storefront/src/app/features/catalogo/*
+frontend/projects/backoffice/src/app/features/catalogo/*
+frontend/projects/backoffice/src/app/features/inventario/*

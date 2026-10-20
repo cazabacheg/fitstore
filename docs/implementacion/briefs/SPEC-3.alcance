@@ -1,0 +1,9 @@
+# Alcance de la SPEC-3 (sección 8 v10): un patrón por línea.
+backend/settings-service/*
+infra/config-repo/settings-service.yml
+infra/config-repo/settings-service-*.yml
+frontend/projects/storefront/src/app/features/inicio/*
+frontend/projects/storefront/src/app/features/legal/*
+frontend/projects/backoffice/src/app/features/configuracion/*
+frontend/projects/backoffice/src/app/features/reclamos/*
+postman/settings.postman_collection.json

@@ -1,6 +1,6 @@
 # FitStore — Stack y versiones
 
-> Versión: **v9 (aprobado)** — 2026-10-20. v9: las pruebas con Testcontainers usan las mismas etiquetas exactas que el compose (CK2 H4). v8: versiones exactas del frontend fijadas en 0b.1 (aprobadas por el autor). v7: herramientas de CI fijadas en 0a.3 (gitleaks, Newman y *actions* de GitHub). v6: versiones exactas fijadas en 0a.2 (`openhtmltopdf-pdfbox` 1.1.87, `greenmail-junit5` 2.1.14). v5: `spring-retry` 2.0.13 para el reintento del cliente de config (CA-0a-04) y etiquetas exactas de las imágenes fijadas en 0a.1. v4: JaCoCo, oasdiff y cobertura de Vitest (estrategia multiagente V0, SPEC-0a I7–I8). v3: Azure Blob diferido (SPEC-8 I6). v2: se adopta MapStruct. Versiones consultadas en Maven Central y npm el 2026-10-18.
+> Versión: **v10 (aprobado)** — 2026-10-20. v10: para la ola 2a, lectura de WebP (TwelveMonkeys), Markdown seguro en la tienda (`marked` + `DOMPurify`) y el script de fotos de demostración (Python + Pillow). v9: las pruebas con Testcontainers usan las mismas etiquetas exactas que el compose (CK2 H4). v8: versiones exactas del frontend fijadas en 0b.1 (aprobadas por el autor). v7: herramientas de CI fijadas en 0a.3 (gitleaks, Newman y *actions* de GitHub). v6: versiones exactas fijadas en 0a.2 (`openhtmltopdf-pdfbox` 1.1.87, `greenmail-junit5` 2.1.14). v5: `spring-retry` 2.0.13 para el reintento del cliente de config (CA-0a-04) y etiquetas exactas de las imágenes fijadas en 0a.1. v4: JaCoCo, oasdiff y cobertura de Vitest (estrategia multiagente V0, SPEC-0a I7–I8). v3: Azure Blob diferido (SPEC-8 I6). v2: se adopta MapStruct. Versiones consultadas en Maven Central y npm el 2026-10-18.
 > Todas las secciones 10.4 de los micros remiten a esta tabla; cada servicio solo lista **qué** usa, no la versión.
 > Regla: las versiones se fijan al crear el repositorio y se actualizan solo con un motivo (seguridad o corrección).
 
@@ -16,6 +16,8 @@
 | **Angular** (CLI, core, CDK, Material, build) | **22.2.1** | Storefront y backoffice; `ng-packagr` **22.2.4** para `shared` |
 | TypeScript | **6.0.3** | Angular 22.2 exige `>=6.0 <6.1` |
 | Tailwind CSS (`tailwindcss`, `@tailwindcss/postcss`) | **4.3.3** | Storefront |
+| Markdown de las políticas (SPEC-3 S3) | `marked` **18.1.0** + `dompurify` **3.4.16** | Storefront y backoffice (vista previa); siempre `marked` → `DOMPurify.sanitize` |
+| Script de fotos de demostración (SPEC-2) | Python **3.12** + `pillow` **12.3.0** + `numpy` **2.5.3** (fijadas en `requirements.txt`, en un `venv`) | Solo se corre en Lyanna para generar las JPG; no es parte de ningún servicio |
 
 **Por qué no Spring Boot 4.1.1** (ya publicado): necesita Spring Cloud 2026.0, que hoy solo está en *milestone* (2026.0.0-M1). Mezclar Boot 4.1 con Cloud 2025.1 no está soportado. Se queda en **4.0.8 + 2025.1.3** (ADR-001); migrar a 4.1 cuando salga Cloud 2026.0 GA sería un cambio de versión en el POM padre.
 
@@ -49,6 +51,7 @@ Gestionadas por los BOM de Spring Boot y Spring Cloud salvo que se indique versi
 | S3 (Garage / AWS) | `software.amazon.awssdk:s3` (BOM `bom`) | **2.56.x** |
 | Azure Blob (adaptador alternativo) | `com.azure:azure-storage-blob` (BOM `azure-sdk-bom`) | **diferido** (la demo usa Garage en la VM, SPEC-8 I6); se fija si se implementa |
 | Imágenes (solo catalog, settings) | `net.coobird:thumbnailator` | **0.4.21** |
+| Lectura de WebP (solo catalog, settings) | `com.twelvemonkeys.imageio:imageio-webp` (plugin de ImageIO, solo lectura: la salida siempre es JPG o PNG) | **3.15.2** |
 | PDF (solo payment) | `io.github.openhtmltopdf:openhtmltopdf-pdfbox` | **1.1.87** (fijada en 0a.2; las 1.1.88+ tenían menos de dos semanas) |
 | Carga masiva (solo catalog) | `org.apache.poi:poi-ooxml`, `org.apache.commons:commons-csv` | **5.5.1**, **1.14.1** |
 | Mercado Pago (solo payment) | `com.mercadopago:sdk-java` | **3.7.0** |

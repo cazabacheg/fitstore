@@ -1,11 +1,12 @@
 # SPEC-3 — Tienda y reclamos
 
-> Versión: **v9 (aprobado)** — 2026-10-19 · Estados: ✅ decidido · 🟡 propuesto · ❓ abierto
+> Versión: **v10 (aprobado)** — 2026-10-20 · Estados: ✅ decidido · 🟡 propuesto · ❓ abierto
 > **Dueña de:** `backend/settings-service` (configuración, ubigeo, Libro de Reclamaciones) · tienda: `features/inicio`, `features/legal` · backoffice: `features/configuracion`, `features/reclamos`.
 > **Depende de:** 0a, 0b, 1 (sesión de staff) · usa el contrato de catalog (destacados y categorías) · **Habilita:** la marca real en todas las pantallas (0b ya la consume), versiones de políticas para el registro (spec 1), parámetros para order y payment (specs 4 y 5).
 > **Contratos:** `contracts/openapi/settings-service.yaml`; eventos `ConfiguracionActualizada`, `ReclamoRegistrado`, `ReclamoRespondido`.
 
 **Historial:**
+- v10 (2026-10-20): al preparar la ola 2a: la columna `beneficios` ya la creó la `V1` de 0a (no hay migración nueva); versiones de `marked` y `DOMPurify` y lectura de WebP en stack v10 (las imágenes de landing se guardan en JPG). Las imágenes de landing de la demo se versionan en los recursos de settings (mismo mecanismo que catalog). Los UUID fijos de la demo están en `docs/demo/ids-demo.md`.
 - v9 (2026-10-20): DoD: verificación en vivo de la marca con los datos semilla, pasada desde la SPEC-0b (decisión del autor).
 - v8 (2026-10-19): etapa de diseño cerrada: diseños de alta fidelidad enlazados (P-3-04).
 - v7 (2026-10-19): etapa de diseño: el tema configura solo los cinco colores; tipografía y bordes son fijos del sistema de diseño (HU-3-03, CA-3-09, boceto P-3-04). CA-3-10: el texto sobre el primario se deriva (blanco o el color de texto), así que solo se advierte si ninguno de los dos llega a 4.5:1. Diseño de P-3-01 enlazado.
@@ -110,7 +111,7 @@ CA-3-13  Cuando edito el hero (título, subtítulo, texto y enlace del botón)
          Entonces se guarda; el enlace debe ser una ruta de la tienda ("/productos?…") o una URL https
 
 CA-3-14  Cuando subo hasta 5 imágenes de landing (JPG o WebP, hasta 5 MB) con texto alternativo y enlace opcional
-         Entonces se redimensionan a 1600 px y puedo reordenarlas o eliminarlas; la sexta se rechaza
+         Entonces se redimensionan a 1600 px (se guardan en JPG) y puedo reordenarlas o eliminarlas; la sexta se rechaza
 
 CA-3-15  Cuando edito los beneficios (opcionales, de 0 a 3: icono y texto corto de hasta 60 caracteres)
          Entonces aparecen en la franja de la landing en su orden
@@ -297,9 +298,9 @@ Todo según el micro de settings. Decisiones de implementación de esta spec:
 
 ## 6. Datos
 
-- **Sin migraciones nuevas** salvo S1: `VAAAAMMDD_HHMM__beneficios.sql` (columna `beneficios jsonb NOT NULL DEFAULT '[]'`; la franja empieza oculta).
+- **Sin migraciones nuevas:** la columna `beneficios` (S1, `jsonb NOT NULL DEFAULT '[]'`, máximo 3) ya está en la `V1` de 0a; la franja empieza oculta.
 - **Políticas versión 1:** textos modelo para una tienda en línea peruana (términos, privacidad con Ley 29733, cambios y devoluciones, envíos), claramente marcados como **plantilla a revisar por la tienda** (no son asesoría legal).
-- **Datos de demostración (perfil `dev` y, en la nube, perfil `demo` (SPEC-8 I7)):** 3 imágenes de landing (licencia libre), beneficios, contacto y tienda física en Gamarra; 3 reclamos (uno vencido, uno por vencer, uno respondido) para mostrar la bandeja.
+- **Datos de demostración (perfil `dev` y, en la nube, perfil `demo` (SPEC-8 I7)):** 3 imágenes de landing (licencia libre; versionadas en los recursos de settings, que las sube a Garage al arrancar con `dev` o `demo`, igual que catalog en la SPEC-2 v9), beneficios, contacto y tienda física en Gamarra; 3 reclamos (uno vencido, uno por vencer, uno respondido) para mostrar la bandeja.
 
 ## 7. Pruebas
 
