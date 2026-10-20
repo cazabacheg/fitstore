@@ -67,7 +67,11 @@ class Anfitrion {
 @Component({ template: 'detalle' })
 class Detalle {}
 
-async function montar(): Promise<{ f: ComponentFixture<Anfitrion>; el: HTMLElement; comp: Anfitrion }> {
+async function montar(): Promise<{
+  f: ComponentFixture<Anfitrion>;
+  el: HTMLElement;
+  comp: Anfitrion;
+}> {
   TestBed.configureTestingModule({
     providers: [provideRouter([{ path: 'pedidos/:codigo', component: Detalle }])],
   });
@@ -96,7 +100,11 @@ describe('FsTabla: paginación y orden', () => {
     const { f, el, comp } = await montar();
     (el.querySelector('.mat-mdc-select-trigger') as HTMLElement).click();
     await estable(f);
-    const opciones = [...TestBed.inject(OverlayContainer).getContainerElement().querySelectorAll<HTMLElement>('mat-option')];
+    const opciones = [
+      ...TestBed.inject(OverlayContainer)
+        .getContainerElement()
+        .querySelectorAll<HTMLElement>('mat-option'),
+    ];
     opciones.find((o) => o.textContent?.trim() === '50')?.click();
     await estable(f);
     expect(comp.consultas.at(-1)).toEqual({ page: 0, size: 50, sort: [] });
@@ -119,13 +127,19 @@ describe('FsTabla: paginación y orden', () => {
 
   it('CA-0b-28 solo las columnas ordenables tienen cabecera de orden', async () => {
     const { el } = await montar();
-    const ordenables = [...el.querySelectorAll('th')].filter((th) => th.querySelector('.mat-sort-header-container'));
+    const ordenables = [...el.querySelectorAll('th')].filter(
+      (th) =>
+        th.querySelector('.mat-sort-header-container') &&
+        !th.classList.contains('mat-sort-header-disabled'),
+    );
     expect(ordenables.map((th) => th.textContent?.trim())).toEqual(['Pedido', 'Total']);
   });
 
   it('CA-0b-28 muestra el rango "1–20 de 64" del paginador en español', async () => {
     const { el } = await montar();
-    expect(el.querySelector('.mat-mdc-paginator-range-label')?.textContent?.trim()).toBe('1 – 20 de 64');
+    expect(el.querySelector('.mat-mdc-paginator-range-label')?.textContent?.trim()).toBe(
+      '1 – 20 de 64',
+    );
   });
 });
 
@@ -160,7 +174,9 @@ describe('FsTabla: convención de filas R11', () => {
     const router = TestBed.inject(Router);
     const abrir = vi.spyOn(window, 'open').mockReturnValue(null);
     const enlace = filas(el)[0].querySelector('td a') as HTMLElement;
-    enlace.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true, ctrlKey: true }));
+    enlace.dispatchEvent(
+      new MouseEvent('click', { bubbles: true, cancelable: true, ctrlKey: true }),
+    );
     await estable(f);
     expect(router.url).toBe('/');
     expect(abrir).not.toHaveBeenCalled(); // la pestaña nueva la abre el navegador con el href real

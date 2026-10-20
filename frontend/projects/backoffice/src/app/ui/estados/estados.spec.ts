@@ -11,7 +11,10 @@ import { EstadoVacio } from './estado-vacio';
     <fs-estado-vacio titulo="Aún no hay pedidos" texto="Cuando entren pedidos aparecerán aquí.">
       <button class="accion-vacio">Crear</button>
     </fs-estado-vacio>
-    <fs-estado-error texto="No pudimos cargar los pedidos." (reintentar)="reintentos = reintentos + 1" />
+    <fs-estado-error
+      texto="No pudimos cargar los pedidos."
+      (reintentar)="reintentos = reintentos + 1"
+    />
   `,
 })
 class Anfitrion {
@@ -41,8 +44,12 @@ describe('Estados comunes (P-0b-03)', () => {
     const f = TestBed.createComponent(Anfitrion);
     f.detectChanges();
     const el = f.nativeElement as HTMLElement;
-    expect(el.querySelector('fs-estado-error')?.textContent).toContain('No pudimos cargar los pedidos.');
-    const boton = [...el.querySelectorAll('button')].find((b) => b.textContent?.includes('Reintentar')) as HTMLElement;
+    expect(el.querySelector('fs-estado-error')?.textContent).toContain(
+      'No pudimos cargar los pedidos.',
+    );
+    const boton = [...el.querySelectorAll('button')].find((b) =>
+      b.textContent?.includes('Reintentar'),
+    ) as HTMLElement;
     boton.click();
     expect(f.componentInstance.reintentos).toBe(1);
   });

@@ -1,0 +1,105 @@
+@if (cargando()) {
+  <fs-estado-cargando />
+} @else if (vacia()) {
+  <fs-estado-vacio [titulo]="tituloVacio()" [texto]="textoVacio()" />
+} @else {
+  <div class="fs-tabla-contenedor">
+    <table
+      mat-table
+      matSort
+      class="fs-tabla"
+      [class.fs-tabla--plana]="!conDetalle()"
+      [dataSource]="filas()"
+      (matSortChange)="alOrdenar($event)"
+    >
+      @for (columna of columnas(); track columna.clave) {
+        <ng-container [matColumnDef]="columna.clave">
+          <th
+            mat-header-cell
+            *matHeaderCellDef
+            [mat-sort-header]="columna.clave"
+            [disabled]="!columna.ordenable"
+          >
+            {{ columna.titulo }}
+          </th>
+          <td mat-cell *matCellDef="let fila">
+            @if (columna.clave === columnaId() && conDetalle()) {
+              @if (destino(fila); as ruta) {
+                <a class="fs-codigo" [routerLink]="ruta">{{ texto(columna, fila) }}</a>
+              } @else {
+                <button type="button" class="fs-enlace fs-codigo" (click)="abrir(fila)">
+                  {{ texto(columna, fila) }}
+                </button>
+              }
+            } @else if (plantillas().get(columna.clave); as plantilla) {
+              <ng-container *ngTemplateOutlet="plantilla; context: { $implicit: fila }" />
+            } @else {
+              {{ texto(columna, fila) }}
+            }
+          </td>
+        </ng-container>
+      }
+      <ng-container matColumnDef="acciones">
+        <th mat-header-cell *matHeaderCellDef class="fs-acciones">Acciones</th>
+        <td mat-cell *matCellDef="let fila" class="fs-acciones">
+          @let lista = accionesDe(fila);
+          @if (lista.length === 0) {
+            @if (conDetalle()) {
+              @if (destino(fila); as ruta) {
+                <a class="fs-btn fs-btn--texto fs-btn--sm" [routerLink]="ruta">Ver ›</a>
+              } @else {
+                <button type="button" class="fs-btn fs-btn--texto fs-btn--sm" (click)="abrir(fila)">
+                  Ver ›
+                </button>
+              }
+            }
+          } @else if (lista.length <= 2) {
+            @for (accion of lista; track accion.etiqueta) {
+              <button
+                type="button"
+                class="fs-btn fs-btn--texto fs-btn--sm"
+                (click)="accion.alEjecutar(fila)"
+              >
+                {{ accion.etiqueta }}
+              </button>
+            }
+          } @else {
+            <button
+              type="button"
+              class="fs-btn fs-btn--texto fs-btn--sm"
+              aria-label="Más acciones"
+              [matMenuTriggerFor]="menu"
+            >
+              ⋮
+            </button>
+            <mat-menu #menu="matMenu" xPosition="before">
+              @for (accion of lista; track accion.etiqueta) {
+                <button mat-menu-item type="button" (click)="accion.alEjecutar(fila)">
+                  {{ accion.etiqueta }}
+                </button>
+              }
+            </mat-menu>
+          }
+        </td>
+      </ng-container>
+      <tr mat-header-row *matHeaderRowDef="claves()"></tr>
+      <tr
+        mat-row
+        *matRowDef="let fila; columns: claves()"
+        [class.fs-fila--clicable]="conDetalle()"
+        [class.fs-fila--aviso]="claseFila()?.(fila) === 'aviso'"
+        [class.fs-fila--error]="claseFila()?.(fila) === 'error'"
+        (click)="clicFila($event, fila)"
+      ></tr>
+    </table>
+    <div class="fs-tabla__pie">
+      <mat-paginator
+        [length]="datos()?.totalElementos ?? 0"
+        [pageIndex]="datos()?.pagina ?? 0"
+        [pageSize]="datos()?.tamano ?? 20"
+        [pageSizeOptions]="tamanosPagina()"
+        (page)="alPaginar($event)"
+      />
+    </div>
+  </div>
+}

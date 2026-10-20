@@ -1,0 +1,40 @@
+:host {
+  display: block;
+}
+.fs-tabla {
+  background: transparent;
+}
+.fs-tabla th.mat-mdc-header-cell,
+.fs-tabla td.mat-mdc-cell {
+  color: inherit;
+  font-family: var(--fs-font-marca);
+}
+.fs-tabla tbody tr {
+  cursor: default;
+}
+.fs-tabla tbody tr.fs-fila--clicable {
+  cursor: pointer;
+}
+.fs-tabla--plana tbody tr:hover {
+  background: transparent;
+}
+.fs-tabla tr.fs-fila--aviso,
+.fs-tabla tr.fs-fila--error {
+  cursor: inherit;
+}
+.fs-enlace {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--fs-color-primario-texto);
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+.fs-acciones {
+  text-align: right;
+}
+.fs-tabla__pie {
+  padding: 0;
+}
