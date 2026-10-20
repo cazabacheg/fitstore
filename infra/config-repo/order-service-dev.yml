@@ -1,0 +1,4 @@
+# order-service en desarrollo: además de las migraciones, Flyway incluye los datos de demostración (db/dev)
+spring:
+  flyway:
+    locations: classpath:db/migration,classpath:db/dev
