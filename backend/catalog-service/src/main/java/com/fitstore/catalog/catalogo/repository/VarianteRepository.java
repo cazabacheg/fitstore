@@ -19,4 +19,8 @@ public interface VarianteRepository extends JpaRepository<Variante, Long> {
     boolean existsByTallaId(Long tallaId);
 
     boolean existsByColorId(Long colorId);
+
+    boolean existsBySku(String sku);
+
+    boolean existsByProductoIdAndTallaIdAndColorId(Long productoId, Long tallaId, Long colorId);
 }

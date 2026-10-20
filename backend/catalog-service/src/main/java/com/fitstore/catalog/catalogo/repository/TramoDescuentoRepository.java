@@ -13,4 +13,6 @@ public interface TramoDescuentoRepository extends JpaRepository<TramoDescuento, 
     List<TramoDescuento> findByProductoIdOrderByUnidadesMinimasAsc(Long productoId);
 
     List<TramoDescuento> findByProductoIdIn(Collection<Long> productoIds);
+
+    void deleteByProductoId(Long productoId);
 }

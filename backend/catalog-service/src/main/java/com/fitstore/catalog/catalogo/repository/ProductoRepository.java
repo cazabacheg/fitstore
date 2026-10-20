@@ -11,5 +11,11 @@ public interface ProductoRepository extends JpaRepository<Producto, Long>, JpaSp
 
     Optional<Producto> findBySlug(String slug);
 
+    boolean existsBySlug(String slug);
+
+    boolean existsByCodigo(String codigo);
+
+    Optional<Producto> findByCodigo(String codigo);
+
     List<Producto> findByEstado(EstadoProducto estado);
 }

@@ -1,5 +1,6 @@
 package com.fitstore.catalog.catalogo.service;
 
+import com.fitstore.catalog.catalogo.dto.DescuentoProductoRequest;
 import com.fitstore.catalog.catalogo.dto.PoliticaDescuentosDto;
 import com.fitstore.catalog.catalogo.dto.TramoDto;
 import com.fitstore.catalog.catalogo.mapper.CatalogoMapper;
@@ -12,11 +13,13 @@ import com.fitstore.catalog.catalogo.repository.TramoDescuentoRepository;
 import com.fitstore.catalog.catalogo.service.dominio.PoliticaDescuentos;
 import com.fitstore.catalog.config.CatalogoProperties;
 import com.fitstore.catalog.catalogo.service.dominio.Tramo;
+import com.fitstore.common.api.FitstoreException;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import tools.jackson.core.type.TypeReference;
@@ -73,6 +76,31 @@ public class DescuentoServiceImpl implements DescuentoService {
         cache.invalidar(CacheCatalogo.DESCUENTOS_GLOBAL);
         cache.invalidarTodosLosProductos();
         return leerGlobal();
+    }
+
+    @Override
+    @Transactional
+    public void configurarProducto(Producto producto, DescuentoProductoRequest peticion) {
+        List<TramoDto> propios = peticion.tramos() == null ? List.of() : peticion.tramos();
+        if (peticion.modo() == ModoDescuento.PERSONALIZADO) {
+            if (propios.isEmpty()) {
+                throw new FitstoreException(HttpStatus.BAD_REQUEST, "VALIDACION", "Agrega al menos un tramo de descuento");
+            }
+            ValidadorTramos.validar(propios, propiedades.descuentos().maxTramos(), propiedades.descuentos().porcentajeMax());
+        }
+        tramos.deleteAll(tramos.findByProductoIdOrderByUnidadesMinimasAsc(producto.getId()));
+        tramos.flush();
+        if (peticion.modo() == ModoDescuento.PERSONALIZADO) {
+            for (TramoDto t : propios) {
+                TramoDescuento nuevo = new TramoDescuento();
+                nuevo.setProductoId(producto.getId());
+                nuevo.setUnidadesMinimas(t.unidadesMinimas());
+                nuevo.setPorcentaje(t.porcentaje());
+                tramos.save(nuevo);
+            }
+        }
+        producto.setModoDescuento(peticion.modo());
+        cache.invalidarProducto(producto.getSlug());
     }
 
     @Override

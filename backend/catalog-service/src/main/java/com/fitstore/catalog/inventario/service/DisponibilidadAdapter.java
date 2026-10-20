@@ -1,6 +1,7 @@
 package com.fitstore.catalog.inventario.service;
 
 import com.fitstore.catalog.catalogo.service.DisponibilidadPort;
+import com.fitstore.catalog.catalogo.service.Existencias;
 import com.fitstore.catalog.catalogo.service.StockVariantePort;
 import com.fitstore.catalog.inventario.model.MovimientoStock;
 import com.fitstore.catalog.inventario.model.Stock;
@@ -34,13 +35,13 @@ public class DisponibilidadAdapter implements DisponibilidadPort, StockVarianteP
 
     @Override
     @Transactional(readOnly = true)
-    public Map<Long, Integer> disponibles(Collection<Long> varianteIds) {
-        Map<Long, Integer> resultado = new HashMap<>();
+    public Map<Long, Existencias> existencias(Collection<Long> varianteIds) {
+        Map<Long, Existencias> resultado = new HashMap<>();
         if (varianteIds.isEmpty()) {
             return resultado;
         }
         for (Stock s : stock.findAllById(varianteIds)) {
-            resultado.put(s.getVarianteId(), s.disponible());
+            resultado.put(s.getVarianteId(), new Existencias(s.getFisico(), s.getReservado()));
         }
         return resultado;
     }
