@@ -4,7 +4,7 @@ Plantilla white-label de e-commerce de ropa y moda para MYPEs (primer caso: ropa
 
 Proyecto final de Desarrollo de Aplicaciones Web II y Desarrollo de Servicios Web II — Cibertec.
 
-**Estado:** análisis y arquitectura completos; en etapa de especificaciones.
+**Estado:** análisis, arquitectura y especificaciones completos; plataforma backend (SPEC-0a) construida; implementación de las specs de negocio en curso.
 
 ## Documentación
 
@@ -54,5 +54,41 @@ docker compose -f infra/docker-compose.yml -f infra/docker-compose.dev.yml up -d
 | Jaeger | http://localhost:16686 |
 | Mailpit | http://localhost:8025 |
 
-Los siete servicios de negocio se completan en los pasos 0a.2 y 0a.3 de la SPEC-0a. Mientras auth no firme los
-tokens (spec 1), el gateway y los servicios validan con el JWKS de prueba de `infra/dev/` (solo desarrollo).
+Mientras auth no firme los tokens (spec 1), el gateway y los servicios validan con el JWKS de prueba de `infra/dev/`
+(solo desarrollo).
+
+### Levantar la plataforma completa y correr el humo
+
+Con un solo comando se construyen las imágenes, se levanta toda la plataforma (infraestructura, config-server, Eureka,
+los 7 servicios de negocio y el gateway) y se verifica que quedó sana:
+
+```bash
+infra/smoke.sh        # crea infra/.env si falta, construye, levanta, espera healthy y verifica; código 0 solo si todo pasa
+```
+
+Necesita Docker con Compose, `curl` y `jq`, y unos 4,5 GB de memoria libres para los contenedores. El humo verifica:
+todos los contenedores *healthy* en menos de 5 minutos (CA-0a-02), `api-gateway` y los 7 servicios en UP en Eureka
+(CA-0a-03), las migraciones de Flyway aplicadas en cada base con Hibernate en `validate` (CA-0a-05), que el usuario de
+un servicio no puede entrar a la base de otro (CA-0a-07), que `/swagger-ui` del gateway ofrece los 7 servicios
+(CA-0a-17) y que cada contenedor tiene `mem_limit` con una suma de 6,5 GB como máximo (CA-0a-19).
+
+Variables opcionales: `SMOKE_TIMEOUT` (segundos para el arranque, 300 por defecto), `SMOKE_SIN_ARRANQUE=1` (verifica una
+plataforma que ya está corriendo) y `SMOKE_BAJAR=1` (baja el compose y borra los volúmenes al terminar).
+
+Colección Postman base (salud del gateway y documentación de los 7 servicios a través del gateway), con la plataforma
+arriba:
+
+```bash
+npx newman@6.2.2 run postman/fitstore-base.postman_collection.json --environment postman/local.postman_environment.json
+```
+
+### Contratos y CI
+
+```bash
+scripts/contrato.sh auth-service   # compara contracts/openapi/<servicio>.yaml con el OpenAPI que genera el servicio (oasdiff)
+```
+
+`contracts/implementados.txt` lista los servicios cuyo contrato ya implementa el código; el CI solo compara esos.
+GitHub Actions: `ci.yml` (PR y push a `dev`: compilación y pruebas por módulo con caché de Maven, gitleaks y validación
+de contratos) y `stage.yml` (PR y push a `stage`, PR a `main`: imágenes, compose completo, `smoke.sh` y Newman).
+Los PR usan la plantilla de `.github/pull_request_template.md`.
