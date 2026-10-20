@@ -55,6 +55,18 @@ class PlantillaRepositoryTest {
     }
 
     @Test
+    @DisplayName("CA-0a-06 PlantillaRepository: los textos sembrados no asumen el género del cliente")
+    void lasPlantillasUsanUnaFormaNeutra() {
+        assertThat(repositorio.findById("BIENVENIDA").orElseThrow().getAsunto())
+                .isEqualTo("Te damos la bienvenida a {{nombreTienda}}, {{nombre}}");
+        assertThat(repositorio.findAll()).allSatisfy(p -> assertThat(
+                p.getAsunto() + " " + p.getTitulo() + " " + p.getMensaje())
+                .doesNotContainIgnoringCase("bienvenido")
+                .doesNotContainIgnoringCase("estimado")
+                .doesNotContainIgnoringCase("estimada"));
+    }
+
+    @Test
     @DisplayName("CA-0a-06 PlantillaRepository actualiza los textos, el botón y el estado activa")
     void actualizaTextosYActiva() {
         Plantilla p = repositorio.findById("BIENVENIDA").orElseThrow();
