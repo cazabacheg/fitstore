@@ -1,6 +1,6 @@
 # FitStore — Stack y versiones
 
-> Versión: **v7 (aprobado)** — 2026-10-20. v7: herramientas de CI fijadas en 0a.3 (gitleaks, Newman y *actions* de GitHub). v6: versiones exactas fijadas en 0a.2 (`openhtmltopdf-pdfbox` 1.1.87, `greenmail-junit5` 2.1.14). v5: `spring-retry` 2.0.13 para el reintento del cliente de config (CA-0a-04) y etiquetas exactas de las imágenes fijadas en 0a.1. v4: JaCoCo, oasdiff y cobertura de Vitest (estrategia multiagente V0, SPEC-0a I7–I8). v3: Azure Blob diferido (SPEC-8 I6). v2: se adopta MapStruct. Versiones consultadas en Maven Central y npm el 2026-10-18.
+> Versión: **v8 (aprobado)** — 2026-10-20. v8: versiones exactas del frontend fijadas en 0b.1 (aprobadas por el autor). v7: herramientas de CI fijadas en 0a.3 (gitleaks, Newman y *actions* de GitHub). v6: versiones exactas fijadas en 0a.2 (`openhtmltopdf-pdfbox` 1.1.87, `greenmail-junit5` 2.1.14). v5: `spring-retry` 2.0.13 para el reintento del cliente de config (CA-0a-04) y etiquetas exactas de las imágenes fijadas en 0a.1. v4: JaCoCo, oasdiff y cobertura de Vitest (estrategia multiagente V0, SPEC-0a I7–I8). v3: Azure Blob diferido (SPEC-8 I6). v2: se adopta MapStruct. Versiones consultadas en Maven Central y npm el 2026-10-18.
 > Todas las secciones 10.4 de los micros remiten a esta tabla; cada servicio solo lista **qué** usa, no la versión.
 > Regla: las versiones se fijan al crear el repositorio y se actualizan solo con un motivo (seguridad o corrección).
 
@@ -13,8 +13,9 @@
 | **Spring Boot** | **4.0.8** | Última de la línea 4.0 (la del repo de clase usa 4.0.6) |
 | **Spring Cloud** | **2025.1.3** ("Oakwood") | Compatible con Boot 4.0.x |
 | Node.js | 22 LTS | Para Angular |
-| **Angular** (CLI, core, Material) | **22.2.x** | Storefront y backoffice |
-| Tailwind CSS | 4.3.x | Storefront |
+| **Angular** (CLI, core, CDK, Material, build) | **22.2.1** | Storefront y backoffice; `ng-packagr` **22.2.4** para `shared` |
+| TypeScript | **6.0.3** | Angular 22.2 exige `>=6.0 <6.1` |
+| Tailwind CSS (`tailwindcss`, `@tailwindcss/postcss`) | **4.3.3** | Storefront |
 
 **Por qué no Spring Boot 4.1.1** (ya publicado): necesita Spring Cloud 2026.0, que hoy solo está en *milestone* (2026.0.0-M1). Mezclar Boot 4.1 con Cloud 2025.1 no está soportado. Se queda en **4.0.8 + 2025.1.3** (ADR-001); migrar a 4.1 cuando salga Cloud 2026.0 GA sería un cambio de versión en el POM padre.
 
@@ -69,7 +70,11 @@ Gestionadas por los BOM de Spring Boot y Spring Cloud salvo que se indique versi
 | HTTP simulado (pasarelas, Feign) | `org.wiremock:wiremock-standalone` | **3.13.x** (la 4.0 sigue en beta) |
 | SMTP de prueba (notification) | `com.icegreen:greenmail-junit5` | **2.1.14** |
 | Cobertura (backend) | `org.jacoco:jacoco-maven-plugin` | **0.8.15** |
-| Cobertura (frontend) | `@vitest/coverage-v8` | la misma versión que Vitest (la fija 0b) |
+| Pruebas unitarias (frontend) | `vitest` + `jsdom` | **5.0.3** + **30.1.1** |
+| Cobertura (frontend) | `@vitest/coverage-v8` | **5.0.3** (la misma que Vitest) |
+| Pruebas de componentes | `@testing-library/angular`, `/dom`, `/user-event` | **19.5.0**, **10.4.2**, **14.6.7** |
+| Calidad (frontend) | `eslint`, `angular-eslint`, `typescript-eslint`, `prettier` | **10.11.0**, **22.5.0**, **8.71.0**, **3.9.9** |
+| Utilidades (frontend) | `rxjs`, `tslib` | **7.8.2**, **2.8.1** |
 | Contrato vs. código | `oasdiff` (imagen `tufin/oasdiff`) | **v1.33.0** |
 | Secretos en CI | gitleaks (binario de la release, verificado con SHA-256) | **v8.30.1** |
 | Postman en CI | `newman` (npm) | **6.2.2** |
