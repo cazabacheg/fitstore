@@ -46,14 +46,18 @@ describe('PoliticaPage (P-3-02)', () => {
     expect(el.querySelector('h1')!.textContent).toContain('Términos y condiciones');
     expect(el.querySelector('strong')!.textContent).toBe('vigente');
     expect(el.querySelector('[data-testid="version"]')!.textContent).toContain('Versión 3');
-    expect(el.querySelector('[data-testid="version"]')!.textContent).toContain('19 de octubre de 2026');
+    expect(el.querySelector('[data-testid="version"]')!.textContent).toContain(
+      '19 de octubre de 2026',
+    );
   });
 
   it('CA-3-21 con ?version=2 pide y muestra una versión anterior', async () => {
     const { ctrl, el, estabilizar } = await abrir('/politicas/privacidad?version=2');
     const peticion = ctrl.expectOne((r) => r.url === '/api/v1/settings/politicas/privacidad');
     expect(peticion.request.params.get('version')).toBe('2');
-    peticion.flush(respuesta({ ...politica('# Privacidad\n\nTexto viejo.', 2), tipo: 'privacidad' }));
+    peticion.flush(
+      respuesta({ ...politica('# Privacidad\n\nTexto viejo.', 2), tipo: 'privacidad' }),
+    );
     await estabilizar();
 
     expect(el.querySelector('[data-testid="version"]')!.textContent).toContain('Versión 2');
@@ -62,7 +66,9 @@ describe('PoliticaPage (P-3-02)', () => {
 
   it('CA-3-21 la versión vigente no muestra el aviso de versión anterior', async () => {
     const { ctrl, el, estabilizar } = await abrir('/politicas/terminos');
-    ctrl.expectOne((r) => r.url.endsWith('/politicas/terminos')).flush(respuesta(politica('# T\n\ntexto')));
+    ctrl
+      .expectOne((r) => r.url.endsWith('/politicas/terminos'))
+      .flush(respuesta(politica('# T\n\ntexto')));
     await estabilizar();
     expect(el.querySelector('[data-testid="aviso-anterior"]')).toBeNull();
   });
@@ -83,7 +89,9 @@ describe('PoliticaPage (P-3-02)', () => {
       'Texto legítimo que sí se ve.',
     ].join('\n');
     const { ctrl, el, estabilizar } = await abrir('/politicas/terminos');
-    ctrl.expectOne((r) => r.url.endsWith('/politicas/terminos')).flush(respuesta(politica(malicioso)));
+    ctrl
+      .expectOne((r) => r.url.endsWith('/politicas/terminos'))
+      .flush(respuesta(politica(malicioso)));
     await estabilizar();
 
     expect(el.querySelector('script')).toBeNull();
@@ -100,7 +108,10 @@ describe('PoliticaPage (P-3-02)', () => {
     const { ctrl, el, estabilizar } = await abrir('/politicas/terminos?version=99');
     ctrl
       .expectOne((r) => r.url.endsWith('/politicas/terminos'))
-      .flush({ success: false, mensaje: 'No encontramos lo que buscas', codigo: 'NO_ENCONTRADO' }, { status: 404, statusText: 'x' });
+      .flush(
+        { success: false, mensaje: 'No encontramos lo que buscas', codigo: 'NO_ENCONTRADO' },
+        { status: 404, statusText: 'x' },
+      );
     await estabilizar();
     expect(el.querySelector('[data-testid="politica-no-encontrada"]')).not.toBeNull();
     expect(el.querySelector('h1')!.textContent).toContain('No encontramos');
@@ -117,12 +128,17 @@ describe('PoliticaPage (P-3-02)', () => {
     const { ctrl, el, estabilizar } = await abrir('/politicas/terminos');
     ctrl
       .expectOne((r) => r.url.endsWith('/politicas/terminos'))
-      .flush({ success: false, mensaje: 'Error', codigo: 'ERROR_INTERNO' }, { status: 500, statusText: 'x' });
+      .flush(
+        { success: false, mensaje: 'Error', codigo: 'ERROR_INTERNO' },
+        { status: 500, statusText: 'x' },
+      );
     await estabilizar();
     const reintentar = el.querySelector('[data-testid="reintentar"]') as HTMLButtonElement;
     expect(reintentar).not.toBeNull();
     reintentar.click();
-    ctrl.expectOne((r) => r.url.endsWith('/politicas/terminos')).flush(respuesta(politica('# Ya cargó')));
+    ctrl
+      .expectOne((r) => r.url.endsWith('/politicas/terminos'))
+      .flush(respuesta(politica('# Ya cargó')));
     await estabilizar();
     expect(el.querySelector('h1')!.textContent).toContain('Ya cargó');
   });

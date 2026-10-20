@@ -1,12 +1,9 @@
 import { Routes } from '@angular/router';
-import { Proximamente } from '../../ui/estados/proximamente';
+import { LibroReclamacionesPage } from './libro-reclamaciones.page';
+import { PoliticaPage } from './politica.page';
 
-/** Marcador "Próximamente" (R2): la spec dueña reemplaza esta carpeta. */
+/** Libro de Reclamaciones (P-3-03) y políticas de la tienda (P-3-02). */
 export const LEGAL_ROUTES: Routes = [
-  {
-    path: 'libro-de-reclamaciones',
-    component: Proximamente,
-    data: { seccion: 'El Libro de Reclamaciones' },
-  },
-  { path: 'politicas/:tipo', component: Proximamente, data: { seccion: 'La política' } },
+  { path: 'libro-de-reclamaciones', component: LibroReclamacionesPage },
+  { path: 'politicas/:tipo', component: PoliticaPage },
 ];

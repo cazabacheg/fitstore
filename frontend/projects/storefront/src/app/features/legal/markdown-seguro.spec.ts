@@ -54,7 +54,9 @@ describe('renderizarMarkdownSeguro', () => {
   });
 
   it('CA-3-21 conserva las tablas de los textos modelo', () => {
-    const dom = aDom(renderizarMarkdownSeguro('| Modalidad | Plazo |\n|---|---|\n| Delivery | 1 a 3 días |\n'));
+    const dom = aDom(
+      renderizarMarkdownSeguro('| Modalidad | Plazo |\n|---|---|\n| Delivery | 1 a 3 días |\n'),
+    );
     expect(dom.querySelector('table')).not.toBeNull();
     expect(dom.querySelectorAll('td').length).toBe(2);
   });

@@ -12,9 +12,13 @@ type Campo = HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement;
 /** Busca el campo cuya etiqueta empieza con el texto dado (input, select, textarea o casilla). */
 function campo(el: HTMLElement, etiqueta: string): Campo {
   const etiquetas = [...el.querySelectorAll('label')];
-  const label = etiquetas.find((l) => l.textContent?.replace(/\s+/g, ' ').trim().startsWith(etiqueta));
+  const label = etiquetas.find((l) =>
+    l.textContent?.replace(/\s+/g, ' ').trim().startsWith(etiqueta),
+  );
   if (!label) throw new Error(`No hay un campo "${etiqueta}"`);
-  const destino = label.htmlFor ? el.querySelector(`#${label.htmlFor}`) : label.querySelector('input,select,textarea');
+  const destino = label.htmlFor
+    ? el.querySelector(`#${label.htmlFor}`)
+    : label.querySelector('input,select,textarea');
   return destino as Campo;
 }
 
@@ -24,10 +28,17 @@ function existe(el: HTMLElement, etiqueta: string): boolean {
   );
 }
 
-async function escribir(el: HTMLElement, etiqueta: string, valor: string, estabilizar: () => Promise<void>) {
+async function escribir(
+  el: HTMLElement,
+  etiqueta: string,
+  valor: string,
+  estabilizar: () => Promise<void>,
+) {
   const c = campo(el, etiqueta);
   c.value = valor;
-  c.dispatchEvent(new Event(c instanceof HTMLSelectElement ? 'change' : 'input', { bubbles: true }));
+  c.dispatchEvent(
+    new Event(c instanceof HTMLSelectElement ? 'change' : 'input', { bubbles: true }),
+  );
   await estabilizar();
 }
 
@@ -50,7 +61,12 @@ async function llenarValido(el: HTMLElement, estabilizar: () => Promise<void>) {
   await escribir(el, 'Monto reclamado', '89.9', estabilizar);
   await escribir(el, 'Código de pedido', 'FS-000118', estabilizar);
   await escribir(el, 'Detalle', 'La casaca llegó con el cierre roto.', estabilizar);
-  await escribir(el, 'Pedido del consumidor', 'Cambio por una nueva o devolución del dinero.', estabilizar);
+  await escribir(
+    el,
+    'Pedido del consumidor',
+    'Cambio por una nueva o devolución del dinero.',
+    estabilizar,
+  );
 }
 
 async function abrir() {
@@ -153,7 +169,9 @@ describe('LibroReclamacionesPage (P-3-03)', () => {
     enviar(el).click();
     await estabilizar();
     ctrl.expectNone('/api/v1/reclamos');
-    expect(campo(el, 'Nombre del padre, madre o apoderado').getAttribute('aria-invalid')).toBe('true');
+    expect(campo(el, 'Nombre del padre, madre o apoderado').getAttribute('aria-invalid')).toBe(
+      'true',
+    );
 
     await escribir(el, 'Nombre del padre, madre o apoderado', 'Marta Díaz Pérez', estabilizar);
     enviar(el).click();
@@ -200,12 +218,21 @@ describe('LibroReclamacionesPage (P-3-03)', () => {
         esMenor: false,
         apoderadoNombre: null,
       },
-      bien: { tipo: 'PRODUCTO', descripcion: 'Casaca Wind talla M negra', montoReclamado: 89.9, pedidoCodigo: 'FS-000118' },
+      bien: {
+        tipo: 'PRODUCTO',
+        descripcion: 'Casaca Wind talla M negra',
+        montoReclamado: 89.9,
+        pedidoCodigo: 'FS-000118',
+      },
       detalle: 'La casaca llegó con el cierre roto.',
       pedidoConsumidor: 'Cambio por una nueva o devolución del dinero.',
     });
     peticion.flush(
-      respuesta({ numero: 'RC-2026-000015', fechaLimite: '2026-11-09', creadoEn: '2026-10-19T15:20:00Z' }),
+      respuesta({
+        numero: 'RC-2026-000015',
+        fechaLimite: '2026-11-09',
+        creadoEn: '2026-10-19T15:20:00Z',
+      }),
       { status: 201, statusText: 'Created' },
     );
     await estabilizar();
@@ -226,7 +253,13 @@ describe('LibroReclamacionesPage (P-3-03)', () => {
     await estabilizar();
     ctrl
       .expectOne('/api/v1/reclamos')
-      .flush(respuesta({ numero: 'RC-2026-000015', fechaLimite: '2026-11-09', creadoEn: '2026-10-19T15:20:00Z' }));
+      .flush(
+        respuesta({
+          numero: 'RC-2026-000015',
+          fechaLimite: '2026-11-09',
+          creadoEn: '2026-10-19T15:20:00Z',
+        }),
+      );
     await estabilizar();
 
     (el.querySelector('[data-testid="imprimir"]') as HTMLButtonElement).click();
@@ -281,12 +314,20 @@ describe('LibroReclamacionesPage (P-3-03)', () => {
     await llenarValido(el, estabilizar);
     enviar(el).click();
     await estabilizar();
-    ctrl.expectOne('/api/v1/reclamos').flush(
-      { success: false, mensaje: 'Demasiados intentos, espera un momento', codigo: 'DEMASIADOS_INTENTOS' },
-      { status: 429, statusText: 'Too Many Requests' },
-    );
+    ctrl
+      .expectOne('/api/v1/reclamos')
+      .flush(
+        {
+          success: false,
+          mensaje: 'Demasiados intentos, espera un momento',
+          codigo: 'DEMASIADOS_INTENTOS',
+        },
+        { status: 429, statusText: 'Too Many Requests' },
+      );
     await estabilizar();
-    expect(el.querySelector('[data-testid="error-envio"]')!.textContent).toContain('Demasiados intentos');
+    expect(el.querySelector('[data-testid="error-envio"]')!.textContent).toContain(
+      'Demasiados intentos',
+    );
     expect((campo(el, 'Nombres') as HTMLInputElement).value).toBe('Rosa');
     expect(enviar(el).disabled).toBe(false);
   });
