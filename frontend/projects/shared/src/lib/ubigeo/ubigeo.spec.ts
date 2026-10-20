@@ -137,6 +137,21 @@ describe('UbigeoCatalogo', () => {
     expect(resultado).toEqual(encontrados);
   });
 
+  it('CA-0b-26 las búsquedas por nombre quedan solo en memoria: el navegador guarda las listas', () => {
+    const { catalogo, ctrl } = configurar();
+    catalogo.departamentos().subscribe();
+    ctrl.expectOne('/api/v1/ubigeo/departamentos').flush(respuesta(DEPARTAMENTOS));
+    for (const texto of ['mi', 'mir', 'miraf']) {
+      catalogo.buscarDistritos(texto).subscribe();
+      ctrl.expectOne((r) => r.url === '/api/v1/ubigeo/distritos').flush(respuesta([]));
+    }
+    const guardado = JSON.parse(localStorage.getItem(CLAVE_CACHE_UBIGEO) ?? '{}');
+    expect(Object.keys(guardado)).toEqual(['departamentos']);
+    // En la misma sesión, repetir una búsqueda no vuelve a llamar a la API.
+    catalogo.buscarDistritos('miraf').subscribe();
+    ctrl.expectNone((r) => r.url === '/api/v1/ubigeo/distritos');
+  });
+
   it('CA-0b-26 el nombre completo de un código ("Miraflores, Lima, Lima") también se guarda en la caché', () => {
     const { catalogo, ctrl } = configurar();
     const nombre = {
