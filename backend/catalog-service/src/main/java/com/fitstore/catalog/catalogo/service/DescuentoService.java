@@ -11,6 +11,12 @@ public interface DescuentoService {
     /** Política global (interruptor y tramos); se lee de la caché de 10 minutos. */
     PoliticaDescuentosDto obtenerGlobal();
 
+    /**
+     * Guarda la política global: reemplaza los tramos y el interruptor. Exige hasta 10 tramos con unidades y porcentajes
+     * crecientes (CA-2-36); invalida la caché de la política y de los detalles de producto (CA-2-37).
+     */
+    PoliticaDescuentosDto guardarGlobal(PoliticaDescuentosDto politica);
+
     /** Política vigente para estos productos, lista para la {@code CalculadoraDescuentos} y para mostrar etiquetas. */
     PoliticaDescuentos politicaPara(Collection<Producto> productos);
 }

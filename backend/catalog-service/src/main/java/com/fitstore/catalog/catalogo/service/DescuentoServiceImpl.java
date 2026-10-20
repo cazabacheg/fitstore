@@ -3,12 +3,14 @@ package com.fitstore.catalog.catalogo.service;
 import com.fitstore.catalog.catalogo.dto.PoliticaDescuentosDto;
 import com.fitstore.catalog.catalogo.dto.TramoDto;
 import com.fitstore.catalog.catalogo.mapper.CatalogoMapper;
+import com.fitstore.catalog.catalogo.model.ConfiguracionDescuento;
 import com.fitstore.catalog.catalogo.model.ModoDescuento;
 import com.fitstore.catalog.catalogo.model.Producto;
 import com.fitstore.catalog.catalogo.model.TramoDescuento;
 import com.fitstore.catalog.catalogo.repository.ConfiguracionDescuentoRepository;
 import com.fitstore.catalog.catalogo.repository.TramoDescuentoRepository;
 import com.fitstore.catalog.catalogo.service.dominio.PoliticaDescuentos;
+import com.fitstore.catalog.config.CatalogoProperties;
 import com.fitstore.catalog.catalogo.service.dominio.Tramo;
 import java.util.Collection;
 import java.util.HashMap;
@@ -16,6 +18,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import tools.jackson.core.type.TypeReference;
 
 @Service
@@ -25,9 +28,11 @@ public class DescuentoServiceImpl implements DescuentoService {
     private final TramoDescuentoRepository tramos;
     private final CatalogoMapper mapper;
     private final CacheCatalogo cache;
+    private final CatalogoProperties propiedades;
 
     public DescuentoServiceImpl(ConfiguracionDescuentoRepository configuracion, TramoDescuentoRepository tramos,
-            CatalogoMapper mapper, CacheCatalogo cache) {
+            CatalogoMapper mapper, CacheCatalogo cache, CatalogoProperties propiedades) {
+        this.propiedades = propiedades;
         this.configuracion = configuracion;
         this.tramos = tramos;
         this.mapper = mapper;
@@ -44,6 +49,30 @@ public class DescuentoServiceImpl implements DescuentoService {
         boolean activo = configuracion.findById(1L).map(c -> c.isActivo()).orElse(false);
         List<TramoDto> lista = mapper.aTramosDto(tramos.findByProductoIdIsNullOrderByUnidadesMinimasAsc());
         return new PoliticaDescuentosDto(activo, lista);
+    }
+
+    @Override
+    @Transactional
+    public PoliticaDescuentosDto guardarGlobal(PoliticaDescuentosDto politica) {
+        ValidadorTramos.validar(politica.tramos(), propiedades.descuentos().maxTramos(), propiedades.descuentos().porcentajeMax());
+        tramos.deleteAll(tramos.findByProductoIdIsNullOrderByUnidadesMinimasAsc());
+        tramos.flush();
+        for (TramoDto t : politica.tramos()) {
+            TramoDescuento nuevo = new TramoDescuento();
+            nuevo.setUnidadesMinimas(t.unidadesMinimas());
+            nuevo.setPorcentaje(t.porcentaje());
+            tramos.save(nuevo);
+        }
+        ConfiguracionDescuento interruptor = configuracion.findById(1L).orElseGet(() -> {
+            ConfiguracionDescuento nueva = new ConfiguracionDescuento();
+            nueva.setId(1L);
+            return nueva;
+        });
+        interruptor.setActivo(politica.activo());
+        configuracion.saveAndFlush(interruptor);
+        cache.invalidar(CacheCatalogo.DESCUENTOS_GLOBAL);
+        cache.invalidarTodosLosProductos();
+        return leerGlobal();
     }
 
     @Override
