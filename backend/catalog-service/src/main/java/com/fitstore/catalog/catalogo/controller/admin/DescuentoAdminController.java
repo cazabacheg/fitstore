@@ -8,12 +8,13 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 /** Política global de descuentos por volumen (micro 4.1): solo ADMIN. */
 @RestController
-@RequestMapping("/api/v1/admin/descuentos")
+@RequestMapping(path = "/api/v1/admin/descuentos", produces = MediaType.APPLICATION_JSON_VALUE)
 @PreAuthorize("hasRole('ADMIN')")
 public class DescuentoAdminController {
 

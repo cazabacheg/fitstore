@@ -21,7 +21,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 /** Imágenes de producto del backoffice (micro 4.1): solo ADMIN. */
 @RestController
-@RequestMapping("/api/v1/admin")
+@RequestMapping(path = "/api/v1/admin", produces = MediaType.APPLICATION_JSON_VALUE)
 @PreAuthorize("hasRole('ADMIN')")
 public class ImagenAdminController {
 

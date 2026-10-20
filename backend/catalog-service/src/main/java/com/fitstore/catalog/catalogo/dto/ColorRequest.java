@@ -11,6 +11,6 @@ import java.util.List;
 import java.util.UUID;
 
 public record ColorRequest(@NotBlank @Size(min = 2, max = 40) String nombre,
-        @NotBlank @Pattern(regexp = "^#[0-9A-Fa-f]{6}$", message = "El color debe tener el formato #RRGGBB") String hex,
+        @NotNull @Pattern(regexp = "^#[0-9A-Fa-f]{6}$", message = "El color debe tener el formato #RRGGBB") String hex,
         Boolean activo) {
 }

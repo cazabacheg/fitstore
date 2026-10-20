@@ -9,6 +9,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -17,7 +18,7 @@ import org.springframework.web.bind.annotation.RestController;
  * {@code /internal/**} (CA-2-54); aquí además exige un JWT válido.
  */
 @RestController
-@RequestMapping("/internal/v1/inventario")
+@RequestMapping(path = "/internal/v1/inventario", produces = MediaType.APPLICATION_JSON_VALUE)
 public class ReservaInternaController {
 
     private final ReservaService servicio;
@@ -27,6 +28,8 @@ public class ReservaInternaController {
     }
 
     @PostMapping("/reservas")
+    @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "201", description = "Reserva creada.")
+    @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "La reserva del pedido ya existía.")
     public ResponseEntity<ApiResponse<ReservaDto>> reservarStock(@Valid @RequestBody ReservaRequest peticion) {
         ReservaService.Resultado resultado = servicio.reservar(peticion);
         HttpStatus estado = resultado.creada() ? HttpStatus.CREATED : HttpStatus.OK;

@@ -11,6 +11,7 @@ import com.fitstore.catalog.catalogo.service.FiltroProductos;
 import com.fitstore.catalog.catalogo.service.OrdenProductos;
 import com.fitstore.common.api.ApiResponse;
 import com.fitstore.common.api.PaginaResponse;
+import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.Size;
@@ -18,13 +19,14 @@ import java.math.BigDecimal;
 import java.util.List;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 /** Catálogo público de la tienda (micro 4.1, SPEC-2 HU-2-01 y HU-2-02): sin sesión y solo lectura. */
 @RestController
-@RequestMapping("/api/v1")
+@RequestMapping(path = "/api/v1", produces = MediaType.APPLICATION_JSON_VALUE)
 public class CatalogoPublicoController {
 
     private final CatalogoPublicoService servicio;
@@ -54,7 +56,8 @@ public class CatalogoPublicoController {
             @RequestParam(required = false) Boolean disponible,
             @RequestParam(defaultValue = "0") @Min(0) int page,
             @RequestParam(defaultValue = "24") @Min(1) @Max(48) int size,
-            @RequestParam(defaultValue = OrdenProductos.NOVEDAD) String sort) {
+            @RequestParam(defaultValue = OrdenProductos.NOVEDAD)
+            @Schema(allowableValues = {"novedad", "precio,asc", "precio,desc", "nombre"}) String sort) {
         FiltroProductos filtro = new FiltroProductos(q, categoria, talla, color, precioMin, precioMax, Boolean.TRUE.equals(disponible));
         return ApiResponse.ok(servicio.listar(filtro, OrdenProductos.paginacion(page, size, sort)));
     }

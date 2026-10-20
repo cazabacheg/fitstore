@@ -7,12 +7,13 @@ import com.fitstore.common.api.ApiResponse;
 import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 /** Cotización pública (HU-2-03): la usan order (carrito y checkout) y la tienda. No modifica nada. */
 @RestController
-@RequestMapping("/api/v1/precios")
+@RequestMapping(path = "/api/v1/precios", produces = MediaType.APPLICATION_JSON_VALUE)
 public class CotizacionController {
 
     private final CotizacionService servicio;

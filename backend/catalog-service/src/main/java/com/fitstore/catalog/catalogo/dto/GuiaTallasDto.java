@@ -1,5 +1,6 @@
 package com.fitstore.catalog.catalogo.dto;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fitstore.catalog.catalogo.model.EstadoProducto;
 import com.fitstore.catalog.catalogo.model.ModoDescuento;
@@ -11,7 +12,7 @@ import java.util.List;
 import java.util.UUID;
 
 public record GuiaTallasDto(
-        @NotNull @Size(min = 2) List<@NotBlank String> columnas,
+        @NotNull @Size(min = 2) List<@NotNull String> columnas,
         @NotNull List<@NotNull List<String>> filas,
-        @Size(max = 300) String nota) {
+        @Schema(nullable = true) @Size(max = 300) String nota) {
 }
