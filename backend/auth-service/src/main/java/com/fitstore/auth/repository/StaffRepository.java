@@ -13,6 +13,8 @@ public interface StaffRepository extends JpaRepository<Staff, UUID>, JpaSpecific
 
     boolean existsByEmailIgnoreCase(String email);
 
+    boolean existsByRol(RolStaff rol);
+
     Optional<Staff> findByEmailIgnoreCase(String email);
 
     Page<Staff> findByRol(RolStaff rol, Pageable pagina);

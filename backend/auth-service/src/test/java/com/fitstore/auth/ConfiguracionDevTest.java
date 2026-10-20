@@ -2,7 +2,7 @@ package com.fitstore.auth;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import com.fitstore.auth.pruebas.PostgresPrueba;
+import com.fitstore.auth.pruebas.PostgresAislada;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,7 +22,7 @@ import org.springframework.test.context.ContextConfiguration;
     "fitstore.auth.issuer=http://localhost:8080"
 })
 @ActiveProfiles({"sin-config-server", "dev"})
-@ContextConfiguration(initializers = PostgresPrueba.class)
+@ContextConfiguration(initializers = PostgresAislada.class)
 class ConfiguracionDevTest {
 
     @Autowired Environment entorno;
