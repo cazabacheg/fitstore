@@ -1,0 +1,2 @@
+# settings-service, perfil cloud: solo db/migration (el valor por defecto de Flyway).
+# Los datos de demostración (db/dev) los agrega el perfil demo de la nube (spec 8).
