@@ -152,7 +152,7 @@ class MaestrosYApoyoRepositoryTest {
 
         GuiaTallas leida = guias.findByCategoriaId(c.getId()).orElseThrow();
         assertThat(leida.getTabla()).containsKey("columnas");
-        assertThat((List<?>) leida.getTabla().get("columnas")).containsExactly("Cintura (cm)", "Cadera (cm)");
+        assertThat(leida.getTabla().get("columnas")).isEqualTo(List.of("Cintura (cm)", "Cadera (cm)"));
         assertThat(leida.getNota()).isEqualTo("Medidas del cuerpo");
     }
 

@@ -11,12 +11,14 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.jdbc.core.JdbcTemplate;
 
 @PruebaRepositorio
 class CategoriaRepositoryTest {
 
     @Autowired CategoriaRepository repositorio;
     @Autowired ProductoRepository productos;
+    @Autowired JdbcTemplate jdbc;
 
     @Test
     @DisplayName("CA-0a-06 CategoriaRepository inserta una raíz y una hija con su auditoría")
@@ -75,10 +77,9 @@ class CategoriaRepositoryTest {
         p.getCategorias().add(c);
         productos.saveAndFlush(p);
 
-        assertThatThrownBy(() -> {
-            repositorio.deleteById(c.getId());
-            repositorio.flush();
-        }).isInstanceOf(DataIntegrityViolationException.class);
+        // directo en la base: la FK de producto_categoria es la que lo impide
+        assertThatThrownBy(() -> jdbc.update("DELETE FROM categoria WHERE id = ?", c.getId()))
+                .isInstanceOf(DataIntegrityViolationException.class);
     }
 
     @Test

@@ -1,0 +1,50 @@
+# catalog-service (micro catalog, sección 10.5). Sin secretos: solo ${VARIABLES} que salen del .env de cada contenedor.
+server:
+  port: 8082
+
+spring:
+  datasource:
+    url: jdbc:postgresql://${DB_HOST:postgres}:5432/catalog_db
+    username: ${CATALOG_DB_USER}
+    password: ${CATALOG_DB_PASSWORD}
+  jpa:
+    hibernate:
+      ddl-auto: validate        # el esquema lo maneja Flyway
+  servlet:
+    multipart:
+      max-file-size: 5MB
+      max-request-size: 6MB
+  cache:
+    redis:
+      time-to-live: 10m
+
+# Documentación OpenAPI 3.0 para oasdiff (contracts K2, SPEC-0a I8)
+springdoc:
+  api-docs:
+    version: openapi_3_0
+
+fitstore:
+  eventos:
+    servicio: catalog           # cola catalog.eventos y su DLQ catalog.eventos.dlq (infraestructura 8)
+    enlaces:                    # routing keys que consume (AsyncAPI: catalogRecibe…)
+      - order.pedido.pagado
+      - order.pedido.cancelado
+      - order.pedido.expirado
+  outbox:
+    habilitado: true
+    intervalo-ms: 1000
+  storage:
+    habilitado: true
+    endpoint: ${S3_ENDPOINT}
+    region: ${S3_REGION:garage}
+    access-key: ${S3_ACCESS_KEY}
+    secret-key: ${S3_SECRET_KEY}
+    bucket-publico: ${S3_BUCKET_PUBLICO:fitstore-media}
+    media-base-url: ${MEDIA_BASE_URL}
+  catalogo:
+    imagenes: { max-por-producto: 10, tamanos: [1200, 400] }
+    descuentos: { max-tramos: 10, porcentaje-max: 50 }
+    cotizacion: { max-lineas: 50 }
+  inventario:
+    liberador-reservas-cron: "0 * * * * *"   # cada minuto (respaldo)
+    umbral-ultimas-unidades: 5               # "¡Últimas N unidades!"
