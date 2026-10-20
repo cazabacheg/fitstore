@@ -1,0 +1,13 @@
+export * from './autenticacion.service';
+import { AutenticacionService } from './autenticacion.service';
+export * from './cliente.service';
+import { ClienteService } from './cliente.service';
+export * from './clientesAdmin.service';
+import { ClientesAdminService } from './clientesAdmin.service';
+export * from './jwks.service';
+import { JwksService } from './jwks.service';
+export * from './staff.service';
+import { StaffService } from './staff.service';
+export * from './staffPropio.service';
+import { StaffPropioService } from './staffPropio.service';
+export const APIS = [AutenticacionService, ClienteService, ClientesAdminService, JwksService, StaffService, StaffPropioService];

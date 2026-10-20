@@ -1,0 +1,11 @@
+export * from './carrito.service';
+import { CarritoService } from './carrito.service';
+export * from './checkout.service';
+import { CheckoutService } from './checkout.service';
+export * from './misPedidos.service';
+import { MisPedidosService } from './misPedidos.service';
+export * from './pedidosAdmin.service';
+import { PedidosAdminService } from './pedidosAdmin.service';
+export * from './ventas.service';
+import { VentasService } from './ventas.service';
+export const APIS = [CarritoService, CheckoutService, MisPedidosService, PedidosAdminService, VentasService];
