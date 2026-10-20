@@ -90,6 +90,7 @@ describe('Rutas del backoffice', () => {
     'CA-0b-16 sin sesión, %s lleva al login recordando la ruta',
     async (ruta) => {
       const harness = await arrancar();
+      await harness.navigateByUrl('/recuperar'); // parte de otra URL para que '/' no cuente como la misma
       await harness.navigateByUrl(ruta);
       const url = TestBed.inject(Router).url;
       expect(url.startsWith('/ingresar?returnUrl=')).toBe(true);
@@ -131,7 +132,7 @@ describe('Rutas del backoffice', () => {
     await harness.navigateByUrl('/no-existe/nada');
     const el = harness.routeNativeElement as HTMLElement;
     expect(el.textContent).toContain('Página no encontrada');
-    expect(el.querySelector('fs-backoffice-shell')).not.toBeNull();
+    expect(el.localName === 'fs-backoffice-shell' || el.querySelector('fs-backoffice-shell')).toBeTruthy();
     const enlace = [...el.querySelectorAll('a')].find((a) => a.textContent?.includes('Volver al inicio'));
     expect(enlace?.getAttribute('href')).toBe('/');
   });
@@ -143,6 +144,6 @@ describe('Rutas del backoffice', () => {
     expect(TestBed.inject(Router).url).toBe('/no-existe');
     expect(el.textContent).toContain('Página no encontrada');
     expect(el.textContent).toContain('Volver al inicio');
-    expect(el.querySelector('fs-backoffice-shell')).toBeNull();
+    expect(el.localName === 'fs-backoffice-shell' || el.querySelector('fs-backoffice-shell')).toBeFalsy();
   });
 });
