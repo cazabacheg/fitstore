@@ -36,7 +36,10 @@ function montar() {
   return { f, el, zona, soltar };
 }
 const miniaturas = (el: HTMLElement) => el.querySelectorAll('.fs-subida__item');
-const motivos = (el: HTMLElement) => [...el.querySelectorAll('.fs-subida__rechazo')].map((n) => n.textContent?.replace(/\s+/g, ' ').trim());
+const motivos = (el: HTMLElement) =>
+  [...el.querySelectorAll('.fs-subida__rechazo')].map((n) =>
+    n.textContent?.replace(/\s+/g, ' ').trim(),
+  );
 
 describe('SubidaImagenes (ui)', () => {
   it('CA-0b-25 al arrastrar sobre la zona cambia el borde y al soltar acepta las imágenes con vista previa', () => {
@@ -48,7 +51,10 @@ describe('SubidaImagenes (ui)', () => {
     expect(zona.classList.contains('fs-subida--arrastrando')).toBe(false);
     expect(miniaturas(el).length).toBe(2);
     expect(el.querySelector('.fs-subida__item img')?.getAttribute('src')).toBe('blob:vista-previa');
-    expect(f.componentInstance.lotes.at(-1)?.map((a) => a.name)).toEqual(['frente.jpg', 'espalda.png']);
+    expect(f.componentInstance.lotes.at(-1)?.map((a) => a.name)).toEqual([
+      'frente.jpg',
+      'espalda.png',
+    ]);
   });
 
   it('CA-0b-25 rechaza un tipo no permitido, un SVG y un archivo muy pesado, diciendo el nombre y el motivo', () => {
@@ -68,7 +74,12 @@ describe('SubidaImagenes (ui)', () => {
 
   it('CA-0b-25 respeta el máximo de archivos', () => {
     const { el, soltar } = montar();
-    soltar(archivo('1.jpg', 'image/jpeg'), archivo('2.jpg', 'image/jpeg'), archivo('3.jpg', 'image/jpeg'), archivo('4.jpg', 'image/jpeg'));
+    soltar(
+      archivo('1.jpg', 'image/jpeg'),
+      archivo('2.jpg', 'image/jpeg'),
+      archivo('3.jpg', 'image/jpeg'),
+      archivo('4.jpg', 'image/jpeg'),
+    );
     expect(miniaturas(el).length).toBe(3);
     expect(motivos(el)).toEqual(['4.jpg: el máximo es de 3 imágenes.']);
   });
@@ -89,14 +100,20 @@ describe('SubidaImagenes (ui)', () => {
     const lista = f.debugElement.query(By.directive(CdkDropList)).injector.get(CdkDropList);
     lista.dropped.emit({ previousIndex: 0, currentIndex: 1 } as never);
     f.detectChanges();
-    expect(f.componentInstance.lotes.at(-1)?.map((a) => a.name)).toEqual(['espalda.png', 'frente.jpg']);
+    expect(f.componentInstance.lotes.at(-1)?.map((a) => a.name)).toEqual([
+      'espalda.png',
+      'frente.jpg',
+    ]);
     expect(miniaturas(el).length).toBe(2);
   });
 
   it('CA-0b-25 elegir archivos con el botón también los valida y acepta', () => {
     const { f, el } = montar();
     const input = el.querySelector('input[type="file"]') as HTMLInputElement;
-    Object.defineProperty(input, 'files', { value: [archivo('lateral.webp', 'image/webp')], configurable: true });
+    Object.defineProperty(input, 'files', {
+      value: [archivo('lateral.webp', 'image/webp')],
+      configurable: true,
+    });
     input.dispatchEvent(new Event('change'));
     f.detectChanges();
     expect(miniaturas(el).length).toBe(1);

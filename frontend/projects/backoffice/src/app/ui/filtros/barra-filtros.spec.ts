@@ -1,6 +1,6 @@
 import { Component, signal } from '@angular/core';
 import { TestBed, type ComponentFixture } from '@angular/core/testing';
-import { ActivatedRoute, Router, provideRouter } from '@angular/router';
+import { Router, provideRouter } from '@angular/router';
 import { BarraFiltros, type ChipFiltro, type SelectFiltro } from './barra-filtros';
 
 const CHIPS: ChipFiltro[] = [
@@ -35,7 +35,9 @@ class Anfitrion {
 
 async function montar(url = '/pedidos') {
   vi.useFakeTimers();
-  TestBed.configureTestingModule({ providers: [provideRouter([{ path: 'pedidos', component: Anfitrion }])] });
+  TestBed.configureTestingModule({
+    providers: [provideRouter([{ path: 'pedidos', component: Anfitrion }])],
+  });
   const router = TestBed.inject(Router);
   await router.navigateByUrl(url);
   const f = TestBed.createComponent(Anfitrion);
@@ -43,7 +45,9 @@ async function montar(url = '/pedidos') {
   return { f, el: f.nativeElement as HTMLElement, router };
 }
 const chip = (el: HTMLElement, texto: string) =>
-  [...el.querySelectorAll<HTMLElement>('.fs-chip')].find((c) => c.textContent?.includes(texto)) as HTMLElement;
+  [...el.querySelectorAll<HTMLElement>('.fs-chip')].find((c) =>
+    c.textContent?.includes(texto),
+  ) as HTMLElement;
 async function ajustar(f: ComponentFixture<unknown>) {
   await vi.advanceTimersByTimeAsync(0);
   f.detectChanges();
@@ -54,11 +58,9 @@ describe('BarraFiltros (ui)', () => {
 
   it('CA-0b-25 muestra los chips con los contadores del contrato y "Todos" con el total', async () => {
     const { el } = await montar();
-    expect([...el.querySelectorAll('.fs-chip')].map((c) => c.textContent?.replace(/\s+/g, ' ').trim())).toEqual([
-      'Todos 11',
-      'Pendiente de pago 4',
-      'Pagado 7',
-    ]);
+    expect(
+      [...el.querySelectorAll('.fs-chip')].map((c) => c.textContent?.replace(/\s+/g, ' ').trim()),
+    ).toEqual(['Todos 11', 'Pendiente de pago 4', 'Pagado 7']);
     expect(chip(el, 'Todos').getAttribute('aria-pressed')).toBe('true');
   });
 
@@ -87,7 +89,8 @@ describe('BarraFiltros (ui)', () => {
 
   it('CA-0b-25 un select de filtro emite su valor y "Limpiar filtros" aparece solo si hay alguno activo', async () => {
     const { f, el, router } = await montar();
-    const textoLimpiar = () => [...el.querySelectorAll('button')].find((b) => b.textContent?.includes('Limpiar filtros'));
+    const textoLimpiar = () =>
+      [...el.querySelectorAll('button')].find((b) => b.textContent?.includes('Limpiar filtros'));
     expect(textoLimpiar()).toBeUndefined();
     const select = el.querySelector('select') as HTMLSelectElement;
     select.value = 'RECOJO';
@@ -112,11 +115,17 @@ describe('BarraFiltros (ui)', () => {
   it('CA-0b-25 con más de 4 controles, los demás van en "Más filtros"', async () => {
     const { f, el } = await montar();
     f.componentInstance.selects.set(
-      ['a', 'b', 'c', 'd'].map((k) => ({ clave: k, etiqueta: k.toUpperCase(), opciones: [{ valor: '1', etiqueta: 'Uno' }] })),
+      ['a', 'b', 'c', 'd'].map((k) => ({
+        clave: k,
+        etiqueta: k.toUpperCase(),
+        opciones: [{ valor: '1', etiqueta: 'Uno' }],
+      })),
     );
     f.detectChanges();
     expect(el.querySelectorAll('select').length).toBe(3); // buscador + 3 selects = 4 visibles
-    const mas = [...el.querySelectorAll('button')].find((b) => b.textContent?.includes('Más filtros')) as HTMLElement;
+    const mas = [...el.querySelectorAll('button')].find((b) =>
+      b.textContent?.includes('Más filtros'),
+    ) as HTMLElement;
     mas.click();
     f.detectChanges();
     expect(el.querySelectorAll('select').length).toBe(4);

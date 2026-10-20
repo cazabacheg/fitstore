@@ -1,0 +1,155 @@
+<fs-encabezado-pagina titulo="Catálogo de componentes" />
+<p class="fs-suave">
+  Componentes de <code>ui/</code> del backoffice con sus variantes y estados. Solo existe en
+  desarrollo.
+</p>
+
+<section class="fs-cat">
+  <h2>Botones</h2>
+  <div class="fs-fila">
+    <button class="fs-btn fs-btn--primario">Primario</button>
+    <button class="fs-btn fs-btn--secundario">Secundario</button>
+    <button class="fs-btn fs-btn--contorno">Contorno</button>
+    <button class="fs-btn fs-btn--texto">Texto</button>
+    <button class="fs-btn fs-btn--peligro">Peligro</button>
+    <button class="fs-btn fs-btn--primario" disabled>Deshabilitado</button>
+    <button class="fs-btn fs-btn--primario fs-btn--sm">Pequeño</button>
+  </div>
+  <div class="fs-fila">
+    <button mat-flat-button>Material relleno</button>
+    <button mat-stroked-button>Material contorno</button>
+    <button mat-button>Material texto</button>
+  </div>
+</section>
+
+<section class="fs-cat">
+  <h2>Insignias de estado</h2>
+  @for (tipo of tipos; track tipo) {
+    <h3>{{ tipo }}</h3>
+    <div class="fs-fila">
+      @for (codigo of codigos(tipo); track codigo) {
+        <fs-insignia-estado [tipo]="tipo" [estado]="codigo" />
+      }
+    </div>
+  }
+  <h3>Etiquetas de producto</h3>
+  <div class="fs-fila">
+    <span class="fs-insignia fs-insignia--acento">Nueva colección</span
+    ><span class="fs-insignia fs-insignia--acento">-10 %</span>
+  </div>
+</section>
+
+<section class="fs-cat">
+  <h2>Estados</h2>
+  <div class="fs-cat__rejilla">
+    <fs-estado-cargando [lineas]="3" />
+    <fs-estado-vacio titulo="Aún no hay pedidos" texto="Cuando entren pedidos aparecerán aquí.">
+      <button class="fs-btn fs-btn--primario fs-btn--sm">Crear pedido</button>
+    </fs-estado-vacio>
+    <fs-estado-error texto="No pudimos cargar los pedidos." />
+  </div>
+</section>
+
+<section class="fs-cat">
+  <h2>Tabla paginada</h2>
+  <h3>Con detalle (enlace, fila clicable, acciones en "⋮")</h3>
+  <fs-tabla
+    [columnas]="columnas"
+    [datos]="pagina"
+    columnaId="codigo"
+    [filaEnlace]="enlace"
+    [acciones]="acciones"
+    [claseFila]="clase"
+  >
+    <ng-template fsCelda="estado" let-fila
+      ><fs-insignia-estado tipo="pedido" [estado]="fila.estado"
+    /></ng-template>
+  </fs-tabla>
+  <h3>Solo "Ver ›"</h3>
+  <fs-tabla [columnas]="columnas" [datos]="pagina" columnaId="codigo" [filaEnlace]="enlace">
+    <ng-template fsCelda="estado" let-fila
+      ><fs-insignia-estado tipo="pedido" [estado]="fila.estado"
+    /></ng-template>
+  </fs-tabla>
+  <h3>Sin detalle (filas no clicables)</h3>
+  <fs-tabla [columnas]="columnas" [datos]="pagina" columnaId="codigo">
+    <ng-template fsCelda="estado" let-fila
+      ><fs-insignia-estado tipo="pedido" [estado]="fila.estado"
+    /></ng-template>
+  </fs-tabla>
+  <h3>Cargando y vacía</h3>
+  <fs-tabla [columnas]="columnas" [cargando]="true" columnaId="codigo" />
+  <fs-tabla [columnas]="columnas" [datos]="vacia" columnaId="codigo" />
+</section>
+
+<section class="fs-cat">
+  <h2>Barra de filtros</h2>
+  <fs-barra-filtros
+    placeholder="Buscar por código o cliente"
+    [selects]="selects"
+    [chips]="chips"
+    [contadores]="contadores"
+  />
+</section>
+
+<section class="fs-cat">
+  <h2>Selector de ubigeo</h2>
+  <h3>Hasta distrito (por defecto)</h3>
+  <fs-selector-ubigeo [(valor)]="ubigeo" />
+  <p class="fs-suave">Código: {{ ubigeo() ?? 'sin elegir' }}</p>
+  <h3>Hasta provincia</h3>
+  <fs-selector-ubigeo hasta="provincia" />
+  <h3>Hasta departamento</h3>
+  <fs-selector-ubigeo hasta="departamento" />
+</section>
+
+<section class="fs-cat">
+  <h2>Subida de imágenes</h2>
+  <fs-subida-imagenes
+    [tipos]="['image/jpeg', 'image/png', 'image/webp']"
+    [tamanoMaximoMb]="5"
+    [maximoArchivos]="6"
+  />
+</section>
+
+<section class="fs-cat">
+  <h2>Toast</h2>
+  <div class="fs-fila">
+    <button class="fs-btn fs-btn--contorno" (click)="avisar('exito', 'Guardado')">Éxito</button>
+    <button
+      class="fs-btn fs-btn--contorno"
+      (click)="avisar('info', 'Se envió el correo al cliente')"
+    >
+      Información
+    </button>
+    <button class="fs-btn fs-btn--contorno" (click)="avisar('aviso', 'Quedan pocas unidades')">
+      Advertencia
+    </button>
+    <button
+      class="fs-btn fs-btn--contorno"
+      (click)="avisar('error', 'No pudimos guardar los cambios')"
+    >
+      Error
+    </button>
+  </div>
+</section>
+
+<section class="fs-cat">
+  <h2>Diálogo de confirmación</h2>
+  <div class="fs-fila">
+    <button class="fs-btn fs-btn--primario" (click)="confirmar(false)">Confirmar pedido</button>
+    <button class="fs-btn fs-btn--peligro" (click)="confirmar(true)">Cancelar pedido</button>
+  </div>
+</section>
+
+<section class="fs-cat">
+  <h2>Banner de servicio no disponible</h2>
+  <div class="fs-fila">
+    <button
+      class="fs-btn fs-btn--contorno"
+      (click)="servicio.noDisponible.set(!servicio.noDisponible())"
+    >
+      {{ servicio.noDisponible() ? 'Ocultar el banner' : 'Simular un 503' }}
+    </button>
+  </div>
+</section>

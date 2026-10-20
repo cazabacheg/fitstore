@@ -1,7 +1,6 @@
 import { inject, isDevMode } from '@angular/core';
 import { CanMatchFn, Route, Routes } from '@angular/router';
 import { CONFIG_SESION, SesionStore, autenticadoGuard, rolGuard } from 'shared';
-import { BackofficeShell } from './layout/backoffice-shell';
 import { Pagina403 } from './ui/estados/pagina-403';
 import { Pagina404 } from './ui/estados/pagina-404';
 
@@ -12,6 +11,9 @@ function datos(titulo: string, ...migas: string[]): Route['data'] {
 
 const OPERADOR = [rolGuard('OPERADOR')];
 const ADMIN = [rolGuard('ADMIN')];
+
+/** El shell (y con él Angular Material) se carga de forma diferida: el bundle inicial queda por debajo del presupuesto. */
+const cargaShell = () => import('./layout/backoffice-shell').then((m) => m.BackofficeShell);
 
 /** Cada ruta de R2 carga de forma diferida la carpeta de su funcionalidad. */
 const carga = {
@@ -145,6 +147,19 @@ const RUTAS_PUBLICAS = ['ingresar', 'recuperar', 'restablecer'];
 const esRutaPublica: CanMatchFn = (_ruta, segmentos) =>
   RUTAS_PUBLICAS.includes(segmentos[0]?.path ?? '');
 
+/**
+ * Catálogo de componentes: solo en desarrollo, fuera del shell y sin sesión (no depende de la API).
+ * Se declara con `ngDevMode` para que el build de producción elimine la ruta y su chunk (CA-0b-25).
+ */
+declare const ngDevMode: unknown;
+const catalogoUi: Route | null =
+  typeof ngDevMode === 'undefined' || ngDevMode
+    ? {
+        path: '_ui',
+        loadComponent: () => import('./ui/catalogo-ui/catalogo-ui').then((m) => m.CatalogoUi),
+      }
+    : null;
+
 /** Hay una sesión del tipo que admite la app (STAFF): decide si la 404 se muestra dentro del shell. */
 const conSesionDeLaApp: CanMatchFn = () => {
   const sesion = inject(SesionStore);
@@ -156,8 +171,9 @@ const conSesionDeLaApp: CanMatchFn = () => {
  * Rutas de la app. `/_ui` (catálogo de componentes) solo existe en desarrollo (CA-0b-25).
  * Los dos comodines: con sesión, la 404 va dentro del shell; sin sesión, fuera de él (CA-0b-19).
  */
-export function crearRutas(_desarrollo: boolean): Routes {
+export function crearRutas(desarrollo: boolean): Routes {
   return [
+    ...(desarrollo && catalogoUi ? [catalogoUi] : []),
     {
       path: '',
       canMatch: [esRutaPublica],
@@ -165,13 +181,13 @@ export function crearRutas(_desarrollo: boolean): Routes {
     },
     {
       path: '',
-      component: BackofficeShell,
+      loadComponent: cargaShell,
       canActivate: [autenticadoGuard],
       children: rutasDelShell,
     },
     {
       path: '**',
-      component: BackofficeShell,
+      loadComponent: cargaShell,
       canMatch: [conSesionDeLaApp],
       children: [{ path: '**', component: Pagina404 }],
     },

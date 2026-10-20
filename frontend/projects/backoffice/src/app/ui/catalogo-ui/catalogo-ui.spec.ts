@@ -26,7 +26,8 @@ describe('Catálogo /_ui', () => {
     for (const seccion of SECCIONES) expect(titulos, seccion).toContain(seccion);
     // variantes de insignia y estados de la tabla
     expect(el.querySelectorAll('.fs-insignia').length).toBeGreaterThanOrEqual(20);
-    for (const v of ['exito', 'aviso', 'info', 'error', 'marca']) expect(el.querySelector(`.fs-insignia--${v}`), v).not.toBeNull();
+    for (const v of ['exito', 'aviso', 'info', 'error', 'marca'])
+      expect(el.querySelector(`.fs-insignia--${v}`), v).not.toBeNull();
     expect(el.querySelector('fs-estado-cargando')).not.toBeNull();
     expect(el.querySelector('fs-estado-vacio')).not.toBeNull();
     expect(el.querySelector('fs-estado-error')).not.toBeNull();
@@ -37,13 +38,19 @@ describe('Catálogo /_ui', () => {
   it('CA-0b-25 /_ui es pública: se ve sin sesión, porque no depende de la API', async () => {
     const harness = await montar(undefined, { url: '/_ui' });
     expect(TestBed.inject(Router).url).toBe('/_ui');
-    expect((harness.routeNativeElement as HTMLElement).textContent).toContain('Catálogo de componentes');
+    expect((harness.routeNativeElement as HTMLElement).textContent).toContain(
+      'Catálogo de componentes',
+    );
   });
 
   it('CA-0b-25 en producción la ruta /_ui no existe (cae en la 404)', () => {
-    const rutas = JSON.stringify(crearRutas(false), (_k, v) => (typeof v === 'function' ? 'fn' : v));
+    const rutas = JSON.stringify(crearRutas(false), (_k, v) =>
+      typeof v === 'function' ? 'fn' : v,
+    );
     expect(rutas).not.toContain('_ui');
-    expect(JSON.stringify(crearRutas(true), (_k, v) => (typeof v === 'function' ? 'fn' : v))).toContain('"path":"_ui"');
+    expect(
+      JSON.stringify(crearRutas(true), (_k, v) => (typeof v === 'function' ? 'fn' : v)),
+    ).toContain('"path":"_ui"');
   });
 
   it('CA-0b-25 en producción, entrar a /_ui muestra la página 404', async () => {
@@ -52,7 +59,9 @@ describe('Catálogo /_ui', () => {
     TestBed.configureTestingModule({ providers: [provideRouter(crearRutas(false))] });
     const harness = await RouterTestingHarness.create();
     await harness.navigateByUrl('/_ui');
-    expect((harness.routeNativeElement as HTMLElement).textContent).toContain('Página no encontrada');
+    expect((harness.routeNativeElement as HTMLElement).textContent).toContain(
+      'Página no encontrada',
+    );
     void SESION_ADMIN;
   });
 });

@@ -56,7 +56,10 @@ describe('Toast (ui)', () => {
     servicio.mostrar('info', 'Dos');
     servicio.mostrar('info', 'Tres');
     f.detectChanges();
-    expect(avisos(el).map((a) => a.textContent)).toEqual([expect.stringContaining('Dos'), expect.stringContaining('Tres')]);
+    expect(avisos(el).map((a) => a.textContent)).toEqual([
+      expect.stringContaining('Dos'),
+      expect.stringContaining('Tres'),
+    ]);
   });
 });
 

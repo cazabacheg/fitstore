@@ -105,7 +105,7 @@ describe('BackofficeShell', () => {
   });
 
   it('CA-0b-24 un ítem con contador registrado muestra su número y el grupo padre la suma', async () => {
-    let fallidos = 2;
+    const fallidos = 2;
     const h = await montar(SESION_ADMIN, {
       url: '/pedidos',
       proveedores: [provideContadorMenu('reembolsos', () => fallidos)],

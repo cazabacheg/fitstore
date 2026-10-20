@@ -6,16 +6,25 @@ import { ESTADOS, insigniaDe } from './estados';
 describe('InsigniaEstado (ui)', () => {
   it.each([
     ['pedido', Object.values(orderApi.EstadoPedido)],
-    ['pago', [...Object.values(paymentApi.EstadoIntencion), ...Object.values(paymentApi.EstadoTransaccion)]],
+    [
+      'pago',
+      [
+        ...Object.values(paymentApi.EstadoIntencion),
+        ...Object.values(paymentApi.EstadoTransaccion),
+      ],
+    ],
     ['entrega', Object.values(deliveryApi.EstadoEntrega)],
     ['reembolso', Object.values(paymentApi.EstadoReembolso)],
-  ] as const)('CA-0b-25 cada estado de %s del contrato tiene etiqueta y variante', (tipo, codigos) => {
-    for (const codigo of codigos) {
-      const insignia = ESTADOS[tipo][codigo as string];
-      expect(insignia, `${tipo} ${codigo}`).toBeDefined();
-      expect(insignia.etiqueta).not.toMatch(/_|^[A-Z]+$/);
-    }
-  });
+  ] as const)(
+    'CA-0b-25 cada estado de %s del contrato tiene etiqueta y variante',
+    (tipo, codigos) => {
+      for (const codigo of codigos) {
+        const insignia = ESTADOS[tipo][codigo as string];
+        expect(insignia, `${tipo} ${codigo}`).toBeDefined();
+        expect(insignia.etiqueta).not.toMatch(/_|^[A-Z]+$/);
+      }
+    },
+  );
 
   it('CA-0b-25 muestra el estado en lenguaje de la persona y con la variante semántica', () => {
     const f = TestBed.createComponent(InsigniaEstado);
@@ -32,12 +41,24 @@ describe('InsigniaEstado (ui)', () => {
     expect(insigniaDe('pedido', 'EN_PREPARACION').variante).toBe('info');
     expect(insigniaDe('pedido', 'CANCELADO').variante).toBe('neutra');
     expect(insigniaDe('pedido', 'DEVUELTO').variante).toBe('error');
-    expect(insigniaDe('reembolso', 'FALLIDO')).toEqual({ etiqueta: 'Reembolso fallido', variante: 'error' });
-    expect(insigniaDe('pago', 'REEMBOLSADA')).toEqual({ etiqueta: 'Reembolsado', variante: 'marca' });
-    expect(insigniaDe('pago', 'RECHAZADA')).toEqual({ etiqueta: 'Pago rechazado', variante: 'error' });
+    expect(insigniaDe('reembolso', 'FALLIDO')).toEqual({
+      etiqueta: 'Reembolso fallido',
+      variante: 'error',
+    });
+    expect(insigniaDe('pago', 'REEMBOLSADA')).toEqual({
+      etiqueta: 'Reembolsado',
+      variante: 'marca',
+    });
+    expect(insigniaDe('pago', 'RECHAZADA')).toEqual({
+      etiqueta: 'Pago rechazado',
+      variante: 'error',
+    });
   });
 
   it('CA-0b-25 un estado desconocido se muestra neutro con su código legible, sin romper', () => {
-    expect(insigniaDe('pedido', 'EN_REVISION')).toEqual({ etiqueta: 'En revision', variante: 'neutra' });
+    expect(insigniaDe('pedido', 'EN_REVISION')).toEqual({
+      etiqueta: 'En revision',
+      variante: 'neutra',
+    });
   });
 });

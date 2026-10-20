@@ -1,11 +1,17 @@
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
-import { readFileSync } from 'node:fs';
-import { resolve } from 'node:path';
 import { TemaService, provideFitstoreHttp } from 'shared';
 
-/** Hoja de estilos global del backoffice, tal como se publica. */
-const CSS = readFileSync(resolve(__dirname, '../styles.css'), 'utf8');
+/** Hoja de estilos global del backoffice, tal como se publica (se lee del disco: el runner corre en Node). */
+let CSS = '';
+beforeAll(async () => {
+  const modulo = 'node:fs'; // variable: el proyecto no trae @types/node
+  const fs = (await import(/* @vite-ignore */ modulo)) as {
+    readFileSync(ruta: string, codificacion: string): string;
+  };
+  const proceso = (globalThis as unknown as { process: { cwd(): string } }).process;
+  CSS = fs.readFileSync(`${proceso.cwd()}/projects/backoffice/src/styles.css`, 'utf8');
+});
 
 /** Valor declarado de una variable en `:root`, sin comentarios. */
 function declarada(nombre: string): string | undefined {
@@ -60,7 +66,9 @@ describe('Tema de Angular Material 3 del backoffice (styles.css)', () => {
   it('CA-0b-05 si settings devuelve el primario #E11D48, el primario de Material es #E11D48', async () => {
     document.documentElement.removeAttribute('style');
     localStorage.clear();
-    TestBed.configureTestingModule({ providers: [provideFitstoreHttp({ carrito: false }), provideHttpClientTesting()] });
+    TestBed.configureTestingModule({
+      providers: [provideFitstoreHttp({ carrito: false }), provideHttpClientTesting()],
+    });
     const tema = TestBed.inject(TemaService);
     const inicio = tema.iniciar();
     TestBed.inject(HttpTestingController)
@@ -70,7 +78,13 @@ describe('Tema de Angular Material 3 del backoffice (styles.css)', () => {
         mensaje: 'Operación exitosa',
         data: {
           identidad: { nombre: 'Moda Activa' },
-          tema: { colorPrimario: '#E11D48', colorSecundario: '#111827', colorAcento: '#F59E0B', colorFondo: '#FFFFFF', colorTexto: '#111827' },
+          tema: {
+            colorPrimario: '#E11D48',
+            colorSecundario: '#111827',
+            colorAcento: '#F59E0B',
+            colorFondo: '#FFFFFF',
+            colorTexto: '#111827',
+          },
         },
       });
     await inicio;

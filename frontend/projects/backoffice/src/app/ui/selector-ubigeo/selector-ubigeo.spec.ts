@@ -21,7 +21,11 @@ const sobre = <T>(data: T) => ({ success: true, mensaje: 'Operación exitosa', d
 
 @Component({
   imports: [SelectorUbigeo],
-  template: `<fs-selector-ubigeo [hasta]="hasta()" [(valor)]="valor" (valorChange)="emitidos.push($event)" />`,
+  template: `<fs-selector-ubigeo
+    [hasta]="hasta()"
+    [(valor)]="valor"
+    (valorChange)="emitidos.push($event)"
+  />`,
 })
 class Anfitrion {
   hasta = signal<HastaUbigeo>('distrito');
@@ -31,10 +35,15 @@ class Anfitrion {
 
 function preparar() {
   localStorage.clear();
-  TestBed.configureTestingModule({ providers: [provideFitstoreHttp({ carrito: false }), provideHttpClientTesting()] });
+  TestBed.configureTestingModule({
+    providers: [provideFitstoreHttp({ carrito: false }), provideHttpClientTesting()],
+  });
   return TestBed.inject(HttpTestingController);
 }
-async function crear(ctrl: HttpTestingController, config: (a: Anfitrion) => void = () => undefined) {
+async function crear(
+  ctrl: HttpTestingController,
+  config: (a: Anfitrion) => void = () => undefined,
+) {
   const f = TestBed.createComponent(Anfitrion);
   config(f.componentInstance);
   f.detectChanges();
@@ -48,7 +57,8 @@ async function estable(f: ComponentFixture<unknown>) {
   await f.whenStable();
   f.detectChanges();
 }
-const selects = (f: ComponentFixture<unknown>) => [...(f.nativeElement as HTMLElement).querySelectorAll('select')] as HTMLSelectElement[];
+const selects = (f: ComponentFixture<unknown>) =>
+  [...(f.nativeElement as HTMLElement).querySelectorAll('select')] as HTMLSelectElement[];
 async function elegir(f: ComponentFixture<unknown>, nivel: number, codigo: string) {
   const s = selects(f)[nivel];
   s.value = codigo;
@@ -75,7 +85,11 @@ describe('SelectorUbigeo', () => {
   it('CA-0b-26 las listas vienen de /ubigeo y quedan en la caché del navegador (no se vuelven a pedir)', async () => {
     const ctrl = preparar();
     const f = await crear(ctrl);
-    expect([...selects(f)[0].options].map((o) => o.textContent?.trim())).toEqual(['Selecciona', 'Arequipa', 'Lima']);
+    expect([...selects(f)[0].options].map((o) => o.textContent?.trim())).toEqual([
+      'Selecciona',
+      'Arequipa',
+      'Lima',
+    ]);
     const segundo = TestBed.createComponent(Anfitrion);
     segundo.detectChanges();
     await estable(segundo);
@@ -106,7 +120,9 @@ describe('SelectorUbigeo', () => {
     const f = await crear(ctrl, (a) => a.hasta.set('provincia'));
     expect(selects(f).length).toBe(2);
     await elegir(f, 0, '04');
-    ctrl.expectOne('/api/v1/ubigeo/departamentos/04/provincias').flush(sobre([{ codigo: '0401', nombre: 'Arequipa' }]));
+    ctrl
+      .expectOne('/api/v1/ubigeo/departamentos/04/provincias')
+      .flush(sobre([{ codigo: '0401', nombre: 'Arequipa' }]));
     await estable(f);
     expect(f.componentInstance.emitidos).toEqual([]);
     await elegir(f, 1, '0401');
@@ -124,7 +140,9 @@ describe('SelectorUbigeo', () => {
     await estable(f);
     await elegir(f, 2, '150122');
     await elegir(f, 0, '04');
-    ctrl.expectOne('/api/v1/ubigeo/departamentos/04/provincias').flush(sobre([{ codigo: '0401', nombre: 'Arequipa' }]));
+    ctrl
+      .expectOne('/api/v1/ubigeo/departamentos/04/provincias')
+      .flush(sobre([{ codigo: '0401', nombre: 'Arequipa' }]));
     await estable(f);
     expect(selects(f)[1].value).toBe('');
     expect(selects(f)[2].value).toBe('');
@@ -149,7 +167,9 @@ describe('SelectorUbigeo', () => {
   it('CA-0b-26 se puede buscar el distrito por nombre y llena los tres selects', async () => {
     const ctrl = preparar();
     const f = await crear(ctrl);
-    const buscador = (f.nativeElement as HTMLElement).querySelector('input[type="search"], input[role="combobox"]') as HTMLInputElement;
+    const buscador = (f.nativeElement as HTMLElement).querySelector(
+      'input[type="search"], input[role="combobox"]',
+    ) as HTMLInputElement;
     buscador.focus();
     buscador.dispatchEvent(new Event('focusin'));
     buscador.value = 'miraf';
@@ -164,8 +184,15 @@ describe('SelectorUbigeo', () => {
       ]),
     );
     await estable(f);
-    const opciones = [...TestBed.inject(OverlayContainer).getContainerElement().querySelectorAll<HTMLElement>('mat-option')];
-    expect(opciones.map((o) => o.textContent?.trim())).toEqual(['Miraflores · Lima, Lima', 'Miraflores · Arequipa, Arequipa']);
+    const opciones = [
+      ...TestBed.inject(OverlayContainer)
+        .getContainerElement()
+        .querySelectorAll<HTMLElement>('mat-option'),
+    ];
+    expect(opciones.map((o) => o.textContent?.trim())).toEqual([
+      'Miraflores · Lima, Lima',
+      'Miraflores · Arequipa, Arequipa',
+    ]);
     opciones[0].click();
     await estable(f);
     ctrl.expectOne('/api/v1/ubigeo/departamentos/15/provincias').flush(sobre(PROVINCIAS_LIMA));

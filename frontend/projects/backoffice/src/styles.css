@@ -1,4 +1,5 @@
 @import '../../shared/src/lib/theme/tokens.css';
+@import '@angular/material/prebuilt-themes/azure-blue.css';
 
 /*
  * Estilos globales del backoffice: clases `fs-*` del sistema de diseño (docs/diseno/sistema/components/bundle.css),
@@ -6,6 +7,75 @@
  */
 :root {
   --fs-font-marca: var(--font-poppins);
+}
+
+/*
+ * Tema de Angular Material 3 (CA-0b-05): el tema base trae los tokens `--mat-sys-*` y aquí se sobrescriben con la marca
+ * de settings (`--fs-color-*`, que escribe el TemaService en `:root`). `:root` gana al `html` del tema base.
+ * La tipografía (Poppins) y los radios son fijos y no se configuran.
+ */
+:root {
+  --mat-sys-primary: var(--fs-color-primario);
+  --mat-sys-on-primary: var(--fs-color-en-primario);
+  --mat-sys-primary-container: var(--fs-color-primario-suave);
+  --mat-sys-on-primary-container: var(--fs-color-primario-texto);
+  --mat-sys-secondary: var(--fs-color-secundario);
+  --mat-sys-on-secondary: var(--fs-color-en-secundario);
+  --mat-sys-secondary-container: var(--fs-color-superficie-alterna);
+  --mat-sys-on-secondary-container: var(--fs-color-texto);
+  --mat-sys-tertiary: var(--fs-color-acento);
+  --mat-sys-on-tertiary: var(--fs-color-en-acento);
+  --mat-sys-tertiary-container: var(--fs-color-superficie-alterna);
+  --mat-sys-on-tertiary-container: var(--fs-color-texto);
+  --mat-sys-background: var(--fs-color-fondo);
+  --mat-sys-on-background: var(--fs-color-texto);
+  --mat-sys-surface: var(--fs-color-superficie);
+  --mat-sys-on-surface: var(--fs-color-texto);
+  --mat-sys-surface-variant: var(--fs-color-superficie-alterna);
+  --mat-sys-on-surface-variant: var(--fs-color-texto-suave);
+  --mat-sys-surface-container-lowest: var(--fs-color-superficie);
+  --mat-sys-surface-container-low: var(--fs-color-superficie);
+  --mat-sys-surface-container: var(--fs-color-superficie);
+  --mat-sys-surface-container-high: var(--fs-color-superficie-alterna);
+  --mat-sys-surface-container-highest: var(--fs-color-superficie-alterna);
+  --mat-sys-outline: var(--fs-color-borde-control);
+  --mat-sys-outline-variant: var(--fs-color-linea);
+  --mat-sys-error: var(--fs-color-error);
+  --mat-sys-on-error: #ffffff;
+  --mat-sys-error-container: var(--fs-color-error-suave);
+  --mat-sys-on-error-container: var(--fs-color-error);
+
+  /* Enlaces y botones de texto en el primario oscurecido (nunca el primario como texto) */
+  --mat-button-text-label-text-color: var(--fs-color-primario-texto);
+  --mat-button-outlined-label-text-color: var(--fs-color-primario-texto);
+
+  /* Tipografía fija: Poppins en todos los estilos de Material */
+  --mat-sys-display-large-font: var(--font-poppins);
+  --mat-sys-display-medium-font: var(--font-poppins);
+  --mat-sys-display-small-font: var(--font-poppins);
+  --mat-sys-headline-large-font: var(--font-poppins);
+  --mat-sys-headline-medium-font: var(--font-poppins);
+  --mat-sys-headline-small-font: var(--font-poppins);
+  --mat-sys-title-large-font: var(--font-poppins);
+  --mat-sys-title-medium-font: var(--font-poppins);
+  --mat-sys-title-small-font: var(--font-poppins);
+  --mat-sys-body-large-font: var(--font-poppins);
+  --mat-sys-body-medium-font: var(--font-poppins);
+  --mat-sys-body-small-font: var(--font-poppins);
+  --mat-sys-label-large-font: var(--font-poppins);
+  --mat-sys-label-medium-font: var(--font-poppins);
+  --mat-sys-label-small-font: var(--font-poppins);
+
+  /* Radios fijos: 4 / 8 / 16 px */
+  --mat-sys-corner-extra-small: var(--radio-sm);
+  --mat-sys-corner-small: var(--radio-sm);
+  --mat-sys-corner-medium: var(--radio-md);
+  --mat-sys-corner-large: var(--radio-lg);
+  --mat-sys-corner-extra-large: var(--radio-lg);
+}
+
+a {
+  color: var(--fs-color-primario-texto);
 }
 
 html,

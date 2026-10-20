@@ -1,0 +1,91 @@
+<div class="fs-filtros">
+  <div class="fs-filtros__controles">
+    <div class="fs-buscador">
+      <span class="fs-icono" aria-hidden="true">search</span>
+      <input
+        #buscador
+        type="search"
+        class="fs-input"
+        [placeholder]="placeholder()"
+        [attr.aria-label]="placeholder()"
+        [value]="valor('q')"
+        (input)="escribir(buscador.value)"
+      />
+    </div>
+    @for (s of selectsVisibles(); track s.clave) {
+      <select
+        class="fs-select"
+        [attr.aria-label]="s.etiqueta"
+        (change)="poner(s.clave, $any($event.target).value)"
+      >
+        <option value="" [selected]="!valor(s.clave)">{{ s.etiqueta }}</option>
+        @for (o of s.opciones; track o.valor) {
+          <option [value]="o.valor" [selected]="o.valor === valor(s.clave)">
+            {{ o.etiqueta }}
+          </option>
+        }
+      </select>
+    }
+    @if (selectsExtra().length > 0) {
+      <button
+        type="button"
+        class="fs-btn fs-btn--texto fs-btn--sm"
+        [attr.aria-expanded]="masAbierto()"
+        (click)="masAbierto.set(!masAbierto())"
+      >
+        Más filtros
+      </button>
+    }
+    @if (hayActivos()) {
+      <button type="button" class="fs-btn fs-btn--texto fs-btn--sm" (click)="limpiar()">
+        Limpiar filtros
+      </button>
+    }
+  </div>
+  @if (masAbierto()) {
+    <div class="fs-filtros__controles">
+      @for (s of selectsExtra(); track s.clave) {
+        <select
+          class="fs-select"
+          [attr.aria-label]="s.etiqueta"
+          (change)="poner(s.clave, $any($event.target).value)"
+        >
+          <option value="" [selected]="!valor(s.clave)">{{ s.etiqueta }}</option>
+          @for (o of s.opciones; track o.valor) {
+            <option [value]="o.valor" [selected]="o.valor === valor(s.clave)">
+              {{ o.etiqueta }}
+            </option>
+          }
+        </select>
+      }
+    </div>
+  }
+  @if (chips().length > 0) {
+    <div class="fs-filtros__controles">
+      <button
+        type="button"
+        class="fs-chip"
+        [attr.aria-pressed]="!valor(claveChip())"
+        (click)="poner(claveChip(), '')"
+      >
+        Todos
+        @if (total() !== null) {
+          <b>{{ total() }}</b>
+        }
+      </button>
+      @for (c of chips(); track c.valor) {
+        <button
+          type="button"
+          class="fs-chip"
+          [attr.aria-pressed]="valor(claveChip()) === c.valor"
+          (click)="poner(claveChip(), c.valor)"
+        >
+          {{ c.etiqueta }}
+          @if (contadores(); as conteo) {
+            <b>{{ conteo[c.valor] ?? 0 }}</b>
+          }
+        </button>
+      }
+    </div>
+  }
+</div>

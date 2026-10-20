@@ -1,6 +1,20 @@
-import { ChangeDetectionStrategy, Component, DestroyRef, computed, effect, inject, input, model, signal, untracked } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  DestroyRef,
+  computed,
+  effect,
+  inject,
+  input,
+  model,
+  signal,
+  untracked,
+} from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { MatAutocompleteModule, type MatAutocompleteSelectedEvent } from '@angular/material/autocomplete';
+import {
+  MatAutocompleteModule,
+  type MatAutocompleteSelectedEvent,
+} from '@angular/material/autocomplete';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { Subject, catchError, of, switchMap } from 'rxjs';
@@ -37,7 +51,9 @@ export class SelectorUbigeo {
   protected readonly provincias = signal<settingsApi.UbigeoItem[]>([]);
   protected readonly distritos = signal<settingsApi.UbigeoItem[]>([]);
   protected readonly resultados = signal<settingsApi.DistritoEncontrado[]>([]);
-  protected readonly niveles = computed(() => ({ departamento: 1, provincia: 2, distrito: 3 })[this.hasta()]);
+  protected readonly niveles = computed(
+    () => ({ departamento: 1, provincia: 2, distrito: 3 })[this.hasta()],
+  );
 
   private ultimoCodigo: string | null = null;
   private readonly busqueda = new Subject<string>();
@@ -88,7 +104,10 @@ export class SelectorUbigeo {
     else this.busqueda.next(texto);
   }
 
-  protected elegirResultado(evento: MatAutocompleteSelectedEvent, buscador: HTMLInputElement): void {
+  protected elegirResultado(
+    evento: MatAutocompleteSelectedEvent,
+    buscador: HTMLInputElement,
+  ): void {
     const encontrado = evento.option.value as settingsApi.DistritoEncontrado;
     this.llenarDesde(encontrado.codigo);
     this.publicar();
@@ -106,12 +125,17 @@ export class SelectorUbigeo {
     this.distrito.set(codigo?.length === 6 ? codigo : '');
     this.provincias.set([]);
     this.distritos.set([]);
-    if (this.departamento()) this.catalogo.provincias(this.departamento()).subscribe((l) => this.provincias.set(l));
-    if (this.provincia()) this.catalogo.distritos(this.provincia()).subscribe((l) => this.distritos.set(l));
+    if (this.departamento())
+      this.catalogo.provincias(this.departamento()).subscribe((l) => this.provincias.set(l));
+    if (this.provincia())
+      this.catalogo.distritos(this.provincia()).subscribe((l) => this.distritos.set(l));
   }
 
   private publicar(): void {
-    const codigo = { departamento: this.departamento(), provincia: this.provincia(), distrito: this.distrito() }[this.hasta()] || null;
+    const codigo =
+      { departamento: this.departamento(), provincia: this.provincia(), distrito: this.distrito() }[
+        this.hasta()
+      ] || null;
     if (codigo !== this.ultimoCodigo) {
       this.ultimoCodigo = codigo;
       this.valor.set(codigo);
