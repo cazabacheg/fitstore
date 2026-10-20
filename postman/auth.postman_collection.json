@@ -1,0 +1,2206 @@
+{
+  "info": {
+    "name": "FitStore - auth (SPEC-1)",
+    "description": "Identidad a través del gateway. Flujo cliente: registro, ingreso, perfil, direcciones, refresh, cambio de contraseña, logout y recuperación. Flujo staff: ingreso del ADMIN, invitación, edición, desactivación, consulta y bloqueo de clientes, y los 403 del OPERADOR. Requiere la plataforma levantada con el perfil dev (datos de demostración) y las credenciales del ADMIN inicial en las variables adminEmail y adminPassword (las de FITSTORE_ADMIN_EMAIL y FITSTORE_ADMIN_PASSWORD). Cada petición lleva en el nombre el id del criterio que verifica.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Flujo cliente",
+      "description": "Registro, ingreso, perfil, direcciones, sesión y recuperación.",
+      "item": [
+        {
+          "name": "CA-1-01 Registro de un cliente nuevo (201, sesión iniciada)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/registro",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "registro"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"email\": \"{{clienteEmail}}\", \"password\": \"{{clientePassword}}\", \"nombres\": \"Postman\", \"apellidos\": \"Cliente Prueba\", \"dni\": \"{{clienteDni}}\", \"telefono\": \"{{clienteTelefono}}\", \"aceptaTerminos\": true, \"aceptaPrivacidad\": true, \"versionTerminos\": 1, \"versionPrivacidad\": 1}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const sufijo = Date.now().toString();",
+                  "pm.collectionVariables.set('clienteEmail', 'postman.' + sufijo + '@fitstore.test');",
+                  "pm.collectionVariables.set('clienteDni', sufijo.slice(-8).padStart(8, '1'));",
+                  "pm.collectionVariables.set('clienteTelefono', '9' + sufijo.slice(-8).padStart(8, '1'));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('CA-1-01 crea la cuenta (201)', function () { pm.response.to.have.status(201); });",
+                  "pm.test('CA-1-01 deja la sesión iniciada con access token y cuenta de cliente', function () { const d = pm.response.json().data; pm.expect(d.accessToken).to.be.a('string').and.not.empty; pm.expect(d.cuenta.tipo).to.eql('CLIENTE'); pm.collectionVariables.set('clienteToken', d.accessToken); pm.collectionVariables.set('clienteId', d.cuenta.id); });",
+                  "pm.test('CA-1-01 responde Location: /api/v1/clientes/me', function () { pm.expect(pm.response.headers.get('Location')).to.eql('/api/v1/clientes/me'); });",
+                  "pm.test('CA-1-01 entrega el refresh en la cookie fs_refresh', function () { pm.expect(pm.response.headers.get('Set-Cookie')).to.include('fs_refresh=').and.include('HttpOnly'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "CA-1-02 Registro con el correo repetido (409 CORREO_DUPLICADO)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/registro",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "registro"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"email\": \"{{clienteEmail}}\", \"password\": \"{{clientePassword}}\", \"nombres\": \"Postman\", \"apellidos\": \"Repetido\", \"dni\": \"{{clienteDniOtro}}\", \"telefono\": \"{{clienteTelefono}}\", \"aceptaTerminos\": true, \"aceptaPrivacidad\": true, \"versionTerminos\": 1, \"versionPrivacidad\": 1}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.collectionVariables.set('clienteDniOtro', (Date.now() + 7).toString().slice(-8).padStart(8, '2'));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('CA-1-02 responde 409', function () { pm.response.to.have.status(409); });",
+                  "pm.test('CA-1-02 el código es CORREO_DUPLICADO', function () { pm.expect(pm.response.json().codigo).to.eql('CORREO_DUPLICADO'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "CA-1-03 Registro con datos inválidos (400 con los campos)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/registro",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "registro"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"email\": \"otro@fitstore.test\", \"password\": \"sinnumeros\", \"nombres\": \"Postman\", \"apellidos\": \"Invalido\", \"dni\": \"123\", \"telefono\": \"812345678\", \"aceptaTerminos\": false, \"aceptaPrivacidad\": true, \"versionTerminos\": 1, \"versionPrivacidad\": 1}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('CA-1-03 responde 400', function () { pm.response.to.have.status(400); });",
+                  "pm.test('CA-1-03 indica los campos inválidos', function () { const campos = pm.response.json().errores.map(e => e.campo); pm.expect(campos).to.include.members(['password', 'dni', 'telefono', 'aceptaTerminos']); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "CA-1-05 Ingreso con contraseña errada (401, mensaje genérico)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "login"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"email\": \"{{clienteEmail}}\", \"password\": \"Incorrecta123\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('CA-1-05 responde 401', function () { pm.response.to.have.status(401); });",
+                  "pm.test('CA-1-05 dice Correo o contraseña incorrectos', function () { pm.expect(pm.response.json().mensaje).to.eql('Correo o contraseña incorrectos'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "CA-1-04 Ingreso del cliente (200, access token y cookie de refresh)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "login"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"email\": \"{{clienteEmail}}\", \"password\": \"{{clientePassword}}\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('CA-1-04 responde 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('CA-1-04 entrega el access token y la cuenta CLIENTE', function () { const d = pm.response.json().data; pm.expect(d.cuenta.rol).to.eql('CLIENTE'); pm.collectionVariables.set('clienteToken', d.accessToken); });",
+                  "pm.test('CA-1-04 entrega la cookie de refresh HttpOnly', function () { pm.expect(pm.response.headers.get('Set-Cookie')).to.include('fs_refresh=').and.include('HttpOnly'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "CA-1-07 Las credenciales del staff no sirven en la tienda (401)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "login"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"email\": \"{{demoOperadorEmail}}\", \"password\": \"{{demoPassword}}\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('CA-1-07 responde 401', function () { pm.response.to.have.status(401); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "CA-1-15 Ver mi perfil (correo y DNI visibles)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/clientes/me",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "clientes",
+                "me"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{clienteToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('CA-1-15 responde 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('CA-1-15 trae el correo y el DNI', function () { const d = pm.response.json().data; pm.expect(d.email).to.eql(pm.collectionVariables.get('clienteEmail')); pm.expect(d.dni).to.match(/^[0-9]{8}$/); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "CA-1-15 Editar mi perfil (el correo y el DNI no cambian)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/clientes/me",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "clientes",
+                "me"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"nombres\": \"Postman Editado\", \"apellidos\": \"Cliente Prueba\", \"telefono\": \"{{clienteTelefono}}\", \"email\": \"otro@fitstore.test\", \"dni\": \"99999999\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{clienteToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('CA-1-15 responde 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('CA-1-15 actualiza el nombre y conserva correo y DNI', function () { const d = pm.response.json().data; pm.expect(d.nombres).to.eql('Postman Editado'); pm.expect(d.email).to.eql(pm.collectionVariables.get('clienteEmail')); pm.expect(d.dni).to.not.eql('99999999'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "CA-1-17 Crear la primera dirección (queda predeterminada)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/clientes/me/direcciones",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "clientes",
+                "me",
+                "direcciones"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"alias\": \"Casa\", \"ubigeo\": \"150115\", \"direccion\": \"Jr. Gamarra 123, dpto 4\", \"referencia\": \"Frente al parque\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{clienteToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('CA-1-17 responde 201', function () { pm.response.to.have.status(201); });",
+                  "pm.test('CA-1-17 es predeterminada y guarda el ubigeo', function () { const d = pm.response.json().data; pm.expect(d.predeterminada).to.eql(true); pm.expect(d.ubigeo).to.eql('150115'); pm.collectionVariables.set('direccion1', d.id); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "CA-1-17 Crear una segunda dirección (no es predeterminada)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/clientes/me/direcciones",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "clientes",
+                "me",
+                "direcciones"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"alias\": \"Trabajo\", \"ubigeo\": \"150101\", \"direccion\": \"Av. Abancay 456, Cercado\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{clienteToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('CA-1-17 responde 201', function () { pm.response.to.have.status(201); });",
+                  "pm.test('CA-1-17 no es predeterminada', function () { const d = pm.response.json().data; pm.expect(d.predeterminada).to.eql(false); pm.collectionVariables.set('direccion2', d.id); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "CA-1-18 Marcar la segunda como predeterminada (la anterior deja de serlo)",
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/clientes/me/direcciones/{{direccion2}}/predeterminada",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "clientes",
+                "me",
+                "direcciones",
+                "{{direccion2}}",
+                "predeterminada"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{clienteToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('CA-1-18 responde 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('CA-1-18 queda una sola predeterminada', function () { const l = pm.response.json().data; pm.expect(l.filter(d => d.predeterminada)).to.have.lengthOf(1); pm.expect(l[0].alias).to.eql('Trabajo'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "CA-1-19 Editar una dirección",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/clientes/me/direcciones/{{direccion1}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "clientes",
+                "me",
+                "direcciones",
+                "{{direccion1}}"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"alias\": \"Casa editada\", \"ubigeo\": \"150115\", \"direccion\": \"Jr. Gamarra 999, dpto 4\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{clienteToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('CA-1-19 responde 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('CA-1-19 actualiza el alias', function () { pm.expect(pm.response.json().data.alias).to.eql('Casa editada'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "CA-1-19 Eliminar la predeterminada (pasa a serlo la creada más recientemente)",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/clientes/me/direcciones/{{direccion2}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "clientes",
+                "me",
+                "direcciones",
+                "{{direccion2}}"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{clienteToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('CA-1-19 responde 200', function () { pm.response.to.have.status(200); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "CA-1-19 Listar: la que queda es predeterminada",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/clientes/me/direcciones",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "clientes",
+                "me",
+                "direcciones"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{clienteToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('CA-1-19 responde 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('CA-1-19 queda una dirección y es predeterminada', function () { const l = pm.response.json().data; pm.expect(l).to.have.lengthOf(1); pm.expect(l[0].predeterminada).to.eql(true); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "CA-1-21 Una dirección que no es mía responde 404",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/clientes/me/direcciones/999999999",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "clientes",
+                "me",
+                "direcciones",
+                "999999999"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{clienteToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('CA-1-21 responde 404', function () { pm.response.to.have.status(404); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "CA-1-08 Refrescar la sesión con la cookie (rota el refresh)",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/refresh",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "refresh"
+              ]
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('CA-1-08 responde 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('CA-1-08 entrega un access token nuevo y un refresh nuevo', function () { pm.expect(pm.response.json().data.accessToken).to.be.a('string').and.not.empty; pm.expect(pm.response.headers.get('Set-Cookie')).to.include('fs_refresh='); pm.collectionVariables.set('clienteToken', pm.response.json().data.accessToken); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "CA-1-36 Un token real de auth pasa el gateway (200)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/clientes/me",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "clientes",
+                "me"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{clienteToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('CA-1-36 el gateway acepta el token emitido por auth', function () { pm.response.to.have.status(200); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "CA-1-36 Un token adulterado se rechaza (401)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/clientes/me",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "clientes",
+                "me"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{clienteTokenAdulterado}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const t = pm.collectionVariables.get('clienteToken'); pm.collectionVariables.set('clienteTokenAdulterado', t.slice(0, -4) + (t.endsWith('AAAA') ? 'BBBB' : 'AAAA'));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('CA-1-36 el gateway rechaza el token adulterado (401)', function () { pm.response.to.have.status(401); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "CA-1-16 Cambiar mi contraseña con la actual incorrecta (400 en passwordActual)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/clientes/me/password",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "clientes",
+                "me",
+                "password"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"passwordActual\": \"Incorrecta123\", \"nuevaPassword\": \"NuevaPostman2027\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{clienteToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('CA-1-16 responde 400', function () { pm.response.to.have.status(400); });",
+                  "pm.test('CA-1-16 el error está en passwordActual', function () { pm.expect(pm.response.json().errores[0].campo).to.eql('passwordActual'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "CA-1-16 Cambiar mi contraseña (200, las otras sesiones se cierran)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/clientes/me/password",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "clientes",
+                "me",
+                "password"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"passwordActual\": \"{{clientePassword}}\", \"nuevaPassword\": \"NuevaPostman2027\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{clienteToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('CA-1-16 responde 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('CA-1-16 entrega una cookie de refresh nueva para esta sesión', function () { pm.expect(pm.response.headers.get('Set-Cookie')).to.include('fs_refresh='); });",
+                  "pm.collectionVariables.set('clientePassword', 'NuevaPostman2027');"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "CA-1-10 Cerrar sesión (revoca el refresh y borra la cookie)",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/logout",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "logout"
+              ]
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('CA-1-10 responde 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('CA-1-10 borra la cookie', function () { pm.expect(pm.response.headers.get('Set-Cookie')).to.include('Max-Age=0'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "CA-1-10 Con el refresh revocado ya no hay sesión (401)",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/refresh",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "refresh"
+              ]
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('CA-1-10 responde 401', function () { pm.response.to.have.status(401); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "CA-1-12 Pedir recuperar la contraseña (siempre el mismo mensaje)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/password/olvido",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "password",
+                "olvido"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"email\": \"no.existe.{{clienteEmail}}\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('CA-1-12 responde 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('CA-1-12 dice Si el correo está registrado, te enviaremos un enlace', function () { pm.expect(pm.response.json().mensaje).to.eql('Si el correo está registrado, te enviaremos un enlace'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "CA-1-14 Restablecer con un enlace inválido (400 TOKEN_INVALIDO)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/password/restablecer",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "password",
+                "restablecer"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"token\": \"token-que-no-existe-0123456789abcdefghijk\", \"nuevaPassword\": \"NuevaPostman2027\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('CA-1-14 responde 400', function () { pm.response.to.have.status(400); });",
+                  "pm.test('CA-1-14 dice Enlace inválido o expirado', function () { pm.expect(pm.response.json().codigo).to.eql('TOKEN_INVALIDO'); pm.expect(pm.response.json().mensaje).to.eql('Enlace inválido o expirado'); });"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Flujo staff",
+      "description": "Backoffice: ADMIN y OPERADOR.",
+      "item": [
+        {
+          "name": "CA-1-22 Ingreso del ADMIN al backoffice",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/staff/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "staff",
+                "login"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"email\": \"{{adminEmail}}\", \"password\": \"{{adminPassword}}\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('CA-1-22 responde 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('CA-1-22 la cuenta es STAFF con rol ADMIN', function () { const d = pm.response.json().data; pm.expect(d.cuenta.tipo).to.eql('STAFF'); pm.expect(d.cuenta.rol).to.eql('ADMIN'); pm.collectionVariables.set('adminToken', d.accessToken); pm.collectionVariables.set('adminId', d.cuenta.id); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "CA-1-23 Un cliente no ingresa al backoffice (401)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/staff/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "staff",
+                "login"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"email\": \"{{clienteEmail}}\", \"password\": \"{{clientePassword}}\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('CA-1-23 responde 401', function () { pm.response.to.have.status(401); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "CA-1-35 Ver mi perfil de staff",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/staff/me",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "staff",
+                "me"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('CA-1-35 responde 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('CA-1-35 el rol es ADMIN', function () { pm.expect(pm.response.json().data.rol).to.eql('ADMIN'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "CA-1-25 Invitar a un miembro del staff (invitación pendiente)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/staff",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "staff"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"email\": \"{{staffEmail}}\", \"nombres\": \"Postman\", \"apellidos\": \"Invitado\", \"rol\": \"OPERADOR\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.collectionVariables.set('staffEmail', 'invitado.' + Date.now() + '@fitstore.test');"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('CA-1-25 responde 201', function () { pm.response.to.have.status(201); });",
+                  "pm.test('CA-1-25 queda como Invitación pendiente', function () { const d = pm.response.json().data; pm.expect(d.estado).to.eql('INVITACION_PENDIENTE'); pm.collectionVariables.set('staffId', d.id); pm.collectionVariables.set('staffVersion', d.version); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "CA-1-25 Listar el staff filtrando por invitación pendiente",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/staff?estado=INVITACION_PENDIENTE&size=100",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "staff"
+              ],
+              "query": [
+                {
+                  "key": "estado",
+                  "value": "INVITACION_PENDIENTE"
+                },
+                {
+                  "key": "size",
+                  "value": "100"
+                }
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('CA-1-25 responde 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('CA-1-25 incluye al invitado', function () { const c = pm.response.json().data.contenido; pm.expect(c.map(s => s.email)).to.include(pm.collectionVariables.get('staffEmail')); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "CA-1-23 El invitado sin contraseña no puede ingresar (401)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/staff/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "staff",
+                "login"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"email\": \"{{staffEmail}}\", \"password\": \"Clave12345\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('CA-1-23 responde 401', function () { pm.response.to.have.status(401); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "CA-1-30 Reenviar la invitación",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/staff/{{staffId}}/reenviar-invitacion",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "staff",
+                "{{staffId}}",
+                "reenviar-invitacion"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('CA-1-30 responde 200', function () { pm.response.to.have.status(200); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "CA-1-27 Editar el nombre y el rol (el correo no cambia)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/staff/{{staffId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "staff",
+                "{{staffId}}"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"nombres\": \"Postman Editado\", \"apellidos\": \"Invitado\", \"rol\": \"ADMIN\", \"version\": {{staffVersion}}}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('CA-1-27 responde 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('CA-1-27 actualiza el nombre y el rol', function () { const d = pm.response.json().data; pm.expect(d.nombres).to.eql('Postman Editado'); pm.expect(d.rol).to.eql('ADMIN'); pm.expect(d.email).to.eql(pm.collectionVariables.get('staffEmail')); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "CA-1-28 Un admin no puede desactivarse a sí mismo (409)",
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/staff/{{adminId}}/desactivar",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "staff",
+                "{{adminId}}",
+                "desactivar"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('CA-1-28 responde 409', function () { pm.response.to.have.status(409); });",
+                  "pm.test('CA-1-28 el código es AUTO_DESACTIVACION', function () { pm.expect(pm.response.json().codigo).to.eql('AUTO_DESACTIVACION'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "CA-1-29 Desactivar al invitado",
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/staff/{{staffId}}/desactivar",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "staff",
+                "{{staffId}}",
+                "desactivar"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('CA-1-29 responde 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('CA-1-29 queda INACTIVO', function () { pm.expect(pm.response.json().data.estado).to.eql('INACTIVO'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "CA-1-29 Reactivarlo",
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/staff/{{staffId}}/activar",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "staff",
+                "{{staffId}}",
+                "activar"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('CA-1-29 responde 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('CA-1-29 vuelve a invitación pendiente (sigue sin contraseña)', function () { pm.expect(pm.response.json().data.estado).to.eql('INVITACION_PENDIENTE'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "CA-1-32 Buscar clientes por correo",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/clientes?q=postman.&size=100",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "clientes"
+              ],
+              "query": [
+                {
+                  "key": "q",
+                  "value": "postman."
+                },
+                {
+                  "key": "size",
+                  "value": "100"
+                }
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('CA-1-32 responde 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('CA-1-32 encuentra al cliente de la colección', function () { const c = pm.response.json().data.contenido; pm.expect(c.map(x => x.email)).to.include(pm.collectionVariables.get('clienteEmail')); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "CA-1-33 Ver el detalle de un cliente con sus direcciones",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/clientes/{{clienteId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "clientes",
+                "{{clienteId}}"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('CA-1-33 responde 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('CA-1-33 trae sus datos y sus direcciones', function () { const d = pm.response.json().data; pm.expect(d.id).to.eql(pm.collectionVariables.get('clienteId')); pm.expect(d.direcciones).to.be.an('array'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "CA-1-34 El ADMIN bloquea a un cliente",
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/clientes/{{clienteId}}/desactivar",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "clientes",
+                "{{clienteId}}",
+                "desactivar"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('CA-1-34 responde 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('CA-1-34 el cliente queda inactivo', function () { pm.expect(pm.response.json().data.activo).to.eql(false); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "CA-1-34 El cliente bloqueado no puede ingresar (401)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "login"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"email\": \"{{clienteEmail}}\", \"password\": \"{{clientePassword}}\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('CA-1-34 responde 401', function () { pm.response.to.have.status(401); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "CA-1-34 El ADMIN lo desbloquea",
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/clientes/{{clienteId}}/activar",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "clientes",
+                "{{clienteId}}",
+                "activar"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('CA-1-34 responde 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('CA-1-34 el cliente queda activo', function () { pm.expect(pm.response.json().data.activo).to.eql(true); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "CA-1-31 Ingreso del OPERADOR de demostración",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/staff/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "staff",
+                "login"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"email\": \"{{demoOperadorEmail}}\", \"password\": \"{{demoPassword}}\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('CA-1-31 responde 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('CA-1-31 el rol es OPERADOR', function () { const d = pm.response.json().data; pm.expect(d.cuenta.rol).to.eql('OPERADOR'); pm.collectionVariables.set('operadorToken', d.accessToken); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "CA-1-31 Un OPERADOR no administra el staff (403)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/staff",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "staff"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{operadorToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('CA-1-31 responde 403', function () { pm.response.to.have.status(403); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "CA-1-34 Un OPERADOR no bloquea clientes (403)",
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/clientes/{{clienteId}}/desactivar",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "clientes",
+                "{{clienteId}}",
+                "desactivar"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{operadorToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('CA-1-34 responde 403', function () { pm.response.to.have.status(403); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "CA-1-32 Un OPERADOR sí consulta clientes (200)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/clientes?size=5",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "clientes"
+              ],
+              "query": [
+                {
+                  "key": "size",
+                  "value": "5"
+                }
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{operadorToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('CA-1-32 responde 200', function () { pm.response.to.have.status(200); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "CA-1-36 Un token de staff adulterado se rechaza (401)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/staff/me",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "staff",
+                "me"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{staffTokenAdulterado}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const t = pm.collectionVariables.get('adminToken'); pm.collectionVariables.set('staffTokenAdulterado', t.slice(0, -4) + (t.endsWith('AAAA') ? 'BBBB' : 'AAAA'));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('CA-1-36 responde 401', function () { pm.response.to.have.status(401); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "CA-1-10 Cerrar la sesión del ADMIN",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/logout",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "logout"
+              ]
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('CA-1-10 responde 200', function () { pm.response.to.have.status(200); });"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "clientePassword",
+      "value": "Gamarra2026",
+      "description": "Contraseña de la cuenta de cliente que crea la colección"
+    },
+    {
+      "key": "demoOperadorEmail",
+      "value": "diana.flores@fitstore.demo",
+      "description": "OPERADOR de demostración (R__datos_demo.sql, perfil dev)"
+    },
+    {
+      "key": "demoPassword",
+      "value": "FitStoreDemo2026",
+      "description": "Contraseña común de DESARROLLO de las cuentas de demostración (no es un secreto)"
+    },
+    {
+      "key": "adminEmail",
+      "value": "",
+      "description": "Correo del ADMIN inicial (FITSTORE_ADMIN_EMAIL); defínelo en el entorno o aquí"
+    },
+    {
+      "key": "adminPassword",
+      "value": "",
+      "description": "Contraseña del ADMIN inicial (FITSTORE_ADMIN_PASSWORD); defínela en el entorno o aquí"
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// adminEmail y adminPassword pueden venir del entorno de Postman; si no, se usan los de la colección",
+          "['adminEmail', 'adminPassword'].forEach(function (k) { const v = pm.environment.get(k); if (v) { pm.collectionVariables.set(k, v); } });"
+        ]
+      }
+    }
+  ]
+}
