@@ -43,7 +43,7 @@ class UbigeoApiTest extends PruebaApi {
         mvc.perform(get("/api/v1/ubigeo/provincias/1501/distritos"))
                 .andExpect(status().isOk())
                 .andExpect(header().string("Cache-Control", containsString("max-age=86400")))
-                .andExpect(jsonPath("$.data", hasSize(43)))
+                .andExpect(jsonPath("$.data", hasSize(44)))
                 .andExpect(jsonPath("$.data[0].nombre", is("Ancon")));
     }
 
