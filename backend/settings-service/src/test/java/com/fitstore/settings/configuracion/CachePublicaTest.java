@@ -12,6 +12,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import com.fitstore.settings.configuracion.service.CachePublica;
 import com.fitstore.settings.pruebas.PruebaApi;
+import com.fitstore.settings.pruebas.RestauraSemilla;
 import java.time.Duration;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -29,11 +30,7 @@ class CachePublicaTest extends PruebaApi {
 
     @AfterEach
     void restaurarLaSemilla() {
-        jdbc.update("DELETE FROM imagen_tienda");
-        jdbc.update("DELETE FROM outbox_evento");
-        jdbc.update("UPDATE configuracion_tienda SET nombre = 'FitStore', razon_social = 'Moda Activa S.A.C.', "
-                + "color_primario = '#C9B28C', hero_titulo = 'Muévete con estilo', "
-                + "expiracion_pedido_minutos = 30, version = 0 WHERE id = 1");
+        RestauraSemilla.ejecutar(jdbc);
     }
 
     private int versionActual() throws Exception {

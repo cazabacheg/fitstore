@@ -10,6 +10,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.fitstore.settings.pruebas.PruebaApiBase;
+import com.fitstore.settings.pruebas.RestauraSemilla;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import org.junit.jupiter.api.AfterEach;
@@ -30,8 +31,7 @@ class RedisCaidoTest extends PruebaApiBase {
 
     @AfterEach
     void restaurarLaSemilla() {
-        jdbc.update("DELETE FROM outbox_evento");
-        jdbc.update("UPDATE configuracion_tienda SET nombre = 'FitStore', version = 0 WHERE id = 1");
+        RestauraSemilla.ejecutar(jdbc);
     }
 
     @Test
