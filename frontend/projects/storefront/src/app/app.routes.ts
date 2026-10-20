@@ -54,7 +54,8 @@ export function crearRutas(dev: boolean): Routes {
       path: '',
       loadChildren: () => import('./features/legal/legal.routes').then((m) => m.LEGAL_ROUTES),
     },
-    ...(dev
+    // `ngDevMode` es falso en el build de producción: el compilador descarta la ruta y el catálogo no se empaqueta.
+    ...(ngDevMode && dev
       ? [
           {
             path: '_ui',
