@@ -3,6 +3,8 @@ package com.fitstore.auth.service;
 import com.fitstore.auth.config.PropiedadesAuth;
 import com.fitstore.auth.event.PasswordCambiado;
 import com.fitstore.auth.event.PasswordResetSolicitado;
+import com.fitstore.auth.exception.ErrorCamposException;
+import com.fitstore.auth.exception.SesionInvalidaException;
 import com.fitstore.auth.exception.TokenInvalidoException;
 import com.fitstore.auth.model.Cliente;
 import com.fitstore.auth.model.Cuenta;
@@ -13,12 +15,15 @@ import com.fitstore.auth.model.TokenPassword;
 import com.fitstore.auth.repository.TokenPasswordRepository;
 import com.fitstore.auth.security.CuentaLookup;
 import com.fitstore.auth.security.HashToken;
+import com.fitstore.auth.security.SesionEmitida;
+import com.fitstore.auth.security.TokenService;
 import com.fitstore.common.event.OutboxRegistrador;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
+import java.util.UUID;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -32,15 +37,17 @@ public class PasswordServiceImpl implements PasswordService {
     private final OutboxRegistrador outbox;
     private final PropiedadesAuth propiedades;
     private final Clock reloj;
+    private final TokenService emisor;
 
     public PasswordServiceImpl(CuentaLookup cuentas, TokenPasswordRepository tokens, PasswordEncoder codificador,
-            OutboxRegistrador outbox, PropiedadesAuth propiedades, Clock reloj) {
+            OutboxRegistrador outbox, PropiedadesAuth propiedades, Clock reloj, TokenService emisor) {
         this.cuentas = cuentas;
         this.tokens = tokens;
         this.codificador = codificador;
         this.outbox = outbox;
         this.propiedades = propiedades;
         this.reloj = reloj;
+        this.emisor = emisor;
     }
 
     @Override
@@ -63,10 +70,25 @@ public class PasswordServiceImpl implements PasswordService {
         if (!cuenta.isActivo()) {
             throw new TokenInvalidoException();
         }
-        cuenta.setPasswordHash(codificador.encode(nuevaPassword));
-        // invalida todas las sesiones abiertas de la cuenta (invariante 8)
-        cuenta.setCredencialesActualizadasEn(ahora.truncatedTo(ChronoUnit.MILLIS));
+        guardarPassword(cuenta, nuevaPassword, ahora);
         guardado.setUsadoEn(ahora);
+    }
+
+    @Override
+    @Transactional
+    public SesionEmitida cambiar(TipoCuenta tipo, UUID cuentaId, String passwordActual, String nuevaPassword) {
+        Cuenta cuenta = cuentas.buscar(tipo, cuentaId).filter(Cuenta::isActivo).orElseThrow(SesionInvalidaException::new);
+        if (cuenta.getPasswordHash() == null || !codificador.matches(passwordActual, cuenta.getPasswordHash())) {
+            throw new ErrorCamposException("passwordActual", "La contraseña actual es incorrecta");
+        }
+        guardarPassword(cuenta, nuevaPassword, reloj.instant());
+        return new SesionEmitida(cuenta, emisor.emitir(cuenta));
+    }
+
+    /** Guarda el hash, invalida todas las sesiones abiertas de la cuenta (invariante 8) y publica PasswordCambiado. */
+    private void guardarPassword(Cuenta cuenta, String nuevaPassword, Instant ahora) {
+        cuenta.setPasswordHash(codificador.encode(nuevaPassword));
+        cuenta.setCredencialesActualizadasEn(ahora.truncatedTo(ChronoUnit.MILLIS));
         outbox.registrar("PasswordCambiado", cuenta.getId().toString(),
                 new PasswordCambiado(cuenta.getId(), cuenta.tipo(), cuenta.getEmail(), cuenta.getNombres()));
     }
