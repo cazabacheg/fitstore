@@ -86,6 +86,7 @@ class RepartidorRepositoryTest {
         Entrega entrega = entrega(Modalidad.DELIVERY_LOCAL);
         entrega.setRepartidor(repartidor);
         entregas.saveAndFlush(entrega);
+        em.clear(); // el borrado parte de un contexto limpio: solo la restricción de la base decide
 
         assertThat(entregas.existsByRepartidorId(repartidor.getId())).isTrue();
         assertThatThrownBy(() -> {

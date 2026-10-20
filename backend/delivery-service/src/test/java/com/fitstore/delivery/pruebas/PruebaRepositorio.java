@@ -7,6 +7,7 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 import org.springframework.boot.autoconfigure.AutoConfigurationPackage;
+import org.springframework.boot.jackson.autoconfigure.JacksonAutoConfiguration;
 import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest;
 import org.springframework.boot.jdbc.test.autoconfigure.AutoConfigureTestDatabase;
 import org.springframework.context.annotation.Import;
@@ -23,7 +24,7 @@ import org.springframework.test.context.ContextConfiguration;
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
 @ActiveProfiles("sin-config-server")
 @ContextConfiguration(initializers = PostgresPrueba.class)
-@Import({JsonPersistenciaAutoConfiguration.class, PruebaRepositorio.EntidadesComunes.class})
+@Import({JacksonAutoConfiguration.class, JsonPersistenciaAutoConfiguration.class, PruebaRepositorio.EntidadesComunes.class})
 public @interface PruebaRepositorio {
 
     /** En la aplicación real lo registra EventosAutoConfiguration: entidades y repositorios del outbox de fitstore-common. */

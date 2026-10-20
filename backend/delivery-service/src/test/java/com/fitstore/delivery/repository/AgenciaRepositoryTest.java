@@ -85,6 +85,7 @@ class AgenciaRepositoryTest {
         Entrega entrega = entrega(Modalidad.AGENCIA);
         entrega.setAgencia(agencia);
         entregas.saveAndFlush(entrega);
+        em.clear(); // el borrado parte de un contexto limpio: solo la restricción de la base decide
 
         assertThat(entregas.existsByAgenciaId(agencia.getId())).isTrue();
         assertThatThrownBy(() -> {
