@@ -31,7 +31,7 @@ const imagenActiva = (el: HTMLElement) =>
 
 describe('CarruselHero (P-3-01)', () => {
   beforeEach(() => {
-    vi.useFakeTimers();
+    vi.useFakeTimers({ toFake: ['setInterval', 'clearInterval'] });
     simularMovimientoReducido(false);
   });
   afterEach(() => vi.useRealTimers());
@@ -175,9 +175,11 @@ describe('CarruselHero (P-3-01)', () => {
   });
 
   it('CA-3-01 un enlace https del botón abre como enlace externo', async () => {
-    const { el } = await montar(CarruselHero, { ...ENTRADAS, ctaEnlace: 'https://tienda.pe/oferta' }, [
-      provideRouter([]),
-    ]);
+    const { el } = await montar(
+      CarruselHero,
+      { ...ENTRADAS, ctaEnlace: 'https://tienda.pe/oferta' },
+      [provideRouter([])],
+    );
     expect(el.querySelector('a[data-testid="hero-cta"]')!.getAttribute('href')).toBe(
       'https://tienda.pe/oferta',
     );
