@@ -19,7 +19,7 @@ import org.springframework.test.context.ContextConfiguration;
 
 @DataJpaTest
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
-@ActiveProfiles("test")
+@ActiveProfiles({"test", "sin-config-server"})
 @ContextConfiguration(initializers = PostgresInicializador.class)
 class PlantillaRepositoryTest {
 
