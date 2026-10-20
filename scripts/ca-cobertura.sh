@@ -9,7 +9,7 @@ archivo="$(ls "$raiz"/docs/specs/SPEC-"$spec"-*.md 2>/dev/null | head -n1)"
 [[ -n "$archivo" ]] || { echo "No existe docs/specs/SPEC-$spec-*.md" >&2; exit 2; }
 
 # Criterios definidos en la spec (líneas que empiezan con el id, dentro de los bloques gherkin).
-mapfile -t criterios < <(grep -oE "^CA-$spec-[0-9]+b?" "$archivo" | sort -u -V)
+mapfile -t criterios < <(grep -oE "^CA-$spec-[0-9]+[a-z]?" "$archivo" | sort -u -V)
 [[ ${#criterios[@]} -gt 0 ]] || { echo "La spec no define criterios CA-$spec-xx" >&2; exit 2; }
 
 # Dónde se buscan: todo el repo salvo documentación, contratos y dependencias.

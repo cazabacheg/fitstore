@@ -54,7 +54,7 @@ Todos los criterios tienen dueño; `scripts/ca-cobertura.sh 0b` debe dar **33 de
 
 1. **Workspace** `frontend/` con Angular 22.2.x: aplicaciones `storefront` y `backoffice` (esqueleto generado por el CLI) y librería `shared`; `angular.json` completo para las dos apps (Tailwind 4.3 en la tienda, Angular Material 22 en el backoffice, presupuestos, locale `es-PE`, proxy de desarrollo a `localhost:8080`); ESLint, Prettier, Vitest con `@vitest/coverage-v8` y umbral de **80 % de líneas** por proyecto (sin `shared/api`).
 2. **`shared`** según R1: `api` (generado), `auth` (`SesionStore`, guards `autenticadoGuard` y `rolGuard`), `http` (los 5 interceptores en el orden de R7), `theme` (R4: carga de `/settings/public`, variables CSS, colores derivados, respaldo en `localStorage`, título y favicon), `i18n` (`es-PE`), `ubigeo` (servicio con caché), `carrito` (`CarritoContador`), `models` (`ApiResponse`, página), `pipes` (`precio`, `fecha`), y el token `CONTADOR_MENU` (R3).
-3. **Clientes de API** (R5): `npm run api:generate` con `openapitools/openapi-generator-cli:v7.10.0` (`typescript-angular`) → `shared/api/<servicio>/`, versionados en Git.
+3. **Clientes de API** (R5): `npm run api:generate` con `openapitools/openapi-generator-cli:v7.10.0` (`typescript-angular`) → `shared/src/lib/api/<servicio>/`, versionados en Git.
 4. **Job `frontend` en `.github/workflows/ci.yml`**: lint, pruebas con cobertura y build, con filtro por ruta (solo si cambia `frontend/` o `contracts/`) y caché de npm; y la verificación de clientes desactualizados (CA-0b-30).
 
 ### 3. Fuera de alcance de 0b.1

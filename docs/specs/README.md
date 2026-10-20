@@ -22,7 +22,7 @@
 3. **Migraciones:** `V1` (esquema completo) la crea 0a; las siguientes usan `VAAAAMMDD_HHMM__…` para no chocar.
 4. **Permisos con `@PreAuthorize`** por método; sin configuración central de rutas por servicio.
 5. **Un consumidor por tipo de evento**, en su propio archivo.
-6. **Clientes de API del frontend generados** desde OpenAPI en `shared/api`; nunca se editan a mano.
+6. **Clientes de API del frontend generados** desde OpenAPI en `frontend/projects/shared/src/lib/api`; nunca se editan a mano.
 7. **Una rama / worktree por spec desde `dev`**, PR a `dev` con *squash*, de uno en uno con CI en verde; promociones `dev → stage → main` por PR (ADR-021). Nunca push directo a `main` ni a `stage`.
 8. Commits sin atribución de IA; autor `cazabacheg`.
 

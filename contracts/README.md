@@ -24,7 +24,7 @@ Fuente de verdad: los **micros** (secciones 4 y 6) y las **specs** (criterios y 
 ## 2. Para qué sirven
 
 1. **Trabajo en paralelo:** cada spec implementa su servicio contra los contratos de los demás, sin esperar a que existan (regla de convivencia del README de specs).
-2. **Clientes del frontend generados:** `openapi-generator` (`typescript-angular`) produce `frontend/projects/shared/api/<servicio>/` desde estos archivos (SPEC-0b R5).
+2. **Clientes del frontend generados:** `openapi-generator` (`typescript-angular`) produce `frontend/projects/shared/src/lib/api/<servicio>/` desde estos archivos (SPEC-0b R5).
 3. **Mocks:** WireMock para las pruebas de los clientes Feign entre servicios, y para el frontend mientras un servicio no existe.
 4. **Documentación:** Swagger UI del gateway muestra lo que exponen los servicios; el CI compara eso con estos archivos (K2).
 

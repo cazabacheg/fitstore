@@ -1,10 +1,11 @@
 # SPEC-0b — Fundaciones del frontend
 
-> Versión: **v10 (aprobado)** — 2026-10-19 · Estados: ✅ decidido · 🟡 propuesto · ❓ abierto
+> Versión: **v11 (aprobado)** — 2026-10-19 · Estados: ✅ decidido · 🟡 propuesto · ❓ abierto
 > **Dueña de:** workspace Angular (`frontend/`), librería `shared`, *shells* (layouts) de storefront y backoffice, rutas y menús generales, tema white-label, carpetas `ui/` de cada app, job de frontend en CI.
 > **Depende de:** 0a (gateway y CI), la etapa de contratos (OpenAPI para generar los clientes) y la etapa de diseño (**sistema de diseño**: los componentes de `ui/` se construyen según él). · **Habilita:** pantallas de las specs 1–8.
 
 **Historial:**
+- v11 (2026-10-20): ruta de los clientes generados unificada con R1: `shared/src/lib/api/<servicio>/` (`ng-packagr` empaqueta bajo `src/`; detectado por el agente de 0b.1).
 - v10 (2026-10-20): DoD ajustado (decisión del autor): `/settings/public`, `/categorias`, `/staff/me` y `/ubigeo` llegan con las specs 1–3, así que en 0b la marca se verifica con pruebas (respuesta simulada) y en vivo con el tema por defecto (CA-0b-07); la verificación en vivo con los datos semilla pasa a la SPEC-3.
 - v9 (2026-10-19): por la estrategia multiagente: cobertura mínima de 80 % con Vitest en el job `frontend` (R9).
 - v8 (2026-10-19): etapa de diseño cerrada: diseños de alta fidelidad enlazados (P-0b-02).
@@ -221,11 +222,11 @@ Como desarrollador, quiero clientes TypeScript generados desde los contratos, pa
 
 ```gherkin
 CA-0b-29  Cuando ejecuto npm run api:generate
-          Entonces se generan en shared/api/ los clientes de los 7 servicios desde contracts/openapi/*.yaml
+          Entonces se generan en shared/src/lib/api/ los clientes de los 7 servicios desde contracts/openapi/*.yaml
 
 CA-0b-30  Dado que alguien cambió un contrato sin regenerar
           Cuando corre el CI
-          Entonces falla indicando que shared/api está desactualizado
+          Entonces falla indicando que shared/src/lib/api está desactualizado
 ```
 
 ## 4. Pantallas
@@ -279,7 +280,7 @@ No modifica el backend. Decisiones de implementación del frontend:
 | R2 | **Rutas registradas** ✅ | Tabla de abajo; cada ruta carga `features/<carpeta>/<carpeta>.routes.ts`, que 0b crea con una página "Próximamente". La spec dueña solo reemplaza el contenido de su carpeta |
 | R3 | **Menú por rol** ✅ | Definido en `layout/menu.ts` del backoffice con el rol mínimo de cada ítem y sus subítems (tabla de abajo y P-0b-02); los ítems pueden mostrar un contador aportado por su funcionalidad |
 | R4 | **Tema** ✅ | `provideAppInitializer` carga `/settings/public` y escribe variables CSS en `:root` (`--fs-color-primario`, `--fs-color-secundario`, `--fs-color-acento`, `--fs-color-fondo`, `--fs-color-texto`) y deriva los demás colores (`--fs-color-en-primario`, `--fs-color-primario-texto`, …; ver el sistema de diseño). Tailwind 4 las usa en su `@theme`; en Angular Material 3 se asignan a los tokens del sistema (`--mat-sys-primary`, …). La configuración se guarda en `localStorage` como respaldo (CA-0b-07). La tipografía (Poppins) y los radios son fijos: vienen de los estilos de `ui/`, no de settings |
-| R5 | **Clientes de API** ✅ | `openapi-generator` (`typescript-angular`) → `shared/api/<servicio>/`, **versionados en Git**; el CI regenera y falla si hay diferencias (CA-0b-30). Ninguna spec los edita a mano |
+| R5 | **Clientes de API** ✅ | `openapi-generator` (`typescript-angular`) → `shared/src/lib/api/<servicio>/`, **versionados en Git**; el CI regenera y falla si hay diferencias (CA-0b-30). Ninguna spec los edita a mano |
 | R6 | **Sesión** | `SesionStore` en `shared/auth` (señales: cuenta, rol, tipo; el access token solo en memoria). `iniciarSesion()` y `cerrarSesion()` los llaman las pantallas de la spec 1. Guards `autenticadoGuard`, `rolGuard('ADMIN')` |
 | R7 | **Interceptores** (en este orden) | `requestId` → `autenticacion` (Bearer) → `carritoId` (solo tienda, solo `/carrito`) → `refresco` (401 → un único refresh compartido → reintento) → `errores` (toast, banner 503, errores de campos) |
 | R8 | **Contador del carrito** | `CarritoContador` (señal en `shared/carrito`): la cabecera lo muestra y la spec 4 lo actualiza. Así 0b no depende de la lógica del carrito |
@@ -353,7 +354,7 @@ No aplica (no hay base de datos). En el navegador: `localStorage` solo para la c
 | Ruta | Acción | Después de cerrar 0b |
 |---|---|---|
 | `frontend/` (workspace: `angular.json`, `package.json`, `tsconfig*`, ESLint, Prettier, `proxy.conf.json`) | crea | congelado |
-| `frontend/projects/shared/` | crea | **congelado** (salvo `shared/api/`, que solo se regenera) |
+| `frontend/projects/shared/` | crea | **congelado** (salvo `shared/src/lib/api/`, que solo se regenera) |
 | `frontend/projects/*/src/app/{core,layout,ui}/` y `app.routes.ts`, `app.config.ts` | crea | **congelados** |
 | `frontend/projects/*/src/app/features/<carpeta>/` | crea el marcador "Próximamente" | pasa a su spec dueña (tabla R2) |
 | `.github/workflows/ci.yml` | modifica (agrega el job `frontend`) | congelado |
