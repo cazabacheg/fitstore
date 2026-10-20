@@ -46,7 +46,9 @@ if [[ ! -f "$INFRA/.env" ]]; then
 fi
 set -a
 # shellcheck disable=SC1091
-. "$INFRA/.env"
+# Si una línea no es válida en bash (p. ej. un valor con espacios o < > sin comillas), se detiene aquí: seguir sin las
+# variables hacía fallar después verificaciones que no tenían la culpa.
+. "$INFRA/.env" || { echo "No se pudo cargar infra/.env: revisa las comillas de los valores con espacios" >&2; exit 2; }
 set +a
 
 limpiar() {

@@ -17,8 +17,11 @@ import {
 } from '@angular/material/autocomplete';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
-import { Subject, catchError, of, switchMap } from 'rxjs';
+import { Subject, catchError, debounceTime, of, switchMap } from 'rxjs';
 import { UbigeoCatalogo, departamentoDe, provinciaDe, settingsApi } from 'shared';
+
+/** Espera del buscador antes de consultar: solo se pide el texto final, no cada tecla. */
+const ESPERA_BUSCADOR_MS = 300;
 
 /** Hasta qué nivel se elige: el código emitido tiene 2, 4 o 6 dígitos (CA-0b-26). */
 export type HastaUbigeo = 'departamento' | 'provincia' | 'distrito';
@@ -62,7 +65,12 @@ export class SelectorUbigeo {
     this.catalogo.departamentos().subscribe((lista) => this.departamentos.set(lista));
     this.busqueda
       .pipe(
-        switchMap((texto) => this.catalogo.buscarDistritos(texto).pipe(catchError(() => of([])))),
+        debounceTime(ESPERA_BUSCADOR_MS),
+        switchMap((texto) =>
+          texto.trim().length < 2
+            ? of([])
+            : this.catalogo.buscarDistritos(texto).pipe(catchError(() => of([]))),
+        ),
         takeUntilDestroyed(this.destruir),
       )
       .subscribe((lista) => this.resultados.set(lista));
@@ -101,7 +109,7 @@ export class SelectorUbigeo {
 
   protected buscar(texto: string): void {
     if (texto.trim().length < 2) this.resultados.set([]);
-    else this.busqueda.next(texto);
+    this.busqueda.next(texto);
   }
 
   protected elegirResultado(
@@ -112,6 +120,7 @@ export class SelectorUbigeo {
     this.llenarDesde(encontrado.codigo);
     this.publicar();
     buscador.value = '';
+    this.busqueda.next('');
     this.resultados.set([]);
   }
 

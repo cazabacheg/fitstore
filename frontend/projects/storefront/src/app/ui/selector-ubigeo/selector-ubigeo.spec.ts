@@ -41,7 +41,26 @@ async function iniciar(entradas: Record<string, unknown> = {}) {
   return { ...m, ctrl, emitidos, selects, elegir, responder };
 }
 
+/** El buscador espera 300 ms sin teclear antes de consultar. */
+const esperarBuscador = () => new Promise((r) => setTimeout(r, 350));
+
 describe('Selector de ubigeo de ui/', () => {
+  it('CA-0b-26 el buscador espera a que se deje de escribir: una sola consulta con el texto final', async () => {
+    const u = await iniciar();
+    await u.responder('/api/v1/ubigeo/departamentos', DEPARTAMENTOS);
+    const buscador = u.el.querySelector('input[type="search"]') as HTMLInputElement;
+    for (const texto of ['mi', 'mir', 'miraf']) {
+      buscador.value = texto;
+      buscador.dispatchEvent(new Event('input'));
+    }
+    await u.estabilizar();
+    u.ctrl.expectNone((r) => r.url === '/api/v1/ubigeo/distritos');
+    await esperarBuscador();
+    await u.estabilizar();
+    const peticiones = u.ctrl.match((r) => r.url === '/api/v1/ubigeo/distritos');
+    expect(peticiones.map((p) => p.request.params.get('q'))).toEqual(['miraf']);
+  });
+
   it('CA-0b-26 elegir Lima › Lima › Miraflores emite 150122', async () => {
     const u = await iniciar();
     await u.responder('/api/v1/ubigeo/departamentos', DEPARTAMENTOS);
@@ -112,6 +131,7 @@ describe('Selector de ubigeo de ui/', () => {
     const buscador = u.el.querySelector('input[type="search"]') as HTMLInputElement;
     buscador.value = 'miraf';
     buscador.dispatchEvent(new Event('input'));
+    await esperarBuscador();
     await u.estabilizar();
     const peticion = u.ctrl.expectOne((r) => r.url === '/api/v1/ubigeo/distritos');
     expect(peticion.request.params.get('q')).toBe('miraf');

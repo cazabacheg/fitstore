@@ -1,7 +1,12 @@
 import { Component, effect, inject, input, output, signal, untracked } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { Subject, catchError, debounceTime, of, switchMap } from 'rxjs';
 import { UbigeoCatalogo, departamentoDe, provinciaDe, type NivelUbigeo } from 'shared';
 import type { settingsApi } from 'shared';
 import { idUnico } from '../id-unico';
+
+/** Espera del buscador antes de consultar (la misma que el selector del backoffice). */
+const ESPERA_BUSCADOR_MS = 300;
 
 /**
  * Selector de ubigeo en tres niveles con buscador de distritos; emite el código INEI (sistema de diseño:
@@ -105,10 +110,22 @@ export class FsSelectorUbigeo {
   protected readonly texto = signal('');
   protected readonly resultados = signal<settingsApi.DistritoEncontrado[]>([]);
 
-  private consulta = 0;
+  /** Textos del buscador: se consulta 300 ms después de la última tecla, y solo el texto final. */
+  private readonly busqueda = new Subject<string>();
 
   constructor() {
     this.catalogo.departamentos().subscribe((lista) => this.departamentos.set(lista));
+    this.busqueda
+      .pipe(
+        debounceTime(ESPERA_BUSCADOR_MS),
+        switchMap((texto) =>
+          texto.trim().length < 2
+            ? of([])
+            : this.catalogo.buscarDistritos(texto).pipe(catchError(() => of([]))),
+        ),
+        takeUntilDestroyed(),
+      )
+      .subscribe((lista) => this.resultados.set(lista));
     effect(() => {
       const inicial = this.valor();
       untracked(() => this.aplicarInicial(inicial));
@@ -149,18 +166,12 @@ export class FsSelectorUbigeo {
   protected buscar(evento: Event): void {
     const texto = (evento.target as HTMLInputElement).value;
     this.texto.set(texto);
-    const actual = ++this.consulta;
-    if (texto.trim().length < 2) {
-      this.resultados.set([]);
-      return;
-    }
-    this.catalogo.buscarDistritos(texto).subscribe((lista) => {
-      if (actual === this.consulta) this.resultados.set(lista);
-    });
+    if (texto.trim().length < 2) this.resultados.set([]);
+    this.busqueda.next(texto);
   }
 
   protected elegirResultado(r: settingsApi.DistritoEncontrado): void {
-    this.consulta++;
+    this.busqueda.next('');
     this.texto.set('');
     this.resultados.set([]);
     this.aplicarInicial(r.codigo);

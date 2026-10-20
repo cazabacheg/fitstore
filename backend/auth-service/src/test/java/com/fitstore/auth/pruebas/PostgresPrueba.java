@@ -11,7 +11,7 @@ import org.testcontainers.postgresql.PostgreSQLContainer;
  */
 public class PostgresPrueba implements ApplicationContextInitializer<ConfigurableApplicationContext> {
 
-    private static final PostgreSQLContainer POSTGRES = new PostgreSQLContainer("postgres:17");
+    private static final PostgreSQLContainer POSTGRES = new PostgreSQLContainer("postgres:17.10");
 
     static {
         POSTGRES.start();

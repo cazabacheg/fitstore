@@ -66,7 +66,28 @@ async function elegir(f: ComponentFixture<unknown>, nivel: number, codigo: strin
   await estable(f);
 }
 
+/** El buscador espera 300 ms sin teclear antes de consultar. */
+const esperarBuscador = () => new Promise((r) => setTimeout(r, 350));
+
 describe('SelectorUbigeo', () => {
+  it('CA-0b-26 el buscador espera a que se deje de escribir: una sola consulta con el texto final', async () => {
+    const ctrl = preparar();
+    const f = await crear(ctrl);
+    const buscador = (f.nativeElement as HTMLElement).querySelector(
+      'input[type="search"], input[role="combobox"]',
+    ) as HTMLInputElement;
+    for (const texto of ['mi', 'mir', 'miraf']) {
+      buscador.value = texto;
+      buscador.dispatchEvent(new Event('input'));
+    }
+    await estable(f);
+    ctrl.expectNone((r) => r.url === '/api/v1/ubigeo/distritos');
+    await esperarBuscador();
+    await estable(f);
+    const pedidos = ctrl.match((r) => r.url === '/api/v1/ubigeo/distritos');
+    expect(pedidos.map((p) => p.request.params.get('q'))).toEqual(['miraf']);
+  });
+
   it('CA-0b-26 elegir Lima › Lima › Miraflores emite el código 150122', async () => {
     const ctrl = preparar();
     const f = await crear(ctrl);
@@ -174,6 +195,7 @@ describe('SelectorUbigeo', () => {
     buscador.dispatchEvent(new Event('focusin'));
     buscador.value = 'miraf';
     buscador.dispatchEvent(new Event('input'));
+    await esperarBuscador();
     await estable(f);
     const pedido = ctrl.expectOne((r) => r.url === '/api/v1/ubigeo/distritos');
     expect(pedido.request.params.get('q')).toBe('miraf');

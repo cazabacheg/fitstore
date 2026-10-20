@@ -18,10 +18,6 @@
 .fs-tabla--plana tbody tr:hover {
   background: transparent;
 }
-.fs-tabla tr.fs-fila--aviso,
-.fs-tabla tr.fs-fila--error {
-  cursor: inherit;
-}
 .fs-enlace {
   padding: 0;
   border: 0;
