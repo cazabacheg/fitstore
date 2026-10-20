@@ -24,6 +24,7 @@ jobs:
     outputs:
       compilar: ${{ steps.filtro.outputs.compilar }}
       modulos: ${{ steps.filtro.outputs.modulos }}
+      frontend: ${{ steps.filtro.outputs.frontend }}
     steps:
       - uses: actions/checkout@v7.0.1
         with:
@@ -36,10 +37,12 @@ jobs:
         run: |
           # CA-0a-20
           set -euo pipefail
+          sin_comparacion=false
           if [[ "$EVENTO" == "pull_request" ]]; then
             archivos="$(git diff --name-only "origin/${BASE_PR}...HEAD")"
           elif [[ "$ANTES_PUSH" =~ ^0+$ ]] || ! git cat-file -e "$ANTES_PUSH^{commit}" 2>/dev/null; then
             archivos="pom.xml"   # sin punto de comparación (primer push o rama nueva): se compila todo
+            sin_comparacion=true
           else
             archivos="$(git diff --name-only "$ANTES_PUSH" HEAD)"
           fi
@@ -53,6 +56,15 @@ jobs:
           echo "compilar=$compilar"; echo "modulos=${modulos:-todos}"
           echo "compilar=$compilar" >> "$GITHUB_OUTPUT"
           echo "modulos=$modulos" >> "$GITHUB_OUTPUT"
+          # CA-0b-04 El frontend solo corre si cambia frontend/ o contracts/ (los clientes de API salen de los contratos)
+          # o este flujo; sin punto de comparación se corre todo.
+          if [[ "$sin_comparacion" == "true" ]] || echo "$archivos" | grep -qE '^(frontend/|contracts/|\.github/workflows/ci\.yml)'; then
+            frontend=true
+          else
+            frontend=false
+          fi
+          echo "frontend=$frontend"
+          echo "frontend=$frontend" >> "$GITHUB_OUTPUT"
 
   backend:
     needs: cambios
@@ -78,6 +90,51 @@ jobs:
           else
             ./mvnw -B verify -pl "$MODULOS" -am
           fi
+
+  # CA-0b-04 Frontend (SPEC-0b): lint, pruebas con cobertura y build, solo si cambia frontend/ o contracts/, con caché de npm.
+  frontend:
+    needs: cambios
+    if: needs.cambios.outputs.frontend == 'true'
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v7.0.1
+      # CA-0b-04 Caché de npm
+      - uses: actions/setup-node@v7.0.0
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - name: Instalar dependencias
+        run: |
+          # CA-0b-01
+          npm ci
+      - name: Lint
+        run: |
+          # CA-0b-02
+          npm run lint
+      - name: Pruebas con cobertura (80 % de líneas por proyecto, sin shared/api)
+        run: |
+          # CA-0b-02
+          npm test -- --watch=false --coverage
+      - name: Build de shared, storefront y backoffice (con presupuestos de tamaño)
+        run: |
+          # CA-0b-01
+          npm run build
+      - name: Configuración del workspace (proxy, presupuestos y este job)
+        run: |
+          # CA-0b-03, CA-0b-04
+          scripts/probar-configuracion.sh
+      - name: Clientes de API desactualizados (regenera y compara con shared/src/lib/api)
+        run: |
+          # CA-0b-30
+          scripts/verificar-clientes.sh
+      - name: api:generate genera los 7 servicios y la verificación detecta un contrato cambiado
+        run: |
+          # CA-0b-29, CA-0b-30
+          scripts/probar-api-generate.sh
 
   # CA-0a-18 Sin secretos: gitleaks sobre todo el historial, y .env ignorado con solo .env.example versionado.
   secretos:
