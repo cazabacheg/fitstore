@@ -1,4 +1,9 @@
-import { HttpErrorResponse, HttpEventType, HttpInterceptorFn } from '@angular/common/http';
+import {
+  HttpContextToken,
+  HttpErrorResponse,
+  HttpEventType,
+  HttpInterceptorFn,
+} from '@angular/common/http';
 import { inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { catchError, switchMap, tap, throwError } from 'rxjs';
@@ -15,6 +20,9 @@ export const CLAVE_CARRITO_ID = 'fs_carrito_id';
 /** Estas rutas devuelven 401 por sus propias razones: no disparan refresco ni toast. */
 const SIN_REFRESCO = ['/auth/login', '/auth/staff/login', '/auth/refresh', '/auth/logout'];
 const RUTA_CARRITO = /^\/api\/v1\/carrito(\/|\?|$)/;
+
+/** Peticiones que no muestran toast si fallan (p. ej. la configuración pública, que tiene su propio respaldo). */
+export const SIN_TOAST = new HttpContextToken<boolean>(() => false);
 
 function esRutaSinRefresco(url: string): boolean {
   return SIN_REFRESCO.some((ruta) => url.includes(ruta));
@@ -119,7 +127,7 @@ export const erroresInterceptor: HttpInterceptorFn = (req, next) => {
         const cuerpo = comoApiError(error);
         if (!cuerpo) return;
         if (error.status === 400 && cuerpo.errores?.length) return; // los muestra el formulario
-        toasts.mostrar('error', cuerpo.mensaje);
+        if (!req.context.get(SIN_TOAST)) toasts.mostrar('error', cuerpo.mensaje);
       },
     }),
   );

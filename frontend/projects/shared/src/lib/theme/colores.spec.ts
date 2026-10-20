@@ -135,7 +135,7 @@ describe('derivarColores según el sistema de diseño', () => {
 
   it('CA-0b-05 un primario claro se oscurece como texto pero conserva su tono', () => {
     const d = derivarPorFormula(PALETA_FITSTORE.entrada);
-    const [r, g, b] = hexARgb(d.primarioTexto);
+    const [r, , b] = hexARgb(d.primarioTexto);
     expect(r).toBeGreaterThan(b); // sigue siendo cálido (arena), no gris
     expect(contraste(d.primarioTexto, '#FAF9F7')).toBeLessThan(7); // no se oscurece de más
   });

@@ -168,6 +168,7 @@ describe('TemaService', () => {
 
     // Si la respuesta llega tarde, igual se aplica.
     ctrl.expectOne(RUTA).flush(configuracion('#E11D48'));
+    await vi.advanceTimersByTimeAsync(0); // deja resolver la promesa de la respuesta
     expect(variable('--fs-color-primario')).toBe('#E11D48');
   });
 
