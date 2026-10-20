@@ -29,3 +29,11 @@ export { CLAVE_CARRITO_ID, SIN_TOAST } from './lib/http/interceptores';
 export * from './lib/theme/colores';
 export { TemaService, CLAVE_RESPALDO_CONFIG } from './lib/theme/tema.service';
 export { provideTema } from './lib/theme/proveedores';
+
+export { provideLocaleEsPe } from './lib/i18n/proveedores';
+export { PrecioPipe } from './lib/pipes/precio.pipe';
+export { FechaPipe, type FormatoFecha } from './lib/pipes/fecha.pipe';
+export { UbigeoCatalogo, CLAVE_CACHE_UBIGEO } from './lib/ubigeo/ubigeo-catalogo';
+export { departamentoDe, nivelDe, provinciaDe, type NivelUbigeo } from './lib/ubigeo/codigos';
+export { CarritoContador } from './lib/carrito/carrito-contador';
+export { CONTADOR_MENU, provideContadorMenu, type ContadorMenu } from './lib/menu/contador-menu';
