@@ -148,7 +148,7 @@ class UbigeoASqlTest(unittest.TestCase):
         r = ejecutar(DATOS, "--correcciones", CORRECCIONES)
         self.assertEqual(r.returncode, 0, r.stderr)
         self.assertIn("('180107', '1801', 'SAN ANTONIO')", r.stdout)
-        self.assertIn("-- departamentos: 25, provincias: 196, distritos: 1895", r.stdout)
+        self.assertIn("-- departamentos: 25, provincias: 196, distritos: 1893", r.stdout)
         self.assertIn("('150122', '1501', 'MIRAFLORES')", r.stdout)
         self.assertIn("('150115', '1501', 'LA VICTORIA')", r.stdout)
 

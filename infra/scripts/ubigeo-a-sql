@@ -17,7 +17,7 @@ todas las filas que lo comparten.
 
 Uso:
     infra/scripts/ubigeo-a-sql ENTRADA.csv [--salida backend/settings-service/src/main/resources/db/migration/V2__ubigeo_inei.sql]
-                                           [--codificacion utf-8]
+                                           [--codificacion utf-8] [--correcciones CORRECCIONES.csv]
 Sin --salida escribe en la salida estándar. Termina con código distinto de 0 y un mensaje en la salida de
 errores si el CSV es inválido.
 """
@@ -40,6 +40,21 @@ def normalizar(texto):
     sin_tildes = unicodedata.normalize("NFD", texto)
     sin_tildes = "".join(c for c in sin_tildes if unicodedata.category(c) != "Mn")
     return sin_tildes.strip().lower()
+
+
+def leer_correcciones(ruta):
+    """CSV departamento,provincia,distrito,inei -> {(dep, prov, dist normalizados): código} para filas sin código."""
+    if not ruta:
+        return {}
+    try:
+        filas = list(csv.DictReader(io.StringIO(pathlib.Path(ruta).read_text(encoding="utf-8").lstrip("\ufeff"))))
+    except FileNotFoundError:
+        raise CsvInvalido(f"No existe el archivo de correcciones: {ruta}")
+    try:
+        return {tuple(normalizar(f[k]) for k in ("departamento", "provincia", "distrito")): f["inei"].strip()
+                for f in filas}
+    except KeyError as error:
+        raise CsvInvalido(f"Al archivo de correcciones le falta la columna {error}")
 
 
 def leer(ruta, codificacion):
@@ -68,7 +83,8 @@ def leer(ruta, codificacion):
     return [(numero, fila, posicion) for numero, fila in enumerate(filas[1:], start=2) if any(x.strip() for x in fila)]
 
 
-def construir(filas):
+def construir(filas, correcciones=None):
+    correcciones = correcciones or {}
     departamentos, provincias, distritos = {}, {}, {}
     for numero, fila, pos in filas:
         try:
@@ -76,7 +92,10 @@ def construir(filas):
         except IndexError:
             raise CsvInvalido(f"Línea {numero}: faltan columnas")
         if not re.fullmatch(r"[0-9]{6}", ubigeo):
-            raise CsvInvalido(f"Línea {numero}: el ubigeo '{ubigeo}' no tiene 6 dígitos")
+            ubigeo = correcciones.get(tuple(normalizar(x) for x in (departamento, provincia, distrito)), ubigeo)
+        if not re.fullmatch(r"[0-9]{6}", ubigeo):
+            raise CsvInvalido(f"Línea {numero}: el ubigeo '{ubigeo}' no tiene 6 dígitos "
+                             f"({departamento} / {provincia} / {distrito}); si la fuente no lo trae, use --correcciones")
         if not (departamento and provincia and distrito):
             raise CsvInvalido(f"Línea {numero}: el ubigeo {ubigeo} tiene un nombre vacío")
         if ubigeo in distritos:
@@ -120,10 +139,12 @@ def main(argumentos):
     analizador = argparse.ArgumentParser(description="Convierte el CSV de ubigeo del INEI en la migración V2 de settings.")
     analizador.add_argument("entrada", help="CSV del INEI (UBIGEO, DEPARTAMENTO, PROVINCIA, DISTRITO)")
     analizador.add_argument("--salida", help="archivo SQL de salida (por defecto, la salida estándar)")
+    analizador.add_argument("--correcciones", help="CSV departamento,provincia,distrito,inei con los códigos que la fuente no trae")
     analizador.add_argument("--codificacion", default="utf-8", help="codificación del CSV (por defecto utf-8)")
     opciones = analizador.parse_args(argumentos)
     try:
-        departamentos, provincias, distritos = construir(leer(opciones.entrada, opciones.codificacion))
+        departamentos, provincias, distritos = construir(leer(opciones.entrada, opciones.codificacion),
+                                                         leer_correcciones(opciones.correcciones))
     except CsvInvalido as error:
         print(f"ubigeo-a-sql: {error}", file=sys.stderr)
         return 1
