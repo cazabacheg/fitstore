@@ -41,7 +41,7 @@ Reglas que no se rompen:
 - **Congelados** (no se tocan sin aprobación del autor y PR aparte): `backend/fitstore-common`, `backend/api-gateway`, `backend/config-server`, `backend/discovery-server`, `pom.xml` padre, `infra/config-repo/application.yml`, `infra/docker-compose*.yml`, `.github/workflows/`, `frontend/projects/shared`, `ui/`, `layout/`, rutas y menús generales, `scripts/contrato.sh`.
 - **Nunca** cambies una spec, un micro, un contrato ni otro documento de `docs/` o `contracts/`. Si crees que hace falta, detente y pregunta.
 - Migraciones nuevas: `VAAAAMMDD_HHMM__descripcion.sql` (la `V1` es de 0a).
-- Clientes de API del frontend: siempre generados desde OpenAPI en `shared/api`; nunca a mano.
+- Clientes de API del frontend: siempre generados desde OpenAPI en `frontend/projects/shared/src/lib/api`; nunca a mano.
 
 ## 4. Cuándo detenerte y preguntar al lead
 
