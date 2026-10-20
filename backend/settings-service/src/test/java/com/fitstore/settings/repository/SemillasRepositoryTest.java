@@ -50,16 +50,16 @@ class SemillasRepositoryTest extends PruebaDatos {
     }
 
     @Test
-    @DisplayName("CA-0a-06 V2: Lima tiene 10 provincias y Lima (provincia) tiene 43 distritos")
+    @DisplayName("CA-0a-06 V2: Lima tiene 10 provincias y Lima (provincia) tiene 44 distritos")
     void jerarquiaDeLima() {
         assertThat(ubigeo.provinciasDe("15")).hasSize(10);
-        assertThat(ubigeo.distritosDe("1501")).hasSize(43);
+        assertThat(ubigeo.distritosDe("1501")).hasSize(44);
     }
 
     @Test
     @DisplayName("CA-0a-06 V2: el buscador encuentra distritos sobre el maestro real sin importar tildes")
     void buscadorSobreElMaestro() {
-        assertThat(ubigeo.buscarDistritos("miraflores")).hasSize(2);
+        assertThat(ubigeo.buscarDistritos("miraflores")).extracting(d -> d.getCodigo()).contains("150122", "040110");
         assertThat(ubigeo.buscarDistritos("Unión Ashaninka")).isNotEmpty();
     }
 

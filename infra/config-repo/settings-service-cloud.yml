@@ -1,4 +1,2 @@
-# settings-service, perfil cloud: también lleva los datos de demostración (perfil demo de la nube, spec 8)
-spring:
-  flyway:
-    locations: classpath:db/migration,classpath:db/dev
+# settings-service, perfil cloud: solo db/migration (el valor por defecto de Flyway).
+# Los datos de demostración (db/dev) los agrega el perfil demo de la nube (spec 8).
