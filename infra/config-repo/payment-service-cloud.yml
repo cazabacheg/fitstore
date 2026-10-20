@@ -1,0 +1,9 @@
+# payment-service, perfil cloud (micro payment, 10.5): solo se aplican las migraciones del esquema, sin datos de
+# demostración. La pasarela simulada se activa solo con PAGOS_SIMULADO_HABILITADO=true (la demo en la VM).
+spring:
+  flyway:
+    locations: classpath:db/migration
+
+fitstore:
+  pagos:
+    simulado.habilitado: ${PAGOS_SIMULADO_HABILITADO:false}
