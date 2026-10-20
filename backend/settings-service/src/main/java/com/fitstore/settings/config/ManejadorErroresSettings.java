@@ -7,6 +7,7 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
+import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.multipart.MaxUploadSizeExceededException;
@@ -35,6 +36,13 @@ public class ManejadorErroresSettings extends GlobalExceptionHandlerBase {
             HttpServletRequest peticion) {
         return responder(HttpStatus.CONFLICT,
                 ApiError.de("El dato ya fue modificado por otra persona; vuelve a intentarlo", "CONFLICTO"), peticion);
+    }
+
+    @ExceptionHandler(HttpRequestMethodNotSupportedException.class)
+    public ResponseEntity<ApiError> alUsarUnMetodoNoPermitido(HttpRequestMethodNotSupportedException e,
+            HttpServletRequest peticion) {
+        return responder(HttpStatus.METHOD_NOT_ALLOWED,
+                ApiError.de("Esa operación no está permitida", "METODO_NO_PERMITIDO"), peticion);
     }
 
     @ExceptionHandler({MaxUploadSizeExceededException.class, MissingServletRequestPartException.class,
