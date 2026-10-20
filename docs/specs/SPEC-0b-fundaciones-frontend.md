@@ -1,10 +1,11 @@
 # SPEC-0b — Fundaciones del frontend
 
-> Versión: **v11 (aprobado)** — 2026-10-19 · Estados: ✅ decidido · 🟡 propuesto · ❓ abierto
+> Versión: **v12 (aprobado)** — 2026-10-20 · Estados: ✅ decidido · 🟡 propuesto · ❓ abierto
 > **Dueña de:** workspace Angular (`frontend/`), librería `shared`, *shells* (layouts) de storefront y backoffice, rutas y menús generales, tema white-label, carpetas `ui/` de cada app, job de frontend en CI.
 > **Depende de:** 0a (gateway y CI), la etapa de contratos (OpenAPI para generar los clientes) y la etapa de diseño (**sistema de diseño**: los componentes de `ui/` se construyen según él). · **Habilita:** pantallas de las specs 1–8.
 
 **Historial:**
+- v12 (2026-10-20): por CK2, R2 fija que cada pantalla del backoffice carga su **propio arreglo de rutas** (exportación con nombre de su carpeta), para que dos pantallas de la misma carpeta no reciban la misma ruta. Se registran las decisiones tomadas al implementar 0b (sección "Decisiones de implementación").
 - v11 (2026-10-20): ruta de los clientes generados unificada con R1: `shared/src/lib/api/<servicio>/` (`ng-packagr` empaqueta bajo `src/`; detectado por el agente de 0b.1).
 - v10 (2026-10-20): DoD ajustado (decisión del autor): `/settings/public`, `/categorias`, `/staff/me` y `/ubigeo` llegan con las specs 1–3, así que en 0b la marca se verifica con pruebas (respuesta simulada) y en vivo con el tema por defecto (CA-0b-07); la verificación en vivo con los datos semilla pasa a la SPEC-3.
 - v9 (2026-10-19): por la estrategia multiagente: cobertura mínima de 80 % con Vitest en el job `frontend` (R9).
@@ -277,7 +278,7 @@ No modifica el backend. Decisiones de implementación del frontend:
 | # | Decisión | Detalle |
 |---|---|---|
 | R1 | **Estructura** ✅ | `frontend/projects/{storefront,backoffice}/src/app/{core,layout,ui,features}` y `frontend/projects/shared/src/lib/{api,auth,http,theme,i18n,ubigeo,carrito,models,pipes}`. Componentes *standalone*, señales (`signal`, `computed`) para el estado y control de flujo nuevo (`@if`, `@for`). Sin NgRx (KISS) |
-| R2 | **Rutas registradas** ✅ | Tabla de abajo; cada ruta carga `features/<carpeta>/<carpeta>.routes.ts`, que 0b crea con una página "Próximamente". La spec dueña solo reemplaza el contenido de su carpeta |
+| R2 | **Rutas registradas** ✅ | Tabla de abajo; cada ruta carga `features/<carpeta>/<carpeta>.routes.ts`, que 0b crea con una página "Próximamente". La spec dueña solo reemplaza el contenido de su carpeta. **Cada pantalla (o grupo de URLs con la misma guarda) tiene su propio arreglo exportado con nombre** (`STAFF_ROUTES`, `CLIENTES_ROUTES`, `ENTREGAS_ROUTES` con `''`, `dia` y `:id`, `REPARTIDORES_ROUTES`…): el *shell* carga cada uno con su URL y su guarda de rol, y la carpeta declara solo las subrutas (`:id`, `nuevo`, `dia`…) |
 | R3 | **Menú por rol** ✅ | Definido en `layout/menu.ts` del backoffice con el rol mínimo de cada ítem y sus subítems (tabla de abajo y P-0b-02); los ítems pueden mostrar un contador aportado por su funcionalidad |
 | R4 | **Tema** ✅ | `provideAppInitializer` carga `/settings/public` y escribe variables CSS en `:root` (`--fs-color-primario`, `--fs-color-secundario`, `--fs-color-acento`, `--fs-color-fondo`, `--fs-color-texto`) y deriva los demás colores (`--fs-color-en-primario`, `--fs-color-primario-texto`, …; ver el sistema de diseño). Tailwind 4 las usa en su `@theme`; en Angular Material 3 se asignan a los tokens del sistema (`--mat-sys-primary`, …). La configuración se guarda en `localStorage` como respaldo (CA-0b-07). La tipografía (Poppins) y los radios son fijos: vienen de los estilos de `ui/`, no de settings |
 | R5 | **Clientes de API** ✅ | `openapi-generator` (`typescript-angular`) → `shared/src/lib/api/<servicio>/`, **versionados en Git**; el CI regenera y falla si hay diferencias (CA-0b-30). Ninguna spec los edita a mano |
@@ -368,6 +369,20 @@ No aplica (no hay base de datos). En el navegador: `localStorage` solo para la c
 - [ ] `/_ui` muestra todos los componentes de `ui/` en ambas apps.
 - [ ] Sin tokens en `localStorage`; sin atribución de IA en commits.
 - [ ] Revisado y aprobado por el autor.
+
+## Decisiones de implementación (0b) ✅
+
+Tomadas al implementar 0b y aprobadas por el autor al integrar #33, #35 y #36 o en CK2:
+
+1. **Rutas del backoffice por pantalla** (R2, CK2 H1). `/catalogo` redirige a `/catalogo/productos`.
+2. **Insignias de estado:** textos para los estados que la hoja de diseño no nombraba: "Por asignar", "Enviado a la agencia", "Disponible en la agencia", y el grupo de reembolso ("Reembolso pendiente", "Reembolsado", "Reembolso fallido", "Resuelto a mano"). Un código desconocido se muestra neutro con su nombre en palabras.
+3. **Logo:** la tienda y el menú del backoffice usan `logoClaroUrl` y, si no hay, `logoOscuroUrl`; sin ninguno, el nombre de la tienda.
+4. **`/_ui` solo en desarrollo:** se declara con `ngDevMode`, que el build de producción reemplaza por `false` y elimina la ruta y su chunk.
+5. **Shell del backoffice diferido** (`loadComponent`): con Angular Material en el bundle inicial se pasaba del presupuesto (553 kB de 500 kB).
+6. **Barra de anuncio:** el componente existe en el *shell* de la tienda, pero `/settings/public` no trae un texto de anuncio; no se muestra hasta que un dato lo defina.
+7. **Filas marcadas de `FsTabla`** (por vencer o vencidas): contorno izquierdo de color, sin relleno, para que las insignias del mismo color se distingan (CK2 H6).
+8. **Buscador de ubigeo:** espera 300 ms sin teclear antes de consultar; las listas se guardan en el navegador y las búsquedas solo en memoria (CK2 H5).
+9. **Etiqueta "Admin" del menú lateral:** se mantiene fija, como en el diseño `BoBarra`.
 
 ## Decisiones ✅
 

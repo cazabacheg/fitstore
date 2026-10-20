@@ -1,6 +1,6 @@
 # FitStore — Stack y versiones
 
-> Versión: **v8 (aprobado)** — 2026-10-20. v8: versiones exactas del frontend fijadas en 0b.1 (aprobadas por el autor). v7: herramientas de CI fijadas en 0a.3 (gitleaks, Newman y *actions* de GitHub). v6: versiones exactas fijadas en 0a.2 (`openhtmltopdf-pdfbox` 1.1.87, `greenmail-junit5` 2.1.14). v5: `spring-retry` 2.0.13 para el reintento del cliente de config (CA-0a-04) y etiquetas exactas de las imágenes fijadas en 0a.1. v4: JaCoCo, oasdiff y cobertura de Vitest (estrategia multiagente V0, SPEC-0a I7–I8). v3: Azure Blob diferido (SPEC-8 I6). v2: se adopta MapStruct. Versiones consultadas en Maven Central y npm el 2026-10-18.
+> Versión: **v9 (aprobado)** — 2026-10-20. v9: las pruebas con Testcontainers usan las mismas etiquetas exactas que el compose (CK2 H4). v8: versiones exactas del frontend fijadas en 0b.1 (aprobadas por el autor). v7: herramientas de CI fijadas en 0a.3 (gitleaks, Newman y *actions* de GitHub). v6: versiones exactas fijadas en 0a.2 (`openhtmltopdf-pdfbox` 1.1.87, `greenmail-junit5` 2.1.14). v5: `spring-retry` 2.0.13 para el reintento del cliente de config (CA-0a-04) y etiquetas exactas de las imágenes fijadas en 0a.1. v4: JaCoCo, oasdiff y cobertura de Vitest (estrategia multiagente V0, SPEC-0a I7–I8). v3: Azure Blob diferido (SPEC-8 I6). v2: se adopta MapStruct. Versiones consultadas en Maven Central y npm el 2026-10-18.
 > Todas las secciones 10.4 de los micros remiten a esta tabla; cada servicio solo lista **qué** usa, no la versión.
 > Regla: las versiones se fijan al crear el repositorio y se actualizan solo con un motivo (seguridad o corrección).
 
@@ -65,7 +65,7 @@ Gestionadas por los BOM de Spring Boot y Spring Cloud salvo que se indique versi
 | Base | `spring-boot-starter-test` (JUnit 5, AssertJ, Mockito) | BOM Boot |
 | Capa de datos (AP1) | `spring-boot-starter-data-jpa-test` (`@DataJpaTest`) | BOM Boot |
 | Contenedores | `org.testcontainers:testcontainers-postgresql`, `-rabbitmq`, `-junit-jupiter` (BOM `testcontainers-bom`) | **2.0.5** |
-| Redis en pruebas | contenedor genérico `redis:8` con Testcontainers | — |
+| Imágenes en pruebas | Testcontainers con las etiquetas exactas del compose: `postgres:17.10`, `redis:8.10.1` (contenedor genérico), `rabbitmq:4.3.5-management` | — |
 | Seguridad | `spring-security-test` | BOM Boot |
 | HTTP simulado (pasarelas, Feign) | `org.wiremock:wiremock-standalone` | **3.13.x** (la 4.0 sigue en beta) |
 | SMTP de prueba (notification) | `com.icegreen:greenmail-junit5` | **2.1.14** |
