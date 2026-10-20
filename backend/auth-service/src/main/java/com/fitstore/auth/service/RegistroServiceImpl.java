@@ -1,6 +1,7 @@
 package com.fitstore.auth.service;
 
 import com.fitstore.auth.dto.request.RegistroRequest;
+import com.fitstore.auth.security.SesionEmitida;
 import com.fitstore.auth.event.ClienteRegistrado;
 import com.fitstore.auth.model.Cliente;
 import com.fitstore.auth.model.Consentimiento;

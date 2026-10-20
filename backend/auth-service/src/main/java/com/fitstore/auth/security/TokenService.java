@@ -31,11 +31,22 @@ public class TokenService {
     private final PropiedadesAuth propiedades;
     private final Clock reloj;
 
-    public TokenService(ProveedorClavesRsa claves, PropiedadesAuth propiedades, Clock reloj) {
+    public TokenService(ProveedorClavesRsa claves, PropiedadesAuth propiedades, Clock reloj,
+            RegistroRefreshRevocados revocados, CuentaLookup cuentas) {
         this.encoder = claves.jwtEncoder();
         this.kid = claves.kid();
         this.propiedades = propiedades;
         this.reloj = reloj;
+    }
+
+    /** Valida el refresh token, lo revoca (rotación) y emite un par nuevo. */
+    public SesionEmitida refrescar(String refreshToken) {
+        throw new UnsupportedOperationException("pendiente");
+    }
+
+    /** Revoca el refresh token (logout). */
+    public void revocar(String refreshToken) {
+        throw new UnsupportedOperationException("pendiente");
     }
 
     /** Emite un par nuevo de tokens para la cuenta. */

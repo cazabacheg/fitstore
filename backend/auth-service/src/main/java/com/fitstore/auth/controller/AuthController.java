@@ -4,7 +4,7 @@ import com.fitstore.auth.dto.request.RegistroRequest;
 import com.fitstore.auth.dto.response.SesionResponse;
 import com.fitstore.auth.security.CookieRefresh;
 import com.fitstore.auth.service.RegistroService;
-import com.fitstore.auth.service.SesionEmitida;
+import com.fitstore.auth.security.SesionEmitida;
 import com.fitstore.common.api.ApiResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import jakarta.servlet.http.HttpServletRequest;

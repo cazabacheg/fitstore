@@ -1,6 +1,7 @@
 package com.fitstore.auth.service;
 
 import com.fitstore.auth.dto.request.RegistroRequest;
+import com.fitstore.auth.security.SesionEmitida;
 
 public interface RegistroService {
 

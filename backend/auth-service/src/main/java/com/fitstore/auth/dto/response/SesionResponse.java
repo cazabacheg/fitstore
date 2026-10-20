@@ -1,7 +1,7 @@
 package com.fitstore.auth.dto.response;
 
 import com.fitstore.auth.security.ParTokens;
-import com.fitstore.auth.service.SesionEmitida;
+import com.fitstore.auth.security.SesionEmitida;
 import jakarta.validation.constraints.NotNull;
 import java.time.Instant;
 
