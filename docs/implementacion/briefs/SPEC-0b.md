@@ -63,12 +63,62 @@ Layouts, componentes de `ui/`, rutas de las features y `/_ui` de cada app (0b.2 
 
 ---
 
-## 0b.2 — Storefront y 0b.3 — Backoffice
+## Común a 0b.2 y 0b.3
 
-Se completan al cerrar 0b.1 (como 0a.2), con lo aprendido: ejemplos reales de `shared`, rutas exactas y trampas encontradas. Resumen de lo que construye cada uno:
+> Completado tras la entrega de 0b.1 (PR #33). Dos agentes a la vez, cada uno en su carpeta.
 
-- **0b.2 Storefront:** `TiendaShell` (P-0b-01: cabecera clara con hasta 4 categorías y atenuación al pasar el mouse, menú lateral en móvil, pie al final del documento), `ui/` de la tienda con Tailwind (P-0b-04, columna izquierda), estados comunes (P-0b-03), rutas R2 de la tienda con "Próximamente", `/_ui` solo en desarrollo. Diseño: `docs/diseno/pantallas/TiendaCabecera.dc.html`, `TiendaPie.dc.html` y `marca.css`.
-- **0b.3 Backoffice:** `BackofficeShell` (P-0b-02: menú lateral R3 por rol con contadores, barra superior con migas y menú de usuario), `ui/` del backoffice con Angular Material (P-0b-04, columna derecha, con `FsTabla` según R11), estados comunes, rutas R2 del backoffice con "Próximamente" y página 403, `/_ui` solo en desarrollo. Diseño: `docs/diseno/pantallas/BoBarra.dc.html` y las barras superiores de las pantallas del backoffice.
+### Lectura obligatoria (en este orden)
+
+1. [`CLAUDE.md`](../../../CLAUDE.md).
+2. Este brief: la regla para que no choquen, la tabla de validación y la sección de tu paso.
+3. [SPEC-0b](../../specs/SPEC-0b-fundaciones-frontend.md) (v11) completa. **La spec manda.** En especial las historias de tu app, la sección 4 (pantallas), la 5 (R1, R2, R3, R10, R11) y la 7.
+4. El sistema de diseño: [`docs/diseno/sistema/README.md`](../../diseno/sistema/README.md), `components/*/README.md` (cada componente de `ui/` que construyes tiene su ficha) y `components/bundle.css` (estilos de referencia, clases `fs-*`).
+5. Las pantallas aprobadas de tu app en [`docs/diseno/pantallas/`](../../diseno/pantallas/) y `marca.css`.
+6. **El código de 0b.1 ya integrado:** `frontend/projects/shared/src/public-api.ts` (todo lo que exporta `shared`: `SesionStore`, guards, `ToastService`, `EstadoServicio`, `TemaService`, `UbigeoCatalogo`, `PrecioPipe`, `FechaPipe`, `CarritoContador`, `CONTADOR_MENU`, clientes `authApi`, `catalogApi`, …), `shared/src/lib/theme/tokens.css` y el `app.config.ts` y `styles.css` de tu app.
+
+En tu primer mensaje: qué leíste, qué componentes y rutas vas a construir y cómo probarás cada criterio tuyo.
+
+### Reglas
+
+- Toca **solo** `frontend/projects/<tu-app>/`. `shared`, `angular.json`, `package.json` y `ci.yml` están congelados: si necesitas algo de ahí (una dependencia, un export de `shared`), **detente y pregúntame**.
+- **Tus criterios necesitan pruebas propias dentro de tu carpeta**, con el id en el nombre, aunque `shared` ya tenga una prueba complementaria con el mismo id (el lead lo verifica buscando en tu carpeta, no solo con `ca-cobertura.sh`).
+- Los endpoints que consume tu *shell* (`/categorias`, `/settings/public`, `/staff/me`, `/ubigeo`) llegan con las specs 1–3: pruébalos con `HttpTestingController` y deja los estados de fallo de la sección 4 funcionando (el *shell* no se bloquea si fallan).
+- Cada ruta de la tabla R2 de tu app crea su carpeta `features/<carpeta>/<carpeta>.routes.ts` con la página "Próximamente" (R2): la spec dueña solo reemplaza esa carpeta.
+- `/_ui` solo en desarrollo (`isDevMode()` o la configuración de desarrollo); en el build de producción la ruta no existe (CA-0b-25).
+- Cobertura ≥ 80 % de líneas en tu proyecto (lo exige el build); núcleo cubierto por completo (abajo).
+- Lecciones de 0b.1: `npm ci` funciona con npm 10, pero **no cambies dependencias** (el `package-lock.json` exige `npx npm@11`); los clientes de API se usan por espacio de nombres (`catalogApi.CategoriasService`…); los tipos comunes están en `shared/models`.
+
+## 0b.2 — Storefront
+
+Rama `spec/0b-2-storefront`, alcance [`SPEC-0b.2.alcance`](SPEC-0b.2.alcance).
+
+**Qué construyes:**
+1. **Tema de Tailwind:** `@theme` en `styles.css` con las variables de `tokens.css` (colores de marca y derivados, tipografía, espacios, radios, sombras), para que las clases usen la marca de settings (CA-0b-05).
+2. **`TiendaShell` (P-0b-01)** según `TiendaCabecera.dc.html` y `TiendaPie.dc.html`: cabecera clara con logo, **hasta 4 categorías raíz** de `GET /categorias` en su orden, atenuación de las demás al pasar el mouse o el foco y la actual subrayada (CA-0b-20c), buscador que navega a `/productos?q=` (CA-0b-22), cuenta y carrito con el `CarritoContador` (CA-0b-23); en 390 px, menú lateral ☰ junto al logo con todas las categorías y la cuenta, sin scroll horizontal (CA-0b-21); pie al final del documento, nunca fijo, con el contenido de altura mínima de la ventana (CA-0b-20b) y el enlace "Libro de Reclamaciones" (CA-0b-20); `BarraAnuncio`.
+3. **`ui/` de la tienda (P-0b-04, columna izquierda):** botón, campo, select, checkbox, selector de ubigeo (CA-0b-26), precio con descuento, tarjeta de producto (esqueleto), badge, paginador simple, galería básica, estados, toast, diálogo. Cada uno según su ficha del sistema de diseño, con estados de foco y accesibilidad (R10).
+4. **Estados comunes (P-0b-03):** `EstadoCargando`, `EstadoVacio`, `EstadoError`, `Pagina404` con "Volver al inicio" (CA-0b-19), `BannerServicioNoDisponible` (reacciona a `EstadoServicio`, CA-0b-13), `Toast` (reacciona a `ToastService`), `DialogoConfirmacion`.
+5. **Rutas R2 de la tienda** con carga diferida, "Próximamente" (CA-0b-15) y guards: `/checkout`, `/pago/:codigo`, `/cuenta/**` con `autenticadoGuard` → `/ingresar?returnUrl=` (CA-0b-16); ruta comodín → 404.
+6. **`/_ui`** con todos los componentes de `ui/`, sus variantes y estados (CA-0b-25).
+
+**Criterios:** CA-0b-20, 20b, 20c, 21, 22, 23 (componente), la parte storefront de 15, 16, 19, 25 y 26; complementarias de 05, 08 (logo en la cabecera) y 13 (toast y banner).
+
+**Núcleo:** `TiendaShell` (límite de 4 categorías, estado de fallo de `/categorias`, menú móvil, pie), guards de rutas y el selector de ubigeo.
+
+## 0b.3 — Backoffice
+
+Rama `spec/0b-3-backoffice`, alcance [`SPEC-0b.3.alcance`](SPEC-0b.3.alcance).
+
+**Qué construyes:**
+1. **Tema de Angular Material 3:** mapeo de los tokens de `tokens.css` a `--mat-sys-*` (primario, superficie, texto, error…) en `styles.css`, para que los componentes de Material usen la marca de settings (CA-0b-05).
+2. **`BackofficeShell` (P-0b-02)** según `BoBarra.dc.html` y la barra superior de las pantallas del backoffice: `sidenav` con el **menú R3** por rol (OPERADOR no ve Pagos, Tarifas y agencias, Staff, Notificaciones ni Configuración de tienda — CA-0b-17), ítem activo resaltado, subítems, **insignia de contador** para los ítems con un `CONTADOR_MENU` registrado, refrescada al navegar (CA-0b-24); colapsable en tablet; `BarraSuperior` con migas y menú de usuario (perfil, cambiar contraseña, salir); `EncabezadoPagina` (título + acción principal).
+3. **`ui/` del backoffice (P-0b-04, columna derecha):** `FsTabla` (`mat-table` + paginador + orden que emiten `page/size/sort` del ADR-015 — CA-0b-28; y la convención **R11** con `filaEnlace` y `acciones` — CA-0b-28b), barra de filtros, selector de ubigeo con la opción `hasta` (CA-0b-26), subida de imágenes (arrastrar, validar tipo y tamaño), badge de estado (pedido, pago, entrega), estados, toast, diálogo de confirmación.
+4. **Estados comunes (P-0b-03):** los mismos de la tienda con Material, más `Pagina403`.
+5. **Rutas R2 del backoffice** con carga diferida, "Próximamente" (CA-0b-15), `autenticadoGuard` (solo STAFF; un CLIENTE va al login de staff — CA-0b-18) y `rolGuard('ADMIN')` en las rutas de ADMIN → `/403` (CA-0b-16, 17); `/ingresar`, `/recuperar`, `/restablecer` públicas; comodín → 404 (CA-0b-19).
+6. **`/_ui`** con todos los componentes de `ui/` (CA-0b-25).
+
+**Criterios:** CA-0b-17, 18, 24, 28, 28b, la parte backoffice de 15, 16, 19, 25 y 26; complementarias de 05, 08 y 13.
+
+**Núcleo:** filtrado del menú por rol y contadores, `FsTabla` (R11: enlace, clic en la fila, acciones que no propagan, tabla sin detalle), guards de rutas y el selector de ubigeo con `hasta`.
 
 ## DoD de la marca (decisión del autor, 2026-10-20)
 

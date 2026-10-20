@@ -22,9 +22,9 @@
 
 | Paso | Agente | Rama | Estado | Ronda | PR | Bloqueos / notas |
 |---|---|---|---|---|---|---|
-| 0b.1 Workspace, `shared` y CI | — | `spec/0b-1-base` | 📝 brief listo | — | — | Esperando la aprobación del autor |
-| 0b.2 Storefront | — | `spec/0b-2-storefront` | ⏳ | — | — | Tras 0b.1 (en paralelo con 0b.3) |
-| 0b.3 Backoffice | — | `spec/0b-3-backoffice` | ⏳ | — | — | Tras 0b.1 (en paralelo con 0b.2) |
+| 0b.1 Workspace, `shared` y CI | Sonnet | `spec/0b-1-base` | 👀 en revisión del autor | 1 | #33 | Verificado por el lead |
+| 0b.2 Storefront | — | `spec/0b-2-storefront` | 📝 brief listo | — | — | Tras 0b.1 (en paralelo con 0b.3) |
+| 0b.3 Backoffice | — | `spec/0b-3-backoffice` | 📝 brief listo | — | — | Tras 0b.1 (en paralelo con 0b.2) |
 
 ## Próximas olas
 
