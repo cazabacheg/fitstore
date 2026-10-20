@@ -1,0 +1,65 @@
+/*
+ * Tokens del sistema de diseño (docs/diseno/sistema/tokens.json), compartidos por la tienda y el backoffice.
+ * Cada app lo importa en su styles.css.
+ *
+ * - Colores de marca: valores de la plantilla FitStore. Son el punto de partida antes de que cargue
+ *   `/settings/public`; el TemaService (R4) los reemplaza en `:root` con los de la tienda y sus derivados.
+ * - Colores semánticos, espacio, radios, tipografía y sombras: fijos en todas las tiendas.
+ */
+:root {
+  /* Marca configurable (settings) */
+  --fs-color-primario: #c9b28c;
+  --fs-color-secundario: #2b2621;
+  --fs-color-acento: #4e5b45;
+  --fs-color-fondo: #faf9f7;
+  --fs-color-texto: #26221d;
+
+  /* Marca derivada (la recalcula el TemaService) */
+  --fs-color-en-primario: #26221d;
+  --fs-color-en-secundario: #ffffff;
+  --fs-color-en-acento: #ffffff;
+  --fs-color-primario-texto: #7a6343;
+  --fs-color-primario-suave: #f3ede3;
+  --fs-color-superficie-alterna: #f2f0ec;
+  --fs-color-texto-suave: #6a6259;
+  --fs-color-linea: #e6e1d9;
+  --fs-color-borde-control: #8a8277;
+
+  /* Fijos */
+  --fs-color-superficie: #ffffff;
+  --fs-color-foco: var(--fs-color-primario-texto);
+  --fs-color-exito: #166534;
+  --fs-color-exito-suave: #dcfce7;
+  --fs-color-aviso: #92400e;
+  --fs-color-aviso-suave: #fef3c7;
+  --fs-color-error: #b91c1c;
+  --fs-color-error-suave: #fee2e2;
+  --fs-color-info: #1d4ed8;
+  --fs-color-info-suave: #dbeafe;
+
+  /* Tipografía: Poppins en todas las tiendas; JetBrains Mono para códigos */
+  --font-poppins: Poppins, 'Segoe UI', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, Menlo, Consolas, monospace;
+
+  /* Espacio */
+  --espacio-1: 4px;
+  --espacio-2: 8px;
+  --espacio-3: 12px;
+  --espacio-4: 16px;
+  --espacio-6: 24px;
+  --espacio-8: 32px;
+  --espacio-12: 48px;
+  --espacio-16: 64px;
+
+  /* Radios (fijos, no se configuran) */
+  --radio-sm: 4px;
+  --radio-md: 8px;
+  --radio-lg: 16px;
+  --radio-pill: 999px;
+
+  /* Sombras: tintadas con el color secundario de la marca */
+  --sombra-1:
+    0 1px 2px rgb(from var(--fs-color-secundario) r g b / 0.06),
+    0 1px 3px rgb(from var(--fs-color-secundario) r g b / 0.1);
+  --sombra-2: 0 12px 32px rgb(from var(--fs-color-secundario) r g b / 0.18);
+}

@@ -1,0 +1,11 @@
+export * from './configuracionAdmin.service';
+import { ConfiguracionAdminService } from './configuracionAdmin.service';
+export * from './configuracionPublica.service';
+import { ConfiguracionPublicaService } from './configuracionPublica.service';
+export * from './politicas.service';
+import { PoliticasService } from './politicas.service';
+export * from './reclamos.service';
+import { ReclamosService } from './reclamos.service';
+export * from './ubigeo.service';
+import { UbigeoService } from './ubigeo.service';
+export const APIS = [ConfiguracionAdminService, ConfiguracionPublicaService, PoliticasService, ReclamosService, UbigeoService];

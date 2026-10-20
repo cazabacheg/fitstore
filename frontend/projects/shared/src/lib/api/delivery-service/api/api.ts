@@ -1,0 +1,11 @@
+export * from './agenciasAdmin.service';
+import { AgenciasAdminService } from './agenciasAdmin.service';
+export * from './entregas.service';
+import { EntregasService } from './entregas.service';
+export * from './envios.service';
+import { EnviosService } from './envios.service';
+export * from './repartidores.service';
+import { RepartidoresService } from './repartidores.service';
+export * from './tarifas.service';
+import { TarifasService } from './tarifas.service';
+export const APIS = [AgenciasAdminService, EntregasService, EnviosService, RepartidoresService, TarifasService];

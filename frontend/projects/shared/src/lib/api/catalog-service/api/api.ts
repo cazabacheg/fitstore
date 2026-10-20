@@ -1,0 +1,15 @@
+export * from './categoriasAdmin.service';
+import { CategoriasAdminService } from './categoriasAdmin.service';
+export * from './cotizacion.service';
+import { CotizacionService } from './cotizacion.service';
+export * from './interno.service';
+import { InternoService } from './interno.service';
+export * from './inventario.service';
+import { InventarioService } from './inventario.service';
+export * from './maestrosAdmin.service';
+import { MaestrosAdminService } from './maestrosAdmin.service';
+export * from './productosAdmin.service';
+import { ProductosAdminService } from './productosAdmin.service';
+export * from './tienda.service';
+import { TiendaService } from './tienda.service';
+export const APIS = [CategoriasAdminService, CotizacionService, InternoService, InventarioService, MaestrosAdminService, ProductosAdminService, TiendaService];
