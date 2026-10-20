@@ -14,6 +14,7 @@ import unittest
 AQUI = pathlib.Path(__file__).resolve().parent
 SCRIPT = AQUI / "ubigeo-a-sql"
 MUESTRA = AQUI / "ubigeo-a-sql-muestra.csv"
+DATOS = AQUI / "ubigeo-a-sql-datos" / "ubigeo_distrito.csv"
 
 
 def ejecutar(*argumentos):
@@ -132,6 +133,22 @@ class UbigeoASqlTest(unittest.TestCase):
         self.assertNotEqual(r.returncode, 0)
         r = ejecutar(AQUI / "no-existe.csv")
         self.assertNotEqual(r.returncode, 0)
+
+    # CA-0a-05: el CSV derivado del INEI usa la columna "inei" y trae columnas de más que se ignoran
+    def test_acepta_la_columna_inei_e_ignora_las_demas(self):
+        ruta = csv_temporal("inei,reniec,departamento,provincia,distrito,region\n"
+                            "150122,150122,LIMA,LIMA,MIRAFLORES,LIMA\n")
+        r = ejecutar(ruta)
+        self.assertEqual(r.returncode, 0, r.stderr)
+        self.assertIn("('150122', '1501', 'MIRAFLORES')", r.stdout)
+
+    # CA-0a-05: conteos del INEI sobre los datos versionados
+    def test_datos_versionados_tienen_los_conteos_del_inei(self):
+        r = ejecutar(DATOS)
+        self.assertEqual(r.returncode, 0, r.stderr)
+        self.assertIn("-- departamentos: 25, provincias: 196, distritos: 1895", r.stdout)
+        self.assertIn("('150122', '1501', 'MIRAFLORES')", r.stdout)
+        self.assertIn("('150115', '1501', 'LA VICTORIA')", r.stdout)
 
 
 if __name__ == "__main__":
