@@ -1,0 +1,8 @@
+# Perfil dev: los datos de demostración (db/dev) solo se cargan aquí y con el perfil demo (SPEC-0a CA-0a-05).
+spring:
+  flyway:
+    locations: classpath:db/migration,classpath:db/dev
+
+fitstore:
+  notificacion:
+    ritmo-por-segundo: 10       # Mailpit no tiene límite (SPEC-7 N6)
