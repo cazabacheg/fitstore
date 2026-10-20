@@ -72,6 +72,10 @@ todos los contenedores *healthy* en menos de 5 minutos (CA-0a-02), `api-gateway`
 un servicio no puede entrar a la base de otro (CA-0a-07), que `/swagger-ui` del gateway ofrece los 7 servicios
 (CA-0a-17) y que cada contenedor tiene `mem_limit` con una suma de 6,5 GB como máximo (CA-0a-19).
 
+Si el puerto 5432 de tu máquina está ocupado (por ejemplo, por un PostgreSQL local), el compose de dev no puede
+publicar el de la plataforma: crea un archivo compose adicional que lo cambie (`postgres: ports: !override ["127.0.0.1:55432:5432"]`)
+y pásalo con `SMOKE_COMPOSE_EXTRA=<archivo>`. El humo no usa ese puerto (entra a PostgreSQL con `docker compose exec`).
+
 Variables opcionales: `SMOKE_TIMEOUT` (segundos para el arranque, 300 por defecto), `SMOKE_SIN_ARRANQUE=1` (verifica una
 plataforma que ya está corriendo) y `SMOKE_BAJAR=1` (baja el compose y borra los volúmenes al terminar).
 
