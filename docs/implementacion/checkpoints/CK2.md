@@ -139,7 +139,7 @@ Con el valor entre comillas en un clon limpio:
 ## 9. Observaciones (no bloquean)
 
 - **O1 — Memoria:** en reposo, los 7 servicios están en ≈ 320 de 320 MiB (incluye la caché de páginas del contenedor) y el gateway en 244 de 256 MiB. Sin reinicios ni OOM en el *smoke*. Se mide con carga en la spec 8; hay margen de 1,7 GB dentro de los 6,5 GB para subir los `mem_limit`.
-- **O2 — Etiqueta "Admin" fija en el menú lateral:** así está en el diseño (`BoBarra`), aunque un OPERADOR también la ve. Se mantiene como en el diseño.
+- **O2 — Etiqueta "Admin" fija en el menú lateral:** así está en el diseño (`BoBarra`), aunque un OPERADOR también la ve. Decisión del autor: mostrar el rol de la sesión ("Admin" u "Operador"), corregido en `fix/rol-menu`.
 - **O3 — Storefront:** las carpetas `catalogo`, `acceso` y `legal` cuelgan de la ruta `''`. Al abrir `/ingresar`, el router descarga también el chunk de `catalogo` para probar coincidencias. Es un detalle de rendimiento, sin efecto funcional; se revisa con Lighthouse en la spec 8.
 - **O4 — Selector de ubigeo con API distinta por app:** la tienda usa `valor` y `(cambio)`; el backoffice, `[(valor)]`. Cada spec usa el de su app, y los briefs lo indican.
 - **O5 — `settings-service`:** su `application.yml` usa el perfil `pruebas` (los otros 6 usan `sin-config-server`), `${CONFIG_USER:}` con valor vacío por defecto y 10 reintentos (los demás, 20). Funciona; se le indica a la SPEC-3, que es dueña del servicio, que lo alinee.

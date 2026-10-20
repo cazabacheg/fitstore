@@ -5,7 +5,7 @@
     } @else {
       <span class="fs-menu__nombre">{{ tema.nombre() ?? 'FitStore' }}</span>
     }
-    <span class="fs-menu__rol">Admin</span>
+    <span class="fs-menu__rol">{{ rolVisible() }}</span>
   </div>
   <ul class="fs-menu__lista">
     @for (item of items(); track item.clave) {

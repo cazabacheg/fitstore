@@ -5,6 +5,9 @@ import { filter, map, startWith } from 'rxjs';
 import { CONTADOR_MENU, SesionStore, TemaService } from 'shared';
 import { hojasDelMenu, menuParaRol, type ItemMenu } from './menu';
 
+/** Rol de la sesión que se muestra bajo la marca (decisión del autor en CK2: el diseño lo tenía fijo en "Admin"). */
+const ROLES_VISIBLES: Record<string, string> = { ADMIN: 'Admin', OPERADOR: 'Operador' };
+
 /** Menú lateral del backoffice (P-0b-02): ítems por rol (R3), ítem activo, subítems y contadores. */
 @Component({
   selector: 'fs-menu-lateral',
@@ -20,6 +23,7 @@ export class MenuLateral {
 
   private readonly sesion = inject(SesionStore);
   protected readonly items = computed(() => menuParaRol(this.sesion.rol()));
+  protected readonly rolVisible = computed(() => ROLES_VISIBLES[this.sesion.rol() ?? ''] ?? '');
   /** Cambia en cada navegación: el menú vuelve a pedir los contadores. */
   private readonly navegaciones = toSignal(
     this.router.events.pipe(
