@@ -1,0 +1,4 @@
+# delivery-service, perfil cloud: solo las migraciones (los datos de demostración los agrega el perfil demo, spec 8)
+spring:
+  flyway:
+    locations: classpath:db/migration
