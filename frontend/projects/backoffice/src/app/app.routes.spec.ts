@@ -77,6 +77,61 @@ describe('Rutas del backoffice', () => {
     },
   );
 
+  // Cada URL llega a la pantalla de su carpeta, con la subruta que fija su spec (p. ej. `dia` en SPEC-6):
+  // dos pantallas de la misma carpeta (Staff y Clientes, Pagos y Reembolsos…) nunca reciben la misma ruta.
+  it.each([
+    ['/', 'dashboard'],
+    ['/perfil', 'perfil'],
+    ['/staff', 'staff'],
+    ['/clientes', 'clientes'],
+    ['/clientes/0d2f8c1e', 'clientes'],
+    ['/catalogo/productos', 'productos'],
+    ['/catalogo/productos/12', 'productos'],
+    ['/catalogo/productos/carga-masiva', 'carga-masiva'],
+    ['/catalogo/categorias', 'categorias'],
+    ['/catalogo/maestros', 'maestros'],
+    ['/catalogo/descuentos', 'descuentos'],
+    ['/inventario', 'inventario'],
+    ['/inventario/40', 'inventario'],
+    ['/pedidos', 'pedidos'],
+    ['/pedidos/FS-000124', 'pedidos'],
+    ['/entregas', 'entregas'],
+    ['/entregas/dia', 'entregas-dia'],
+    ['/entregas/7', 'entregas'],
+    ['/repartidores', 'repartidores'],
+    ['/tarifas', 'tarifas'],
+    ['/agencias', 'agencias'],
+    ['/pagos', 'pagos'],
+    ['/pagos/3', 'pagos'],
+    ['/reembolsos', 'reembolsos'],
+    ['/notificaciones', 'notificaciones'],
+    ['/notificaciones/plantillas', 'plantillas'],
+    ['/configuracion', 'configuracion'],
+    ['/configuracion/politicas', 'politicas'],
+    ['/reclamos', 'reclamos'],
+    ['/reclamos/5', 'reclamos'],
+  ])('CA-0b-15 %s llega a su propia pantalla (%s)', async (ruta, pantalla) => {
+    const harness = await arrancar(SESION_ADMIN);
+    await harness.navigateByUrl(ruta);
+    let actual = TestBed.inject(Router).routerState.snapshot.root;
+    while (actual.firstChild) actual = actual.firstChild;
+    expect(actual.data['pantalla']).toBe(pantalla);
+  });
+
+  it('CA-0b-15 /entregas/dia llega a entregas.routes.ts como la subruta "dia" (SPEC-6)', async () => {
+    const harness = await arrancar(SESION_ADMIN);
+    await harness.navigateByUrl('/entregas/dia');
+    let actual = TestBed.inject(Router).routerState.snapshot.root;
+    while (actual.firstChild) actual = actual.firstChild;
+    expect(actual.routeConfig?.path).toBe('dia');
+  });
+
+  it('CA-0b-15 /catalogo lleva a los productos', async () => {
+    const harness = await arrancar(SESION_OPERADOR);
+    await harness.navigateByUrl('/catalogo');
+    expect(TestBed.inject(Router).url).toBe('/catalogo/productos');
+  });
+
   it('CA-0b-15 cada ruta de R2 se carga con loadChildren (carga diferida)', () => {
     const raiz = crearRutas(true);
     const lista = JSON.stringify(raiz, (_k, v) => (typeof v === 'function' ? 'fn' : v));
