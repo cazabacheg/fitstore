@@ -17,7 +17,7 @@ concurrency:
 
 jobs:
   # CA-0a-20 Filtros por ruta: decide qué módulos compilar según los archivos que cambiaron.
-  # Cambios en fitstore-common, pom.xml, mvnw o .mvn => todos los módulos; si no, solo los módulos cambiados
+  # Cambios en fitstore-common, pom.xml, mvnw, .mvn o ci.yml => todos los módulos; si no, solo los módulos cambiados
   # (con -am, que arrastra fitstore-common); si solo cambió documentación u otras carpetas => no compila.
   cambios:
     runs-on: ubuntu-latest
@@ -44,7 +44,7 @@ jobs:
             archivos="$(git diff --name-only "$ANTES_PUSH" HEAD)"
           fi
           echo "Archivos cambiados:"; echo "$archivos" | sed 's/^/  /'
-          if echo "$archivos" | grep -qE '^(pom\.xml|mvnw|mvnw\.cmd|\.mvn/|backend/fitstore-common/)'; then
+          if echo "$archivos" | grep -qE '^(pom\.xml|mvnw|mvnw\.cmd|\.mvn/|backend/fitstore-common/|\.github/workflows/ci\.yml)'; then
             compilar=true; modulos=""
           else
             modulos="$(echo "$archivos" | sed -nE 's#^(backend/[^/]+)/.*#\1#p' | sort -u | paste -sd ',' -)"
