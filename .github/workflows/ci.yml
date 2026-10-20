@@ -150,6 +150,11 @@ jobs:
           git check-ignore -q infra/.env || { echo "infra/.env no está en .gitignore"; exit 1; }
           versionados="$(git ls-files | grep -E '(^|/)\.env($|\.)' | grep -vE '(^|/)\.env\.example$' || true)"
           if [[ -n "$versionados" ]]; then echo "Archivos .env versionados:"; echo "$versionados"; exit 1; fi
+      - name: infra/.env.example se puede cargar en bash (lo hace smoke.sh)
+        run: |
+          # CA-0a-02
+          bash -n infra/.env.example
+          (set -a; . infra/.env.example; [[ -n "${CONFIG_USER:-}" && -n "${MAIL_FROM:-}" ]])
       - name: gitleaks v8.30.1
         run: |
           # CA-0a-18
