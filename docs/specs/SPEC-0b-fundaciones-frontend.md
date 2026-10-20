@@ -382,7 +382,7 @@ Tomadas al implementar 0b y aprobadas por el autor al integrar #33, #35 y #36 o 
 6. **Barra de anuncio:** el componente existe en el *shell* de la tienda, pero `/settings/public` no trae un texto de anuncio; no se muestra hasta que un dato lo defina.
 7. **Filas marcadas de `FsTabla`** (por vencer o vencidas): contorno izquierdo de color, sin relleno, para que las insignias del mismo color se distingan (CK2 H6).
 8. **Buscador de ubigeo:** espera 300 ms sin teclear antes de consultar; las listas se guardan en el navegador y las búsquedas solo en memoria (CK2 H5).
-9. **Etiqueta "Admin" del menú lateral:** se mantiene fija, como en el diseño `BoBarra`.
+9. **Rol bajo la marca del menú lateral:** muestra el rol de la sesión ("Admin" u "Operador"); el diseño `BoBarra` lo tenía fijo en "Admin" (decisión del autor).
 
 ## Decisiones ✅
 
