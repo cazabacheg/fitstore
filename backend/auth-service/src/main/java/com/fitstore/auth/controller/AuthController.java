@@ -13,19 +13,22 @@ import com.fitstore.auth.service.PasswordService;
 import com.fitstore.auth.service.RegistroService;
 import com.fitstore.common.api.ApiResponse;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 /** Registro, logins, sesión y recuperación de contraseña (micro 4.1). Sin lógica: delega en los servicios. */
 @RestController
-@RequestMapping("/api/v1/auth")
+@RequestMapping(value = "/api/v1/auth", produces = MediaType.APPLICATION_JSON_VALUE)
 public class AuthController {
 
     private static final String MENSAJE_OLVIDO = "Si el correo está registrado, te enviaremos un enlace";
@@ -44,6 +47,7 @@ public class AuthController {
     }
 
     @PostMapping("/registro")
+    @ResponseStatus(HttpStatus.CREATED)
     @Operation(operationId = "registrarCliente", summary = "Registrar un cliente")
     public ResponseEntity<ApiResponse<SesionResponse>> registrar(@Valid @RequestBody RegistroRequest solicitud,
             HttpServletRequest peticion) {
@@ -67,13 +71,15 @@ public class AuthController {
     }
 
     @PostMapping("/refresh")
-    @Operation(operationId = "refrescarSesion", summary = "Renovar el access token")
+    @Operation(operationId = "refrescarSesion", summary = "Renovar el access token",
+            security = @SecurityRequirement(name = "refreshCookie"))
     public ResponseEntity<ApiResponse<SesionResponse>> refrescar(HttpServletRequest peticion) {
         return sesion(autenticacion.refrescar(cookie.leer(peticion)));
     }
 
     @PostMapping("/logout")
-    @Operation(operationId = "cerrarSesion", summary = "Cerrar la sesión")
+    @Operation(operationId = "cerrarSesion", summary = "Cerrar la sesión",
+            security = @SecurityRequirement(name = "refreshCookie"))
     public ResponseEntity<ApiResponse<Void>> cerrarSesion(HttpServletRequest peticion) {
         autenticacion.cerrarSesion(cookie.leer(peticion));
         return ResponseEntity.ok()

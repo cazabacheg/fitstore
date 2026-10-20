@@ -1,5 +1,6 @@
 package com.fitstore.auth.dto.request;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
@@ -10,6 +11,6 @@ public record DireccionRequest(
         @NotBlank(message = "Ponle un nombre a la dirección") @Size(max = 40, message = "Máximo 40 caracteres") String alias,
         @NotNull(message = Validaciones.MENSAJE_UBIGEO) @Pattern(regexp = Validaciones.UBIGEO, message = Validaciones.MENSAJE_UBIGEO) String ubigeo,
         @NotBlank(message = "Ingresa la dirección") @Size(min = 5, max = 200, message = "Debe tener entre 5 y 200 caracteres") String direccion,
-        @Size(max = 200, message = "Máximo 200 caracteres") String referencia,
-        @Pattern(regexp = Validaciones.CELULAR, message = Validaciones.MENSAJE_CELULAR) String telefonoContacto) {
+        @Schema(nullable = true) @Size(max = 200, message = "Máximo 200 caracteres") String referencia,
+        @Schema(nullable = true) @Pattern(regexp = Validaciones.CELULAR, message = Validaciones.MENSAJE_CELULAR) String telefonoContacto) {
 }

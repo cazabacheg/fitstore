@@ -15,10 +15,12 @@ import com.fitstore.auth.service.PasswordService;
 import com.fitstore.common.api.ApiResponse;
 import com.fitstore.common.security.UsuarioActual;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import jakarta.validation.Valid;
 import java.util.List;
 import java.util.UUID;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -30,11 +32,13 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 /** Cuenta propia del cliente: perfil, contraseña y direcciones. El id sale siempre del token, nunca de la URL. */
 @RestController
-@RequestMapping("/api/v1/clientes/me")
+@SecurityRequirement(name = "bearerAuth")
+@RequestMapping(value = "/api/v1/clientes/me", produces = MediaType.APPLICATION_JSON_VALUE)
 @SoloCliente
 public class ClienteController {
 
@@ -83,6 +87,7 @@ public class ClienteController {
     }
 
     @PostMapping("/direcciones")
+    @ResponseStatus(HttpStatus.CREATED)
     @Operation(operationId = "crearDireccion", summary = "Crear una dirección")
     public ResponseEntity<ApiResponse<DireccionResponse>> crearDireccion(Authentication autenticacion,
             @Valid @RequestBody DireccionRequest solicitud) {

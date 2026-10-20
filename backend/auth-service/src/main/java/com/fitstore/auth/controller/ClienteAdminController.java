@@ -9,6 +9,7 @@ import com.fitstore.auth.service.Paginacion;
 import com.fitstore.common.api.ApiResponse;
 import com.fitstore.common.api.PaginaResponse;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
@@ -16,13 +17,15 @@ import org.springframework.data.domain.Sort;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 /** Backoffice: consulta de clientes (OPERADOR y ADMIN) y bloqueo por fraude o abuso (ADMIN). */
 @RestController
-@RequestMapping("/api/v1/clientes")
+@SecurityRequirement(name = "bearerAuth")
+@RequestMapping(value = "/api/v1/clientes", produces = MediaType.APPLICATION_JSON_VALUE)
 public class ClienteAdminController {
 
     private static final Set<String> ORDENABLES = Set.of("nombres", "apellidos", "email", "dni", "activo", "creadoEn");

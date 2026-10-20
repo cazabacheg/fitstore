@@ -20,12 +20,14 @@ import com.fitstore.auth.service.StaffService;
 import com.fitstore.common.api.ApiResponse;
 import com.fitstore.common.api.PaginaResponse;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import jakarta.validation.Valid;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -37,11 +39,13 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 /** Backoffice: cuenta propia del staff y administración del personal (ADMIN). */
 @RestController
-@RequestMapping("/api/v1/staff")
+@SecurityRequirement(name = "bearerAuth")
+@RequestMapping(value = "/api/v1/staff", produces = MediaType.APPLICATION_JSON_VALUE)
 public class StaffController {
 
     private static final Set<String> ORDENABLES = Set.of("nombres", "apellidos", "email", "rol", "creadoEn", "ultimoLoginEn");
@@ -98,6 +102,7 @@ public class StaffController {
     }
 
     @PostMapping
+    @ResponseStatus(HttpStatus.CREATED)
     @SoloAdmin
     @Operation(operationId = "invitarStaff", summary = "Invitar a un miembro del staff")
     public ResponseEntity<ApiResponse<StaffResponse>> invitar(Authentication autenticacion,

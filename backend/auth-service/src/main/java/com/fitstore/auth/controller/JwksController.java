@@ -7,6 +7,7 @@ import com.nimbusds.jose.jwk.RSAKey;
 import io.swagger.v3.oas.annotations.Operation;
 import java.util.List;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -21,7 +22,7 @@ public class JwksController {
         this.claves = claves;
     }
 
-    @GetMapping("/.well-known/jwks.json")
+    @GetMapping(value = "/.well-known/jwks.json", produces = MediaType.APPLICATION_JSON_VALUE)
     @Operation(operationId = "obtenerJwks", summary = "Clave pública (JWKS)")
     public ResponseEntity<JwksResponse> jwks() {
         List<ClaveJwkResponse> publicas = claves.jwkSet().getKeys().stream()

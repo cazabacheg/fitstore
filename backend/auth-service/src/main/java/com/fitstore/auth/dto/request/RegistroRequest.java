@@ -1,5 +1,6 @@
 package com.fitstore.auth.dto.request;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.AssertTrue;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.Min;
@@ -19,8 +20,8 @@ public record RegistroRequest(
         @NotNull(message = Validaciones.MENSAJE_DNI) @Pattern(regexp = Validaciones.DNI, message = Validaciones.MENSAJE_DNI) String dni,
         @NotNull(message = Validaciones.MENSAJE_CELULAR)
         @Pattern(regexp = Validaciones.CELULAR, message = Validaciones.MENSAJE_CELULAR) String telefono,
-        @AssertTrue(message = "Debes aceptar los términos y condiciones") boolean aceptaTerminos,
-        @AssertTrue(message = "Debes aceptar la política de privacidad") boolean aceptaPrivacidad,
+        @AssertTrue(message = "Debes aceptar los términos y condiciones") @Schema(allowableValues = "true") boolean aceptaTerminos,
+        @AssertTrue(message = "Debes aceptar la política de privacidad") @Schema(allowableValues = "true") boolean aceptaPrivacidad,
         @NotNull(message = "Falta la versión de los términos") @Min(value = 1, message = "Versión inválida") Integer versionTerminos,
         @NotNull(message = "Falta la versión de la política de privacidad") @Min(value = 1, message = "Versión inválida") Integer versionPrivacidad) {
 }
