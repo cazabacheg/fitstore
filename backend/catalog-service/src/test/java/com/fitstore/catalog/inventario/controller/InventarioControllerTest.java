@@ -50,6 +50,7 @@ class InventarioControllerTest extends ApiBase {
     }
 
     private int cuantasAlertas(long varianteId) {
+        em.flush(); // el outbox se guarda con JPA: se manda a la base antes de leer con SQL
         return jdbc.queryForObject("SELECT count(*) FROM outbox_evento WHERE tipo = 'StockBajo' AND agregado_id = ?",
                 Integer.class, String.valueOf(varianteId));
     }
@@ -189,6 +190,7 @@ class InventarioControllerTest extends ApiBase {
 
         ajuste(v.getId(), -2, "Venta en tienda").andExpect(status().isCreated());
         assertThat(cuantasAlertas(v.getId())).isEqualTo(1);
+        em.flush();
         String payload = jdbc.queryForObject("SELECT payload::text FROM outbox_evento WHERE tipo = 'StockBajo' AND agregado_id = ?",
                 String.class, String.valueOf(v.getId()));
         assertThat(payload).contains("\"sku\"", "\"disponible\"").contains("\"disponible\": 4").contains("\"minimo\": 5")
@@ -264,6 +266,7 @@ class InventarioControllerTest extends ApiBase {
         // el nuevo mínimo por defecto (8) se usa en el cruce de umbral
         ajuste(v.getId(), -2, "Baja a 7").andExpect(status().isCreated());
         assertThat(cuantasAlertas(v.getId())).isEqualTo(1);
+        em.flush();
         assertThat(jdbc.queryForObject("SELECT payload->>'minimo' FROM outbox_evento WHERE tipo = 'StockBajo' AND agregado_id = ?",
                 String.class, String.valueOf(v.getId()))).isEqualTo("8");
 

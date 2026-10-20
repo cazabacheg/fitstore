@@ -12,4 +12,7 @@ public interface MovimientoStockRepository extends JpaRepository<MovimientoStock
     Page<MovimientoStock> findByVarianteIdOrderByCreadoEnDesc(Long varianteId, Pageable pageable);
 
     boolean existsByVarianteIdIn(Collection<Long> varianteIds);
+
+    /** Kardex con desempate por id: movimientos del mismo instante salen del último al primero. */
+    Page<MovimientoStock> findByVarianteIdOrderByCreadoEnDescIdDesc(Long varianteId, Pageable pageable);
 }
