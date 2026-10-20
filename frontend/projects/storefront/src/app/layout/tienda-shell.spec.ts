@@ -1,11 +1,17 @@
-import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { provideZonelessChangeDetection } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { Router, provideRouter } from '@angular/router';
 import { RouterTestingHarness } from '@angular/router/testing';
 import { readFileSync } from 'node:fs';
-import { CarritoContador, EstadoServicio, TemaService, ToastService, provideSesionConfig } from 'shared';
+import {
+  CarritoContador,
+  EstadoServicio,
+  TemaService,
+  ToastService,
+  provideFitstoreHttp,
+  provideSesionConfig,
+} from 'shared';
 import type { settingsApi } from 'shared';
 import { crearRutas } from '../app.routes';
 import { BarraAnuncio } from './barra-anuncio';
@@ -18,7 +24,11 @@ const nodo = (id: number, nombre: string, slug: string, hijas = 0) => ({
   id,
   nombre,
   slug,
-  hijas: Array.from({ length: hijas }, (_, i) => ({ id: id * 100 + i, nombre: `Sub ${nombre} ${i}`, slug: `${slug}-${i}` })),
+  hijas: Array.from({ length: hijas }, (_, i) => ({
+    id: id * 100 + i,
+    nombre: `Sub ${nombre} ${i}`,
+    slug: `${slug}-${i}`,
+  })),
 });
 const CATEGORIAS = [
   nodo(1, 'Nueva colección', 'nueva-coleccion'),
@@ -55,7 +65,11 @@ const CONFIG = {
     instagramUrl: 'https://instagram.com/fitstore',
     facebookUrl: 'https://facebook.com/fitstore',
     tiktokUrl: null,
-    tiendaFisica: { direccion: 'Galería Gamarra, Jr. Gamarra 700, tienda 210', ubigeo: '150132', ubigeoNombre: 'La Victoria, Lima, Lima' },
+    tiendaFisica: {
+      direccion: 'Galería Gamarra, Jr. Gamarra 700, tienda 210',
+      ubigeo: '150132',
+      ubigeoNombre: 'La Victoria, Lima, Lima',
+    },
     imagenesLanding: [],
   },
   parametros: {
@@ -75,11 +89,16 @@ interface Opciones {
   config?: settingsApi.ConfiguracionPublica | null;
 }
 
-async function abrir({ url = '/', categorias = CATEGORIAS, falloCategorias = false, config = CONFIG }: Opciones = {}) {
+async function abrir({
+  url = '/',
+  categorias = CATEGORIAS,
+  falloCategorias = false,
+  config = CONFIG,
+}: Opciones = {}) {
   TestBed.configureTestingModule({
     providers: [
       provideZonelessChangeDetection(),
-      provideHttpClient(),
+      provideFitstoreHttp({ carrito: true }),
       provideHttpClientTesting(),
       provideRouter(crearRutas(true)),
       provideSesionConfig({ tipo: 'CLIENTE', rutaLogin: '/ingresar', rutaSinPermiso: '/403' }),
@@ -96,7 +115,10 @@ async function abrir({ url = '/', categorias = CATEGORIAS, falloCategorias = fal
   await harness.navigateByUrl(url);
   const peticion = ctrl.expectOne('/api/v1/categorias');
   if (falloCategorias) {
-    peticion.flush({ success: false, mensaje: 'Error interno', errores: [] }, { status: 500, statusText: 'Server Error' });
+    peticion.flush(
+      { success: false, mensaje: 'Error interno', errores: [] },
+      { status: 500, statusText: 'Server Error' },
+    );
   } else {
     peticion.flush(ok(categorias));
   }
@@ -109,7 +131,9 @@ async function abrir({ url = '/', categorias = CATEGORIAS, falloCategorias = fal
   return { harness, ctrl, el, estabilizar, router: TestBed.inject(Router) };
 }
 
-const enlacesNav = (el: HTMLElement) => [...el.querySelectorAll<HTMLAnchorElement>('nav[aria-label="Categorías"] a')];
+const enlacesNav = (el: HTMLElement) => [
+  ...el.querySelectorAll<HTMLAnchorElement>('nav[aria-label="Categorías"] a'),
+];
 const escribir = async (el: HTMLElement, texto: string, tecla = 'Enter') => {
   const campo = el.querySelector('input[type="search"]') as HTMLInputElement;
   campo.value = texto;
@@ -120,7 +144,9 @@ const escribir = async (el: HTMLElement, texto: string, tecla = 'Enter') => {
 describe('TiendaShell: cabecera', () => {
   it('CA-0b-20 muestra logo, categorías, buscador, cuenta y carrito con contador', async () => {
     const { el } = await abrir();
-    expect(el.querySelector('header a[href="/"] img')!.getAttribute('src')).toBe('https://cdn.fitstore.pe/logo-claro.png');
+    expect(el.querySelector('header a[href="/"] img')!.getAttribute('src')).toBe(
+      'https://cdn.fitstore.pe/logo-claro.png',
+    );
     expect(enlacesNav(el).length).toBeGreaterThan(0);
     expect(el.querySelector('header input[type="search"]')).not.toBeNull();
     expect(el.querySelector('header a[aria-label="Mi cuenta"]')).not.toBeNull();
@@ -130,7 +156,12 @@ describe('TiendaShell: cabecera', () => {
   it('CA-0b-20 muestra hasta 4 categorías raíz, en el orden de /categorias', async () => {
     const { el } = await abrir();
     const enlaces = enlacesNav(el);
-    expect(enlaces.map((a) => a.textContent?.trim())).toEqual(['Nueva colección', 'Leggings', 'Tops', 'Casacas']);
+    expect(enlaces.map((a) => a.textContent?.trim())).toEqual([
+      'Nueva colección',
+      'Leggings',
+      'Tops',
+      'Casacas',
+    ]);
     expect(enlaces[1].getAttribute('href')).toBe('/categoria/leggings');
   });
 
@@ -176,7 +207,7 @@ describe('TiendaShell: cabecera', () => {
   it('CA-0b-20c al pasar el mouse o el foco las demás se atenúan al 40 % (regla del menú)', () => {
     expect(estilos).toMatch(/\.fs-nav:hover a,\s*\.fs-nav:focus-within a\s*\{\s*opacity:\s*0\.4/);
     expect(estilos).toMatch(/\.fs-nav a:hover,\s*\.fs-nav a:focus-visible\s*\{\s*opacity:\s*1/);
-    expect(estilos).toMatch(/\.fs-nav a\[aria-current="page"\]\s*\{\s*border-bottom-color/);
+    expect(estilos).toMatch(/\.fs-nav a\[aria-current=["']page["']\]\s*\{\s*border-bottom-color/);
   });
 
   it('CA-0b-22 escribir en el buscador y presionar Enter navega a /productos?q=', async () => {
@@ -227,16 +258,32 @@ describe('TiendaShell: menú móvil (390 px)', () => {
     await estabilizar();
     const panel = el.querySelector('.fs-menu-movil')!;
     const textos = [...panel.querySelectorAll('a')].map((a) => a.textContent?.trim());
-    expect(textos).toEqual(expect.arrayContaining(['Nueva colección', 'Leggings', 'Tops', 'Casacas', 'Shorts', 'Accesorios', 'Mi cuenta']));
+    expect(textos).toEqual(
+      expect.arrayContaining([
+        'Nueva colección',
+        'Leggings',
+        'Tops',
+        'Casacas',
+        'Shorts',
+        'Accesorios',
+        'Mi cuenta',
+      ]),
+    );
     expect(textos.some((t) => t?.startsWith('Sub '))).toBe(false);
-    expect((el.querySelector('button[aria-label="Abrir menú"]') as HTMLButtonElement).getAttribute('aria-expanded')).toBe('true');
+    expect(
+      (el.querySelector('button[aria-label="Abrir menú"]') as HTMLButtonElement).getAttribute(
+        'aria-expanded',
+      ),
+    ).toBe('true');
   });
 
   it('CA-0b-21 elegir una categoría navega y cierra el menú', async () => {
     const { el, estabilizar, router } = await abrir();
     (el.querySelector('button[aria-label="Abrir menú"]') as HTMLButtonElement).click();
     await estabilizar();
-    const enlace = [...el.querySelectorAll<HTMLAnchorElement>('.fs-menu-movil a')].find((a) => a.textContent?.includes('Shorts'))!;
+    const enlace = [...el.querySelectorAll<HTMLAnchorElement>('.fs-menu-movil a')].find((a) =>
+      a.textContent?.includes('Shorts'),
+    )!;
     enlace.click();
     await estabilizar();
     await estabilizar();
@@ -248,21 +295,31 @@ describe('TiendaShell: menú móvil (390 px)', () => {
     const { el, estabilizar } = await abrir();
     (el.querySelector('button[aria-label="Abrir menú"]') as HTMLButtonElement).click();
     await estabilizar();
-    el.querySelector('.fs-menu-movil')!.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+    el.querySelector('.fs-menu-movil')!.dispatchEvent(
+      new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }),
+    );
     await estabilizar();
     expect(el.querySelector('.fs-menu-movil')).toBeNull();
     (el.querySelector('button[aria-label="Abrir menú"]') as HTMLButtonElement).click();
     await estabilizar();
-    (el.querySelector('.fs-menu-movil button[aria-label="Cerrar menú"]') as HTMLButtonElement).click();
+    (
+      el.querySelector('.fs-menu-movil button[aria-label="Cerrar menú"]') as HTMLButtonElement
+    ).click();
     await estabilizar();
     expect(el.querySelector('.fs-menu-movil')).toBeNull();
   });
 
   it('CA-0b-21 en móvil las categorías y la cuenta salen de la barra y no hay scroll horizontal', async () => {
     const { el } = await abrir();
-    expect(el.querySelector('nav[aria-label="Categorías"]')!.classList).toContain('fs-solo-escritorio');
-    expect(el.querySelector('header a[aria-label="Mi cuenta"]')!.classList).toContain('fs-solo-escritorio');
-    expect(estilos).toMatch(/@media \(max-width: 720px\)[\s\S]*\.fs-solo-escritorio\s*\{\s*display:\s*none/);
+    expect(el.querySelector('nav[aria-label="Categorías"]')!.classList).toContain(
+      'fs-solo-escritorio',
+    );
+    expect(el.querySelector('header a[aria-label="Mi cuenta"]')!.classList).toContain(
+      'fs-solo-escritorio',
+    );
+    expect(estilos).toMatch(
+      /@media \(max-width: 720px\)[\s\S]*\.fs-solo-escritorio\s*\{\s*display:\s*none/,
+    );
     expect(estilos).toMatch(/\.fs-menu-movil__panel\s*\{[^}]*overflow-x:\s*hidden/);
     expect(estilos).toMatch(/\.fs-pagina\s*\{[^}]*box-sizing:\s*border-box/);
   });
@@ -281,26 +338,42 @@ describe('TiendaShell: pie y contenido', () => {
     expect(pie.querySelector('a[href="https://instagram.com/fitstore"]')).not.toBeNull();
     expect(pie.querySelector('a[href="https://facebook.com/fitstore"]')).not.toBeNull();
     expect(pie.querySelector('a[href*="tiktok"]')).toBeNull();
-    const libro = [...pie.querySelectorAll('a')].find((a) => a.textContent?.includes('Libro de Reclamaciones'))!;
+    const libro = [...pie.querySelectorAll('a')].find((a) =>
+      a.textContent?.includes('Libro de Reclamaciones'),
+    )!;
     expect(libro.getAttribute('href')).toBe('/libro-de-reclamaciones');
-    const politicas = [...pie.querySelectorAll<HTMLAnchorElement>('a[href^="/politicas/"]')].map((a) => a.getAttribute('href'));
-    expect(politicas).toEqual(['/politicas/envios', '/politicas/cambios-devoluciones', '/politicas/terminos', '/politicas/privacidad']);
+    const politicas = [...pie.querySelectorAll<HTMLAnchorElement>('a[href^="/politicas/"]')].map(
+      (a) => a.getAttribute('href'),
+    );
+    expect(politicas).toEqual([
+      '/politicas/envios',
+      '/politicas/cambios-devoluciones',
+      '/politicas/terminos',
+      '/politicas/privacidad',
+    ]);
     expect(pie.textContent).not.toContain('Guía de tallas');
   });
 
   it('CA-0b-20 el Libro de Reclamaciones está siempre, aunque no haya configuración', async () => {
     const { el } = await abrir({ config: null });
-    const libro = [...el.querySelectorAll('footer a')].find((a) => a.textContent?.includes('Libro de Reclamaciones'));
+    const libro = [...el.querySelectorAll('footer a')].find((a) =>
+      a.textContent?.includes('Libro de Reclamaciones'),
+    );
     expect(libro?.getAttribute('href')).toBe('/libro-de-reclamaciones');
   });
 
   it('CA-0b-20 la leyenda de pagos se arma con los medios habilitados', async () => {
     const { el } = await abrir();
-    expect(el.querySelector('footer')!.textContent).toContain('Pagos seguros con Culqi y Mercado Pago');
+    expect(el.querySelector('footer')!.textContent).toContain(
+      'Pagos seguros con Culqi y Mercado Pago',
+    );
   });
 
   it('CA-0b-20 sin medios de pago la leyenda se omite', async () => {
-    const sin = { ...CONFIG, parametros: { ...CONFIG.parametros, metodosPago: [] } } as unknown as settingsApi.ConfiguracionPublica;
+    const sin = {
+      ...CONFIG,
+      parametros: { ...CONFIG.parametros, metodosPago: [] },
+    } as unknown as settingsApi.ConfiguracionPublica;
     const { el } = await abrir({ config: sin });
     expect(el.querySelector('footer')!.textContent).not.toContain('Pagos seguros');
   });
@@ -309,7 +382,9 @@ describe('TiendaShell: pie y contenido', () => {
     const { el } = await abrir();
     expect(el.querySelector('main')!.classList).toContain('fs-contenido');
     expect(estilos).toMatch(/\.fs-contenido\s*\{[^}]*min-height:\s*calc\(100dvh - 80px\)/);
-    expect(estilos).toMatch(/@media \(max-width: 720px\)[\s\S]*\.fs-contenido\s*\{[^}]*min-height:\s*calc\(100dvh - 64px\)/);
+    expect(estilos).toMatch(
+      /@media \(max-width: 720px\)[\s\S]*\.fs-contenido\s*\{[^}]*min-height:\s*calc\(100dvh - 64px\)/,
+    );
   });
 
   it('CA-0b-20b el pie va después del contenido, al final del documento', async () => {

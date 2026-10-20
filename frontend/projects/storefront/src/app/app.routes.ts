@@ -1,6 +1,7 @@
 import { isDevMode } from '@angular/core';
 import { Routes } from '@angular/router';
 import { autenticadoGuard } from 'shared';
+import { TiendaShell } from './layout/tienda-shell';
 import { Pagina404 } from './ui/estados/pagina-404';
 
 /**
@@ -8,7 +9,7 @@ import { Pagina404 } from './ui/estados/pagina-404';
  * Las que exigen sesión de CLIENTE van con `autenticadoGuard` (→ /ingresar?returnUrl=). `/_ui` solo en desarrollo.
  */
 export function crearRutas(dev: boolean): Routes {
-  return [
+  const hijas: Routes = [
     {
       path: '',
       pathMatch: 'full',
@@ -63,6 +64,7 @@ export function crearRutas(dev: boolean): Routes {
       : []),
     { path: '**', component: Pagina404 },
   ];
+  return [{ path: '', component: TiendaShell, children: hijas }];
 }
 
 export const routes: Routes = crearRutas(isDevMode());

@@ -727,3 +727,129 @@ textarea.fs-input {
     height: 64px;
   }
 }
+
+/* Layout de la tienda: contenido, logo, buscador, contador y pie */
+.fs-contenido {
+  min-height: calc(100dvh - 80px);
+}
+.fs-logo {
+  color: var(--fs-color-texto);
+  text-decoration: none;
+  font-size: 20px;
+  line-height: 24px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+}
+.fs-logo img {
+  display: block;
+  max-height: 40px;
+  max-width: 160px;
+  width: auto;
+}
+.fs-cabecera {
+  position: relative;
+  background: var(--fs-color-superficie);
+  color: var(--fs-color-texto);
+  border-bottom: 1px solid var(--fs-color-linea);
+  font-family: var(--fs-font-marca);
+}
+.fs-cabecera__acciones {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+}
+.fs-busqueda {
+  width: 240px;
+}
+.fs-contador {
+  position: absolute;
+  top: 4px;
+  right: 2px;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  box-sizing: border-box;
+  border-radius: var(--radio-pill);
+  background: var(--fs-color-texto);
+  color: var(--fs-color-superficie);
+  font-size: 10px;
+  line-height: 16px;
+  font-weight: 700;
+  text-align: center;
+}
+.fs-pie {
+  background: var(--fs-color-secundario);
+  color: var(--fs-color-en-secundario);
+  font-family: var(--fs-font-marca);
+  font-size: 14px;
+  line-height: 22px;
+}
+.fs-pie a {
+  color: var(--fs-color-en-secundario);
+}
+.fs-pie__col {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+.fs-pie__marca {
+  font-size: 20px;
+  line-height: 24px;
+  font-weight: 700;
+}
+.fs-pie__titulo {
+  font-size: 12px;
+  line-height: 16px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  opacity: 0.7;
+}
+.fs-pie__suave {
+  opacity: 0.8;
+}
+.fs-pie__libro {
+  display: inline-flex;
+  gap: 6px;
+  align-items: center;
+}
+.fs-pie__redes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+.fs-pie__base {
+  padding-block: 16px;
+  border-top: 1px solid rgb(from var(--fs-color-en-secundario) r g b / 0.14);
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  font-size: 13px;
+  opacity: 0.75;
+}
+@media (max-width: 720px) {
+  .fs-contenido {
+    min-height: calc(100dvh - 64px);
+  }
+  .fs-busqueda {
+    display: none;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    width: auto;
+    padding: 8px 16px;
+    background: var(--fs-color-superficie);
+    border-bottom: 1px solid var(--fs-color-linea);
+    z-index: 20;
+  }
+  .fs-busqueda--abierta {
+    display: block;
+  }
+}
