@@ -6,6 +6,8 @@ import java.time.Instant;
 import java.time.ZoneId;
 import java.util.List;
 import java.util.Set;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
 import org.junit.jupiter.api.BeforeEach;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -39,6 +41,7 @@ public abstract class PruebaApi {
     @Autowired protected JdbcTemplate jdbc;
     @Autowired protected StringRedisTemplate redis;
     @Autowired protected AlmacenEnMemoria almacen;
+    @PersistenceContext protected EntityManager em;
 
     @DynamicPropertySource
     static void propiedades(DynamicPropertyRegistry registro) {
@@ -66,6 +69,7 @@ public abstract class PruebaApi {
     }
 
     protected List<String> eventosDelTipo(String tipo) {
+        em.flush();
         return jdbc.queryForList("SELECT payload::text FROM outbox_evento WHERE tipo = ? ORDER BY creado_en", String.class,
                 tipo);
     }

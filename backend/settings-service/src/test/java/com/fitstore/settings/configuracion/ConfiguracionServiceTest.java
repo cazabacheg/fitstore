@@ -177,7 +177,7 @@ class ConfiguracionServiceTest extends PruebaApi {
     @DisplayName("CA-3-08 cada guardado sube la versión y devuelve la nueva")
     void cadaGuardadoSubeLaVersion() throws Exception {
         guardar("identidad", identidad(0)).andExpect(jsonPath("$.data.version", is(1)));
-        guardar("tema", tema(1, "#26221D", "#FAF9F7", "#C9B28C")).andExpect(jsonPath("$.data.version", is(2)));
+        guardar("tema", tema(1, "#111111", "#FFFFFF", "#1E3A8A")).andExpect(jsonPath("$.data.version", is(2)));
         guardar("parametros", parametros(2)).andExpect(jsonPath("$.data.version", is(3)));
     }
 
