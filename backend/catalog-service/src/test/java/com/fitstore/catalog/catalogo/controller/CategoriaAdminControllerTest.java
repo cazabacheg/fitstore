@@ -153,7 +153,7 @@ class CategoriaAdminControllerTest extends ApiBase {
         mvc.perform(delete("/api/v1/admin/categorias/" + conHijas).with(admin()))
                 .andExpect(status().isConflict())
                 .andExpect(jsonPath("$.codigo").value("CATEGORIA_EN_USO"))
-                .andExpect(jsonPath("$.mensaje").value(org.hamcrest.Matchers.containsString("desactiv")));
+                .andExpect(jsonPath("$.mensaje").value(org.hamcrest.Matchers.containsString("Desactívala")));
         mvc.perform(delete("/api/v1/admin/categorias/" + conProductos.getId()).with(admin()))
                 .andExpect(status().isConflict())
                 .andExpect(jsonPath("$.codigo").value("CATEGORIA_EN_USO"));
