@@ -1,0 +1,11 @@
+# Alcance de 0a.3 (scripts/fuera-de-alcance.sh): un patrón por línea.
+infra/smoke.sh
+.github/workflows/ci.yml
+.github/workflows/stage.yml
+.github/pull_request_template.md
+scripts/contrato.sh
+contracts/implementados.txt
+.gitleaks.toml
+postman/fitstore-base.postman_collection.json
+postman/local.postman_environment.json
+README.md

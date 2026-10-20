@@ -1,9 +1,10 @@
 # FitStore — Análisis micro: `delivery-service`
 
-> Versión: **v7 (aprobado)** — 2026-10-19. Fuente: [`01-analisis-macro.md`](../01-analisis-macro.md) v15.
+> Versión: **v8 (aprobado)** — 2026-10-19. Fuente: [`01-analisis-macro.md`](../01-analisis-macro.md) v15.
 > Estados: ✅ decidido · 🟡 propuesto · ❓ abierto · 🕓 diferido
 
 **Historial:**
+- v8 (2026-10-20): por la implementación de 0a.2: `entrega.dest_email` (el contrato lo exige en `EntregaActualizada`); la semilla de `V2` usa valores de demostración (S/ 15 / 18 / 25 por zona, Arequipa S/ 18 en 2–3 días, agencias con URL de rastreo de ejemplo).
 - v7 (2026-10-19): ajustes de la etapa de contratos: `PATCH /admin/agencias/{id}/orden` (orden arrastrable del checkout, SPEC-6 CA-6-14); la entrega guarda los `bultos` que llegan en `PedidoListoDespacho`.
 - v6 (2026-10-19): por SPEC-6: **devolución a tienda** (estado final `DEVUELTA` desde `FALLIDA` o `DISPONIBLE_EN_AGENCIA`, motivo obligatorio; D5 actualizada); la cotización informa el nivel de la tarifa aplicada (`nivelTarifa`, `ubigeoTarifa`) para la prueba de tarifas.
 - v5 (2026-10-18): sección 10 aprobada → **documento completo aprobado**.
@@ -124,7 +125,7 @@ classDiagram
 | `tarifa_envio` | `id`, `modalidad` (`DELIVERY_LOCAL`, `AGENCIA`), `ubigeo` (`varchar(6)`), `costo`, `plazo_dias_min`, `plazo_dias_max`, `activa`, auditoría | Único `(modalidad, ubigeo)`; `CHECK ubigeo ~ '^([0-9]{2}|[0-9]{4}|[0-9]{6})$'`; `CHECK` de invariantes 2 y 3 |
 | `agencia` | `id`, `nombre`, `url_seguimiento`, `activa`, `orden` | Único `lower(nombre)` |
 | `repartidor` | `id`, `nombres`, `telefono`, `vehiculo` (`MOTO`, `AUTO`, `BICICLETA`), `placa`, `activo`, auditoría | |
-| `entrega` | `id`, `pedido_id`, `codigo_pedido`, `modalidad`, `estado`; destinatario: `dest_nombres`, `dest_apellidos`, `dest_dni`, `dest_telefono`; dirección: `dir_ubigeo`, `dir_departamento`, `dir_provincia`, `dir_distrito`, `dir_direccion`, `dir_referencia`; `repartidor_id`, `fecha_programada`, `intentos`, `agencia_id`, `codigo_seguimiento`, `clave_recojo`, `resumen_items`, `bultos`, `creado_en`, `actualizado_en`, `version` | Único `pedido_id`; índices `(estado)`, `(fecha_programada, repartidor_id)` |
+| `entrega` | `id`, `pedido_id`, `codigo_pedido`, `modalidad`, `estado`; destinatario: `dest_nombres`, `dest_apellidos`, `dest_dni`, `dest_telefono`, `dest_email` (lo exige `EntregaActualizada.destinatario.email` del contrato); dirección: `dir_ubigeo`, `dir_departamento`, `dir_provincia`, `dir_distrito`, `dir_direccion`, `dir_referencia`; `repartidor_id`, `fecha_programada`, `intentos`, `agencia_id`, `codigo_seguimiento`, `clave_recojo`, `resumen_items`, `bultos`, `creado_en`, `actualizado_en`, `version` | Único `pedido_id`; índices `(estado)`, `(fecha_programada, repartidor_id)` |
 | `entrega_evento` | `id`, `entrega_id`, `estado`, `observacion`, `actor_id`, `creado_en` | Índice `(entrega_id, creado_en)` |
 
 **Comunes:** `outbox_evento` y `evento_procesado` (ADR-009).
