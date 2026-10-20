@@ -1,0 +1,47 @@
+# Integración completa (ADR-021): PR y push a stage, PR a main. Construye las imágenes, levanta el compose completo
+# en el runner (entorno efímero), corre infra/smoke.sh y la colección Postman base con Newman.
+# Las pruebas E2E llegan desde la spec 8; deploy.yml (push a main) lo crea la spec 8.
+name: stage
+
+on:
+  pull_request:
+    branches: [stage, main]
+  push:
+    branches: [stage]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: stage-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  plataforma:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - uses: actions/setup-node@v7.0.0
+        with:
+          node-version: '22'
+      # CA-0a-02, 03, 05, 07, 17, 19: infra/smoke.sh construye las imágenes (docker compose build), levanta el compose
+      # de dev, espera a que todo quede healthy y verifica los criterios de humo. La plataforma sigue arriba para Newman.
+      - name: Humo (smoke.sh)
+        run: |
+          # CA-0a-02
+          infra/smoke.sh
+      # CA-0a-17 La colección base verifica el health del gateway y la documentación de los 7 servicios por el gateway
+      - name: Postman base con Newman 6.2.2
+        run: |
+          # CA-0a-17
+          npx --yes newman@6.2.2 run postman/fitstore-base.postman_collection.json \
+            --environment postman/local.postman_environment.json
+      - name: Registros de los contenedores si algo falló
+        if: failure()
+        run: |
+          docker compose -f infra/docker-compose.yml -f infra/docker-compose.dev.yml ps -a
+          docker compose -f infra/docker-compose.yml -f infra/docker-compose.dev.yml logs --tail 200
+      - name: Bajar la plataforma
+        if: always()
+        run: docker compose -f infra/docker-compose.yml -f infra/docker-compose.dev.yml down -v --remove-orphans
