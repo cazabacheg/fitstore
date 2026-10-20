@@ -18,6 +18,8 @@ export const CLAVE_CACHE_UBIGEO = 'fs_ubigeo_v1';
 export class UbigeoCatalogo {
   private readonly api = inject(UbigeoService);
   private readonly guardado: Record<string, unknown> = this.leer();
+  /** Búsquedas por nombre: solo en memoria (cada texto tecleado no debe quedarse en el navegador). */
+  private readonly busquedas: Record<string, unknown> = {};
   private readonly enCurso = new Map<string, Observable<unknown>>();
 
   departamentos(): Observable<UbigeoItem[]> {
@@ -38,8 +40,10 @@ export class UbigeoCatalogo {
 
   /** Buscador por nombre (sin importar tildes), máximo 20 resultados. */
   buscarDistritos(texto: string): Observable<DistritoEncontrado[]> {
-    return this.consultar(`buscar:${texto.trim().toLowerCase()}`, () =>
-      this.api.buscarDistritos(texto.trim()),
+    return this.consultar(
+      `buscar:${texto.trim().toLowerCase()}`,
+      () => this.api.buscarDistritos(texto.trim()),
+      this.busquedas,
     );
   }
 
@@ -48,17 +52,22 @@ export class UbigeoCatalogo {
     return this.consultar(`nombre:${codigo}`, () => this.api.obtenerUbigeo(codigo));
   }
 
-  private consultar<T>(clave: string, pedir: () => Observable<{ data?: T }>): Observable<T> {
-    if (clave in this.guardado) return of(this.guardado[clave] as T);
+  /** Consulta con caché: por defecto en el navegador (`guardado`); las búsquedas pasan su caché en memoria. */
+  private consultar<T>(
+    clave: string,
+    pedir: () => Observable<{ data?: T }>,
+    cache: Record<string, unknown> = this.guardado,
+  ): Observable<T> {
+    if (clave in cache) return of(cache[clave] as T);
     let pendiente = this.enCurso.get(clave) as Observable<T> | undefined;
     if (!pendiente) {
       pendiente = pedir().pipe(
         map((respuesta) => respuesta.data as T),
         tap({
           next: (datos) => {
-            this.guardado[clave] = datos;
+            cache[clave] = datos;
             this.enCurso.delete(clave);
-            this.escribir();
+            if (cache === this.guardado) this.escribir();
           },
           error: () => this.enCurso.delete(clave), // un error no se guarda: la próxima consulta reintenta
         }),
