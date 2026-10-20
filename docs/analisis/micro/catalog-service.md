@@ -1,9 +1,10 @@
 # FitStore — Análisis micro: `catalog-service`
 
-> Versión: **v8 (aprobado)** — 2026-10-19. Fuente: [`01-analisis-macro.md`](../01-analisis-macro.md) v11.
+> Versión: **v9 (aprobado)** — 2026-10-19. Fuente: [`01-analisis-macro.md`](../01-analisis-macro.md) v11.
 > Estados: ✅ decidido · 🟡 propuesto · ❓ abierto · 🕓 diferido
 
 **Historial:**
+- v9 (2026-10-20): por la implementación de 0a.2: payload de `StockNoConfirmado` alineado con el contrato; hex de los colores semilla; índices únicos con `NULLS NOT DISTINCT` para las raíces de categoría y los tramos globales; `configuracion_descuento` sembrada con `activo = true`.
 - v8 (2026-10-19): ajustes de la etapa de contratos: la cotización pública no expone el stock exacto (estado por línea; `disponible` solo si no alcanza); el kardex devuelve también el stock actual.
 - v7 (2026-10-19): revisión de coherencia: rangos de la configuración de inventario (stock mínimo por defecto 0–999, margen de reserva 0–30 min, como valida la SPEC-3 CA-3-38); se edita en la pestaña Parámetros de la configuración de tienda (SPEC-3 S2). Las dos entradas sin número de versión del 2026-10-18 corresponden a cambios de la SPEC-2 sobre la v6.
 - (2026-10-18, por SPEC-2) Cada imagen pertenece a un color (D3) y publicar exige una imagen por color activo (invariante 4); color maestro "Variado"; carga masiva de productos por CSV/XLSX (4.4.1); ejemplo de categorías renombrado.
@@ -432,11 +433,11 @@ catalog **no consume eventos de settings**: el stock mínimo por defecto es suyo
 
 **Correo de alerta de `StockNoConfirmado`** (lo envía notification a los administradores; los destinatarios se definen en el micro de notification):
 
-- **Asunto:** `⚠ Pedido {codigoPedido} pagado sin stock disponible`
+- **Asunto:** `Pedido {codigoPedido} pagado sin stock disponible` (sin emoji, como todos los correos)
 - **Cuerpo:** el pago del pedido se confirmó cuando su reserva ya había vencido y no hay stock para algunas prendas. Tabla con `SKU · producto · talla · color · solicitado · disponible`. Datos del cliente (nombre, correo, teléfono) y monto pagado.
 - **Acciones sugeridas:** reponer el stock y continuar el pedido, o cancelarlo desde el backoffice (se reembolsa automáticamente).
 - **Botón:** "Ver pedido en el backoffice".
-- Para armarlo, el payload del evento se amplía a: `pedidoId`, `codigoPedido`, `faltantes[{sku, producto, talla, color, solicitado, disponible}]`. Los datos del cliente y el monto los toma notification del `PedidoCreado` que ya recibió.
+- El payload es el del contrato (`SobreStockNoConfirmado`): `pedidoId`, `faltantes[{varianteId, sku, solicitado, disponible}]`. El código del pedido, los datos del cliente, el producto, la talla y el color los toma notification de su copia `pedido_resumen` (del `PedidoCreado` que ya recibió).
 
 ---
 
@@ -655,4 +656,4 @@ fitstore:
 
 - **Política global de descuentos:** 3 un. → 5 %, 6 un. → 10 %, 12 un. → 15 % (editable: agregar, cambiar o quitar tramos).
 - **Tallas:** `XS, S, M, L, XL, XXL`.
-- **Colores:** negro, blanco, gris, azul marino, azul, rojo, rosado, verde, morado, beige.
+- **Colores:** negro `#1D1D1F`, blanco `#FFFFFF`, gris `#9A9A9A`, azul marino `#1F2A44`, azul `#2563EB`, rojo `#DC2626`, rosado `#F472B6`, verde `#16A34A`, morado `#7C3AED`, beige `#D8C7A8` (en `V2__semilla.sql`; "Variado" va en los datos de demostración de la SPEC-2).

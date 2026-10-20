@@ -8,15 +8,15 @@
 | Paso | Agente | Rama | Estado | Ronda | PR | Bloqueos / notas |
 |---|---|---|---|---|---|---|
 | 0a.1 Monorepo, común e infraestructura | Sonnet | `spec/0a-1-plataforma` | ✅ integrada | 2 | #17 | — |
-| **CK1** Checkpoint de base (revisión exhaustiva del lead) | lead | `fix/ck1-base` | 👀 en revisión del autor | — | — | [Informe](checkpoints/CK1.md): 1 bloqueante (H1) y 4 menores; corrección en curso |
-| 0a.2 auth | — | `spec/0a-2-auth` | ⏳ | — | — | Tras CK1 |
-| 0a.2 catalog | — | `spec/0a-2-catalog` | ⏳ | — | — | Tras CK1 |
-| 0a.2 settings | — | `spec/0a-2-settings` | ⏳ | — | — | Tras CK1 |
-| 0a.2 order | — | `spec/0a-2-order` | ⏳ | — | — | Tras CK1 |
-| 0a.2 payment | — | `spec/0a-2-payment` | ⏳ | — | — | Tras CK1 |
-| 0a.2 delivery | — | `spec/0a-2-delivery` | ⏳ | — | — | Tras CK1 |
-| 0a.2 notification | — | `spec/0a-2-notification` | ⏳ | — | — | Tras CK1 |
-| 0a.3 CI, humo y Postman | — | `spec/0a-3-ci` | ⏳ | — | — | Tras los 7 esqueletos |
+| **CK1** Checkpoint de base (revisión exhaustiva del lead) | lead | `fix/ck1-base` | ✅ aprobado | — | #18, #19 | [Informe](checkpoints/CK1.md) |
+| 0a.2 auth | Sonnet | `spec/0a-2-auth` | ✅ integrada | 1 | #20 | — |
+| 0a.2 catalog | Sonnet | `spec/0a-2-catalog` | ✅ integrada | 1 | #22 | — |
+| 0a.2 settings | Sonnet | `spec/0a-2-settings` | ✅ integrada | 1 | #21 | — |
+| 0a.2 order | Sonnet | `spec/0a-2-order` | ✅ integrada | 1 | #23 | — |
+| 0a.2 payment | Sonnet | `spec/0a-2-payment` | ✅ integrada | 1 | #24 | — |
+| 0a.2 delivery | Sonnet | `spec/0a-2-delivery` | ✅ integrada | 1 | #25 | — |
+| 0a.2 notification | Sonnet | `spec/0a-2-notification` | ✅ integrada | 2 | #26 | — |
+| 0a.3 CI, humo y Postman | — | `spec/0a-3-ci` | 📝 brief listo | — | — | Esperando la aprobación del autor para lanzar |
 
 ## Próximas olas
 
@@ -32,6 +32,7 @@
 
 | Fecha | Evento |
 |---|---|
+| 2026-10-20 | Los 7 esqueletos de 0a.2 integrados (#20–#26; notification en 2 rondas, el resto en 1). Brief de 0a.3 listo. |
 | 2026-10-19 | Estrategia aprobada (v3). Brief de 0a.1 listo. |
 | 2026-10-19 | 0a.1 integrada (#17, 2 rondas). CK1: informe con H1–H5; brief de 0a.2 completo. |
 | 2026-10-19 | 0a.1 lanzado; fase de lectura revisada (15 dudas resueltas; CA-0a-07 y 18 vuelven a 0a.3 según la spec). |

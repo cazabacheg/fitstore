@@ -1,9 +1,10 @@
 # FitStore — Análisis micro: `settings-service`
 
-> Versión: **v10 (aprobado)** — 2026-10-19. Fuente: [`01-analisis-macro.md`](../01-analisis-macro.md) v12.
+> Versión: **v11 (aprobado)** — 2026-10-19. Fuente: [`01-analisis-macro.md`](../01-analisis-macro.md) v12.
 > Estados: ✅ decidido · 🟡 propuesto · ❓ abierto · 🕓 diferido
 
 **Historial:**
+- v11 (2026-10-20): por la implementación de 0a.2: correlativo de reclamos con `INSERT … ON CONFLICT` (3.1 igual a 10.2); fuente y conteos del ubigeo; `f_unaccent` IMMUTABLE para el índice trigram; configuración inicial con los datos de la marca demo (`V3`).
 - v10 (2026-10-19): etapa de diseño: el tema configura **solo los cinco colores**; se quitan `tipografia` y `radioBordes` (D6 reescrita, invariante 2, tabla y configuración). Invariante 1: colores por defecto de la plantilla FitStore.
 - v9 (2026-10-19): ajustes de la etapa de contratos: la bandeja de reclamos busca por número, nombre o documento (SPEC-3 P-3-06).
 - v8 (2026-10-18): nuevo parámetro público **`diasReembolsoPostventa`** (0 a 365, 0 = sin límite, por defecto 30), decidido en la SPEC-5. Lo usa order.
@@ -191,7 +192,7 @@ classDiagram
 | Tabla | Columnas principales | Restricciones |
 |---|---|---|
 | `reclamo` | `id`, `numero` (`RC-2026-000001`), `anio`, `correlativo`, `tipo` (`RECLAMO`/`QUEJA`), `estado`; consumidor: `nombres`, `apellidos`, `tipo_documento` (`DNI`/`CE`), `numero_documento`, `domicilio`, `telefono`, `email`, `es_menor`, `apoderado_nombre`; bien: `bien_tipo` (`PRODUCTO`/`SERVICIO`), `bien_descripcion`, `monto_reclamado`, `pedido_codigo`; `detalle`, `pedido_consumidor`, `fecha_limite`, `respuesta`, `respondido_en`, `respondido_por`, `ip`, `creado_en` | Único `numero`; único `(anio, correlativo)`; sin `DELETE` (D8) |
-| `correlativo_reclamo` | `anio` (PK), `ultimo` | Se incrementa con `UPDATE … SET ultimo = ultimo + 1 RETURNING ultimo` (atómico, sin huecos) |
+| `correlativo_reclamo` | `anio` (PK), `ultimo` | Se incrementa con `INSERT … ON CONFLICT (anio) DO UPDATE SET ultimo = correlativo_reclamo.ultimo + 1 RETURNING ultimo` (atómico, sin huecos; crea la fila del primer reclamo de cada año, ver 10.2) |
 
 **Comunes:** `outbox_evento` (ADR-009).
 
@@ -478,7 +479,7 @@ fitstore:
 
 | Componente | Uso |
 |---|---|
-| PostgreSQL `settings_db` | Tablas de 3.1; ubigeo INEI en `V2__ubigeo_inei.sql` (generado desde el CSV oficial) |
+| PostgreSQL `settings_db` | Tablas de 3.1; ubigeo INEI en `V2__ubigeo_inei.sql`, generado por `infra/scripts/ubigeo-a-sql` desde el repo derivado del INEI `jmcastagnetto/ubigeo-peru-aumentado` (MIT, commit `a783fa6`; decisión del autor porque SISCONCODE del INEI no respondía): 25 departamentos, 196 provincias y 1 893 distritos; SAN ANTONIO (Moquegua) con código deducido 180107 |
 | Redis (prefijo `settings:`) | Configuración pública, políticas y ubigeo |
 | RabbitMQ | Publica `settings.configuracion.actualizada`, `settings.reclamo.registrado`, `settings.reclamo.respondido`. No consume |
 | Garage | Bucket público `fitstore-media`, prefijo `tienda/` |

@@ -1,6 +1,6 @@
 # FitStore — Stack y versiones
 
-> Versión: **v5 (aprobado)** — 2026-10-19. v5: `spring-retry` 2.0.13 para el reintento del cliente de config (CA-0a-04) y etiquetas exactas de las imágenes fijadas en 0a.1. v4: JaCoCo, oasdiff y cobertura de Vitest (estrategia multiagente V0, SPEC-0a I7–I8). v3: Azure Blob diferido (SPEC-8 I6). v2: se adopta MapStruct. Versiones consultadas en Maven Central y npm el 2026-10-18.
+> Versión: **v6 (aprobado)** — 2026-10-20. v6: versiones exactas fijadas en 0a.2 (`openhtmltopdf-pdfbox` 1.1.87, `greenmail-junit5` 2.1.14). v5: `spring-retry` 2.0.13 para el reintento del cliente de config (CA-0a-04) y etiquetas exactas de las imágenes fijadas en 0a.1. v4: JaCoCo, oasdiff y cobertura de Vitest (estrategia multiagente V0, SPEC-0a I7–I8). v3: Azure Blob diferido (SPEC-8 I6). v2: se adopta MapStruct. Versiones consultadas en Maven Central y npm el 2026-10-18.
 > Todas las secciones 10.4 de los micros remiten a esta tabla; cada servicio solo lista **qué** usa, no la versión.
 > Regla: las versiones se fijan al crear el repositorio y se actualizan solo con un motivo (seguridad o corrección).
 
@@ -48,7 +48,7 @@ Gestionadas por los BOM de Spring Boot y Spring Cloud salvo que se indique versi
 | S3 (Garage / AWS) | `software.amazon.awssdk:s3` (BOM `bom`) | **2.56.x** |
 | Azure Blob (adaptador alternativo) | `com.azure:azure-storage-blob` (BOM `azure-sdk-bom`) | **diferido** (la demo usa Garage en la VM, SPEC-8 I6); se fija si se implementa |
 | Imágenes (solo catalog, settings) | `net.coobird:thumbnailator` | **0.4.21** |
-| PDF (solo payment) | `io.github.openhtmltopdf:openhtmltopdf-pdfbox` | **1.1.x** |
+| PDF (solo payment) | `io.github.openhtmltopdf:openhtmltopdf-pdfbox` | **1.1.87** (fijada en 0a.2; las 1.1.88+ tenían menos de dos semanas) |
 | Carga masiva (solo catalog) | `org.apache.poi:poi-ooxml`, `org.apache.commons:commons-csv` | **5.5.1**, **1.14.1** |
 | Mercado Pago (solo payment) | `com.mercadopago:sdk-java` | **3.7.0** |
 | Culqi (solo payment) | Cliente HTTP propio (`RestClient`) sobre su API REST | — |
@@ -67,7 +67,7 @@ Gestionadas por los BOM de Spring Boot y Spring Cloud salvo que se indique versi
 | Redis en pruebas | contenedor genérico `redis:8` con Testcontainers | — |
 | Seguridad | `spring-security-test` | BOM Boot |
 | HTTP simulado (pasarelas, Feign) | `org.wiremock:wiremock-standalone` | **3.13.x** (la 4.0 sigue en beta) |
-| SMTP de prueba (notification) | `com.icegreen:greenmail-junit5` | **2.1.x** |
+| SMTP de prueba (notification) | `com.icegreen:greenmail-junit5` | **2.1.14** |
 | Cobertura (backend) | `org.jacoco:jacoco-maven-plugin` | **0.8.15** |
 | Cobertura (frontend) | `@vitest/coverage-v8` | la misma versión que Vitest (la fija 0b) |
 | Contrato vs. código | `oasdiff` (imagen `tufin/oasdiff`) | **v1.33.0** |

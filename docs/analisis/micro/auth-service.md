@@ -1,9 +1,10 @@
 # FitStore — Análisis micro: `auth-service`
 
-> Versión: **v5 (aprobado)** — 2026-10-19. Fuente: [`01-analisis-macro.md`](../01-analisis-macro.md) v11.
+> Versión: **v6 (aprobado)** — 2026-10-19. Fuente: [`01-analisis-macro.md`](../01-analisis-macro.md) v11.
 > Estados: ✅ decidido · 🟡 propuesto · ❓ abierto · 🕓 diferido
 
 **Historial:**
+- v6 (2026-10-20): por la implementación de 0a.2: tamaños no definidos: `consentimiento.version_politica varchar(20)`, `ip varchar(45)`, `tipo` y `token_password.motivo varchar(20)` con `CHECK` de sus valores; FK sin `ON DELETE CASCADE`.
 - v5 (2026-10-19): ajustes de la etapa de contratos: nombre de la cookie de refresh: `fs_refresh` (contracts K8).
 - v4 (2026-10-18): sección 10 aprobada → **documento completo aprobado**.
 - v3 (2026-10-18): sección 10 (diseño técnico) redactada: C3, código de tokens, paquetes, dependencias, configuración e infraestructura.

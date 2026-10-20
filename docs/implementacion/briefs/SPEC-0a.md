@@ -164,3 +164,65 @@ Controladores, servicios de aplicación, lógica de negocio, consumidores con l�
 - El SDK de S3 con Garage necesita checksums `WHEN_REQUIRED` (ya lo hace `S3FileStorage`).
 - Testcontainers 2: módulos `testcontainers-postgresql`, `-rabbitmq`, `-junit-jupiter`; usa `@ServiceConnection` como en `OutboxPublisherTest`.
 - Si el puerto 5432 de la máquina está ocupado, las pruebas no se afectan (Testcontainers usa puertos aleatorios).
+
+---
+
+## 0a.3 — CI, humo y Postman
+
+> Completado tras integrar los 7 esqueletos (2026-10-20, PRs #20 a #26). Un agente, rama `spec/0a-3-ci` desde `dev`, alcance [`SPEC-0a.3.alcance`](SPEC-0a.3.alcance). Cierra la SPEC-0a.
+
+### 1. Lectura obligatoria (en este orden)
+
+1. [`CLAUDE.md`](../../../CLAUDE.md).
+2. [SPEC-0a](../../specs/SPEC-0a-plataforma-backend.md) completa, en especial la sección 1 ("Incluye": CI y colección Postman base), 3 (todos los criterios), 5 (I7, I8), 7 (tabla de pruebas y convención de nombres), 8 y 9 (DoD).
+3. [ADR-021](../../adr/0021-flujo-de-ramas-dev-stage-main.md) (flujo de ramas y qué hace cada workflow) y [ADR-018](../../adr/0018-monorepo-build-y-ci-con-github-actions.md).
+4. [`infraestructura.md`](../../analisis/micro/infraestructura.md) secciones 6 (compose, memoria y orden de arranque), 9 (pruebas: *smoke*) y 10.
+5. [`contracts/README.md`](../../../contracts/README.md): K2 (`oasdiff`) y la tabla de herramientas (Redocly CLI 2.57.0, AsyncAPI CLI 6.2.0, `tufin/oasdiff:v1.33.0`).
+6. [`stack-versiones.md`](../../arquitectura/stack-versiones.md) v5.
+7. El estado real del repo: `pom.xml`, `infra/` (compose, `.env.example`, `init.sql`, `dev/`), `infra/config-repo/` y un `ContratoOpenApiTest` de cualquier servicio (genera `target/openapi.json`).
+
+En tu primer mensaje: qué leíste, qué vas a construir y cómo verificarás cada criterio.
+
+### 2. Qué construyes
+
+1. **`infra/smoke.sh`**: levanta el compose completo de dev (`docker compose … up -d --wait`), espera a que todo quede *healthy* y verifica los criterios de humo; termina con código 0 solo si todo pasa. Cada verificación lleva un comentario `# CA-0a-xx`. Debe poder correr en Lyanna y en el runner de GitHub Actions.
+2. **`.github/workflows/ci.yml`** (PR y push a `dev`): compilación y pruebas con `./mvnw verify` (incluye JaCoCo), con **filtros por ruta** (solo se compila lo que cambió más `fitstore-common`) y caché de Maven; **gitleaks**; **Redocly** sobre `contracts/openapi/*-service.yaml` y **AsyncAPI CLI** sobre `fitstore-eventos.yaml`; **`oasdiff`** para cada servicio listado en `contracts/implementados.txt`. Cada paso con su comentario `# CA-0a-xx`.
+3. **`.github/workflows/stage.yml`** (PR y push a `stage`, PR a `main`): construye las imágenes, levanta el compose completo en el runner, corre `infra/smoke.sh` y la colección Postman con Newman.
+4. **`.github/pull_request_template.md`**: la lista de verificación del PR (V1 a V11 de la estrategia, en corto).
+5. **`scripts/contrato.sh <servicio>`**: genera `target/openapi.json` con el `ContratoOpenApiTest` del servicio y corre `oasdiff breaking contracts/openapi/<servicio>.yaml target/openapi.json` con la imagen `tufin/oasdiff:v1.33.0`.
+6. **`contracts/implementados.txt`**: vacío al cerrar 0a (con un comentario que explique su uso); cada spec agrega su servicio al terminar.
+7. **`.gitleaks.toml`**: configuración de gitleaks con la *allowlist* de la clave de prueba `infra/dev/clave-privada-PRUEBA-solo-dev.jwk.json` (y el JWKS público de prueba), y nada más.
+8. **Postman**: `postman/fitstore-base.postman_collection.json` y `postman/local.postman_environment.json` con el *health* de la plataforma **a través del gateway** (ver decisión L1 abajo).
+9. **`README.md`**: completar la sección de cómo levantar el entorno dev completo y correr el humo (DoD de la spec; sin atribución de IA).
+
+### 3. Criterios (tabla de validación)
+
+| CA | Qué verifica | Dónde |
+|---|---|---|
+| CA-0a-01 | `./mvnw verify` compila los 11 módulos y pasa todo | `ci.yml` (y en local) |
+| CA-0a-02 | Arranque completo: todo *healthy* en menos de 5 minutos y `smoke.sh` termina con 0 | `smoke.sh` |
+| CA-0a-03 | Eureka lista `api-gateway` y los 7 servicios con estado UP | `smoke.sh` |
+| CA-0a-05 | Cada servicio aplicó `V1` (y sus semillas) en su base, con Hibernate en `validate` | `smoke.sh` (consulta `flyway_schema_history` de cada base y el arranque sano) |
+| CA-0a-07 | El usuario de un servicio no puede leer la base de otro | `smoke.sh` (con `psql` en el contenedor de PostgreSQL) |
+| CA-0a-17 | `/swagger-ui` del gateway ofrece los 7 servicios y cada documentación responde | `smoke.sh` |
+| CA-0a-18 | Sin secretos versionados; `.env` ignorado y solo `.env.example` | `.gitignore` + gitleaks en `ci.yml` |
+| CA-0a-19 | Cada contenedor tiene `mem_limit` y la suma no supera 6,5 GB | `smoke.sh` (`docker inspect` / `docker stats`) |
+| CA-0a-20 | Un PR que solo toca `backend/catalog-service` compila y prueba `fitstore-common` y catalog, con caché | `ci.yml` (filtros por ruta) |
+| CA-0a-22 | Redocly + AsyncAPI CLI en cada PR; `oasdiff` para los servicios de `implementados.txt` | `ci.yml` + `scripts/contrato.sh` |
+
+Los demás criterios ya tienen dueño y prueba (0a.1 y 0a.2). `scripts/ca-cobertura.sh 0a` debe quedar en **22 de 22**.
+
+### 4. Núcleo
+
+`smoke.sh` (cada verificación debe fallar de verdad si la condición no se cumple: pruébalo rompiéndola a propósito al menos una vez por criterio y deja constancia en el reporte) y los filtros por ruta de `ci.yml`.
+
+### 5. Decisiones del lead
+
+- **L1 — Postman "health a través del gateway":** el gateway no enruta `/actuator/**` de los servicios (su configuración está congelada). La colección base verifica `GET /actuator/health` del gateway y, por cada uno de los 7 servicios, `GET /<servicio>/v3/api-docs` a través del gateway (200): prueba que el servicio está arriba, registrado y enrutado.
+- **L2 — Versiones no fijadas en stack-versiones** (gitleaks, Newman, *actions* de GitHub): propón la versión estable más reciente con al menos dos semanas de publicada y pregúntame antes de fijarla.
+- **L3 — Si el compose completo no queda sano** por un problema dentro de un servicio (su YAML o su código), **no lo corrijas tú**: detente y repórtalo con el diagnóstico (log, contenedor, causa). El lead decide la corrección en un PR aparte.
+- **L4 — Memoria:** el gateway usa ≈ 237 MiB de 256 MiB (CK1). Si con el compose completo algún contenedor se reinicia por memoria, repórtalo; no cambies `mem_limit` sin aprobación.
+
+### 6. Fuera de alcance
+
+Código de los servicios, `fitstore-common`, el gateway, el POM padre, `infra/docker-compose*.yml` e `infra/config-repo/` (congelados o de sus specs); `deploy.yml` (spec 8); el job de frontend de `ci.yml` (0b); cualquier archivo de `docs/` o `contracts/` salvo `contracts/implementados.txt`.

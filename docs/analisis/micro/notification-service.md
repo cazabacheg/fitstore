@@ -1,9 +1,10 @@
 # FitStore — Análisis micro: `notification-service`
 
-> Versión: **v12 (aprobado)** — 2026-10-19. Fuente: [`01-analisis-macro.md`](../01-analisis-macro.md) v15.
+> Versión: **v13 (aprobado)** — 2026-10-19. Fuente: [`01-analisis-macro.md`](../01-analisis-macro.md) v15.
 > Estados: ✅ decidido · 🟡 propuesto · ❓ abierto · 🕓 diferido
 
 **Historial:**
+- v13 (2026-10-20): por la implementación de 0a.2: `V3__marca_tienda_inicial.sql`; `envio_correo.evento_id` nullable (correo de prueba sin evento); notification no publica, así que su outbox queda deshabilitado; los textos de las 18 plantillas son de 0a.2 y no asumen el género del cliente.
 - v12 (2026-10-19): etapa de diseño: el texto sobre el color primario en los correos se elige por contraste (4.4).
 - v11 (2026-10-19): ajustes de la etapa de contratos: `envio_correo.historial_intentos` (`jsonb`) para mostrar cada intento con su fecha (SPEC-7 CA-7-20).
 - v10 (2026-10-19): revisión de coherencia: se distingue lo que se consume sin correo de lo que no se escucha (`PedidoExpirado`, `PagoRechazado`).
@@ -161,7 +162,7 @@ classDiagram
 | # | Evento | Correo |
 |---|---|---|
 | T1 | `StockBajo` | Stock bajo: SKU, producto, talla, color, disponible y mínimo |
-| T2 | `StockNoConfirmado` | ⚠ Pedido pagado sin stock disponible (definido en catalog 6) |
+| T2 | `StockNoConfirmado` | Pedido pagado sin stock disponible (definido en catalog 6) |
 | T3 | `ReembolsoFallido` | ⚠ Reembolso fallido: pedido, monto, error, "reintenta desde el backoffice" |
 | T4 | `ReclamoRegistrado` | Nuevo reclamo: número, tipo y fecha límite |
 
@@ -468,7 +469,7 @@ fitstore:
 
 | Componente | Uso |
 |---|---|
-| PostgreSQL `notification_db` | Tablas de 3.1; plantillas sembradas en `V2__plantillas.sql` |
+| PostgreSQL `notification_db` | Tablas de 3.1; plantillas sembradas en `V2__plantillas.sql`; fila inicial de `marca_tienda` en `V3__marca_tienda_inicial.sql` (coherente con la configuración inicial de settings) |
 | RabbitMQ | Cola `notification.eventos` enlazada a las 17 routing keys de la sección 6; DLQ |
 | SMTP | Mailpit en dev (`http://localhost:8025`), Amazon SES en cloud |
 | Servicios | payment (`/internal/v1/boletas`), settings (marca inicial) |
