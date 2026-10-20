@@ -1,0 +1,11 @@
+# payment-service, perfil dev (micro payment, 10.5): pasarela simulada habilitada para la demo, logs SQL y datos de
+# demostración (CA-0a-05: db/dev solo con los perfiles dev o demo).
+spring:
+  flyway:
+    locations: classpath:db/migration,classpath:db/dev
+  jpa:
+    show-sql: true
+
+fitstore:
+  pagos:
+    simulado.habilitado: true
