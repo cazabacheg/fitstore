@@ -1,0 +1,63 @@
+<nav aria-label="Menú del backoffice" class="fs-menu">
+  <div class="fs-menu__marca">
+    @if (tema.logoClaroUrl() ?? tema.logoOscuroUrl(); as logo) {
+      <img class="fs-menu__logo" [src]="logo" [alt]="tema.nombre() ?? 'FitStore'" />
+    } @else {
+      <span class="fs-menu__nombre">{{ tema.nombre() ?? 'FitStore' }}</span>
+    }
+    <span class="fs-menu__rol">Admin</span>
+  </div>
+  <ul class="fs-menu__lista">
+    @for (item of items(); track item.clave) {
+      <li [attr.data-clave]="item.clave" data-nivel="item">
+        @if (item.subitems) {
+          <button
+            type="button"
+            class="fs-menu__enlace"
+            [attr.aria-expanded]="abierto(item)"
+            [class.fs-menu__enlace--activo]="contieneActiva(item)"
+            (click)="alternar(item)"
+          >
+            <span class="fs-icono" aria-hidden="true">{{ item.icono }}</span>
+            {{ item.etiqueta }}
+            @if (numero(item.clave, item); as n) {
+              <span class="fs-contador" [attr.aria-label]="n + ' pendientes'">{{ n }}</span>
+            }
+            <span class="fs-icono fs-menu__flecha" aria-hidden="true">{{
+              abierto(item) ? 'expand_less' : 'expand_more'
+            }}</span>
+          </button>
+          @if (abierto(item)) {
+            <ul class="fs-menu__sublista">
+              @for (sub of item.subitems; track sub.clave) {
+                <li [attr.data-clave]="sub.clave" data-nivel="sub">
+                  <a
+                    class="fs-menu__enlace fs-menu__enlace--sub"
+                    [routerLink]="sub.ruta"
+                    [attr.aria-current]="activa() === sub.clave ? 'page' : null"
+                    >{{ sub.etiqueta }}
+                    @if (numero(sub.clave); as n) {
+                      <span class="fs-contador" [attr.aria-label]="n + ' pendientes'">{{ n }}</span>
+                    }
+                  </a>
+                </li>
+              }
+            </ul>
+          }
+        } @else {
+          <a
+            class="fs-menu__enlace"
+            [routerLink]="item.ruta"
+            [attr.aria-current]="activa() === item.clave ? 'page' : null"
+          >
+            <span class="fs-icono" aria-hidden="true">{{ item.icono }}</span>
+            {{ item.etiqueta }}
+            @if (numero(item.clave); as n) {
+              <span class="fs-contador" [attr.aria-label]="n + ' pendientes'">{{ n }}</span>
+            }
+          </a>
+        }
+      </li>
+    }
+  </ul>
+</nav>

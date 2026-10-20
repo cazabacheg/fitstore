@@ -1,0 +1,63 @@
+<div class="fs-ubigeo-selector">
+  @if (niveles() === 3) {
+    <mat-form-field class="fs-ubigeo-selector__buscador" subscriptSizing="dynamic">
+      <mat-label>Buscar distrito</mat-label>
+      <input
+        matInput
+        #buscador
+        autocomplete="off"
+        placeholder="Por ejemplo, miraflores"
+        [matAutocomplete]="auto"
+        (input)="buscar(buscador.value)"
+      />
+    </mat-form-field>
+    <mat-autocomplete #auto="matAutocomplete" (optionSelected)="elegirResultado($event, buscador)">
+      @for (r of resultados(); track r.codigo) {
+        <mat-option [value]="r">{{ etiquetaResultado(r) }}</mat-option>
+      }
+    </mat-autocomplete>
+  }
+  <div class="fs-ubigeo">
+    <mat-form-field subscriptSizing="dynamic">
+      <mat-label>Departamento</mat-label>
+      <select matNativeControl (change)="elegirDepartamento($any($event.target).value)">
+        <option value="">Selecciona</option>
+        @for (d of departamentos(); track d.codigo) {
+          <option [value]="d.codigo" [selected]="d.codigo === departamento()">
+            {{ d.nombre }}
+          </option>
+        }
+      </select>
+    </mat-form-field>
+    @if (niveles() >= 2) {
+      <mat-form-field subscriptSizing="dynamic">
+        <mat-label>Provincia</mat-label>
+        <select
+          matNativeControl
+          [disabled]="!departamento()"
+          (change)="elegirProvincia($any($event.target).value)"
+        >
+          <option value="">Selecciona</option>
+          @for (p of provincias(); track p.codigo) {
+            <option [value]="p.codigo" [selected]="p.codigo === provincia()">{{ p.nombre }}</option>
+          }
+        </select>
+      </mat-form-field>
+    }
+    @if (niveles() === 3) {
+      <mat-form-field subscriptSizing="dynamic">
+        <mat-label>Distrito</mat-label>
+        <select
+          matNativeControl
+          [disabled]="!provincia()"
+          (change)="elegirDistrito($any($event.target).value)"
+        >
+          <option value="">Selecciona</option>
+          @for (d of distritos(); track d.codigo) {
+            <option [value]="d.codigo" [selected]="d.codigo === distrito()">{{ d.nombre }}</option>
+          }
+        </select>
+      </mat-form-field>
+    }
+  </div>
+</div>

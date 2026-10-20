@@ -1,0 +1,119 @@
+:host {
+  display: flex;
+  flex-direction: column;
+  min-height: 100%;
+  background: var(--fs-color-secundario);
+  color: var(--fs-color-en-secundario);
+  font-family: var(--fs-font-marca);
+}
+.fs-menu__marca {
+  height: 64px;
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 24px;
+  border-bottom: 1px solid rgb(255 255 255 / 0.1);
+}
+.fs-menu__nombre {
+  font-size: 17px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+.fs-menu__logo {
+  max-height: 32px;
+  max-width: 140px;
+}
+.fs-menu__rol {
+  font-size: 11px;
+  opacity: 0.6;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.fs-menu__lista,
+.fs-menu__sublista {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 2px;
+}
+.fs-menu {
+  display: flex;
+  flex-direction: column;
+}
+.fs-menu__lista {
+  padding: 8px 12px;
+}
+.fs-menu__sublista {
+  padding-left: 36px;
+  margin-top: 2px;
+}
+.fs-menu__enlace {
+  position: relative;
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  width: 100%;
+  box-sizing: border-box;
+  height: 40px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: var(--radio-md);
+  background: none;
+  color: inherit;
+  font: 500 14px var(--fs-font-marca);
+  text-align: left;
+  text-decoration: none;
+  cursor: pointer;
+  opacity: 0.72;
+}
+.fs-menu__enlace--sub {
+  height: 36px;
+  font-size: 13px;
+}
+.fs-menu__enlace:hover {
+  opacity: 1;
+  background: rgb(255 255 255 / 0.06);
+}
+.fs-menu__enlace[aria-current='page'] {
+  opacity: 1;
+  background: rgb(255 255 255 / 0.12);
+  font-weight: 600;
+}
+.fs-menu__enlace[aria-current='page']::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 10px;
+  bottom: 10px;
+  width: 3px;
+  border-radius: 2px;
+  background: var(--fs-color-primario);
+}
+.fs-menu__enlace--activo {
+  opacity: 1;
+}
+.fs-menu__flecha {
+  margin-left: auto;
+  font-size: 18px;
+}
+.fs-contador {
+  margin-left: auto;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  box-sizing: border-box;
+  border-radius: var(--radio-pill);
+  background: var(--fs-color-error);
+  color: #fff;
+  font-size: 11px;
+  line-height: 20px;
+  font-weight: 700;
+  text-align: center;
+}
+.fs-menu__flecha + .fs-contador,
+.fs-contador + .fs-menu__flecha {
+  margin-left: 4px;
+}

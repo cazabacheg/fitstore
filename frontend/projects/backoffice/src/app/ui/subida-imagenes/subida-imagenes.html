@@ -1,0 +1,36 @@
+<div
+  class="fs-subida"
+  [class.fs-subida--arrastrando]="arrastrando()"
+  (dragover)="sobre($event)"
+  (dragleave)="arrastrando.set(false)"
+  (drop)="soltar($event)"
+>
+  <span class="fs-icono" aria-hidden="true">cloud_upload</span>
+  <strong>Arrastra tus imágenes aquí</strong>
+  <span class="fs-suave"
+    >{{ nombresTipos() }} · hasta {{ tamanoMaximoMb() }} MB · máximo {{ maximoArchivos() }}</span
+  >
+  <button type="button" class="fs-btn fs-btn--contorno fs-btn--sm" (click)="entrada.click()">
+    Selecciona archivos
+  </button>
+  <input #entrada type="file" hidden multiple [accept]="aceptados()" (change)="elegidos(entrada)" />
+</div>
+@for (motivo of rechazos(); track $index) {
+  <p class="fs-subida__rechazo" role="alert">{{ motivo }}</p>
+}
+<div
+  cdkDropList
+  cdkDropListOrientation="mixed"
+  class="fs-subida__lista"
+  aria-label="Imágenes seleccionadas; arrástralas para cambiar el orden"
+  (cdkDropListDropped)="reordenar($event)"
+>
+  @for (item of archivos(); track item.vistaPrevia; let i = $index) {
+    <div cdkDrag class="fs-subida__item">
+      <img [src]="item.vistaPrevia" [alt]="item.archivo.name" />
+      <button type="button" [attr.aria-label]="'Quitar ' + item.archivo.name" (click)="quitar(i)">
+        <span class="fs-icono" aria-hidden="true">close</span>
+      </button>
+    </div>
+  }
+</div>

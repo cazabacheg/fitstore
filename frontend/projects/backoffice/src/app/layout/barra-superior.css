@@ -1,0 +1,38 @@
+:host {
+  display: block;
+}
+.fs-barra__espacio {
+  flex: 1;
+}
+.fs-barra__menu {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border: 0;
+  border-radius: var(--radio-md);
+  background: none;
+  color: var(--fs-color-texto);
+  cursor: pointer;
+}
+.fs-barra__usuario {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: 400 14px var(--fs-font-marca);
+  cursor: pointer;
+}
+.fs-barra__avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radio-pill);
+  background: var(--fs-color-primario-suave);
+  color: var(--fs-color-primario-texto);
+  display: grid;
+  place-items: center;
+  font-weight: 700;
+  font-size: 13px;
+}

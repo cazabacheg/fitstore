@@ -1,0 +1,30 @@
+:host {
+  display: block;
+  height: 100vh;
+}
+.fs-shell {
+  height: 100%;
+  background: var(--fs-color-fondo);
+  color: var(--fs-color-texto);
+  font-family: var(--fs-font-marca);
+}
+.fs-shell__lateral {
+  width: 240px;
+  border: 0;
+  border-radius: 0;
+  background: var(--fs-color-secundario);
+}
+.fs-bo__principal {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.fs-bo__contenido {
+  padding: 28px 32px 48px;
+  display: grid;
+  gap: 24px;
+  align-content: start;
+  max-width: 1440px;
+  width: 100%;
+  box-sizing: border-box;
+}
