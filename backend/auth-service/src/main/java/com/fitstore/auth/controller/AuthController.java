@@ -1,12 +1,15 @@
 package com.fitstore.auth.controller;
 
 import com.fitstore.auth.dto.request.LoginRequest;
+import com.fitstore.auth.dto.request.OlvidoRequest;
 import com.fitstore.auth.dto.request.RegistroRequest;
+import com.fitstore.auth.dto.request.RestablecerRequest;
 import com.fitstore.auth.dto.response.SesionResponse;
 import com.fitstore.auth.model.TipoCuenta;
 import com.fitstore.auth.security.CookieRefresh;
 import com.fitstore.auth.security.SesionEmitida;
 import com.fitstore.auth.service.AutenticacionService;
+import com.fitstore.auth.service.PasswordService;
 import com.fitstore.auth.service.RegistroService;
 import com.fitstore.common.api.ApiResponse;
 import io.swagger.v3.oas.annotations.Operation;
@@ -25,13 +28,18 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/api/v1/auth")
 public class AuthController {
 
+    private static final String MENSAJE_OLVIDO = "Si el correo está registrado, te enviaremos un enlace";
+
     private final RegistroService registro;
     private final AutenticacionService autenticacion;
+    private final PasswordService passwords;
     private final CookieRefresh cookie;
 
-    public AuthController(RegistroService registro, AutenticacionService autenticacion, CookieRefresh cookie) {
+    public AuthController(RegistroService registro, AutenticacionService autenticacion, PasswordService passwords,
+            CookieRefresh cookie) {
         this.registro = registro;
         this.autenticacion = autenticacion;
+        this.passwords = passwords;
         this.cookie = cookie;
     }
 
@@ -71,6 +79,27 @@ public class AuthController {
         return ResponseEntity.ok()
                 .header(HttpHeaders.SET_COOKIE, cookie.borrar())
                 .body(ApiResponse.ok("Sesión cerrada"));
+    }
+
+    @PostMapping("/password/olvido")
+    @Operation(operationId = "olvidoPasswordCliente", summary = "Pedir enlace de recuperación (cliente)")
+    public ApiResponse<Void> olvidoCliente(@Valid @RequestBody OlvidoRequest solicitud) {
+        passwords.solicitarRecuperacion(TipoCuenta.CLIENTE, solicitud.email());
+        return ApiResponse.ok(MENSAJE_OLVIDO);
+    }
+
+    @PostMapping("/staff/password/olvido")
+    @Operation(operationId = "olvidoPasswordStaff", summary = "Pedir enlace de recuperación (staff)")
+    public ApiResponse<Void> olvidoStaff(@Valid @RequestBody OlvidoRequest solicitud) {
+        passwords.solicitarRecuperacion(TipoCuenta.STAFF, solicitud.email());
+        return ApiResponse.ok(MENSAJE_OLVIDO);
+    }
+
+    @PostMapping("/password/restablecer")
+    @Operation(operationId = "restablecerPassword", summary = "Crear una nueva contraseña con el enlace")
+    public ApiResponse<Void> restablecer(@Valid @RequestBody RestablecerRequest solicitud) {
+        passwords.restablecer(solicitud.token(), solicitud.nuevaPassword());
+        return ApiResponse.ok("Contraseña actualizada");
     }
 
     private ResponseEntity<ApiResponse<SesionResponse>> sesion(SesionEmitida sesion) {
