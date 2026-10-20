@@ -1,0 +1,14 @@
+# Configuración de gitleaks (SPEC-0a CA-0a-18): reglas por defecto más la allowlist de la clave de prueba de dev.
+# La clave privada de infra/dev es DE PRUEBA, solo para desarrollo (SPEC-0a I2): no protege nada y se elimina
+# al cerrar la spec 1.
+title = "FitStore"
+
+[extend]
+useDefault = true
+
+[[allowlists]]
+description = "Clave de prueba de dev (SPEC-0a I2) y su JWKS público"
+paths = [
+  '''infra/dev/clave-privada-PRUEBA-solo-dev\.jwk\.json''',
+  '''infra/dev/jwks-prueba\.json''',
+]
