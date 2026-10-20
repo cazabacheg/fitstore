@@ -2,17 +2,22 @@ package com.fitstore.delivery;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import com.fitstore.delivery.pruebas.PostgresPrueba;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
+import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 
-// CA-0a-01: el módulo compila y arranca (base mínima; 0a.2 completa el servicio)
+// CA-0a-01: el módulo compila y arranca (con la seguridad activa y el esquema migrado y validado)
 @SpringBootTest
 @AutoConfigureMockMvc
+@ActiveProfiles("sin-config-server")
+@ContextConfiguration(initializers = PostgresPrueba.class)
 class DeliveryServiceApplicationTest {
 
     @Autowired

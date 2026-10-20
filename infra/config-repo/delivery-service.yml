@@ -1,0 +1,28 @@
+# delivery-service (micro delivery-service, sección 10.5). Sin secretos: solo ${VARIABLES} del .env.
+server:
+  port: 8085
+
+spring:
+  datasource:
+    url: jdbc:postgresql://${DB_HOST:postgres}:5432/delivery_db
+    username: ${DELIVERY_DB_USER}
+    password: ${DELIVERY_DB_PASSWORD}
+  jpa:
+    hibernate:
+      ddl-auto: validate   # el esquema lo maneja Flyway
+
+springdoc:
+  api-docs:
+    version: openapi_3_0
+
+fitstore:
+  delivery:
+    local:
+      prefijos-ubigeo: ["1501", "07"]   # Lima Metropolitana y Callao
+  eventos:
+    servicio: delivery
+    # Cola delivery.eventos (y su DLQ) enlazada a lo que delivery consume
+    enlaces:
+      - order.pedido.listo-despacho
+  outbox:
+    habilitado: true

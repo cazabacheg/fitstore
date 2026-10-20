@@ -1,0 +1,48 @@
+# Perfil de pruebas: no hay config-server ni Eureka. Carga lo mínimo que en la ejecución real viene de infra/config-repo.
+spring:
+  application:
+    name: delivery-service
+  cloud:
+    config:
+      enabled: false
+    discovery:
+      enabled: false
+  jpa:
+    hibernate:
+      ddl-auto: validate
+  rabbitmq:
+    host: localhost
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          # Ficticio: la validación está activa, pero ninguna prueba descarga claves
+          jwk-set-uri: http://localhost:9/.well-known/jwks-de-prueba.json
+
+eureka:
+  client:
+    enabled: false
+
+management:
+  health:
+    redis:
+      enabled: false
+    rabbit:
+      enabled: false
+  opentelemetry:
+    tracing:
+      export:
+        otlp:
+          endpoint: http://localhost:9/v1/traces
+
+springdoc:
+  api-docs:
+    version: openapi_3_0
+
+fitstore:
+  eventos:
+    servicio: delivery
+    enlaces:
+      - order.pedido.listo-despacho
+  outbox:
+    habilitado: false
