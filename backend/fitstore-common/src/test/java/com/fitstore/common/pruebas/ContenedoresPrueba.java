@@ -7,8 +7,8 @@ import org.testcontainers.rabbitmq.RabbitMQContainer;
 /** PostgreSQL y RabbitMQ compartidos por todas las pruebas de integración de la librería (se arrancan una vez). */
 public final class ContenedoresPrueba {
 
-    public static final PostgreSQLContainer POSTGRES = new PostgreSQLContainer("postgres:17");
-    public static final RabbitMQContainer RABBIT = new RabbitMQContainer("rabbitmq:4-management");
+    public static final PostgreSQLContainer POSTGRES = new PostgreSQLContainer("postgres:17.10");
+    public static final RabbitMQContainer RABBIT = new RabbitMQContainer("rabbitmq:4.3.5-management");
 
     static {
         POSTGRES.start();

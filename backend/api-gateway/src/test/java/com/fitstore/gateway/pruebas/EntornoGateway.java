@@ -10,7 +10,7 @@ public final class EntornoGateway {
     public static final ServiciosSimulados SERVICIOS = new ServiciosSimulados();
     public static final TokensDePrueba EMISOR = new TokensDePrueba("kid-gateway");
     public static final GenericContainer<?> REDIS =
-            new GenericContainer<>(DockerImageName.parse("redis:8")).withExposedPorts(6379);
+            new GenericContainer<>(DockerImageName.parse("redis:8.10.1")).withExposedPorts(6379);
 
     static {
         REDIS.start();

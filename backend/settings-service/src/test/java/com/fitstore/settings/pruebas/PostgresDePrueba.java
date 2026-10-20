@@ -6,7 +6,7 @@ import org.testcontainers.postgresql.PostgreSQLContainer;
 /** PostgreSQL compartido por las pruebas del servicio (se arranca una sola vez). */
 public final class PostgresDePrueba {
 
-    public static final PostgreSQLContainer POSTGRES = new PostgreSQLContainer("postgres:17");
+    public static final PostgreSQLContainer POSTGRES = new PostgreSQLContainer("postgres:17.10");
 
     static {
         POSTGRES.start();
