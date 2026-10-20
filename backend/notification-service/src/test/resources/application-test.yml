@@ -1,0 +1,35 @@
+# Perfil de pruebas: sin config-server ni Eureka, con la seguridad activa (jwk-set-uri ficticio, solo para pruebas)
+spring:
+  cloud:
+    config:
+      enabled: false
+    discovery:
+      enabled: false
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          jwk-set-uri: http://localhost:9/jwks-ficticio-solo-pruebas
+  flyway:
+    locations: classpath:db/migration
+  jpa:
+    hibernate:
+      ddl-auto: validate
+eureka:
+  client:
+    enabled: false
+    register-with-eureka: false
+    fetch-registry: false
+management:
+  health:
+    redis:
+      enabled: false
+    rabbit:
+      enabled: false
+    mail:
+      enabled: false
+fitstore:
+  eventos:
+    servicio: notification
+  outbox:
+    habilitado: false
