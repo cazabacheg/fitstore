@@ -53,6 +53,14 @@ describe('BackofficeShell', () => {
     expect(items.some((t) => t.includes('Pedidos'))).toBe(true);
   });
 
+  it.each([
+    ['Admin', SESION_ADMIN],
+    ['Operador', SESION_OPERADOR],
+  ])('CA-0b-17 bajo la marca, el menú muestra el rol de la sesión: %s', async (rol, sesion) => {
+    const h = await montar(sesion, { url: '/pedidos' });
+    expect(menu(raiz(h)).querySelector('.fs-menu__rol')?.textContent?.trim()).toBe(rol);
+  });
+
   it('CA-0b-17 el ADMIN ve los 13 ítems del menú', async () => {
     const h = await montar(SESION_ADMIN, { url: '/pedidos' });
     expect(raiz(h).querySelectorAll('[data-clave][data-nivel="item"]').length).toBe(13);
