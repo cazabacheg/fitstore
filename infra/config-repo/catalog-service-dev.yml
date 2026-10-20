@@ -1,0 +1,7 @@
+# catalog-service, perfil dev (micro catalog, 10.5): logs SQL y datos de demostración
+# (CA-0a-05: db/dev solo con los perfiles dev o demo).
+spring:
+  flyway:
+    locations: classpath:db/migration,classpath:db/dev
+  jpa:
+    show-sql: true
