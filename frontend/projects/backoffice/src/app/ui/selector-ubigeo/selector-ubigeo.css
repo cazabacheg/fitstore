@@ -1,0 +1,3 @@
+:host { display: block; }
+.fs-ubigeo-selector { display: grid; gap: var(--espacio-3); }
+.fs-ubigeo-selector__buscador { max-width: 360px; }
