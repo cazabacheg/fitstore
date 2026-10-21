@@ -8,3 +8,4 @@ auth-service
 catalog-service
 settings-service
 order-service
+payment-service
