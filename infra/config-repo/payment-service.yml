@@ -37,10 +37,12 @@ fitstore:
     bucket-privado: ${S3_BUCKET_PRIVADO:fitstore-privado}     # boletas/{anio}/{numero}.pdf
   pagos:
     culqi: { public-key: "${CULQI_PUBLIC_KEY:}", secret-key: "${CULQI_SECRET_KEY:}", url: "https://api.culqi.com/v2", timeout: 10s }
-    mercadopago: { public-key: "${MP_PUBLIC_KEY:}", access-token: "${MERCADOPAGO_ACCESS_TOKEN:}", webhook-secret: "${MP_WEBHOOK_SECRET:}", timeout: 10s }
+    mercadopago: { public-key: "${MP_PUBLIC_KEY:}", access-token: "${MERCADOPAGO_ACCESS_TOKEN:}", webhook-secret: "${MP_WEBHOOK_SECRET:}", url: "https://api.mercadopago.com", timeout: 10s }
     simulado.habilitado: false  # solo por configuración técnica (D7): true en -dev, ${PAGOS_SIMULADO_HABILITADO:false} en -cloud
     yape.tope-diario: 500.00
     verificador: { cada: 2m, antiguedad: 2m }
     reembolsos.esperas: [1m, 5m, 15m, 60m]
-    boleta: { serie: B001, leyenda: "Documento simulado sin validez tributaria" }
+    boleta: { serie: B001, leyenda: "Documento simulado sin validez tributaria", cada: 20s }   # cada: cada cuánto se emiten las boletas pendientes
+    circuito: { ventana: 10, minimo-llamadas: 5, umbral: 50, espera: 30s }   # circuit breaker por pasarela (CA-5-23)
+    tareas.habilitadas: true    # verificador de pagos y emisión de boletas; las pruebas lo apagan
     settings-cache-ttl: 5m
