@@ -12,3 +12,16 @@ paths = [
   '''infra/dev/clave-privada-PRUEBA-solo-dev\.jwk\.json''',
   '''infra/dev/jwks-prueba\.json''',
 ]
+
+# Valores de relleno de las pruebas (decisión del autor, 2026-10-21): credenciales del contenedor Garage de Testcontainers
+# (las mismas de infra/.env.example) y el token inventado de LogSinDatosSensiblesTest (CA-5-15). Se excluye el valor exacto,
+# no la ruta, porque la integración por squash crea commits nuevos y las huellas de .gitleaksignore no los cubren.
+[[allowlists]]
+description = "Valores de relleno de pruebas (Garage de Testcontainers y token de CA-5-15)"
+regexTarget = "match"
+regexes = [
+  '''GK0123456789abcdef01234567''',
+  '''0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef''',
+  '''fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210''',
+  '''tok_brick_SECRETO_9f8e7d6c''',
+]

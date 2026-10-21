@@ -123,7 +123,13 @@ public class Pedido {
 
     public void agregarHistorial(EstadoPedido anterior, EstadoPedido nuevo, TipoActor actor, UUID actorId,
             String comentario) {
+        agregarHistorial(anterior, nuevo, actor, actorId, null, comentario);
+    }
+
+    public void agregarHistorial(EstadoPedido anterior, EstadoPedido nuevo, TipoActor actor, UUID actorId,
+            String actorNombre, String comentario) {
         HistorialEstado fila = new HistorialEstado();
+        fila.setActorNombre(actorNombre);
         fila.setPedido(this);
         fila.setEstadoAnterior(anterior);
         fila.setEstadoNuevo(nuevo);

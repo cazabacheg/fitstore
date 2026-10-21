@@ -9,7 +9,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 
 /** Los filtros del listado (estado, modalidad, fecha, repartidor, código de pedido) se componen con {@code Specification}. */
-public interface EntregaRepository extends JpaRepository<Entrega, UUID>, JpaSpecificationExecutor<Entrega> {
+public interface EntregaRepository extends JpaRepository<Entrega, UUID>, JpaSpecificationExecutor<Entrega>, EntregaBusqueda {
 
     Optional<Entrega> findByPedidoId(UUID pedidoId);
 

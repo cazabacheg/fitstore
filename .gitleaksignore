@@ -23,3 +23,17 @@ f6697136a385d0ba1e852f1abc36bfe9ec83aca0:backend/fitstore-common/src/test/java/c
 
 # contracts/openapi/auth-service.yaml (commit 2150f97), línea 967: ejemplo de contrato (accessToken: eyJhbGciOi….firma), un JWT ficticio con la firma literal "firma".
 2150f97c983f47575a0229fda1895e3e918504da:contracts/openapi/auth-service.yaml:generic-api-key:967
+
+# backend/catalog-service y backend/payment-service, GaragePrueba.java (commits d168995 y 5997721): credenciales del contenedor Garage
+# de Testcontainers (valores de relleno 0123456789abcdef…, fedcba9876543210… y GK0123456789abcdef…, los mismos de infra/.env.example);
+# el contenedor vive solo durante la prueba.
+d168995809024243a557f5ed5189ee5a86f6f8f5:backend/catalog-service/src/test/java/com/fitstore/catalog/pruebas/GaragePrueba.java:generic-api-key:22
+d168995809024243a557f5ed5189ee5a86f6f8f5:backend/catalog-service/src/test/java/com/fitstore/catalog/pruebas/GaragePrueba.java:generic-api-key:23
+d168995809024243a557f5ed5189ee5a86f6f8f5:backend/catalog-service/src/test/java/com/fitstore/catalog/pruebas/GaragePrueba.java:generic-api-key:27
+599772167adc22dea700dc20af9305d774065e05:backend/payment-service/src/test/java/com/fitstore/payment/pruebas/GaragePrueba.java:generic-api-key:22
+599772167adc22dea700dc20af9305d774065e05:backend/payment-service/src/test/java/com/fitstore/payment/pruebas/GaragePrueba.java:generic-api-key:23
+599772167adc22dea700dc20af9305d774065e05:backend/payment-service/src/test/java/com/fitstore/payment/pruebas/GaragePrueba.java:generic-api-key:27
+
+# backend/payment-service, LogSinDatosSensiblesTest.java (commit 686fcf4): token inventado (tok_brick_SECRETO_…) que la prueba usa para
+# comprobar que no aparece en los logs (CA-5-15).
+686fcf4847501e233ae92063c9f04091b1059710:backend/payment-service/src/test/java/com/fitstore/payment/service/LogSinDatosSensiblesTest.java:generic-api-key:23

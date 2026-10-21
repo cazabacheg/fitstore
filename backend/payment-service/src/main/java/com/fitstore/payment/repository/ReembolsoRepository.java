@@ -14,6 +14,8 @@ public interface ReembolsoRepository extends JpaRepository<Reembolso, UUID> {
 
     List<Reembolso> findByIntencionId(UUID intencionId);
 
+    List<Reembolso> findByIntencionIdIn(java.util.Collection<UUID> intencionIds);
+
     Optional<Reembolso> findBySolicitudId(UUID solicitudId);
 
     List<Reembolso> findByEstado(EstadoReembolso estado);
