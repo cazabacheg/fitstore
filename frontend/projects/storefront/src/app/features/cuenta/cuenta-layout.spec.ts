@@ -34,13 +34,14 @@ describe('CuentaLayout (P-1-05)', () => {
   it('CA-1-15 el menú lateral lleva a Perfil, Direcciones y Mis pedidos, y /cuenta abre el perfil', async () => {
     const h = await arrancar();
     await h.navigateByUrl('/cuenta');
-    http().match(() => true).forEach((r) => r.flush({ success: true, mensaje: '', data: null }));
+    http()
+      .match(() => true)
+      .forEach((r) => r.flush({ success: true, mensaje: '', data: null }));
 
     expect(TestBed.inject(Router).url).toBe('/cuenta/perfil');
-    const enlaces = [...(h.routeNativeElement as HTMLElement).querySelectorAll('nav a')].map((a) => [
-      a.textContent?.trim(),
-      a.getAttribute('href'),
-    ]);
+    const enlaces = [...(h.routeNativeElement as HTMLElement).querySelectorAll('nav a')].map(
+      (a) => [a.textContent?.trim(), a.getAttribute('href')],
+    );
     expect(enlaces).toEqual([
       ['Perfil', '/cuenta/perfil'],
       ['Direcciones', '/cuenta/direcciones'],
@@ -51,10 +52,12 @@ describe('CuentaLayout (P-1-05)', () => {
   it('CA-1-10 "Cerrar sesión" llama a /auth/logout, borra la sesión local y vuelve al inicio', async () => {
     const h = await arrancar();
     await h.navigateByUrl('/cuenta/direcciones');
-    http().match(() => true).forEach((r) => r.flush({ success: true, mensaje: '', data: [] }));
-    const boton = [...(h.routeNativeElement as HTMLElement).querySelectorAll<HTMLButtonElement>('button')].find((b) =>
-      b.textContent?.includes('Cerrar sesión'),
-    )!;
+    http()
+      .match(() => true)
+      .forEach((r) => r.flush({ success: true, mensaje: '', data: [] }));
+    const boton = [
+      ...(h.routeNativeElement as HTMLElement).querySelectorAll<HTMLButtonElement>('button'),
+    ].find((b) => b.textContent?.includes('Cerrar sesión'))!;
     boton.click();
 
     const peticion = http().expectOne('/api/v1/auth/logout');
@@ -70,7 +73,9 @@ describe('CuentaLayout (P-1-05)', () => {
   it('CA-1-10 aunque el servidor falle, la sesión local se cierra', async () => {
     const h = await arrancar();
     await h.navigateByUrl('/cuenta/direcciones');
-    http().match(() => true).forEach((r) => r.flush({ success: true, mensaje: '', data: [] }));
+    http()
+      .match(() => true)
+      .forEach((r) => r.flush({ success: true, mensaje: '', data: [] }));
     [...(h.routeNativeElement as HTMLElement).querySelectorAll<HTMLButtonElement>('button')]
       .find((b) => b.textContent?.includes('Cerrar sesión'))!
       .click();

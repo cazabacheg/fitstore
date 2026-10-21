@@ -24,7 +24,9 @@ async function iniciar(lista: authApi.Direccion[]) {
   http().expectOne(RUTA).flush(ok(lista));
   await m.estabilizar();
   const boton = (texto: string) =>
-    [...m.el.querySelectorAll<HTMLButtonElement>('button')].find((b) => b.textContent?.includes(texto))!;
+    [...m.el.querySelectorAll<HTMLButtonElement>('button')].find((b) =>
+      b.textContent?.includes(texto),
+    )!;
   const tarjetas = () => [...m.el.querySelectorAll<HTMLElement>('fs-tarjeta-direccion')];
   return { ...m, boton, tarjetas };
 }
@@ -66,10 +68,14 @@ describe('DireccionesPage (P-1-06)', () => {
 
   it('CA-1-19 eliminar pide confirmación y luego borra la dirección', async () => {
     const p = await iniciar([dir(1, 'Casa', true), dir(2, 'Trabajo')]);
-    [...p.tarjetas()[1].querySelectorAll<HTMLButtonElement>('button')].find((b) => b.textContent?.includes('Eliminar'))!.click();
+    [...p.tarjetas()[1].querySelectorAll<HTMLButtonElement>('button')]
+      .find((b) => b.textContent?.includes('Eliminar'))!
+      .click();
     await p.estabilizar();
 
-    expect(p.el.querySelector('[role="dialog"]')?.textContent).toContain('¿Eliminar la dirección Trabajo?');
+    expect(p.el.querySelector('[role="dialog"]')?.textContent).toContain(
+      '¿Eliminar la dirección Trabajo?',
+    );
     http().expectNone(`${RUTA}/2`);
     [...p.el.querySelectorAll<HTMLButtonElement>('[role="dialog"] button')]
       .find((b) => b.textContent?.includes('Eliminar dirección'))!
@@ -80,7 +86,9 @@ describe('DireccionesPage (P-1-06)', () => {
     expect(borrado.request.method).toBe('DELETE');
     borrado.flush(ok(null, 'Dirección eliminada'));
     await p.estabilizar();
-    http().expectOne(RUTA).flush(ok([dir(1, 'Casa', true)]));
+    http()
+      .expectOne(RUTA)
+      .flush(ok([dir(1, 'Casa', true)]));
     await p.estabilizar();
 
     expect(p.tarjetas()).toHaveLength(1);
@@ -90,7 +98,9 @@ describe('DireccionesPage (P-1-06)', () => {
     const p = await iniciar([dir(1, 'Casa', true)]);
     p.tarjetas()[0].querySelectorAll<HTMLButtonElement>('button')[1].click();
     await p.estabilizar();
-    [...p.el.querySelectorAll<HTMLButtonElement>('[role="dialog"] button')].find((b) => b.textContent?.includes('Volver'))!.click();
+    [...p.el.querySelectorAll<HTMLButtonElement>('[role="dialog"] button')]
+      .find((b) => b.textContent?.includes('Volver'))!
+      .click();
     await p.estabilizar();
 
     expect(p.el.querySelector('[role="dialog"]')).toBeNull();
@@ -107,21 +117,29 @@ describe('DireccionesPage (P-1-06)', () => {
 
   it('CA-1-17 agregar abre el diálogo y, si se guardó una dirección, recarga la lista', async () => {
     const p = await iniciar([]);
-    const abrir = vi.spyOn(TestBed.inject(DialogoDireccionService), 'abrir').mockResolvedValue(dir(1, 'Casa', true));
+    const abrir = vi
+      .spyOn(TestBed.inject(DialogoDireccionService), 'abrir')
+      .mockResolvedValue(dir(1, 'Casa', true));
     p.boton('Agregar dirección').click();
     await p.estabilizar();
     await Promise.resolve();
 
     expect(abrir).toHaveBeenCalledWith(undefined);
-    http().expectOne(RUTA).flush(ok([dir(1, 'Casa', true)]));
+    http()
+      .expectOne(RUTA)
+      .flush(ok([dir(1, 'Casa', true)]));
     await p.estabilizar();
     expect(p.tarjetas()).toHaveLength(1);
   });
 
   it('CA-1-19 editar abre el diálogo con la dirección; si se cancela no recarga', async () => {
     const p = await iniciar([dir(1, 'Casa', true)]);
-    const abrir = vi.spyOn(TestBed.inject(DialogoDireccionService), 'abrir').mockResolvedValue(undefined);
-    [...p.tarjetas()[0].querySelectorAll<HTMLButtonElement>('button')].find((b) => b.textContent?.includes('Editar'))!.click();
+    const abrir = vi
+      .spyOn(TestBed.inject(DialogoDireccionService), 'abrir')
+      .mockResolvedValue(undefined);
+    [...p.tarjetas()[0].querySelectorAll<HTMLButtonElement>('button')]
+      .find((b) => b.textContent?.includes('Editar'))!
+      .click();
     await p.estabilizar();
     await Promise.resolve();
 
@@ -135,7 +153,9 @@ describe('DireccionesPage (P-1-06)', () => {
     await m.estabilizar();
 
     expect(m.el.querySelector('[role="alert"]')?.textContent).toContain('Reintentar');
-    [...m.el.querySelectorAll<HTMLButtonElement>('button')].find((b) => b.textContent?.includes('Reintentar'))!.click();
+    [...m.el.querySelectorAll<HTMLButtonElement>('button')]
+      .find((b) => b.textContent?.includes('Reintentar'))!
+      .click();
     http().expectOne(RUTA).flush(ok([]));
     await m.estabilizar();
     expect(m.el.textContent).toContain('Aún no tienes direcciones');

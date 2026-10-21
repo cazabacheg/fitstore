@@ -36,7 +36,8 @@ async function iniciar() {
       .click();
     await m.estabilizar();
   };
-  const errorDe = (etiqueta: string) => campo(etiqueta).querySelector('.fs-campo__error')?.textContent ?? '';
+  const errorDe = (etiqueta: string) =>
+    campo(etiqueta).querySelector('.fs-campo__error')?.textContent ?? '';
   return { ...m, campo, entrada, escribir, guardar, errorDe };
 }
 
@@ -71,7 +72,11 @@ describe('PerfilPage (P-1-05)', () => {
     peticion.flush(ok({ ...PERFIL, nombres: 'Rosa María', telefono: '912345678' }));
     await p.estabilizar();
 
-    expect(TestBed.inject(ToastService).toasts().map((t) => t.mensaje)).toContain('Guardado');
+    expect(
+      TestBed.inject(ToastService)
+        .toasts()
+        .map((t) => t.mensaje),
+    ).toContain('Guardado');
     expect(p.entrada('Nombres').value).toBe('Rosa María');
   });
 
@@ -91,10 +96,15 @@ describe('PerfilPage (P-1-05)', () => {
     await p.guardar();
     http()
       .expectOne(ME)
-      .flush(error400([{ campo: 'telefono', mensaje: 'El celular debe tener 9 dígitos y empezar con 9' }]), {
-        status: 400,
-        statusText: 'Bad Request',
-      });
+      .flush(
+        error400([
+          { campo: 'telefono', mensaje: 'El celular debe tener 9 dígitos y empezar con 9' },
+        ]),
+        {
+          status: 400,
+          statusText: 'Bad Request',
+        },
+      );
     await p.estabilizar();
 
     expect(p.errorDe('Celular')).toContain('empezar con 9');
@@ -106,9 +116,11 @@ describe('PerfilPage (P-1-05)', () => {
     await m.estabilizar();
 
     expect(m.el.querySelector('[role="alert"]')?.textContent).toContain('Reintentar');
-    [...m.el.querySelectorAll<HTMLButtonElement>('button')].find((b) => b.textContent?.includes('Reintentar'))!.click();
+    [...m.el.querySelectorAll<HTMLButtonElement>('button')]
+      .find((b) => b.textContent?.includes('Reintentar'))!
+      .click();
     http().expectOne(ME).flush(ok(PERFIL));
     await m.estabilizar();
-    expect(m.el.textContent).toContain('rosa@correo.pe');
+    expect(m.el.querySelector<HTMLInputElement>('input:disabled')?.value).toBe('rosa@correo.pe');
   });
 });

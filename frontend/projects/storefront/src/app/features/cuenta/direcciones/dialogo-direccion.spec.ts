@@ -1,5 +1,4 @@
 import { ApplicationRef } from '@angular/core';
-import { By } from '@angular/platform-browser';
 import { TestBed } from '@angular/core/testing';
 import { provideZonelessChangeDetection } from '@angular/core';
 import { authApi } from 'shared';
@@ -29,7 +28,9 @@ async function abrir(direccion?: authApi.Direccion) {
   };
   await refrescar();
   // el selector de ubigeo pide los departamentos al montarse
-  http().match((r) => r.url.includes('/ubigeo/')).forEach((r) => r.flush(ok([])));
+  http()
+    .match((r) => r.url.includes('/ubigeo/'))
+    .forEach((r) => r.flush(ok([])));
   const dialogo = () => document.body.querySelector<HTMLElement>('[role="dialog"]');
   const campo = (etiqueta: string) =>
     [...document.body.querySelectorAll<HTMLElement>('[role="dialog"] .fs-campo')].find((c) =>
@@ -42,20 +43,15 @@ async function abrir(direccion?: authApi.Direccion) {
     await refrescar();
   };
   const elegirUbigeo = async (codigo: string | null) => {
-    const selector = TestBed.inject(ApplicationRef).components.length
-      ? null
-      : null;
-    void selector;
-    const el = document.body.querySelector('fs-selector-ubigeo');
-    const instancia = (el as unknown as { __ngContext__: unknown }) && getSelector();
-    instancia.cambio.emit(codigo);
+    getSelector().cambio.emit(codigo);
     await refrescar();
   };
   const boton = (texto: string) =>
     [...document.body.querySelectorAll<HTMLButtonElement>('[role="dialog"] button')].find((b) =>
       b.textContent?.includes(texto),
     )!;
-  const errorDe = (etiqueta: string) => campo(etiqueta).querySelector('.fs-campo__error')?.textContent ?? '';
+  const errorDe = (etiqueta: string) =>
+    campo(etiqueta).querySelector('.fs-campo__error')?.textContent ?? '';
   return { resultado, refrescar, dialogo, campo, escribir, elegirUbigeo, boton, errorDe };
 }
 
@@ -65,8 +61,6 @@ function getSelector(): FsSelectorUbigeo {
   const depurar = (window as unknown as { ng: { getComponent(e: Element): FsSelectorUbigeo } }).ng;
   return depurar.getComponent(el);
 }
-
-void By;
 
 describe('DialogoDireccion y su servicio (A6)', () => {
   afterEach(() => {
@@ -155,7 +149,11 @@ describe('DialogoDireccion y su servicio (A6)', () => {
     http()
       .expectOne(RUTA)
       .flush(
-        { success: false, mensaje: 'Ya tienes 10 direcciones guardadas', codigo: 'LIMITE_DIRECCIONES' },
+        {
+          success: false,
+          mensaje: 'Ya tienes 10 direcciones guardadas',
+          codigo: 'LIMITE_DIRECCIONES',
+        },
         { status: 409, statusText: 'Conflict' },
       );
     await d.refrescar();

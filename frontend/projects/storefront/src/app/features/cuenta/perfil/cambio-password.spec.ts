@@ -25,7 +25,8 @@ async function iniciar() {
     m.el.querySelector<HTMLButtonElement>('button[type="submit"]')!.click();
     await m.estabilizar();
   };
-  const errorDe = (etiqueta: string) => campo(etiqueta).querySelector('.fs-campo__error')?.textContent ?? '';
+  const errorDe = (etiqueta: string) =>
+    campo(etiqueta).querySelector('.fs-campo__error')?.textContent ?? '';
   return { ...m, llenar, errorDe, campo };
 }
 
@@ -38,11 +39,18 @@ describe('CambioPassword (P-1-05)', () => {
 
     const peticion = http().expectOne(RUTA);
     expect(peticion.request.method).toBe('PUT');
-    expect(peticion.request.body).toEqual({ passwordActual: 'Gamarra2026', nuevaPassword: 'NuevaClave2027' });
+    expect(peticion.request.body).toEqual({
+      passwordActual: 'Gamarra2026',
+      nuevaPassword: 'NuevaClave2027',
+    });
     peticion.flush(ok(null, 'Contraseña actualizada'));
     await c.estabilizar();
 
-    expect(TestBed.inject(ToastService).toasts().map((t) => t.mensaje)).toContain('Contraseña actualizada');
+    expect(
+      TestBed.inject(ToastService)
+        .toasts()
+        .map((t) => t.mensaje),
+    ).toContain('Contraseña actualizada');
     expect(c.campo('Contraseña actual').querySelector<HTMLInputElement>('input')!.value).toBe('');
   });
 
@@ -51,10 +59,13 @@ describe('CambioPassword (P-1-05)', () => {
     await c.llenar('Incorrecta1', 'NuevaClave2027');
     http()
       .expectOne(RUTA)
-      .flush(error400([{ campo: 'passwordActual', mensaje: 'La contraseña actual es incorrecta' }]), {
-        status: 400,
-        statusText: 'Bad Request',
-      });
+      .flush(
+        error400([{ campo: 'passwordActual', mensaje: 'La contraseña actual es incorrecta' }]),
+        {
+          status: 400,
+          statusText: 'Bad Request',
+        },
+      );
     await c.estabilizar();
 
     expect(c.errorDe('Contraseña actual')).toContain('La contraseña actual es incorrecta');

@@ -1,8 +1,21 @@
 import { Routes } from '@angular/router';
-import { Proximamente } from '../../ui/estados/proximamente';
 
-/** Marcador "Próximamente" (R2): la spec dueña reemplaza esta carpeta. */
+/** Mi cuenta (P-1-05 y P-1-06): `CuentaLayout` con el menú lateral; los pedidos (`/cuenta/pedidos`) son de la spec 4. */
 export const CUENTA_ROUTES: Routes = [
-  { path: 'perfil', component: Proximamente, data: { seccion: 'Tu perfil' } },
-  { path: 'direcciones', component: Proximamente, data: { seccion: 'Tus direcciones' } },
+  {
+    path: '',
+    loadComponent: () => import('./cuenta-layout').then((m) => m.CuentaLayout),
+    children: [
+      {
+        path: 'perfil',
+        loadComponent: () => import('./perfil/perfil.page').then((m) => m.PerfilPage),
+      },
+      {
+        path: 'direcciones',
+        loadComponent: () =>
+          import('./direcciones/direcciones.page').then((m) => m.DireccionesPage),
+      },
+      { path: '', pathMatch: 'full', redirectTo: 'perfil' },
+    ],
+  },
 ];
