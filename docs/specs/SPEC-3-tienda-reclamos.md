@@ -298,7 +298,7 @@ Todo según el micro de settings. Decisiones de implementación de esta spec:
 
 ## 6. Datos
 
-- **Sin migraciones nuevas:** la columna `beneficios` (S1, `jsonb NOT NULL DEFAULT '[]'`, máximo 3) ya está en la `V1` de 0a; la franja empieza oculta.
+- **Migraciones:** la columna `beneficios` (S1, `jsonb NOT NULL DEFAULT '[]'`, máximo 3) ya está en la `V1` de 0a; la franja empieza oculta. Una sola migración nueva, `VAAAAMMDD_HHMM__politicas_modelo.sql`, reemplaza el texto de ejemplo de la versión 1 de las 4 políticas por los textos modelo, solo si ese texto no cambió.
 - **Políticas versión 1:** textos modelo para una tienda en línea peruana (términos, privacidad con Ley 29733, cambios y devoluciones, envíos), claramente marcados como **plantilla a revisar por la tienda** (no son asesoría legal).
 - **Datos de demostración (perfil `dev` y, en la nube, perfil `demo` (SPEC-8 I7)):** 3 imágenes de landing (licencia libre; versionadas en los recursos de settings, que las sube a Garage al arrancar con `dev` o `demo`, igual que catalog en la SPEC-2 v9), beneficios, contacto y tienda física en Gamarra; 3 reclamos (uno vencido, uno por vencer, uno respondido) para mostrar la bandeja.
 

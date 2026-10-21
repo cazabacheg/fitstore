@@ -31,12 +31,12 @@ Copiada de la sección 7 de la SPEC-2 v9. Cuando un criterio tiene parte de API 
 | 54 | Integración · gateway (`/internal` → 404) | 2.1 | El gateway está congelado y su prueba de `/internal/**` ya existe. 2.1 la cubre en la colección Postman a través del gateway, con el id en el nombre |
 | 55 | Carga · `k6/catalogo.js` | 2.1 | Se corre en Lyanna con la plataforma levantada; el resultado (p95 con y sin caché) va en el informe |
 | 56–57 | Integración · invalidación de caché y Redis caído | 2.1 | — |
-| 58–61 | Integración · `CargaMasivaServiceTest` (CSV y XLSX de ejemplo) | 2.1 | 2.2: `CargaMasivaPage` (3 pasos, 61 confirmar deshabilitado con el motivo) |
+| 58–61 | Integración · `CargaMasivaServiceTest` (CSV y XLSX de ejemplo) | 2.1 | — (la pantalla P-2-09 pasó a [extensión de alcance](../extension-alcance.md)) |
 | Todas | Postman · `postman/catalog.postman_collection.json` | 2.1 | — |
 
 **Incluye (sección 1), repartido:**
 - **2.1:** lógica completa de catalog, `StockNoConfirmado`, cachés, datos demo con su script de fotos, k6 y Postman.
-- **2.2:** P-2-01 a P-2-09 y el botón "Agregar al carrito" (C1).
+- **2.2:** P-2-01 a P-2-08 y el botón "Agregar al carrito" (C1). P-2-09 (carga masiva) pasó a [extensión de alcance](../extension-alcance.md); su ruta sigue mostrando "Próximamente".
 
 **No incluye:** la landing y sus destacados en pantalla (spec 3), el carrito y el checkout (spec 4), los correos de alertas (spec 7) ni el menú de la cabecera (0b).
 
@@ -114,14 +114,13 @@ En tu primer mensaje: qué leíste, en 5–10 líneas qué construyes, y cómo p
   - **P-2-04 Formulario:** pestañas Datos, Variantes, Imágenes y Descuento; `AvisoPublicacion`; solo lectura para OPERADOR.
   - **P-2-05 Categorías:** árbol arrastrable con CDK y la guía de tallas.
   - **P-2-06** Tallas y colores, y descuentos.
-  - **P-2-09 Carga masiva:** 3 pasos.
 - **Backoffice, `features/inventario`:**
   - **P-2-07 Inventario:** filas marcadas por stock bajo y agotado con `claseFila`; el SKU abre el kardex.
   - **P-2-08 Kardex:** filas no clicables; el código de pedido enlaza a `/pedidos?codigo=…`.
 
 **Rutas:** conserva los arreglos que importa el *shell*:
 - **tienda:** `CATALOGO_ROUTES`;
-- **backoffice:** `PRODUCTOS_ROUTES` (`''`, `nuevo`, `:id`), `CARGA_MASIVA_ROUTES`, `CATEGORIAS_ROUTES`, `MAESTROS_ROUTES`, `DESCUENTOS_ROUTES` e `INVENTARIO_ROUTES` (`''`, `:varianteId`).
+- **backoffice:** `PRODUCTOS_ROUTES` (`''`, `nuevo`, `:id`), `CARGA_MASIVA_ROUTES` (se queda con su "Próximamente"), `CATEGORIAS_ROUTES`, `MAESTROS_ROUTES`, `DESCUENTOS_ROUTES` e `INVENTARIO_ROUTES` (`''`, `:varianteId`).
 
 `/catalogo/productos/nuevo` es solo para ADMIN: pon `rolGuard('ADMIN')` (de `shared`) en esa subruta. Las demás guardas ya están en el *shell*.
 
@@ -130,4 +129,4 @@ En tu primer mensaje: qué leíste, en 5–10 líneas qué construyes, y cómo p
 - Los endpoints se prueban con `HttpTestingController` contra el contrato (catalog ya está implementado en la rama; order todavía no).
 - No cambies dependencias.
 
-**Núcleo (cobertura completa):** filtros y URL del listado, selección de color y talla con su stock, agregar al carrito, `GeneradorMatriz`, `AvisoPublicacion`, `EditorTramos` y los 3 pasos de la carga masiva.
+**Núcleo (cobertura completa):** filtros y URL del listado, selección de color y talla con su stock, agregar al carrito, `GeneradorMatriz`, `AvisoPublicacion` y `EditorTramos`.

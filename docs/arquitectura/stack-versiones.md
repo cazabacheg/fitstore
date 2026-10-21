@@ -68,7 +68,7 @@ Gestionadas por los BOM de Spring Boot y Spring Cloud salvo que se indique versi
 | Base | `spring-boot-starter-test` (JUnit 5, AssertJ, Mockito) | BOM Boot |
 | Capa de datos (AP1) | `spring-boot-starter-data-jpa-test` (`@DataJpaTest`) | BOM Boot |
 | Contenedores | `org.testcontainers:testcontainers-postgresql`, `-rabbitmq`, `-junit-jupiter` (BOM `testcontainers-bom`) | **2.0.5** |
-| Imágenes en pruebas | Testcontainers con las etiquetas exactas del compose: `postgres:17.10`, `redis:8.10.1` (contenedor genérico), `rabbitmq:4.3.5-management` | — |
+| Imágenes en pruebas | Testcontainers con las etiquetas exactas del compose: `postgres:17.10`, `redis:8.10.1` (contenedor genérico), `rabbitmq:4.3.5-management`, `dxflrs/garage:v2.4.1` (contenedor genérico, catalog y settings) | — |
 | Seguridad | `spring-security-test` | BOM Boot |
 | HTTP simulado (pasarelas, Feign) | `org.wiremock:wiremock-standalone` | **3.13.x** (la 4.0 sigue en beta) |
 | SMTP de prueba (notification) | `com.icegreen:greenmail-junit5` | **2.1.14** |
