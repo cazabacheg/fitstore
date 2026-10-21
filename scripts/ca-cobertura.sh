@@ -10,6 +10,15 @@ archivo="$(ls "$raiz"/docs/specs/SPEC-"$spec"-*.md 2>/dev/null | head -n1)"
 
 # Criterios definidos en la spec (líneas que empiezan con el id, dentro de los bloques gherkin).
 mapfile -t criterios < <(grep -oE "^CA-$spec-[0-9]+[a-z]?" "$archivo" | sort -u -V)
+# Los criterios en extensión de alcance (docs/implementacion/extension-alcance.md) no se exigen.
+extension="$raiz/docs/implementacion/extension-alcance.md"
+if [[ -f "$extension" ]]; then
+  mapfile -t excluidos < <(grep -oE "CA-$spec-[0-9]+[a-z]?" "$extension" | sort -u -V)
+  if [[ ${#excluidos[@]} -gt 0 ]]; then
+    mapfile -t criterios < <(printf '%s\n' "${criterios[@]}" | grep -vxF -f <(printf '%s\n' "${excluidos[@]}"))
+    echo "Excluidos por extensión de alcance: ${#excluidos[@]}"
+  fi
+fi
 [[ ${#criterios[@]} -gt 0 ]] || { echo "La spec no define criterios CA-$spec-xx" >&2; exit 2; }
 
 # Dónde se buscan: todo el repo salvo documentación, contratos y dependencias.
