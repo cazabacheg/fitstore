@@ -3,7 +3,7 @@ import { SESION_ADMIN, SESION_OPERADOR } from '../../testing/sesiones';
 import { ProductosPage } from './productos.page';
 import { RESUMENES, armar, asentar, atender, boton, itemsMenu, pagina } from './prueba-catalogo';
 
-@Component({ template: 'formulario' })
+@Component({ selector: 'fs-falso', template: 'formulario' })
 class Falso {}
 
 const RUTAS = [
@@ -53,9 +53,12 @@ describe('ProductosPage (P-2-03)', () => {
     document.querySelectorAll<HTMLElement>('button[mat-menu-item]')[2].click();
     await asentar(fixture);
     ctrl.expectNone('/api/v1/admin/productos/7');
-    const confirmar = document.querySelector<HTMLElement>('mat-dialog-container button.fs-btn--peligro')!;
+    const confirmar = document.querySelector<HTMLElement>(
+      'mat-dialog-container button.fs-btn--peligro',
+    )!;
     expect(confirmar.textContent).toContain('Eliminar');
     confirmar.click();
+    await new Promise((r) => setTimeout(r, 400)); // el diálogo se cierra con su animación
     await asentar(fixture);
     expect(ctrl.expectOne('/api/v1/admin/productos/7').request.method).toBe('DELETE');
   });
@@ -64,7 +67,9 @@ describe('ProductosPage (P-2-03)', () => {
     const { el } = await abrir(SESION_OPERADOR);
     expect(boton(el, 'Nuevo producto')).toBeUndefined();
     expect(el.querySelector('button[aria-label="Más acciones"]')).toBeNull();
-    const ver = Array.from(el.querySelectorAll('a')).filter((a) => a.textContent?.includes('Ver ›'));
+    const ver = Array.from(el.querySelectorAll('a')).filter((a) =>
+      a.textContent?.includes('Ver ›'),
+    );
     expect(ver.length).toBe(2);
     expect(ver[0].getAttribute('href')).toBe('/catalogo/productos/7');
   });

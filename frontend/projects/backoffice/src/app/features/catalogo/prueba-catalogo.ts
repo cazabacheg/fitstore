@@ -2,13 +2,19 @@ import { HttpTestingController, provideHttpClientTesting } from '@angular/common
 import { Component, provideZonelessChangeDetection } from '@angular/core';
 import { TestBed, type ComponentFixture } from '@angular/core/testing';
 import { Router, RouterOutlet, provideRouter, type Routes } from '@angular/router';
-import { SesionStore, provideFitstoreHttp, provideSesionConfig, type authApi, type catalogApi } from 'shared';
+import {
+  SesionStore,
+  provideFitstoreHttp,
+  provideSesionConfig,
+  type authApi,
+  type catalogApi,
+} from 'shared';
 import { SESION_ADMIN } from '../../testing/sesiones';
 
 /** Ayudas compartidas por las pruebas del catálogo y el inventario del backoffice (no forman parte de la aplicación). */
 export const sobre = <T>(data: T) => ({ success: true, mensaje: 'Operación exitosa', data });
 
-@Component({ imports: [RouterOutlet], template: '<router-outlet />' })
+@Component({ selector: 'fs-anfitrion', imports: [RouterOutlet], template: '<router-outlet />' })
 class Anfitrion {}
 
 /** Deja correr efectos y peticiones (sin `whenStable`: una petición pendiente lo bloquearía). */
@@ -48,7 +54,10 @@ export function atender(
     const ruta = req.request.url.split('?')[0].replace('/api/v1', '');
     const error = errores[ruta];
     if (error)
-      req.flush(error.cuerpo ?? { success: false, mensaje: 'Error', codigo: 'ERROR' }, { status: error.status, statusText: 'x' });
+      req.flush(error.cuerpo ?? { success: false, mensaje: 'Error', codigo: 'ERROR' }, {
+        status: error.status,
+        statusText: 'x',
+      });
     else req.flush(sobre(respuestas[ruta] ?? null));
   }
   return atendidas;
@@ -63,13 +72,38 @@ export const pagina = <T>(contenido: T[]) => ({
 });
 
 export const boton = (raiz: ParentNode, texto: string) =>
-  Array.from(raiz.querySelectorAll('button, a')).find((b) => b.textContent?.includes(texto)) as HTMLElement | undefined;
+  Array.from(raiz.querySelectorAll('button, a')).find((b) => b.textContent?.includes(texto)) as
+    HTMLElement | undefined;
 
 /** Ítems del menú "⋮" (el panel vive en la capa superpuesta). */
 export const itemsMenu = () =>
-  Array.from(document.querySelectorAll<HTMLElement>('button[mat-menu-item]')).map((b) => b.textContent?.trim());
+  Array.from(document.querySelectorAll<HTMLElement>('button[mat-menu-item]')).map((b) =>
+    b.textContent?.trim(),
+  );
 
 export const RESUMENES: catalogApi.ProductoAdminResumen[] = [
-  { id: 7, codigo: 'LEG01', nombre: 'Legging Pro', slug: 'legging-pro', estado: 'BORRADOR', destacado: false, precioDesde: 59.9, cantidadVariantes: 6, stockDisponible: 20, imagenUrl: null },
-  { id: 8, codigo: 'POL01', nombre: 'Polo Algodón', slug: 'polo-algodon', estado: 'ACTIVO', destacado: true, precioDesde: 35, cantidadVariantes: 4, stockDisponible: 0, imagenUrl: null },
+  {
+    id: 7,
+    codigo: 'LEG01',
+    nombre: 'Legging Pro',
+    slug: 'legging-pro',
+    estado: 'BORRADOR',
+    destacado: false,
+    precioDesde: 59.9,
+    cantidadVariantes: 6,
+    stockDisponible: 20,
+    imagenUrl: null,
+  },
+  {
+    id: 8,
+    codigo: 'POL01',
+    nombre: 'Polo Algodón',
+    slug: 'polo-algodon',
+    estado: 'ACTIVO',
+    destacado: true,
+    precioDesde: 35,
+    cantidadVariantes: 4,
+    stockDisponible: 0,
+    imagenUrl: null,
+  },
 ];
