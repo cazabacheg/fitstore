@@ -6,6 +6,7 @@ import { PagoService } from 'shared/api/payment-service';
 import { firstValueFrom } from 'rxjs';
 import { FsBoton } from '../../ui/boton/boton';
 import { EstadoCargando, EstadoError } from '../../ui/estados/estados';
+import { ESTILOS_PANTALLA } from '../estilos-pantalla';
 import { BrickMercadoPago, type EnvioBrick } from './brick-mercado-pago';
 import { FormularioSimulado } from './formulario-simulado';
 import { ResultadoPago, type TipoResultado } from './resultado-pago';
@@ -33,7 +34,9 @@ const PAGADOS = ['PAGADA', 'REEMBOLSADA_PARCIAL', 'REEMBOLSADA'];
   selector: 'fs-pago-page',
   imports: [RouterLink, PrecioPipe, FsBoton, EstadoCargando, EstadoError, BrickMercadoPago, FormularioSimulado, ResultadoPago],
   templateUrl: './pago.page.html',
-  styles: `
+  styles: [
+    ESTILOS_PANTALLA,
+    `
     .pago-medios {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
@@ -71,6 +74,7 @@ const PAGADOS = ['PAGADA', 'REEMBOLSADA_PARCIAL', 'REEMBOLSADA'];
       font-variant-numeric: tabular-nums;
     }
   `,
+  ],
 })
 export class PagoPage implements OnInit, OnDestroy {
   protected readonly codigo = inject(ActivatedRoute).snapshot.paramMap.get('codigo') ?? '';

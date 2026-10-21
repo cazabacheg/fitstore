@@ -6,6 +6,7 @@ import { BehaviorSubject, catchError, combineLatest, map, of, startWith, switchM
 import { SIN_TOAST, settingsApi } from 'shared';
 import { PoliticasService } from 'shared/api/settings-service';
 import { FsBoton } from '../../ui/boton/boton';
+import { ESTILOS_PANTALLA } from '../estilos-pantalla';
 import { fechaLarga } from './formato-fecha';
 import { renderizarMarkdownSeguro } from './markdown-seguro';
 
@@ -39,7 +40,7 @@ type Estado =
         }
         @case ('no-encontrada') {
           <div data-testid="politica-no-encontrada" class="mensaje">
-            <h1>No encontramos esta política</h1>
+            <h1 class="fs-titulo-pagina">No encontramos esta política</h1>
             <p class="fs-suave">
               Revisa el enlace o vuelve a las políticas desde el pie de página.
             </p>
@@ -47,7 +48,7 @@ type Estado =
         }
         @case ('error') {
           <div class="mensaje" role="alert">
-            <h2>No pudimos cargar la política</h2>
+            <h2 class="fs-titulo-seccion">No pudimos cargar la política</h2>
             <p class="fs-suave">Inténtalo de nuevo en un momento.</p>
             <button
               type="button"
@@ -76,7 +77,9 @@ type Estado =
       }
     </article>
   `,
-  styles: `
+  styles: [
+    ESTILOS_PANTALLA,
+    `
     .politica {
       max-width: 820px;
       padding-block: 48px 96px;
@@ -92,26 +95,67 @@ type Estado =
       border-radius: var(--fs-radio-md, 8px);
       background: var(--fs-color-primario-suave);
     }
-    .politica__texto {
+    /* El HTML viene de [innerHTML]: no lleva el atributo de encapsulación, por eso se acota con ::ng-deep al contenedor. */
+    :host ::ng-deep .politica__texto {
       line-height: 1.7;
+      color: var(--fs-color-texto);
     }
-    .politica__texto :is(h1, h2, h3) {
+    :host ::ng-deep .politica__texto :is(h1, h2, h3, h4) {
       line-height: 1.25;
-      margin-block: 1.6em 0.5em;
+      font-weight: 700;
+      margin-block: 2em 0.6em;
     }
-    .politica__texto h1 {
+    :host ::ng-deep .politica__texto h1 {
       margin-top: 0;
+      font-size: 28px;
+      line-height: 34px;
+      letter-spacing: -0.01em;
     }
-    .politica__texto table {
+    :host ::ng-deep .politica__texto h2 {
+      font-size: 20px;
+      font-weight: 600;
+    }
+    :host ::ng-deep .politica__texto h3 {
+      font-size: 17px;
+      font-weight: 600;
+    }
+    :host ::ng-deep .politica__texto p {
+      margin: 0 0 1em;
+    }
+    :host ::ng-deep .politica__texto :is(ul, ol) {
+      margin: 0 0 1em;
+      padding-left: 1.5em;
+    }
+    :host ::ng-deep .politica__texto ul {
+      list-style: disc;
+    }
+    :host ::ng-deep .politica__texto ol {
+      list-style: decimal;
+    }
+    :host ::ng-deep .politica__texto li {
+      margin-block: 0.35em;
+    }
+    :host ::ng-deep .politica__texto strong {
+      font-weight: 700;
+    }
+    :host ::ng-deep .politica__texto a {
+      color: var(--fs-color-primario-texto);
+    }
+    :host ::ng-deep .politica__texto hr {
+      border: 0;
+      border-top: 1px solid var(--fs-color-linea);
+      margin-block: 2em;
+    }
+    :host ::ng-deep .politica__texto table {
       border-collapse: collapse;
       margin-block: 1em;
     }
-    .politica__texto :is(th, td) {
+    :host ::ng-deep .politica__texto :is(th, td) {
       border: 1px solid var(--fs-color-linea);
       padding: 8px 12px;
       text-align: left;
     }
-    .politica__texto blockquote {
+    :host ::ng-deep .politica__texto blockquote {
       margin-inline: 0;
       padding: 8px 16px;
       border-left: 4px solid var(--fs-color-primario);
@@ -125,6 +169,7 @@ type Estado =
       text-align: center;
     }
   `,
+  ],
 })
 export class PoliticaPage {
   private readonly ruta = inject(ActivatedRoute);
