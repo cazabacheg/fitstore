@@ -47,6 +47,7 @@
 
 | Fecha | Evento |
 |---|---|
+| 2026-10-20 | **Recorte de alcance** (decisión del autor): P-2-09 y 11 historias de las specs 4–7 pasan a [extensión de alcance](extension-alcance.md); specs 4–7 de 164 a 125 criterios. Pasarela real: Mercado Pago. |
 | 2026-10-20 | CK2 corregido e integrado (#37, #38; rol en el menú, #39). Briefs de la ola 2a: SPEC-1, SPEC-2 en dos pasos y SPEC-3; stack v10 (WebP, Markdown, script de fotos). |
 | 2026-10-20 | SPEC-0b cerrada (#33, #35, #36). CK2: base desde cero en verde; 2 bloqueantes (rutas del backoffice por pantalla, `.env` del *smoke*) y 5 correcciones más, aprobadas por el autor; se corrigen en `fix/ck2-base`. |
 | 2026-10-20 | SPEC-0a cerrada (#29, primer CI real en verde). `.env.example` completado (#28). Brief de 0b listo. |
