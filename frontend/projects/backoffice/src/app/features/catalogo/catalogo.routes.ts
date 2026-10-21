@@ -7,17 +7,23 @@ import { Proximamente } from '../../ui/proximamente/proximamente';
  * La carga masiva (P-2-09) pasó a extensión de alcance y sigue con "Próximamente".
  */
 export const PRODUCTOS_ROUTES: Routes = [
-  { path: '', loadComponent: () => import('./productos.page').then((m) => m.ProductosPage), data: { pantalla: 'productos' },},
+  {
+    path: '',
+    loadComponent: () => import('./productos.page').then((m) => m.ProductosPage),
+    data: { pantalla: 'productos' },
+  },
   // Crear es solo del ADMIN; `nuevo` va antes de `:id`.
   {
     path: 'nuevo',
     canActivate: [rolGuard('ADMIN')],
     loadComponent: () => import('./producto-form.page').then((m) => m.ProductoFormPage),
-  data: { pantalla: 'productos' },},
+    data: { pantalla: 'productos' },
+  },
   {
     path: ':id',
     loadComponent: () => import('./producto-form.page').then((m) => m.ProductoFormPage),
-  data: { pantalla: 'productos' },},
+    data: { pantalla: 'productos' },
+  },
 ];
 
 export const CARGA_MASIVA_ROUTES: Routes = [
@@ -26,13 +32,25 @@ export const CARGA_MASIVA_ROUTES: Routes = [
 ];
 
 export const CATEGORIAS_ROUTES: Routes = [
-  { path: '', loadComponent: () => import('./categorias.page').then((m) => m.CategoriasPage), data: { pantalla: 'categorias' },},
+  {
+    path: '',
+    loadComponent: () => import('./categorias.page').then((m) => m.CategoriasPage),
+    data: { pantalla: 'categorias' },
+  },
 ];
 
 export const MAESTROS_ROUTES: Routes = [
-  { path: '', loadComponent: () => import('./maestros.page').then((m) => m.MaestrosPage), data: { pantalla: 'maestros' },},
+  {
+    path: '',
+    loadComponent: () => import('./maestros.page').then((m) => m.MaestrosPage),
+    data: { pantalla: 'maestros' },
+  },
 ];
 
 export const DESCUENTOS_ROUTES: Routes = [
-  { path: '', loadComponent: () => import('./descuentos.page').then((m) => m.DescuentosPage), data: { pantalla: 'descuentos' },},
+  {
+    path: '',
+    loadComponent: () => import('./descuentos.page').then((m) => m.DescuentosPage),
+    data: { pantalla: 'descuentos' },
+  },
 ];
