@@ -1,7 +1,5 @@
 import { Routes } from '@angular/router';
-import { Proximamente } from '../../ui/estados/proximamente';
+import { CheckoutPage } from './checkout.page';
 
-/** Marcador "Próximamente" (R2): la spec dueña reemplaza esta carpeta. */
-export const CHECKOUT_ROUTES: Routes = [
-  { path: '', component: Proximamente, data: { seccion: 'El checkout' } },
-];
+/** Checkout (P-4-02): solo clientes con sesión (la guarda la pone `app.routes.ts`). */
+export const CHECKOUT_ROUTES: Routes = [{ path: '', component: CheckoutPage }];
