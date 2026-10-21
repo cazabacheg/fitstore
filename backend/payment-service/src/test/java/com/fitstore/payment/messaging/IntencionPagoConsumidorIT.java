@@ -131,7 +131,7 @@ class IntencionPagoConsumidorIT {
 
         UUID evento = RabbitPrueba.publicar(rabbit, UUID.randomUUID(), "order.pedido.cancelado", "PedidoCancelado",
                 "{\"pedidoId\":\"" + pedido + "\",\"codigo\":\"FS-100005\",\"fuePagado\":true,\"motivo\":null,"
-                        + "\"actor\":\"ADMIN\",\"items\":[]}");
+                        + "\"actor\":\"STAFF\",\"items\":[]}");
         esperarProcesado(evento);
 
         assertThat(estado(pedido)).isEqualTo("PAGADA");
