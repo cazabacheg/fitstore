@@ -1,0 +1,128 @@
+<section class="fs-pagina" style="display: grid; gap: var(--espacio-4)">
+  <a class="fs-btn fs-btn--texto fs-btn--sm" routerLink="/pagos" style="justify-self: start">‹ Volver a pagos</a>
+
+  @if (pago.error()) {
+    <fs-estado-error
+      titulo="No pudimos cargar el pago"
+      texto="Puede que no exista o que no haya conexión."
+      (reintentar)="pago.reload()"
+    />
+  } @else if (pago.value(); as p) {
+    <header style="display: flex; flex-wrap: wrap; gap: var(--espacio-3); align-items: center">
+      <h1 class="fs-titulo-pagina" style="margin: 0">
+        Pago del pedido
+        <a class="fs-codigo" [routerLink]="['/pedidos', p.pedidoId]">{{ p.codigoPedido }}</a>
+      </h1>
+      <fs-insignia-estado tipo="pago" [estado]="p.estado" />
+    </header>
+
+    <div class="fs-tarjeta" style="display: grid; gap: var(--espacio-2)">
+      <h2 class="fs-titulo-seccion">Cliente</h2>
+      <div>{{ p.cliente.nombre }}</div>
+      <div class="fs-suave">DNI {{ p.cliente.dni }} · {{ p.cliente.email }}</div>
+      <div class="fs-suave">Creado el {{ p.creadoEn | fecha: 'fechaHora' }}</div>
+    </div>
+
+    <div class="fs-tarjeta pago-montos">
+      <div>
+        <span class="fs-suave">Cobrado</span>
+        <strong>{{ p.estado === 'PENDIENTE' || p.estado === 'ANULADA' ? 0 : (p.monto | precio) }}</strong>
+      </div>
+      <div>
+        <span class="fs-suave">Reembolsado</span>
+        <strong>{{ p.montoReembolsado | precio }}</strong>
+      </div>
+      <div>
+        <span class="fs-suave">Neto</span>
+        <strong>{{ p.neto | precio }}</strong>
+      </div>
+      <div>
+        <span class="fs-suave">Total del pedido</span>
+        <strong>{{ p.monto | precio }}</strong>
+      </div>
+    </div>
+
+    <div class="fs-tarjeta" style="display: grid; gap: var(--espacio-3)">
+      <h2 class="fs-titulo-seccion">Intentos de cobro</h2>
+      @if (p.transacciones.length === 0) {
+        <p class="fs-suave">Todavía no hay intentos de cobro.</p>
+      } @else {
+        <table class="pago-tabla fs-tabla-intentos">
+          <thead>
+            <tr>
+              <th>Proveedor y medio</th>
+              <th>Estado</th>
+              <th>Código</th>
+              <th>Mensaje de la pasarela</th>
+              <th>Fecha</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (t of p.transacciones; track t.id) {
+              <tr>
+                <td>{{ proveedorYMedio(t.proveedor, t.medio) }}</td>
+                <td><fs-insignia-estado tipo="pago" [estado]="t.estado" /></td>
+                <td>{{ t.codigoRespuesta ?? '—' }}</td>
+                <td>{{ t.mensaje ?? '—' }}</td>
+                <td>{{ t.creadoEn | fecha: 'fechaHora' }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      }
+    </div>
+
+    <div class="fs-tarjeta" style="display: grid; gap: var(--espacio-3)">
+      <h2 class="fs-titulo-seccion">Reembolsos</h2>
+      @if (p.reembolsos.length === 0) {
+        <p class="fs-suave">Sin reembolsos.</p>
+      } @else {
+        <table class="pago-tabla">
+          <thead>
+            <tr>
+              <th>Motivo</th>
+              <th>Monto</th>
+              <th>Estado</th>
+              <th>Intentos</th>
+              <th>Nota</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (r of p.reembolsos; track r.id) {
+              <tr>
+                <td>{{ nombreMotivo(r.motivo) }}</td>
+                <td>{{ r.monto | precio }}</td>
+                <td><fs-insignia-estado tipo="reembolso" [estado]="r.estado" /></td>
+                <td>{{ r.intentos }}</td>
+                <td>{{ r.nota ?? r.ultimoError ?? '—' }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      }
+    </div>
+
+    <div class="fs-tarjeta" style="display: grid; gap: var(--espacio-3)">
+      <h2 class="fs-titulo-seccion">Boleta</h2>
+      @if (p.boleta; as b) {
+        <div>
+          <span class="fs-codigo">{{ b.numero }}</span>
+          <span class="fs-suave"> · emitida el {{ b.emitidaEn | fecha: 'fechaHora' }}</span>
+        </div>
+        <button
+          type="button"
+          class="fs-btn fs-btn--contorno"
+          style="justify-self: start"
+          [disabled]="descargando()"
+          (click)="descargarBoleta(b.numero)"
+        >
+          <span class="fs-icono" aria-hidden="true">receipt_long</span>Descargar boleta
+        </button>
+      } @else {
+        <p class="fs-suave">La boleta todavía no se emitió.</p>
+      }
+    </div>
+  } @else {
+    <fs-estado-cargando />
+  }
+</section>
