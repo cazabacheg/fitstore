@@ -3,6 +3,7 @@ import { ChangeDetectionStrategy, Component, DestroyRef, effect, inject, signal,
 import { toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router, RouterLink, type ParamMap } from '@angular/router';
 import { FechaPipe, PrecioPipe, SIN_TOAST, orderApi, type ConsultaPagina, type Pagina } from 'shared';
+import { PedidosAdminService } from 'shared/api/order-service';
 import { Subscription } from 'rxjs';
 import { EstadoError } from '../../ui/estados/estado-error';
 import { BarraFiltros, type ChipFiltro, type SelectFiltro } from '../../ui/filtros/barra-filtros';
@@ -78,7 +79,7 @@ const SELECTS: SelectFiltro[] = [
   `,
 })
 export class PedidosPage {
-  private readonly api = inject(orderApi.PedidosAdminService);
+  private readonly api = inject(PedidosAdminService);
   private readonly ruta = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private carga: Subscription | null = null;

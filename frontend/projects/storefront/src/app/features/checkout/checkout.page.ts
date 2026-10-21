@@ -1,15 +1,11 @@
 import { HttpContext } from '@angular/common/http';
 import { Component, computed, inject, signal } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
-import {
-  PrecioPipe,
-  SIN_TOAST,
-  authApi,
-  comoApiError,
-  deliveryApi,
-  orderApi,
-  settingsApi,
-} from 'shared';
+import { PrecioPipe, SIN_TOAST, authApi, comoApiError, deliveryApi, orderApi } from 'shared';
+import { ClienteService } from 'shared/api/auth-service';
+import { EnviosService } from 'shared/api/delivery-service';
+import { CheckoutService } from 'shared/api/order-service';
+import { ConfiguracionPublicaService } from 'shared/api/settings-service';
 import { FsBoton } from '../../ui/boton/boton';
 import { EstadoCargando, EstadoError } from '../../ui/estados/estados';
 import { DialogoDireccionService } from '../cuenta/direcciones/dialogo-direccion.service';
@@ -180,10 +176,10 @@ const NOMBRE_MODALIDAD: Record<Modalidad, string> = {
   `,
 })
 export class CheckoutPage {
-  private readonly clientes = inject(authApi.ClienteService);
-  private readonly envios = inject(deliveryApi.EnviosService);
-  private readonly configuracion = inject(settingsApi.ConfiguracionPublicaService);
-  private readonly checkout = inject(orderApi.CheckoutService);
+  private readonly clientes = inject(ClienteService);
+  private readonly envios = inject(EnviosService);
+  private readonly configuracion = inject(ConfiguracionPublicaService);
+  private readonly checkout = inject(CheckoutService);
   private readonly dialogoDireccion = inject(DialogoDireccionService);
   private readonly router = inject(Router);
   private readonly sinToast = () => ({ context: new HttpContext().set(SIN_TOAST, true) });

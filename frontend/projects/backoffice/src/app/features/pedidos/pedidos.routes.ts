@@ -7,6 +7,10 @@ import { PedidosPage } from './pedidos.page';
  * El shell (`app.routes.ts`) carga este arreglo y aplica la guarda de rol.
  */
 export const PEDIDOS_ROUTES: Routes = [
-  { path: '', component: PedidosPage },
-  { path: ':id', component: DetallePedidoAdminPage, data: { titulo: 'Pedido', migas: ['Pedidos', 'Detalle'] } },
+  { path: '', component: PedidosPage, data: { pantalla: 'pedidos' } },
+  {
+    path: ':id',
+    component: DetallePedidoAdminPage,
+    data: { pantalla: 'pedidos', titulo: 'Pedido', migas: ['Pedidos', 'Detalle'] },
+  },
 ];

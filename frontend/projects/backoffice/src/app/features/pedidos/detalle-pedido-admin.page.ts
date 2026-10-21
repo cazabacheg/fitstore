@@ -2,6 +2,7 @@ import { HttpClient, HttpContext } from '@angular/common/http';
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { FechaPipe, PrecioPipe, SIN_TOAST, ToastService, comoApiError, orderApi } from 'shared';
+import { PedidosAdminService } from 'shared/api/order-service';
 import { EstadoCargando } from '../../ui/estados/estado-cargando';
 import { EstadoError } from '../../ui/estados/estado-error';
 import { InsigniaEstado } from '../../ui/insignia/insignia-estado';
@@ -163,7 +164,7 @@ const MAXIMO_COMENTARIO = 300;
   `,
 })
 export class DetallePedidoAdminPage {
-  private readonly api = inject(orderApi.PedidosAdminService);
+  private readonly api = inject(PedidosAdminService);
   private readonly cliente = inject(HttpClient);
   private readonly dialogos = inject(DialogoAccionPedidoService);
   private readonly toasts = inject(ToastService);

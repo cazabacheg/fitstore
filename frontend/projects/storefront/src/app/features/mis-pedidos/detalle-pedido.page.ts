@@ -9,6 +9,7 @@ import {
 } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { FechaPipe, PrecioPipe, SIN_TOAST, ToastService, comoApiError, orderApi } from 'shared';
+import { MisPedidosService } from 'shared/api/order-service';
 import { FsBoton } from '../../ui/boton/boton';
 import { DialogoConfirmacion } from '../../ui/dialogo/dialogo-confirmacion';
 import { EstadoCargando, EstadoError } from '../../ui/estados/estados';
@@ -169,7 +170,7 @@ export class CuentaRegresiva {
   `,
 })
 export class DetallePedidoPage {
-  private readonly api = inject(orderApi.MisPedidosService);
+  private readonly api = inject(MisPedidosService);
   private readonly cliente = inject(HttpClient);
   private readonly toasts = inject(ToastService);
   private readonly codigo = inject(ActivatedRoute).snapshot.paramMap.get('codigo') ?? '';

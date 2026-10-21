@@ -2,6 +2,7 @@ import { HttpContext } from '@angular/common/http';
 import { Component, inject, signal } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import { FechaPipe, PrecioPipe, SIN_TOAST, orderApi } from 'shared';
+import { MisPedidosService } from 'shared/api/order-service';
 import { EstadoCargando, EstadoError, EstadoVacio } from '../../ui/estados/estados';
 import { FsPaginador } from '../../ui/paginador/paginador';
 import { EtiquetaEstado } from './etiqueta-estado';
@@ -59,7 +60,7 @@ import { EtiquetaEstado } from './etiqueta-estado';
   `,
 })
 export class MisPedidosPage {
-  private readonly api = inject(orderApi.MisPedidosService);
+  private readonly api = inject(MisPedidosService);
   private readonly router = inject(Router);
 
   protected readonly estado = signal<'cargando' | 'listo' | 'error'>('cargando');

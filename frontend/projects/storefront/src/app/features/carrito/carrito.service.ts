@@ -1,12 +1,13 @@
 import { HttpContext } from '@angular/common/http';
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { CarritoContador, SIN_TOAST, comoApiError, orderApi } from 'shared';
+import { CarritoService as CarritoApi } from 'shared/api/order-service';
 import { Observable, tap } from 'rxjs';
 
 /** Estado del carrito de la tienda con señales; cada cambio actualiza el contador de la cabecera (O7, R8). */
 @Injectable({ providedIn: 'root' })
 export class CarritoService {
-  private readonly api = inject(orderApi.CarritoService);
+  private readonly api = inject(CarritoApi);
   private readonly contador = inject(CarritoContador);
 
   readonly carrito = signal<orderApi.Carrito | null>(null);
