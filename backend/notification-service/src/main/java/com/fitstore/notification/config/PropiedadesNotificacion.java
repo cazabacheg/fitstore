@@ -24,7 +24,7 @@ public record PropiedadesNotificacion(String remitente, Integer ritmoPorSegundo,
         Boolean programacionHabilitada, String paymentUrl, String settingsUrl, Enlaces enlaces) {
 
     public PropiedadesNotificacion {
-        remitente = remitente == null || remitente.isBlank() ? "no-responder@fitstore.local" : remitente;
+        remitente = remitente == null || remitente.isBlank() ? "no-responder@fitstore.local" : soloDireccion(remitente);
         ritmoPorSegundo = ritmoPorSegundo == null || ritmoPorSegundo < 1 ? 1 : ritmoPorSegundo;
         reintentos = reintentos == null || reintentos.isEmpty()
                 ? List.of(Duration.ofMinutes(1), Duration.ofMinutes(5), Duration.ofMinutes(15), Duration.ofMinutes(60))
@@ -34,6 +34,16 @@ public record PropiedadesNotificacion(String remitente, Integer ritmoPorSegundo,
         intervaloDespacho = intervaloDespacho == null ? Duration.ofSeconds(5) : intervaloDespacho;
         programacionHabilitada = programacionHabilitada == null || programacionHabilitada;
         enlaces = enlaces == null ? new Enlaces(null, null) : enlaces;
+    }
+
+    /**
+     * Deja solo la dirección de {@code MAIL_FROM}: si viene como {@code Nombre <correo>}, el nombre se descarta porque
+     * el remitente visible es el nombre de la tienda (marca).
+     */
+    private static String soloDireccion(String remitente) {
+        int abre = remitente.lastIndexOf('<');
+        int cierra = remitente.lastIndexOf('>');
+        return abre >= 0 && cierra > abre ? remitente.substring(abre + 1, cierra).trim() : remitente.trim();
     }
 
     /** URLs base sin la barra final. */

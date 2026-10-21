@@ -20,6 +20,9 @@ spring:
     host: localhost
     port: 3025
   rabbitmq:
+    # Puerto sin broker: si en la máquina corre el RabbitMQ de la plataforma (5672), las pruebas no deben
+    # conectarse a él. Las pruebas de integración lo reemplazan con el de Testcontainers.
+    port: 56720
     listener:
       simple:
         # Solo las pruebas de integración con RabbitMQ (EnrutadorEventosIT) arrancan el consumidor
