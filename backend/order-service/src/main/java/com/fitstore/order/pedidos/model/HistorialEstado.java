@@ -51,6 +51,10 @@ public class HistorialEstado {
     @Column(name = "actor_id")
     private UUID actorId;
 
+    /** Nombre de quien lo hizo (claim {@code nombre} del JWT); nulo cuando el actor es el sistema. */
+    @Column(name = "actor_nombre", length = 120)
+    private String actorNombre;
+
     @Column(length = 500)
     private String comentario;
 

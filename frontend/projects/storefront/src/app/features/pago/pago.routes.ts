@@ -1,7 +1,5 @@
 import { Routes } from '@angular/router';
-import { Proximamente } from '../../ui/estados/proximamente';
+import { PagoPage } from './pago.page';
 
-/** Marcador "Próximamente" (R2): la spec dueña reemplaza esta carpeta. */
-export const PAGO_ROUTES: Routes = [
-  { path: '', component: Proximamente, data: { seccion: 'El pago' } },
-];
+/** `/pago/:codigo`: la página de pago (P-5-01) y su resultado (P-5-02) son la misma ruta (P3). */
+export const PAGO_ROUTES: Routes = [{ path: '', component: PagoPage }];

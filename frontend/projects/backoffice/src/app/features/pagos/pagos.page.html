@@ -1,0 +1,57 @@
+<section class="fs-pagina" style="display: grid; gap: var(--espacio-4)">
+  <header>
+    <h1 class="fs-titulo-pagina">Pagos</h1>
+    <p class="fs-suave">Todos los pagos de la tienda, con sus intentos de cobro.</p>
+  </header>
+
+  <fs-barra-filtros
+    placeholder="Buscar por código de pedido"
+    [selects]="selects"
+    (cambio)="alCambiarFiltros()"
+  />
+  <div class="pagos-fechas">
+    <label>
+      Desde
+      <input
+        type="date"
+        class="fs-input"
+        aria-label="Desde"
+        [value]="desde()"
+        (change)="cambiarFecha('desde', $any($event.target).value)"
+      />
+    </label>
+    <label>
+      Hasta
+      <input
+        type="date"
+        class="fs-input"
+        aria-label="Hasta"
+        [value]="hasta()"
+        (change)="cambiarFecha('hasta', $any($event.target).value)"
+      />
+    </label>
+  </div>
+
+  @if (datos.error()) {
+    <fs-estado-error
+      titulo="No pudimos cargar los pagos"
+      texto="Revisa tu conexión e inténtalo de nuevo."
+      (reintentar)="datos.reload()"
+    />
+  } @else {
+    <fs-tabla
+      columnaId="codigoPedido"
+      tituloVacio="Sin resultados"
+      textoVacio="No hay pagos con esos filtros."
+      [columnas]="columnas"
+      [datos]="datos.value() ?? null"
+      [cargando]="datos.isLoading()"
+      [filaEnlace]="enlaceDetalle"
+      (consulta)="consulta.set($event)"
+    >
+      <ng-template fsCelda="estado" let-fila>
+        <fs-insignia-estado tipo="pago" [estado]="fila.estado" />
+      </ng-template>
+    </fs-tabla>
+  }
+</section>

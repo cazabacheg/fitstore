@@ -1,0 +1,767 @@
+{
+  "info": {
+    "name": "FitStore - payment (SPEC-5)",
+    "description": "Pagos con el proveedor simulado y webhooks de Mercado Pago, a traves del gateway. Antes de correrla crea tres pedidos pendientes de pago de la clienta de prueba y pon sus codigos en las variables codigoPedidoAprobado, codigoPedidoRechazo y codigoPedidoEnCurso; tokenCliente, tokenOtraCliente, tokenAdmin y tokenOperador son tokens de acceso (login). Los reembolsos son extension de alcance y no tienen pasos.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "codigoPedidoAprobado",
+      "value": ""
+    },
+    {
+      "key": "codigoPedidoRechazo",
+      "value": ""
+    },
+    {
+      "key": "codigoPedidoEnCurso",
+      "value": ""
+    },
+    {
+      "key": "tokenCliente",
+      "value": ""
+    },
+    {
+      "key": "tokenOtraCliente",
+      "value": ""
+    },
+    {
+      "key": "tokenAdmin",
+      "value": ""
+    },
+    {
+      "key": "tokenOperador",
+      "value": ""
+    },
+    {
+      "key": "mpWebhookSecret",
+      "value": ""
+    },
+    {
+      "key": "idPagoMp",
+      "value": ""
+    },
+    {
+      "key": "pagoId",
+      "value": ""
+    }
+  ],
+  "item": [
+    {
+      "name": "CA-5-03 Página de pago de un pedido pendiente",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('CA-5-03 200 con el monto y los medios disponibles', function () { pm.response.to.have.status(200); const d = pm.response.json().data; pm.expect(d.codigoPedido).to.eql(pm.collectionVariables.get('codigoPedidoAprobado')); pm.expect(d.medios.length).to.be.above(0); });",
+              "pm.test('CA-5-03 incluye el pago de prueba con PAGOS_SIMULADO_HABILITADO=true', function () { pm.expect(pm.response.json().data.medios.some(m => m.proveedor === 'SIMULADO')).to.eql(true); });"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{tokenCliente}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/pagos/{{codigoPedidoAprobado}}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "pagos",
+            "{{codigoPedidoAprobado}}"
+          ]
+        }
+      }
+    },
+    {
+      "name": "CA-5-07 Pago de otra clienta responde 404",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('CA-5-07 404', function () { pm.response.to.have.status(404); });"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{tokenOtraCliente}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/pagos/{{codigoPedidoAprobado}}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "pagos",
+            "{{codigoPedidoAprobado}}"
+          ]
+        }
+      }
+    },
+    {
+      "name": "CA-5-25 Pago simulado aprobado (tarjeta 4111...1111)",
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "if (!pm.collectionVariables.get('claveAprobado')) pm.collectionVariables.set('claveAprobado', pm.variables.replaceIn('{{$guid}}'));"
+            ]
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('CA-5-25 200 ¡Pago aprobado!', function () { pm.response.to.have.status(200); pm.expect(pm.response.json().data.estado).to.eql('APROBADA'); });"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Idempotency-Key",
+            "value": "{{claveAprobado}}"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{tokenCliente}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/pagos/{{codigoPedidoAprobado}}/cargos",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "pagos",
+            "{{codigoPedidoAprobado}}",
+            "cargos"
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\"proveedor\": \"SIMULADO\", \"medio\": \"TARJETA\", \"token\": \"sim_1111\"}"
+        }
+      }
+    },
+    {
+      "name": "CA-5-17 Repetir el cobro con la misma Idempotency-Key no cobra otra vez",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('CA-5-17 200 con el resultado original', function () { pm.response.to.have.status(200); pm.expect(pm.response.json().data.estado).to.eql('APROBADA'); });"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Idempotency-Key",
+            "value": "{{claveAprobado}}"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{tokenCliente}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/pagos/{{codigoPedidoAprobado}}/cargos",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "pagos",
+            "{{codigoPedidoAprobado}}",
+            "cargos"
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\"proveedor\": \"SIMULADO\", \"medio\": \"TARJETA\", \"token\": \"sim_1111\"}"
+        }
+      }
+    },
+    {
+      "name": "CA-5-16 Cobrar un pedido ya pagado con otra clave responde 409",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('CA-5-16 409 YA_PAGADO', function () { pm.response.to.have.status(409); pm.expect(pm.response.json().codigo).to.eql('YA_PAGADO'); });"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Idempotency-Key",
+            "value": "{{$guid}}"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{tokenCliente}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/pagos/{{codigoPedidoAprobado}}/cargos",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "pagos",
+            "{{codigoPedidoAprobado}}",
+            "cargos"
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\"proveedor\": \"SIMULADO\", \"medio\": \"TARJETA\", \"token\": \"sim_1111\"}"
+        }
+      }
+    },
+    {
+      "name": "CA-5-25 Pago simulado rechazado (tarjeta 4000...0002)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('CA-5-25 402 con el motivo legible', function () { pm.response.to.have.status(402); pm.expect(pm.response.json().mensaje).to.eql('Fondos insuficientes'); });"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Idempotency-Key",
+            "value": "{{$guid}}"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{tokenCliente}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/pagos/{{codigoPedidoRechazo}}/cargos",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "pagos",
+            "{{codigoPedidoRechazo}}",
+            "cargos"
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\"proveedor\": \"SIMULADO\", \"medio\": \"TARJETA\", \"token\": \"sim_0002\"}"
+        }
+      }
+    },
+    {
+      "name": "CA-5-25 Pago simulado en curso (tarjeta 4000...0119)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('CA-5-25 202 Estamos confirmando tu pago', function () { pm.response.to.have.status(202); pm.expect(pm.response.json().data.estado).to.eql('PROCESANDO'); });"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Idempotency-Key",
+            "value": "{{$guid}}"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{tokenCliente}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/pagos/{{codigoPedidoEnCurso}}/cargos",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "pagos",
+            "{{codigoPedidoEnCurso}}",
+            "cargos"
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\"proveedor\": \"SIMULADO\", \"medio\": \"TARJETA\", \"token\": \"sim_0119\"}"
+        }
+      }
+    },
+    {
+      "name": "CA-5-22 Consultar el estado tras el 202 (el verificador lo aprueba en 2 minutos)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('CA-5-22 200 con el estado actual', function () { pm.response.to.have.status(200); pm.expect(['PENDIENTE','PAGADA']).to.include(pm.response.json().data.estado); });"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{tokenCliente}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/pagos/{{codigoPedidoEnCurso}}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "pagos",
+            "{{codigoPedidoEnCurso}}"
+          ]
+        }
+      }
+    },
+    {
+      "name": "CA-5-29 Descargar mi boleta (PDF)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('CA-5-29 200 application/pdf', function () { pm.response.to.have.status(200); pm.expect(pm.response.headers.get('Content-Type')).to.include('application/pdf'); });",
+              "pm.test('CA-5-29 el archivo se llama como el número de la boleta', function () { pm.expect(pm.response.headers.get('Content-Disposition')).to.match(/Boleta-B001-\\d{8}\\.pdf/); });"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{tokenCliente}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/pagos/{{codigoPedidoAprobado}}/boleta",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "pagos",
+            "{{codigoPedidoAprobado}}",
+            "boleta"
+          ]
+        },
+        "description": "La boleta se genera en segundo plano; si responde 404 espera unos segundos y repite."
+      }
+    },
+    {
+      "name": "CA-5-29 La boleta de otra clienta responde 404",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('CA-5-29 404', function () { pm.response.to.have.status(404); });"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{tokenOtraCliente}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/pagos/{{codigoPedidoAprobado}}/boleta",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "pagos",
+            "{{codigoPedidoAprobado}}",
+            "boleta"
+          ]
+        }
+      }
+    },
+    {
+      "name": "CA-5-21 Webhook de Mercado Pago con firma inválida responde 401",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('CA-5-21 401 FIRMA_INVALIDA', function () { pm.response.to.have.status(401); pm.expect(pm.response.json().codigo).to.eql('FIRMA_INVALIDA'); });"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "x-signature",
+            "value": "ts=1700000000,v1=firma-falsa"
+          },
+          {
+            "key": "x-request-id",
+            "value": "postman-1"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/pagos/webhooks/mercadopago",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "pagos",
+            "webhooks",
+            "mercadopago"
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"id\": 12345,\n  \"type\": \"payment\",\n  \"action\": \"payment.updated\",\n  \"data\": {\n    \"id\": \"123456789\"\n  }\n}"
+        }
+      }
+    },
+    {
+      "name": "CA-5-20 Webhook simulado de Mercado Pago con firma válida",
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "// Firma de Mercado Pago: HMAC-SHA256 de 'id:<data.id>;request-id:<x-request-id>;ts:<ts>;' con el secreto de webhooks (variable mpWebhookSecret).",
+              "const ts = String(Math.floor(Date.now() / 1000)); const reqId = 'postman-' + ts; const idPago = pm.collectionVariables.get('idPagoMp') || '123456789';",
+              "const v1 = CryptoJS.HmacSHA256('id:' + idPago + ';request-id:' + reqId + ';ts:' + ts + ';', pm.collectionVariables.get('mpWebhookSecret')).toString();",
+              "pm.collectionVariables.set('requestIdMp', reqId); pm.collectionVariables.set('firmaMp', 'ts=' + ts + ',v1=' + v1); pm.collectionVariables.set('notificacionMp', String(Date.now())); pm.collectionVariables.set('idPagoMp', idPago);"
+            ]
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('CA-5-20 200 recibido', function () { pm.response.to.have.status(200); });"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "x-signature",
+            "value": "{{firmaMp}}"
+          },
+          {
+            "key": "x-request-id",
+            "value": "{{requestIdMp}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/pagos/webhooks/mercadopago",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "pagos",
+            "webhooks",
+            "mercadopago"
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\"id\": {{notificacionMp}}, \"type\": \"payment\", \"action\": \"payment.updated\", \"data\": {\"id\": \"{{idPagoMp}}\"}}"
+        },
+        "description": "Solo confirma un pago si existe una transacción con ese id en Mercado Pago (sandbox)."
+      }
+    },
+    {
+      "name": "CA-5-19 Más de 10 intentos de cobro en un minuto responden 429",
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "// 10 intentos seguidos para agotar el límite del gateway (10 por minuto por usuario)",
+              "for (let n = 0; n < 10; n++) { pm.sendRequest({ url: pm.variables.get('baseUrl') + '/api/v1/pagos/' + pm.collectionVariables.get('codigoPedidoRechazo') + '/cargos', method: 'POST', header: { 'Authorization': 'Bearer ' + pm.collectionVariables.get('tokenCliente'), 'Content-Type': 'application/json', 'Idempotency-Key': 'rate-' + Date.now() + '-' + n }, body: { mode: 'raw', raw: '{\"proveedor\":\"SIMULADO\",\"medio\":\"TARJETA\",\"token\":\"sim_0002\"}' } }, () => {}); }"
+            ]
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('CA-5-19 429 Demasiados intentos', function () { pm.response.to.have.status(429); });"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Idempotency-Key",
+            "value": "{{$guid}}"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{tokenCliente}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/pagos/{{codigoPedidoRechazo}}/cargos",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "pagos",
+            "{{codigoPedidoRechazo}}",
+            "cargos"
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\"proveedor\": \"SIMULADO\", \"medio\": \"TARJETA\", \"token\": \"sim_0002\"}"
+        }
+      }
+    },
+    {
+      "name": "CA-5-33 Listado de pagos del backoffice con filtros",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('CA-5-33 200 con el pago aprobado', function () { pm.response.to.have.status(200); const c = pm.response.json().data.contenido; pm.expect(c.length).to.be.above(0); pm.collectionVariables.set('pagoId', c[0].id); });"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{tokenAdmin}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/admin/pagos?estado=PAGADA&proveedor=SIMULADO&codigo={{codigoPedidoAprobado}}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "admin",
+            "pagos"
+          ],
+          "query": [
+            {
+              "key": "estado",
+              "value": "PAGADA"
+            },
+            {
+              "key": "proveedor",
+              "value": "SIMULADO"
+            },
+            {
+              "key": "codigo",
+              "value": "{{codigoPedidoAprobado}}"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "CA-5-34 Detalle de un pago",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('CA-5-34 200 con intentos, lo cobrado, lo reembolsado y lo neto', function () { pm.response.to.have.status(200); const d = pm.response.json().data; pm.expect(d.transacciones.length).to.be.above(0); pm.expect(d.neto).to.be.a('number'); });"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{tokenAdmin}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/admin/pagos/{{pagoId}}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "admin",
+            "pagos",
+            "{{pagoId}}"
+          ]
+        }
+      }
+    },
+    {
+      "name": "CA-5-35 Un OPERADOR no puede ver los pagos",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('CA-5-35 403', function () { pm.response.to.have.status(403); });"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{tokenOperador}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/admin/pagos",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "admin",
+            "pagos"
+          ]
+        }
+      }
+    }
+  ]
+}

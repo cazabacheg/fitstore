@@ -2,7 +2,9 @@ package com.fitstore.catalog.catalogo.repository;
 
 import com.fitstore.catalog.catalogo.model.Categoria;
 import com.fitstore.catalog.catalogo.model.Producto;
+import com.fitstore.catalog.catalogo.model.EstadoProducto;
 import com.fitstore.catalog.catalogo.model.Variante;
+import com.fitstore.catalog.inventario.model.Stock;
 import jakarta.persistence.criteria.Join;
 import jakarta.persistence.criteria.Predicate;
 import jakarta.persistence.criteria.Root;
@@ -10,6 +12,7 @@ import jakarta.persistence.criteria.Subquery;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
 import org.springframework.data.jpa.domain.Specification;
 
 /**
@@ -75,5 +78,83 @@ public final class ProductoSpecifications {
             var buscado = cb.function("f_unaccent", String.class, cb.literal(texto.toLowerCase()));
             return cb.like(nombre, cb.concat(cb.concat("%", buscado), "%"));
         };
+    }
+
+    /** Producto {@code ACTIVO} con al menos una variante activa: lo único que ve la tienda (micro 4.3, CA-2-07). */
+    public static Specification<Producto> visibleEnTienda() {
+        return (producto, consulta, cb) -> {
+            Subquery<Long> sub = consulta.subquery(Long.class);
+            Root<Variante> variante = sub.from(Variante.class);
+            sub.select(variante.get("id")).where(
+                    cb.equal(variante.get("productoId"), producto.get("id")),
+                    cb.isTrue(variante.get("activo")));
+            return cb.and(cb.equal(producto.get("estado"), EstadoProducto.ACTIVO), cb.exists(sub));
+        };
+    }
+
+    /** No devuelve nada (filtro por un slug o una talla que no existe). */
+    public static Specification<Producto> sinResultados() {
+        return (producto, consulta, cb) -> cb.disjunction();
+    }
+
+    /** El texto está en el nombre o en la descripción, sin importar tildes ni mayúsculas (micro 4.3). */
+    public static Specification<Producto> textoEnNombreODescripcion(String texto) {
+        return (producto, consulta, cb) -> {
+            String patron = "%" + escaparLike(texto.toLowerCase()) + "%";
+            var buscado = cb.function("f_unaccent", String.class, cb.literal(patron));
+            var nombre = cb.function("f_unaccent", String.class, cb.lower(producto.<String>get("nombre")));
+            var descripcion = cb.function("f_unaccent", String.class, cb.lower(producto.<String>get("descripcion")));
+            return cb.or(cb.like(nombre, buscado, '\\'), cb.like(descripcion, buscado, '\\'));
+        };
+    }
+
+    /**
+     * Alguna variante activa cumple a la vez la talla, el color y, si se pide, tiene stock disponible (CA-2-03).
+     * Un conjunto vacío no filtra por ese criterio.
+     */
+    public static Specification<Producto> conVarianteQueCumple(Collection<Long> tallaIds, Collection<Long> colorIds,
+            boolean soloDisponibles) {
+        return (producto, consulta, cb) -> {
+            Subquery<Long> sub = consulta.subquery(Long.class);
+            Root<Variante> variante = sub.from(Variante.class);
+            List<Predicate> condiciones = new ArrayList<>();
+            condiciones.add(cb.equal(variante.get("productoId"), producto.get("id")));
+            condiciones.add(cb.isTrue(variante.get("activo")));
+            if (!tallaIds.isEmpty()) {
+                condiciones.add(variante.get("tallaId").in(tallaIds));
+            }
+            if (!colorIds.isEmpty()) {
+                condiciones.add(variante.get("colorId").in(colorIds));
+            }
+            if (soloDisponibles) {
+                Root<Stock> stock = sub.from(Stock.class);
+                condiciones.add(cb.equal(stock.get("varianteId"), variante.get("id")));
+                condiciones.add(cb.greaterThan(cb.diff(stock.<Integer>get("fisico"), stock.<Integer>get("reservado")), 0));
+            }
+            sub.select(variante.get("id")).where(condiciones.toArray(Predicate[]::new));
+            return cb.exists(sub);
+        };
+    }
+
+    /** Backoffice: el texto está en el nombre o en el código del producto. */
+    public static Specification<Producto> nombreOCodigoContiene(String texto) {
+        return (producto, consulta, cb) -> {
+            String patron = "%" + escaparLike(texto.toLowerCase()) + "%";
+            var buscado = cb.function("f_unaccent", String.class, cb.literal(patron));
+            var nombre = cb.function("f_unaccent", String.class, cb.lower(producto.<String>get("nombre")));
+            return cb.or(cb.like(nombre, buscado, '\\'), cb.like(cb.lower(producto.<String>get("codigo")), patron, '\\'));
+        };
+    }
+
+    public static Specification<Producto> conEstado(EstadoProducto estado) {
+        return (producto, consulta, cb) -> cb.equal(producto.get("estado"), estado);
+    }
+
+    public static Specification<Producto> esDestacado(boolean destacado) {
+        return (producto, consulta, cb) -> cb.equal(producto.get("destacado"), destacado);
+    }
+
+    private static String escaparLike(String texto) {
+        return texto.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_");
     }
 }
