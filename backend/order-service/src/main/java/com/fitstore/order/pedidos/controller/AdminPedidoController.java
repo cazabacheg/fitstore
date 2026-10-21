@@ -103,7 +103,7 @@ public class AdminPedidoController {
     @PreAuthorize("hasRole('OPERADOR')")
     public ApiResponse<PedidoAdminDto> cancelarPedidoStaff(Authentication autenticacion, @PathVariable UUID id,
             @Valid @RequestBody CancelarStaffRequest peticion) {
-        pedidos.cancelarComoStaff(id, peticion.version(), peticion.motivo(), actor(autenticacion));
+        pedidos.cancelarComoStaff(id, peticion.version().longValue(), peticion.motivo(), actor(autenticacion));
         return ApiResponse.ok(consultas.detalleAdmin(id));
     }
 

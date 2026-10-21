@@ -14,7 +14,8 @@ import org.springframework.test.context.ContextConfiguration;
 /** Con el perfil cloud Flyway solo aplica las migraciones: nunca los datos de demostración (CA-0a-05). */
 @SpringBootTest(properties = {
     "spring.config.import=file:../../infra/config-repo/order-service.yml,file:../../infra/config-repo/order-service-cloud.yml",
-    "fitstore.outbox.habilitado=false"
+    "fitstore.outbox.habilitado=true",
+    "fitstore.outbox.intervalo-ms=3600000"
 })
 @ActiveProfiles({"sin-config-server", "cloud"})
 @ContextConfiguration(initializers = EntornoPrueba.class)

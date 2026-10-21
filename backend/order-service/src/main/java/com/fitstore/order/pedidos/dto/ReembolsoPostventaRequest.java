@@ -11,7 +11,7 @@ import java.util.List;
 
 /** Reembolso postventa (extensión de alcance, HU-4-12): solo declara la firma del contrato. */
 public record ReembolsoPostventaRequest(@NotEmpty List<@Valid ItemReembolsoRequest> items,
-        @NotNull @DecimalMin("0.01") BigDecimal monto, @NotNull MotivoReembolso motivo, @Size(max = 300) String nota) {
+        @NotNull @DecimalMin("0.01") BigDecimal monto, @NotNull MotivoReembolso motivo, @Size(max = 300) @io.swagger.v3.oas.annotations.media.Schema(nullable = true) String nota) {
 
     public record ItemReembolsoRequest(@NotNull Long varianteId, @NotNull @jakarta.validation.constraints.Min(1) Integer cantidad) {
     }
