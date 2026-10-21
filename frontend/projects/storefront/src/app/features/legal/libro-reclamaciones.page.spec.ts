@@ -251,15 +251,13 @@ describe('LibroReclamacionesPage (P-3-03)', () => {
     await llenarValido(el, estabilizar);
     enviar(el).click();
     await estabilizar();
-    ctrl
-      .expectOne('/api/v1/reclamos')
-      .flush(
-        respuesta({
-          numero: 'RC-2026-000015',
-          fechaLimite: '2026-11-09',
-          creadoEn: '2026-10-19T15:20:00Z',
-        }),
-      );
+    ctrl.expectOne('/api/v1/reclamos').flush(
+      respuesta({
+        numero: 'RC-2026-000015',
+        fechaLimite: '2026-11-09',
+        creadoEn: '2026-10-19T15:20:00Z',
+      }),
+    );
     await estabilizar();
 
     (el.querySelector('[data-testid="imprimir"]') as HTMLButtonElement).click();
@@ -314,16 +312,14 @@ describe('LibroReclamacionesPage (P-3-03)', () => {
     await llenarValido(el, estabilizar);
     enviar(el).click();
     await estabilizar();
-    ctrl
-      .expectOne('/api/v1/reclamos')
-      .flush(
-        {
-          success: false,
-          mensaje: 'Demasiados intentos, espera un momento',
-          codigo: 'DEMASIADOS_INTENTOS',
-        },
-        { status: 429, statusText: 'Too Many Requests' },
-      );
+    ctrl.expectOne('/api/v1/reclamos').flush(
+      {
+        success: false,
+        mensaje: 'Demasiados intentos, espera un momento',
+        codigo: 'DEMASIADOS_INTENTOS',
+      },
+      { status: 429, statusText: 'Too Many Requests' },
+    );
     await estabilizar();
     expect(el.querySelector('[data-testid="error-envio"]')!.textContent).toContain(
       'Demasiados intentos',

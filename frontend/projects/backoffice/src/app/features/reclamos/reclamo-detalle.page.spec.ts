@@ -136,16 +136,14 @@ describe('ReclamoDetallePage (P-3-06)', () => {
     await estabilizar();
     (q(el, 'responder') as HTMLButtonElement).click();
     await estabilizar();
-    ctrl
-      .expectOne(URL + '/respuesta')
-      .flush(
-        {
-          success: false,
-          mensaje: 'El reclamo ya fue respondido y no se puede modificar',
-          codigo: 'ESTADO_INVALIDO',
-        },
-        { status: 409, statusText: 'Conflict' },
-      );
+    ctrl.expectOne(URL + '/respuesta').flush(
+      {
+        success: false,
+        mensaje: 'El reclamo ya fue respondido y no se puede modificar',
+        codigo: 'ESTADO_INVALIDO',
+      },
+      { status: 409, statusText: 'Conflict' },
+    );
     await estabilizar();
     expect(q(el, 'error-accion')!.textContent).toContain('ya fue respondido');
     ctrl
