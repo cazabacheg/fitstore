@@ -7,13 +7,15 @@ import { FsCampo } from '../../../ui/campo/campo';
 import { EstadoCargando, EstadoError } from '../../../ui/estados/estados';
 import { errorCelular, errorNombre } from '../../acceso/validaciones';
 import { CambioPassword } from './cambio-password';
+import { ESTILOS_PANTALLA } from '../../estilos-pantalla';
 
 /** Mi perfil (P-1-05): edita nombres, apellidos y celular; el correo y el DNI se ven pero no se editan (CA-1-15). */
 @Component({
   selector: 'fs-perfil-page',
   imports: [FsCampo, FsBoton, EstadoCargando, EstadoError, CambioPassword],
+  styles: [ESTILOS_PANTALLA],
   template: `
-    <h1 style="margin: 0 0 var(--espacio-5)">Mi perfil</h1>
+    <h1 class="fs-titulo-pagina" style="margin-bottom: var(--espacio-6)">Mi perfil</h1>
     @switch (estado()) {
       @case ('cargando') {
         <fs-estado-cargando [filas]="4" />
@@ -48,7 +50,7 @@ import { CambioPassword } from './cambio-password';
             </button>
           </div>
         </form>
-        <h2 style="margin: var(--espacio-8) 0 var(--espacio-4)">Cambiar contraseña</h2>
+        <h2 class="fs-titulo-seccion" style="margin: var(--espacio-8) 0 var(--espacio-4)">Cambiar contraseña</h2>
         <fs-cambio-password />
       }
     }

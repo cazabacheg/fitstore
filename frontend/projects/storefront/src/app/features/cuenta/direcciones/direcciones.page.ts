@@ -7,6 +7,7 @@ import { DialogoConfirmacion } from '../../../ui/dialogo/dialogo-confirmacion';
 import { EstadoCargando, EstadoError, EstadoVacio } from '../../../ui/estados/estados';
 import { DialogoDireccionService } from './dialogo-direccion.service';
 import { TarjetaDireccion } from './tarjeta-direccion';
+import { ESTILOS_PANTALLA } from '../../estilos-pantalla';
 
 /** Máximo de direcciones por cliente (invariante 4 de auth). */
 export const MAXIMO_DIRECCIONES = 10;
@@ -22,11 +23,12 @@ export const MAXIMO_DIRECCIONES = 10;
     EstadoError,
     EstadoVacio,
   ],
+  styles: [ESTILOS_PANTALLA],
   template: `
     <header
       style="display: flex; align-items: center; justify-content: space-between; gap: var(--espacio-4); flex-wrap: wrap"
     >
-      <h1 style="margin: 0">Mis direcciones</h1>
+      <h1 class="fs-titulo-pagina">Mis direcciones</h1>
       <button
         type="button"
         fsBoton
@@ -42,7 +44,7 @@ export const MAXIMO_DIRECCIONES = 10;
         Llegaste al máximo de {{ maximo }} direcciones. Elimina una para poder agregar otra.
       </p>
     }
-    <div style="margin-top: var(--espacio-5)">
+    <div style="margin-top: var(--espacio-6)">
       @switch (estado()) {
         @case ('cargando') {
           <fs-estado-cargando />
