@@ -80,16 +80,14 @@ describe('FormularioIngreso (P-1-01)', () => {
     await f.escribir('email', 'rosa@correo.pe');
     await f.escribir('password', 'Incorrecta1');
     await f.enviar();
-    f.ctrl
-      .expectOne(RUTA)
-      .flush(
-        {
-          success: false,
-          mensaje: 'Correo o contraseña incorrectos',
-          codigo: 'CREDENCIALES_INVALIDAS',
-        },
-        { status: 401, statusText: 'Unauthorized' },
-      );
+    f.ctrl.expectOne(RUTA).flush(
+      {
+        success: false,
+        mensaje: 'Correo o contraseña incorrectos',
+        codigo: 'CREDENCIALES_INVALIDAS',
+      },
+      { status: 401, statusText: 'Unauthorized' },
+    );
     await f.estabilizar();
 
     expect(f.alerta()).toContain('Correo o contraseña incorrectos');

@@ -146,16 +146,14 @@ describe('DialogoDireccion y su servicio (A6)', () => {
     await d.elegirUbigeo('150115');
     d.boton('Guardar').click();
     await d.refrescar();
-    http()
-      .expectOne(RUTA)
-      .flush(
-        {
-          success: false,
-          mensaje: 'Ya tienes 10 direcciones guardadas',
-          codigo: 'LIMITE_DIRECCIONES',
-        },
-        { status: 409, statusText: 'Conflict' },
-      );
+    http().expectOne(RUTA).flush(
+      {
+        success: false,
+        mensaje: 'Ya tienes 10 direcciones guardadas',
+        codigo: 'LIMITE_DIRECCIONES',
+      },
+      { status: 409, statusText: 'Conflict' },
+    );
     await d.refrescar();
 
     expect(d.dialogo()?.textContent).toContain('Llegaste al máximo de 10 direcciones');
