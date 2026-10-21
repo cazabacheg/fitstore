@@ -26,8 +26,7 @@ export const CARGA_MASIVA_ROUTES: Routes = [
 ];
 
 export const CATEGORIAS_ROUTES: Routes = [
-  { path: '', component: Proximamente, data: { pantalla: 'categorias' } },
-  { path: '**', component: Proximamente, data: { pantalla: 'categorias' } },
+  { path: '', loadComponent: () => import('./categorias.page').then((m) => m.CategoriasPage) },
 ];
 
 export const MAESTROS_ROUTES: Routes = [
