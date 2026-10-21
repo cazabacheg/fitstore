@@ -1,5 +1,11 @@
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
-import { Component, EnvironmentProviders, Provider, Type, provideZonelessChangeDetection } from '@angular/core';
+import {
+  Component,
+  EnvironmentProviders,
+  Provider,
+  Type,
+  provideZonelessChangeDetection,
+} from '@angular/core';
 import { TestBed, type ComponentFixture } from '@angular/core/testing';
 import { Router, RouterOutlet, provideRouter, type Routes } from '@angular/router';
 import {
@@ -109,33 +115,102 @@ export const RESUMENES: catalogApi.ProductoAdminResumen[] = [
 ];
 
 /** Monta un componente suelto con sus entradas. */
-export async function montarComp<T>(tipo: Type<T>, entradas: Record<string, unknown> = {}, proveedores: (Provider | EnvironmentProviders)[] = []) {
+export async function montarComp<T>(
+  tipo: Type<T>,
+  entradas: Record<string, unknown> = {},
+  proveedores: (Provider | EnvironmentProviders)[] = [],
+) {
   TestBed.configureTestingModule({ providers: [provideZonelessChangeDetection(), ...proveedores] });
   const fixture = TestBed.createComponent(tipo);
-  for (const [nombre, valor] of Object.entries(entradas)) fixture.componentRef.setInput(nombre, valor);
+  for (const [nombre, valor] of Object.entries(entradas))
+    fixture.componentRef.setInput(nombre, valor);
   await asentar(fixture);
   return { fixture, el: fixture.nativeElement as HTMLElement, comp: fixture.componentInstance };
 }
 
-export const TALLAS: catalogApi.Talla[] = ['XS', 'S', 'M', 'L', 'XL'].map((codigo, i) => ({ id: i + 1, codigo, orden: i + 1, activo: true }));
+export const TALLAS: catalogApi.Talla[] = ['XS', 'S', 'M', 'L', 'XL'].map((codigo, i) => ({
+  id: i + 1,
+  codigo,
+  orden: i + 1,
+  activo: true,
+}));
 export const COLORES: catalogApi.Color[] = [
   { id: 1, nombre: 'Negro', hex: '#000000', activo: true },
   { id: 2, nombre: 'Azul', hex: '#1d4ed8', activo: true },
   { id: 3, nombre: 'Rojo', hex: '#dc2626', activo: true },
 ];
 export const CATEGORIAS: catalogApi.CategoriaAdmin[] = [
-  { id: 10, padreId: null, nombre: 'Leggings', slug: 'leggings', orden: 1, activo: true, cantidadProductos: 2, tieneGuiaTallas: true,
-    hijas: [{ id: 11, padreId: 10, nombre: 'Cortos', slug: 'cortos', orden: 1, activo: true, cantidadProductos: 1, tieneGuiaTallas: false }] },
+  {
+    id: 10,
+    padreId: null,
+    nombre: 'Leggings',
+    slug: 'leggings',
+    orden: 1,
+    activo: true,
+    cantidadProductos: 2,
+    tieneGuiaTallas: true,
+    hijas: [
+      {
+        id: 11,
+        padreId: 10,
+        nombre: 'Cortos',
+        slug: 'cortos',
+        orden: 1,
+        activo: true,
+        cantidadProductos: 1,
+        tieneGuiaTallas: false,
+      },
+    ],
+  },
 ];
 
 export const PRODUCTO: catalogApi.ProductoAdmin = {
-  id: 7, codigo: 'LEG01', nombre: 'Legging Pro', slug: 'legging-pro', descripcion: 'Tela de compresión.', precioBase: 59.9,
-  estado: 'BORRADOR', destacado: false, ordenDestacado: null, modoDescuento: 'GLOBAL', tramosPropios: [], categoriaIds: [11],
+  id: 7,
+  codigo: 'LEG01',
+  nombre: 'Legging Pro',
+  slug: 'legging-pro',
+  descripcion: 'Tela de compresión.',
+  precioBase: 59.9,
+  estado: 'BORRADOR',
+  destacado: false,
+  ordenDestacado: null,
+  modoDescuento: 'GLOBAL',
+  tramosPropios: [],
+  categoriaIds: [11],
   variantes: [
-    { id: 101, sku: 'LEG01-NEG-S', tallaId: 2, talla: 'S', colorId: 1, color: 'Negro', precio: null, activo: true, fisico: 5, reservado: 0, disponible: 5 },
-    { id: 102, sku: 'LEG01-AZU-S', tallaId: 2, talla: 'S', colorId: 2, color: 'Azul', precio: 64.9, activo: true, fisico: 0, reservado: 0, disponible: 0 },
+    {
+      id: 101,
+      sku: 'LEG01-NEG-S',
+      tallaId: 2,
+      talla: 'S',
+      colorId: 1,
+      color: 'Negro',
+      precio: null,
+      activo: true,
+      fisico: 5,
+      reservado: 0,
+      disponible: 5,
+    },
+    {
+      id: 102,
+      sku: 'LEG01-AZU-S',
+      tallaId: 2,
+      talla: 'S',
+      colorId: 2,
+      color: 'Azul',
+      precio: 64.9,
+      activo: true,
+      fisico: 0,
+      reservado: 0,
+      disponible: 0,
+    },
   ],
-  imagenes: [], version: 3,
+  imagenes: [],
+  version: 3,
 };
 
-export const MAESTROS_FORM = { '/admin/tallas': TALLAS, '/admin/colores': COLORES, '/admin/categorias': CATEGORIAS };
+export const MAESTROS_FORM = {
+  '/admin/tallas': TALLAS,
+  '/admin/colores': COLORES,
+  '/admin/categorias': CATEGORIAS,
+};

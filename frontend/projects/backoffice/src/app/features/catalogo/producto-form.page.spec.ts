@@ -42,7 +42,12 @@ describe('ProductoFormPage (P-2-04)', () => {
     await asentar(t.fixture);
     const req = t.ctrl.expectOne('/api/v1/admin/productos');
     expect(req.request.method).toBe('POST');
-    expect(req.request.body).toMatchObject({ codigo: 'LEG02', nombre: 'Legging Aire', precioBase: 49.9, descripcion: 'Ligero' });
+    expect(req.request.body).toMatchObject({
+      codigo: 'LEG02',
+      nombre: 'Legging Aire',
+      precioBase: 49.9,
+      descripcion: 'Ligero',
+    });
     req.flush(sobre({ ...PRODUCTO, id: 9, codigo: 'LEG02', variantes: [] }));
     await asentar(t.fixture);
     expect(t.router.url).toBe('/catalogo/productos/9');
@@ -65,7 +70,9 @@ describe('ProductoFormPage (P-2-04)', () => {
     await pestana(t, 'Variantes');
     expect(t.el.textContent).toContain('LEG01-NEG-S');
     expect(t.el.textContent).toContain('LEG01-AZU-S');
-    expect((t.el.querySelector('input[aria-label="Precio de LEG01-AZU-S"]') as HTMLInputElement).value).toBe('64.9');
+    expect(
+      (t.el.querySelector('input[aria-label="Precio de LEG01-AZU-S"]') as HTMLInputElement).value,
+    ).toBe('64.9');
   });
 
   it('CA-2-23 guardar el precio propio de una variante llama a PUT /admin/variantes/{id}', async () => {
@@ -85,7 +92,12 @@ describe('ProductoFormPage (P-2-04)', () => {
     await asentar(t.fixture);
     const req = t.ctrl.expectOne('/api/v1/admin/productos/7/publicar');
     req.flush(
-      { success: false, mensaje: 'Falta completar el producto para publicarlo', codigo: 'NO_PUBLICABLE', detalles: { faltantes: ['Imagen del color Azul'] } },
+      {
+        success: false,
+        mensaje: 'Falta completar el producto para publicarlo',
+        codigo: 'NO_PUBLICABLE',
+        detalles: { faltantes: ['Imagen del color Azul'] },
+      },
       { status: 409, statusText: 'Conflict' },
     );
     await asentar(t.fixture);
@@ -96,7 +108,9 @@ describe('ProductoFormPage (P-2-04)', () => {
     const t = await abrir();
     boton(t.el, 'Publicar')!.click();
     await asentar(t.fixture);
-    t.ctrl.expectOne('/api/v1/admin/productos/7/publicar').flush(sobre({ ...PRODUCTO, estado: 'ACTIVO' }));
+    t.ctrl
+      .expectOne('/api/v1/admin/productos/7/publicar')
+      .flush(sobre({ ...PRODUCTO, estado: 'ACTIVO' }));
     await asentar(t.fixture);
     expect(boton(t.el, 'Desactivar')).toBeDefined();
   });
@@ -112,7 +126,12 @@ describe('ProductoFormPage (P-2-04)', () => {
 
   it('CA-2-31 con 10 imágenes ya no se puede subir otra', async () => {
     const imagenes = Array.from({ length: 10 }, (_, i) => ({
-      id: i + 1, colorId: 1, url: `/f/${i}.jpg`, urlMiniatura: `/f/${i}-400.jpg`, orden: i + 1, principal: i === 0,
+      id: i + 1,
+      colorId: 1,
+      url: `/f/${i}.jpg`,
+      urlMiniatura: `/f/${i}-400.jpg`,
+      orden: i + 1,
+      principal: i === 0,
     }));
     const t = await abrir({ ...PRODUCTO, imagenes });
     await pestana(t, 'Imágenes');
@@ -153,12 +172,26 @@ describe('ProductoFormPage (P-2-04)', () => {
 
   it('CA-2-32 marcar otra foto como principal se guarda', async () => {
     const imagenes = [
-      { id: 1, colorId: 1, url: '/f/1.jpg', urlMiniatura: '/f/1-400.jpg', orden: 1, principal: true },
-      { id: 2, colorId: 1, url: '/f/2.jpg', urlMiniatura: '/f/2-400.jpg', orden: 2, principal: false },
+      {
+        id: 1,
+        colorId: 1,
+        url: '/f/1.jpg',
+        urlMiniatura: '/f/1-400.jpg',
+        orden: 1,
+        principal: true,
+      },
+      {
+        id: 2,
+        colorId: 1,
+        url: '/f/2.jpg',
+        urlMiniatura: '/f/2-400.jpg',
+        orden: 2,
+        principal: false,
+      },
     ];
     const t = await abrir({ ...PRODUCTO, imagenes });
     await pestana(t, 'Imágenes');
-    t.el.querySelector<HTMLInputElement>('input[name="principal-1"][data-imagen="2"]')!.click();
+    t.el.querySelector<HTMLInputElement>('input[type="radio"][data-imagen="2"]')!.click();
     await asentar(t.fixture);
     const req = t.ctrl.expectOne('/api/v1/admin/imagenes/2');
     expect(req.request.method).toBe('PUT');
@@ -181,6 +214,9 @@ describe('ProductoFormPage (P-2-04)', () => {
     boton(t.el, 'Guardar descuento')!.click();
     await asentar(t.fixture);
     const req = t.ctrl.expectOne('/api/v1/admin/productos/7/descuento');
-    expect(req.request.body).toEqual({ modo: 'PERSONALIZADO', tramos: [{ unidadesMinimas: 3, porcentaje: 5 }] });
+    expect(req.request.body).toEqual({
+      modo: 'PERSONALIZADO',
+      tramos: [{ unidadesMinimas: 3, porcentaje: 5 }],
+    });
   });
 });

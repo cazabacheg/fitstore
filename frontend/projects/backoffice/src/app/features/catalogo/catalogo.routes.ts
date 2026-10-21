@@ -1,4 +1,5 @@
 import { Routes } from '@angular/router';
+import { rolGuard } from 'shared';
 import { Proximamente } from '../../ui/proximamente/proximamente';
 
 /**
@@ -7,6 +8,16 @@ import { Proximamente } from '../../ui/proximamente/proximamente';
  */
 export const PRODUCTOS_ROUTES: Routes = [
   { path: '', loadComponent: () => import('./productos.page').then((m) => m.ProductosPage) },
+  // Crear es solo del ADMIN; `nuevo` va antes de `:id`.
+  {
+    path: 'nuevo',
+    canActivate: [rolGuard('ADMIN')],
+    loadComponent: () => import('./producto-form.page').then((m) => m.ProductoFormPage),
+  },
+  {
+    path: ':id',
+    loadComponent: () => import('./producto-form.page').then((m) => m.ProductoFormPage),
+  },
 ];
 
 export const CARGA_MASIVA_ROUTES: Routes = [
