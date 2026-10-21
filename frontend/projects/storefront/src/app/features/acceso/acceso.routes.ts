@@ -1,18 +1,23 @@
 import { Routes } from '@angular/router';
-import { Proximamente } from '../../ui/estados/proximamente';
+import { sinSesionGuard } from './sin-sesion.guard';
 
-/** Marcador "Próximamente" (R2): la spec dueña reemplaza esta carpeta. */
+/** Pantallas públicas de acceso de la tienda: P-1-01 a P-1-04. */
 export const ACCESO_ROUTES: Routes = [
-  { path: 'ingresar', component: Proximamente, data: { seccion: 'El ingreso' } },
-  { path: 'registro', component: Proximamente, data: { seccion: 'El registro' } },
+  {
+    path: 'ingresar',
+    canActivate: [sinSesionGuard],
+    loadComponent: () => import('./ingresar/ingresar.page').then((m) => m.IngresarPage),
+  },
+  {
+    path: 'registro',
+    loadComponent: () => import('./registro/registro.page').then((m) => m.RegistroPage),
+  },
   {
     path: 'recuperar',
-    component: Proximamente,
-    data: { seccion: 'La recuperación de contraseña' },
+    loadComponent: () => import('./recuperar/recuperar.page').then((m) => m.RecuperarPage),
   },
   {
     path: 'restablecer',
-    component: Proximamente,
-    data: { seccion: 'El restablecimiento de contraseña' },
+    loadComponent: () => import('./restablecer/restablecer.page').then((m) => m.RestablecerPage),
   },
 ];
