@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="es-PE">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title th:text="${asunto}">Correo de FitStore</title>
+</head>
+<!--/* Diseño común de los correos (P-7-04): tablas, estilos en línea y 600 px de ancho; se lee sin imágenes. */-->
+<body th:style="'margin:0;padding:0;background-color:' + ${m['colorFondo']} + ';'">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"
+       th:style="'background-color:' + ${m['colorFondo']} + ';'">
+  <tr>
+    <td align="center" style="padding:24px 12px;">
+      <table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0"
+             style="width:100%;max-width:600px;background-color:#FFFFFF;font-family:Arial,Helvetica,sans-serif;">
+        <!-- Cabecera: color primario, logo y nombre de la tienda -->
+        <tr>
+          <td align="center"
+              th:style="'background-color:' + ${m['colorPrimario']} + ';color:' + ${m['colorSobrePrimario']} + ';padding:24px;'">
+            <img th:if="${m['logoUrl'] != null}" th:src="${m['logoUrl']}" th:alt="${m['nombre']}" height="48"
+                 style="display:block;margin:0 auto 8px auto;border:0;height:48px;"/>
+            <div th:text="${m['nombre']}"
+                 th:style="'font-size:22px;font-weight:bold;color:' + ${m['colorSobrePrimario']} + ';'">FitStore</div>
+          </td>
+        </tr>
+        <!-- Título y mensaje -->
+        <tr>
+          <td th:style="'padding:28px 32px 8px 32px;color:' + ${m['colorTexto']} + ';'">
+            <h1 th:text="${titulo}" style="margin:0 0 16px 0;font-size:22px;line-height:1.3;">Título</h1>
+            <div th:utext="${mensajeHtml}" style="font-size:15px;line-height:1.6;">Mensaje</div>
+          </td>
+        </tr>
+        <!-- Detalle: filas "etiqueta: valor" (agencia, seguimiento, motivo, etc.) -->
+        <tr th:if="${!filas.isEmpty()}">
+          <td th:style="'padding:8px 32px;color:' + ${m['colorTexto']} + ';'">
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"
+                   style="font-size:14px;line-height:1.5;">
+              <tr th:each="fila : ${filas}">
+                <td valign="top" style="padding:4px 12px 4px 0;font-weight:bold;white-space:nowrap;"
+                    th:text="${fila['etiqueta']}">Etiqueta</td>
+                <td valign="top" style="padding:4px 0;">
+                  <a th:if="${fila['enlace'] != null}" th:href="${fila['enlace']}" th:text="${fila['valor']}"
+                     th:style="'color:' + ${m['colorTexto']} + ';'">enlace</a>
+                  <span th:if="${fila['enlace'] == null}" th:text="${fila['valor']}">valor</span>
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+        <!-- Bloque propio del correo (resumen del pedido en la confirmación) -->
+        <th:block th:if="${vista == 'pedido-confirmado'}">
+          <th:block th:replace="~{email/bloques :: pedido}"></th:block>
+        </th:block>
+        <!-- Botón con el color primario -->
+        <tr th:if="${botonUrl != null and botonTexto != null}">
+          <td align="center" style="padding:20px 32px 28px 32px;">
+            <a th:href="${botonUrl}" th:text="${botonTexto}"
+               th:style="'display:inline-block;padding:12px 28px;text-decoration:none;font-weight:bold;font-size:15px;background-color:' + ${m['colorPrimario']} + ';color:' + ${m['colorSobrePrimario']} + ';'">Botón</a>
+          </td>
+        </tr>
+        <!-- Pie: dirección, horario, redes y políticas -->
+        <tr>
+          <td th:style="'background-color:' + ${m['colorSecundario']} + ';color:' + ${m['colorSobreSecundario']} + ';padding:20px 32px;font-size:12px;line-height:1.6;'">
+            <div th:text="${m['nombre']}" style="font-weight:bold;font-size:13px;">FitStore</div>
+            <div th:if="${m['direccion'] != null}" th:text="${m['direccion']}">Dirección</div>
+            <div th:if="${m['horario'] != null}" th:text="${m['horario']}">Horario</div>
+            <div th:if="${m['email'] != null or m['telefono'] != null}">
+              <span th:if="${m['email'] != null}" th:text="${m['email']}">correo</span>
+              <span th:if="${m['email'] != null and m['telefono'] != null}"> · </span>
+              <span th:if="${m['telefono'] != null}" th:text="${m['telefono']}">teléfono</span>
+            </div>
+            <div th:if="${m['instagramUrl'] != null or m['facebookUrl'] != null or m['tiktokUrl'] != null}"
+                 style="margin-top:8px;">
+              <a th:if="${m['instagramUrl'] != null}" th:href="${m['instagramUrl']}"
+                 th:style="'color:' + ${m['colorSobreSecundario']} + ';margin-right:12px;'">Instagram</a>
+              <a th:if="${m['facebookUrl'] != null}" th:href="${m['facebookUrl']}"
+                 th:style="'color:' + ${m['colorSobreSecundario']} + ';margin-right:12px;'">Facebook</a>
+              <a th:if="${m['tiktokUrl'] != null}" th:href="${m['tiktokUrl']}"
+                 th:style="'color:' + ${m['colorSobreSecundario']} + ';'">TikTok</a>
+            </div>
+            <div style="margin-top:8px;">
+              <a th:each="politica : ${politicas}" th:href="${politica['url']}" th:text="${politica['texto']}"
+                 th:style="'color:' + ${m['colorSobreSecundario']} + ';margin-right:12px;'">Política</a>
+            </div>
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+</table>
+</body>
+</html>

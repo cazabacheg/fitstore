@@ -19,6 +19,10 @@ spring:
     password: ${SMTP_PASSWORD:}
     properties:
       mail.smtp.starttls.enable: ${SMTP_STARTTLS:false}
+      # Un SMTP que no responde no debe colgar el despachador: falla y se reintenta
+      mail.smtp.connectiontimeout: 5000
+      mail.smtp.timeout: 10000
+      mail.smtp.writetimeout: 10000
 
 springdoc:
   api-docs:
@@ -56,6 +60,9 @@ fitstore:
     reintentos: [1m, 5m, 15m, 60m]
     confirmacion-sin-boleta-tras: 10m
     retencion: 180d
+    intervalo-despacho: 5s          # el despachador toma ritmo-por-segundo × 5 correos por ciclo
+    payment-url: ${PAYMENT_URL:http://payment-service:8084}     # boleta de /internal/v1/boletas (no pasa por el gateway)
+    settings-url: ${SETTINGS_URL:http://settings-service:8087}  # solo si arranca sin copia de la marca
     enlaces:
       storefront: ${STOREFRONT_URL}
       backoffice: ${BACKOFFICE_URL}

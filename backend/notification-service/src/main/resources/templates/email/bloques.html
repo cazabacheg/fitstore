@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="es-PE">
+<body>
+<!--/* Bloques dinámicos que no edita el admin (micro 4.6): el resumen del pedido de "¡Pedido confirmado!". */-->
+<th:block th:fragment="pedido">
+  <tr>
+    <td th:style="'padding:8px 32px;color:' + ${m['colorTexto']} + ';'">
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"
+             style="font-size:14px;line-height:1.5;border-collapse:collapse;">
+        <tr th:if="${!items.isEmpty()}">
+          <th align="left" style="padding:6px 0;border-bottom:1px solid #DDDDDD;">Producto</th>
+          <th align="center" style="padding:6px 0;border-bottom:1px solid #DDDDDD;">Cant.</th>
+          <th align="right" style="padding:6px 0;border-bottom:1px solid #DDDDDD;">Total</th>
+        </tr>
+        <tr th:each="item : ${items}">
+          <td style="padding:6px 0;border-bottom:1px solid #EEEEEE;">
+            <span th:text="${item['producto']}">Producto</span>
+            <span style="color:#777777;" th:text="'(' + ${item['talla']} + ', ' + ${item['color']} + ')'">(M, Negro)</span>
+          </td>
+          <td align="center" style="padding:6px 0;border-bottom:1px solid #EEEEEE;" th:text="${item['cantidad']}">1</td>
+          <td align="right" style="padding:6px 0;border-bottom:1px solid #EEEEEE;" th:text="${item['total']}">S/ 0.00</td>
+        </tr>
+        <tr th:if="${resumen['subtotal'] != null}">
+          <td colspan="2" align="right" style="padding:4px 0;">Subtotal</td>
+          <td align="right" style="padding:4px 0;" th:text="${resumen['subtotal']}">S/ 0.00</td>
+        </tr>
+        <tr th:if="${resumen['descuento'] != null}">
+          <td colspan="2" align="right" style="padding:4px 0;">Descuento</td>
+          <td align="right" style="padding:4px 0;" th:text="${resumen['descuento']}">S/ 0.00</td>
+        </tr>
+        <tr th:if="${resumen['costoEnvio'] != null}">
+          <td colspan="2" align="right" style="padding:4px 0;">Envío</td>
+          <td align="right" style="padding:4px 0;" th:text="${resumen['costoEnvio']}">S/ 0.00</td>
+        </tr>
+        <tr th:if="${resumen['total'] != null}">
+          <td colspan="2" align="right" style="padding:6px 0;font-weight:bold;">Total</td>
+          <td align="right" style="padding:6px 0;font-weight:bold;" th:text="${resumen['total']}">S/ 0.00</td>
+        </tr>
+      </table>
+      <p th:if="${sinBoleta}" style="font-size:14px;line-height:1.5;margin:12px 0 0 0;">
+        Por ahora no pudimos adjuntar la boleta: tu boleta estará disponible en Mis pedidos.
+      </p>
+    </td>
+  </tr>
+</th:block>
+</body>
+</html>

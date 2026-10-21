@@ -46,4 +46,17 @@ public interface EnvioCorreoRepository extends JpaRepository<EnvioCorreo, UUID> 
     @Modifying
     @Query("DELETE FROM EnvioCorreo e WHERE e.creadoEn < :limite")
     int purgarAnterioresA(@Param("limite") Instant limite);
+
+    /** Número de envíos por estado con los mismos filtros del registro, salvo el estado (chips del listado). */
+    @Query("""
+            SELECT e.estado, COUNT(e) FROM EnvioCorreo e
+            WHERE (:plantilla IS NULL OR e.plantilla = :plantilla)
+              AND (:destinatario IS NULL OR LOWER(e.destinatario) LIKE LOWER(CONCAT('%', CAST(:destinatario AS string), '%')))
+              AND (:referencia IS NULL OR e.referencia = :referencia)
+              AND (CAST(:desde AS instant) IS NULL OR e.creadoEn >= :desde)
+              AND (CAST(:hasta AS instant) IS NULL OR e.creadoEn <= :hasta)
+            GROUP BY e.estado
+            """)
+    List<Object[]> contarPorEstado(@Param("plantilla") String plantilla, @Param("destinatario") String destinatario,
+            @Param("referencia") String referencia, @Param("desde") Instant desde, @Param("hasta") Instant hasta);
 }

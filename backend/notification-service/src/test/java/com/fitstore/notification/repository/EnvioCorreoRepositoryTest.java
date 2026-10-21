@@ -183,4 +183,20 @@ class EnvioCorreoRepositoryTest {
 
         assertThat(repositorio.findById(e.getId())).isEmpty();
     }
+
+    @Test
+    @DisplayName("CA-7-19 EnvioCorreoRepository cuenta los envíos por estado sin aplicar el filtro de estado")
+    void cuentaPorEstado() {
+        guardar(envio("BIENVENIDA", "ana@correo.pe", "FS-000001", EstadoEnvio.ENVIADO, null, AHORA.minus(3, ChronoUnit.DAYS)));
+        guardar(envio("PEDIDO_CONFIRMADO", "ana@correo.pe", "FS-000002", EstadoEnvio.FALLIDO, null, AHORA.minus(1, ChronoUnit.DAYS)));
+        guardar(envio("PEDIDO_CONFIRMADO", "luis@correo.pe", "FS-000003", EstadoEnvio.ENVIADO, null, AHORA));
+
+        var todos = repositorio.contarPorEstado(null, null, null, null, null);
+        var deAna = repositorio.contarPorEstado(null, "ana@", null, null, null);
+        var confirmados = repositorio.contarPorEstado("PEDIDO_CONFIRMADO", null, null, null, null);
+
+        assertThat(todos).extracting(f -> f[0] + "=" + f[1]).containsExactlyInAnyOrder("ENVIADO=2", "FALLIDO=1");
+        assertThat(deAna).extracting(f -> f[0] + "=" + f[1]).containsExactlyInAnyOrder("ENVIADO=1", "FALLIDO=1");
+        assertThat(confirmados).extracting(f -> f[0] + "=" + f[1]).containsExactlyInAnyOrder("ENVIADO=1", "FALLIDO=1");
+    }
 }

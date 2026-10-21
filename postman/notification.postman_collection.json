@@ -1,0 +1,893 @@
+{
+  "info": {
+    "name": "FitStore - notification (SPEC-7)",
+    "description": "Registro de envíos del backoffice a través del gateway: lista, filtros, detalle, reenvío y los 403 del OPERADOR; las rutas de plantillas (extensión de alcance) responden 501. Requiere la plataforma con el perfil dev (datos de demostración de notification), las credenciales del ADMIN inicial en adminEmail y adminPassword (FITSTORE_ADMIN_EMAIL y FITSTORE_ADMIN_PASSWORD) y la cuenta de demostración del OPERADOR. La carpeta CA-7-29 revisa Mailpit y se activa con verificarMailpit=true tras la compra de la demo. No hay pasos de editar, vista previa, restaurar ni enviar prueba: son extensión de alcance.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "adminEmail",
+      "value": "",
+      "description": "Correo del ADMIN inicial (FITSTORE_ADMIN_EMAIL)"
+    },
+    {
+      "key": "adminPassword",
+      "value": "",
+      "description": "Contraseña del ADMIN inicial (FITSTORE_ADMIN_PASSWORD)"
+    },
+    {
+      "key": "demoOperadorEmail",
+      "value": "diana.flores@fitstore.demo",
+      "description": "OPERADOR de demostración"
+    },
+    {
+      "key": "demoPassword",
+      "value": "FitStoreDemo2026",
+      "description": "Contraseña común de DESARROLLO de las cuentas de demostración (no es un secreto)"
+    },
+    {
+      "key": "mailpitUrl",
+      "value": "http://localhost:8025",
+      "description": "Mailpit del compose de desarrollo"
+    },
+    {
+      "key": "verificarMailpit",
+      "value": "false",
+      "description": "true para correr la carpeta CA-7-29 tras la compra de la demo"
+    },
+    {
+      "key": "tokenAdmin",
+      "value": ""
+    },
+    {
+      "key": "tokenOperador",
+      "value": ""
+    },
+    {
+      "key": "idFallido",
+      "value": ""
+    },
+    {
+      "key": "idEnviado",
+      "value": ""
+    },
+    {
+      "key": "idCorreoPedido",
+      "value": ""
+    }
+  ],
+  "item": [
+    {
+      "name": "CA-7-22 Ingreso del ADMIN",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('CA-7-22 responde 200 con rol ADMIN', function () { pm.response.to.have.status(200); const d = pm.response.json().data; pm.expect(d.cuenta.rol).to.eql('ADMIN'); pm.collectionVariables.set('tokenAdmin', d.accessToken); });"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/auth/staff/login",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "auth",
+            "staff",
+            "login"
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\"email\": \"{{adminEmail}}\", \"password\": \"{{adminPassword}}\"}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "CA-7-22 Ingreso del OPERADOR de demostración",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('CA-7-22 responde 200 con rol OPERADOR', function () { pm.response.to.have.status(200); const d = pm.response.json().data; pm.expect(d.cuenta.rol).to.eql('OPERADOR'); pm.collectionVariables.set('tokenOperador', d.accessToken); });"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/auth/staff/login",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "auth",
+            "staff",
+            "login"
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\"email\": \"{{demoOperadorEmail}}\", \"password\": \"{{demoPassword}}\"}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "CA-7-19 Registro de envíos: del más reciente al más antiguo, con contadores",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('CA-7-19 200 con la página, los datos de la tabla y los contadores', function () { pm.response.to.have.status(200); const d = pm.response.json().data; pm.expect(d.contenido.length).to.be.above(0); const e = d.contenido[0]; ['id','plantilla','destinatario','asunto','estado','intentos','creadoEn'].forEach(function (c) { pm.expect(e).to.have.property(c); }); pm.expect(d.contadores).to.have.keys('PENDIENTE','ENVIANDO','ENVIADO','FALLIDO'); pm.expect(d).to.have.property('totalElementos'); });",
+              "pm.test('CA-7-19 viene ordenado por fecha, el más reciente primero', function () { const f = pm.response.json().data.contenido.map(function (e) { return Date.parse(e.creadoEn); }); for (let i = 1; i < f.length; i++) { pm.expect(f[i - 1]).to.be.at.least(f[i]); } });",
+              "const c = pm.response.json().data.contenido; const enviado = c.find(function (e) { return e.estado === 'ENVIADO'; }); if (enviado) { pm.collectionVariables.set('idEnviado', enviado.id); }"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{tokenAdmin}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/admin/notificaciones?size=50",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "admin",
+            "notificaciones"
+          ],
+          "query": [
+            {
+              "key": "size",
+              "value": "50"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "CA-7-19 Filtro por estado FALLIDO",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('CA-7-19 todos los envíos devueltos están FALLIDO', function () { pm.response.to.have.status(200); const c = pm.response.json().data.contenido; c.forEach(function (e) { pm.expect(e.estado).to.eql('FALLIDO'); }); if (c.length) { pm.collectionVariables.set('idFallido', c[0].id); } });"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{tokenAdmin}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/admin/notificaciones?estado=FALLIDO",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "admin",
+            "notificaciones"
+          ],
+          "query": [
+            {
+              "key": "estado",
+              "value": "FALLIDO"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "CA-7-19 Filtro por plantilla",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('CA-7-19 todos los envíos son de la plantilla EN_CAMINO', function () { pm.response.to.have.status(200); pm.response.json().data.contenido.forEach(function (e) { pm.expect(e.plantilla).to.eql('EN_CAMINO'); }); });"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{tokenAdmin}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/admin/notificaciones?plantilla=EN_CAMINO",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "admin",
+            "notificaciones"
+          ],
+          "query": [
+            {
+              "key": "plantilla",
+              "value": "EN_CAMINO"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "CA-7-19 Filtro por referencia (código de pedido)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('CA-7-19 todos los envíos son del pedido FS-000109 de la demo', function () { pm.response.to.have.status(200); const c = pm.response.json().data.contenido; pm.expect(c.length).to.be.above(0); c.forEach(function (e) { pm.expect(e.referencia).to.eql('FS-000109'); }); });"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{tokenAdmin}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/admin/notificaciones?referencia=FS-000109",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "admin",
+            "notificaciones"
+          ],
+          "query": [
+            {
+              "key": "referencia",
+              "value": "FS-000109"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "CA-7-19 Filtro por destinatario",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('CA-7-19 todos los envíos son para lucia.mendoza', function () { pm.response.to.have.status(200); const c = pm.response.json().data.contenido; pm.expect(c.length).to.be.above(0); c.forEach(function (e) { pm.expect(e.destinatario).to.include('lucia.mendoza'); }); });"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{tokenAdmin}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/admin/notificaciones?destinatario=lucia.mendoza",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "admin",
+            "notificaciones"
+          ],
+          "query": [
+            {
+              "key": "destinatario",
+              "value": "lucia.mendoza"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "CA-7-19 Filtro por fechas sin resultados",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('CA-7-19 un rango en el futuro no devuelve envíos', function () { pm.response.to.have.status(200); pm.expect(pm.response.json().data.contenido.length).to.eql(0); });"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{tokenAdmin}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/admin/notificaciones?desde=2099-01-01&hasta=2099-01-31",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "admin",
+            "notificaciones"
+          ],
+          "query": [
+            {
+              "key": "desde",
+              "value": "2099-01-01"
+            },
+            {
+              "key": "hasta",
+              "value": "2099-01-31"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "CA-7-20 Detalle de un envío: intentos y último error",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('CA-7-20 200 con asunto, destinatario, referencia, cada intento y el último error', function () { pm.response.to.have.status(200); const e = pm.response.json().data; pm.expect(e.asunto).to.be.a('string'); pm.expect(e.destinatario).to.be.a('string'); pm.expect(e.historialIntentos.length).to.be.above(0); pm.expect(e.historialIntentos[0]).to.have.keys('numero','fecha','error'); pm.expect(e.ultimoError).to.be.a('string'); });"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{tokenAdmin}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/admin/notificaciones/{{idFallido}}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "admin",
+            "notificaciones",
+            "{{idFallido}}"
+          ]
+        }
+      }
+    },
+    {
+      "name": "CA-7-20 Un envío que no existe responde 404",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('CA-7-20 404', function () { pm.response.to.have.status(404); });"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{tokenAdmin}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/admin/notificaciones/00000000-0000-4000-8000-000000000000",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "admin",
+            "notificaciones",
+            "00000000-0000-4000-8000-000000000000"
+          ]
+        }
+      }
+    },
+    {
+      "name": "CA-7-21 Reenviar un envío FALLIDO lo vuelve a PENDIENTE",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('CA-7-21 200 y el estado vuelve a PENDIENTE', function () { pm.response.to.have.status(200); pm.expect(pm.response.json().data.estado).to.eql('PENDIENTE'); });"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{tokenAdmin}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/admin/notificaciones/{{idFallido}}/reenviar",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "admin",
+            "notificaciones",
+            "{{idFallido}}",
+            "reenviar"
+          ]
+        }
+      }
+    },
+    {
+      "name": "CA-7-21 Reenviar un envío ENVIADO lo vuelve a PENDIENTE",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('CA-7-21 200 y el estado vuelve a PENDIENTE', function () { pm.response.to.have.status(200); pm.expect(pm.response.json().data.estado).to.eql('PENDIENTE'); });"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{tokenAdmin}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/admin/notificaciones/{{idEnviado}}/reenviar",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "admin",
+            "notificaciones",
+            "{{idEnviado}}",
+            "reenviar"
+          ]
+        }
+      }
+    },
+    {
+      "name": "CA-7-21 Reenviar un envío que no existe responde 404",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('CA-7-21 404', function () { pm.response.to.have.status(404); });"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{tokenAdmin}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/admin/notificaciones/00000000-0000-4000-8000-000000000000/reenviar",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "admin",
+            "notificaciones",
+            "00000000-0000-4000-8000-000000000000",
+            "reenviar"
+          ]
+        }
+      }
+    },
+    {
+      "name": "CA-7-22 El OPERADOR no ve el registro (403)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('CA-7-22 403 SIN_PERMISO', function () { pm.response.to.have.status(403); pm.expect(pm.response.json().codigo).to.eql('SIN_PERMISO'); });"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{tokenOperador}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/admin/notificaciones",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "admin",
+            "notificaciones"
+          ]
+        }
+      }
+    },
+    {
+      "name": "CA-7-22 El OPERADOR no puede reenviar (403)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('CA-7-22 403', function () { pm.response.to.have.status(403); });"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{tokenOperador}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/admin/notificaciones/{{idEnviado}}/reenviar",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "admin",
+            "notificaciones",
+            "{{idEnviado}}",
+            "reenviar"
+          ]
+        }
+      }
+    },
+    {
+      "name": "CA-7-22 Sin sesión el registro responde 401",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('CA-7-22 401', function () { pm.response.to.have.status(401); });"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/admin/notificaciones",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "admin",
+            "notificaciones"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Plantillas (extensión de alcance): listar responde 501",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('501 EXTENSION_DE_ALCANCE', function () { pm.response.to.have.status(501); pm.expect(pm.response.json().codigo).to.eql('EXTENSION_DE_ALCANCE'); });"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{tokenAdmin}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/admin/notificaciones/plantillas",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "admin",
+            "notificaciones",
+            "plantillas"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Plantillas (extensión de alcance): ver una responde 501",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('501 EXTENSION_DE_ALCANCE', function () { pm.response.to.have.status(501); pm.expect(pm.response.json().codigo).to.eql('EXTENSION_DE_ALCANCE'); });"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{tokenAdmin}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/admin/notificaciones/plantillas/PEDIDO_CONFIRMADO",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "admin",
+            "notificaciones",
+            "plantillas",
+            "PEDIDO_CONFIRMADO"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Plantillas (extensión de alcance): restaurar responde 501",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('501 EXTENSION_DE_ALCANCE', function () { pm.response.to.have.status(501); pm.expect(pm.response.json().codigo).to.eql('EXTENSION_DE_ALCANCE'); });"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{tokenAdmin}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/admin/notificaciones/plantillas/PEDIDO_CONFIRMADO/restaurar",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "admin",
+            "notificaciones",
+            "plantillas",
+            "PEDIDO_CONFIRMADO",
+            "restaurar"
+          ]
+        }
+      }
+    },
+    {
+      "name": "CA-7-29 Correos de la demo en Mailpit",
+      "description": "Se corre con la plataforma levantada y la compra completa hecha (docs/pruebas/demo-correos.md). Con verificarMailpit=false (valor por defecto) los pasos se omiten.",
+      "item": [
+        {
+          "name": "CA-7-29 Mailpit recibió los correos de la compra",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.collectionVariables.get('verificarMailpit') === 'true') { pm.test('CA-7-29 hay correos en Mailpit', function () { const m = pm.response.json(); pm.expect(m.total).to.be.above(0); pm.collectionVariables.set('idCorreoPedido', (m.messages.find(function (x) { return /Pedido FS-/.test(x.Subject) && x.Attachments > 0; }) || {}).ID || ''); }); } else { pm.test('CA-7-29 omitido: verificarMailpit=false', function () {}); }"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{mailpitUrl}}/api/v1/messages",
+              "host": [
+                "{{mailpitUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "messages"
+              ]
+            }
+          }
+        },
+        {
+          "name": "CA-7-29 La confirmación lleva la marca, HTML, texto plano y la boleta adjunta",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.collectionVariables.get('verificarMailpit') === 'true') { pm.test('CA-7-29 trae HTML con la marca, texto plano y la boleta PDF adjunta', function () { const c = pm.response.json(); pm.expect(c.HTML).to.include('<table'); pm.expect(c.Text.length).to.be.above(0); pm.expect(c.Attachments.length).to.be.above(0); pm.expect(c.Attachments[0].FileName).to.match(/^B001-\\d{8}\\.pdf$/); }); } else { pm.test('CA-7-29 omitido: verificarMailpit=false', function () {}); }"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{mailpitUrl}}/api/v1/message/{{idCorreoPedido}}",
+              "host": [
+                "{{mailpitUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "message",
+                "{{idCorreoPedido}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "CA-7-29 Hay correos de entrega y de devolución",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.collectionVariables.get('verificarMailpit') === 'true') { pm.test('CA-7-29 existe el correo de pedido en camino', function () { pm.expect(pm.response.json().total).to.be.above(0); }); } else { pm.test('CA-7-29 omitido: verificarMailpit=false', function () {}); }"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{mailpitUrl}}/api/v1/search?query=subject%3A%22va%20en%20camino%22",
+              "host": [
+                "{{mailpitUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "search?query=subject%3A%22va%20en%20camino%22"
+              ]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}
