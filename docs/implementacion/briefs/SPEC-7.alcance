@@ -1,7 +1,6 @@
 # Alcance de la SPEC-7 (sección 8 v6), sin las pantallas de extensión.
 backend/notification-service/*
-infra/config-repo/notification-service.yml
-infra/config-repo/notification-service-*.yml
+infra/config-repo/notification-service*.yml
 frontend/projects/backoffice/src/app/features/notificaciones/*
 postman/notification.postman_collection.json
 docs/pruebas/demo-correos.md
