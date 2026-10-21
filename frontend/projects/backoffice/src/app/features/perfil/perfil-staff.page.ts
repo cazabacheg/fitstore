@@ -1,6 +1,7 @@
 import { HttpContext } from '@angular/common/http';
 import { Component, computed, inject, signal } from '@angular/core';
 import { SIN_TOAST, ToastService, authApi, camposConError } from 'shared';
+import { StaffPropioService } from 'shared/api/auth-service';
 import { EncabezadoPagina } from '../../layout/encabezado-pagina';
 import { EstadoCargando } from '../../ui/estados/estado-cargando';
 import { EstadoError } from '../../ui/estados/estado-error';
@@ -88,7 +89,7 @@ const ROLES: Record<string, string> = { ADMIN: 'Admin', OPERADOR: 'Operador' };
   `,
 })
 export class PerfilStaffPage {
-  private readonly api = inject(authApi.StaffPropioService);
+  private readonly api = inject(StaffPropioService);
   private readonly toasts = inject(ToastService);
 
   protected readonly estado = signal<'cargando' | 'listo' | 'error'>('cargando');

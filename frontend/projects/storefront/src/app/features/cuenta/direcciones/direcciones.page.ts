@@ -1,6 +1,7 @@
 import { HttpContext } from '@angular/common/http';
 import { Component, computed, inject, signal } from '@angular/core';
 import { SIN_TOAST, ToastService, authApi } from 'shared';
+import { ClienteService } from 'shared/api/auth-service';
 import { FsBoton } from '../../../ui/boton/boton';
 import { DialogoConfirmacion } from '../../../ui/dialogo/dialogo-confirmacion';
 import { EstadoCargando, EstadoError, EstadoVacio } from '../../../ui/estados/estados';
@@ -82,7 +83,7 @@ export const MAXIMO_DIRECCIONES = 10;
   `,
 })
 export class DireccionesPage {
-  private readonly api = inject(authApi.ClienteService);
+  private readonly api = inject(ClienteService);
   private readonly dialogo = inject(DialogoDireccionService);
   private readonly toasts = inject(ToastService);
   private readonly sinToast = () => ({ context: new HttpContext().set(SIN_TOAST, true) });

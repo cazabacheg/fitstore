@@ -1,7 +1,8 @@
 import { HttpContext } from '@angular/common/http';
 import { Component, computed, inject, input, signal } from '@angular/core';
 import { Router } from '@angular/router';
-import { SIN_TOAST, SesionStore, authApi, comoApiError } from 'shared';
+import { SIN_TOAST, SesionStore, comoApiError } from 'shared';
+import { AutenticacionService } from 'shared/api/auth-service';
 import { FsBoton } from '../../../ui/boton/boton';
 import { FsCampo } from '../../../ui/campo/campo';
 import { errorCorreo, rutaDeRetorno } from '../validaciones';
@@ -31,7 +32,7 @@ import { errorCorreo, rutaDeRetorno } from '../validaciones';
   `,
 })
 export class FormularioIngreso {
-  private readonly api = inject(authApi.AutenticacionService);
+  private readonly api = inject(AutenticacionService);
   private readonly sesion = inject(SesionStore);
   private readonly router = inject(Router);
 

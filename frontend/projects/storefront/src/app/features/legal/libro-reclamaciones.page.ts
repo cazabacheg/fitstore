@@ -2,6 +2,7 @@ import { HttpContext } from '@angular/common/http';
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { SIN_TOAST, settingsApi } from 'shared';
+import { ConfiguracionPublicaService } from 'shared/api/settings-service';
 import { ConfirmacionReclamo } from './confirmacion-reclamo';
 import { FormularioHojaReclamacion, type ReclamoEnviado } from './formulario-hoja-reclamacion';
 
@@ -74,7 +75,7 @@ import { FormularioHojaReclamacion, type ReclamoEnviado } from './formulario-hoj
   `,
 })
 export class LibroReclamacionesPage {
-  private readonly api = inject(settingsApi.ConfiguracionPublicaService);
+  private readonly api = inject(ConfiguracionPublicaService);
 
   protected readonly proveedor = signal<settingsApi.Identidad | null>(null);
   protected readonly enviado = signal<ReclamoEnviado | null>(null);

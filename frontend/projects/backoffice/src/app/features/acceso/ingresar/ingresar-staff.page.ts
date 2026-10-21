@@ -1,7 +1,8 @@
 import { HttpContext } from '@angular/common/http';
 import { Component, computed, inject, signal } from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
-import { SIN_TOAST, SesionStore, authApi, comoApiError } from 'shared';
+import { SIN_TOAST, SesionStore, comoApiError } from 'shared';
+import { AutenticacionService } from 'shared/api/auth-service';
 import { CampoFormulario } from '../campo-formulario';
 import { errorCorreo, rutaDeRetorno } from '../validaciones';
 
@@ -70,7 +71,7 @@ import { errorCorreo, rutaDeRetorno } from '../validaciones';
   `,
 })
 export class IngresarStaffPage {
-  private readonly api = inject(authApi.AutenticacionService);
+  private readonly api = inject(AutenticacionService);
   private readonly sesion = inject(SesionStore);
   private readonly router = inject(Router);
   private readonly returnUrl = inject(ActivatedRoute).snapshot.queryParamMap.get('returnUrl');

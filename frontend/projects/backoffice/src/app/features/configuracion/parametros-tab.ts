@@ -9,7 +9,8 @@ import {
   output,
   signal,
 } from '@angular/core';
-import { SIN_TOAST, catalogApi, type settingsApi } from 'shared';
+import { SIN_TOAST, type settingsApi } from 'shared';
+import { InventarioService } from 'shared/api/catalog-service';
 
 /** Parámetros que se guardan con `PUT /admin/settings/parametros` (sin la versión, que agrega la pantalla). */
 export type DatosParametros = Omit<settingsApi.ParametrosRequest, 'version'>;
@@ -286,7 +287,7 @@ function entero(texto: string): number | null {
   `,
 })
 export class ParametrosTab {
-  private readonly inventario = inject(catalogApi.InventarioService);
+  private readonly inventario = inject(InventarioService);
   private readonly sinAviso = new HttpContext().set(SIN_TOAST, true);
 
   readonly parametros = input.required<settingsApi.ParametrosPublicos>();

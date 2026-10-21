@@ -2,6 +2,7 @@ import { HttpContext } from '@angular/common/http';
 import { Component, computed, inject, signal } from '@angular/core';
 import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
 import { SIN_TOAST, authApi, camposConError, comoApiError } from 'shared';
+import { StaffService } from 'shared/api/auth-service';
 import { CampoFormulario } from '../acceso/campo-formulario';
 import { errorCorreo, errorNombre } from '../acceso/validaciones';
 
@@ -70,7 +71,7 @@ export interface DatosDialogoStaff {
   `,
 })
 export class DialogoStaff {
-  private readonly api = inject(authApi.StaffService);
+  private readonly api = inject(StaffService);
   private readonly ref =
     inject<MatDialogRef<DialogoStaff, authApi.Staff | undefined>>(MatDialogRef);
   protected readonly staff = inject<DatosDialogoStaff>(MAT_DIALOG_DATA).staff;

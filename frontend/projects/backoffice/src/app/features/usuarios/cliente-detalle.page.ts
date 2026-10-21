@@ -3,6 +3,7 @@ import { Component, computed, inject, signal } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import type { Observable } from 'rxjs';
 import { SIN_TOAST, SesionStore, ToastService, authApi } from 'shared';
+import { ClientesAdminService } from 'shared/api/auth-service';
 import { EncabezadoPagina } from '../../layout/encabezado-pagina';
 import { DialogoService } from '../../ui/dialogo/dialogo.service';
 import { EstadoCargando } from '../../ui/estados/estado-cargando';
@@ -115,7 +116,7 @@ import { fechaHora } from './formato';
   `,
 })
 export class ClienteDetallePage {
-  private readonly api = inject(authApi.ClientesAdminService);
+  private readonly api = inject(ClientesAdminService);
   private readonly confirmacion = inject(DialogoService);
   private readonly toasts = inject(ToastService);
   private readonly sesion = inject(SesionStore);
