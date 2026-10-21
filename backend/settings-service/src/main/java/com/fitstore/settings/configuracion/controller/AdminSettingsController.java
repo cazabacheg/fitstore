@@ -9,11 +9,13 @@ import com.fitstore.settings.configuracion.dto.IdentidadRequest;
 import com.fitstore.settings.configuracion.dto.ImagenRequest;
 import com.fitstore.settings.configuracion.dto.ImagenTiendaDto;
 import com.fitstore.settings.configuracion.dto.ParametrosRequest;
+import com.fitstore.settings.configuracion.dto.SubirImagenRequest;
 import com.fitstore.settings.configuracion.dto.TemaRequest;
 import com.fitstore.settings.configuracion.model.TipoImagen;
 import com.fitstore.settings.configuracion.service.ConfiguracionService;
 import com.fitstore.settings.configuracion.service.ImagenTiendaService;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Pattern;
@@ -39,9 +41,10 @@ import org.springframework.web.multipart.MultipartFile;
 
 /** Edición de la configuración y de las imágenes de la tienda (solo ADMIN). */
 @RestController
-@RequestMapping("/api/v1/admin/settings")
+@RequestMapping(value = "/api/v1/admin/settings", produces = MediaType.APPLICATION_JSON_VALUE)
 @PreAuthorize("hasRole('ADMIN')")
 @Validated
+@SecurityRequirement(name = "bearerAuth")
 @Tag(name = "configuracion-admin")
 public class AdminSettingsController {
 
@@ -93,12 +96,16 @@ public class AdminSettingsController {
 
     @PostMapping(value = "/imagenes", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @ResponseStatus(HttpStatus.CREATED)
-    @Operation(operationId = "subirImagenTienda", summary = "Subir una imagen de la tienda")
-    public ApiResponse<ImagenTiendaDto> subirImagen(@RequestPart("archivo") MultipartFile archivo,
-            @RequestParam("tipo") TipoImagen tipo,
-            @RequestParam(value = "textoAlternativo", required = false)
+    @Operation(operationId = "subirImagenTienda", summary = "Subir una imagen de la tienda",
+            requestBody = @io.swagger.v3.oas.annotations.parameters.RequestBody(required = true,
+                    content = @io.swagger.v3.oas.annotations.media.Content(mediaType = MediaType.MULTIPART_FORM_DATA_VALUE,
+                            schema = @io.swagger.v3.oas.annotations.media.Schema(implementation = SubirImagenRequest.class))))
+    public ApiResponse<ImagenTiendaDto> subirImagen(
+            @io.swagger.v3.oas.annotations.Parameter(hidden = true) @RequestPart("archivo") MultipartFile archivo,
+            @io.swagger.v3.oas.annotations.Parameter(hidden = true) @RequestParam("tipo") TipoImagen tipo,
+            @io.swagger.v3.oas.annotations.Parameter(hidden = true) @RequestParam(value = "textoAlternativo", required = false)
             @Size(max = 150, message = "El texto alternativo admite hasta 150 caracteres") String textoAlternativo,
-            @RequestParam(value = "enlace", required = false)
+            @io.swagger.v3.oas.annotations.Parameter(hidden = true) @RequestParam(value = "enlace", required = false)
             @Size(max = 300, message = "El enlace admite hasta 300 caracteres")
             @Pattern(regexp = ENLACE, message = "Usa una ruta de la tienda (/productos) o una URL https") String enlace) {
         try {

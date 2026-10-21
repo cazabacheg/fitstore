@@ -8,6 +8,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
+import org.springframework.http.MediaType;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -17,7 +18,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 /** Registro público del Libro de Reclamaciones (con o sin cuenta). El gateway limita 3 envíos por minuto por IP. */
 @RestController
-@RequestMapping("/api/v1/reclamos")
+@RequestMapping(value = "/api/v1/reclamos", produces = MediaType.APPLICATION_JSON_VALUE)
 @Tag(name = "reclamos")
 public class ReclamoController {
 

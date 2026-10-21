@@ -12,6 +12,7 @@ import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import java.time.Duration;
 import java.util.List;
+import org.springframework.http.MediaType;
 import org.springframework.http.CacheControl;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
@@ -23,7 +24,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 /** Consulta pública del ubigeo del INEI. Las listas llevan caché de 24 h también en el navegador (CA-3-32). */
 @RestController
-@RequestMapping("/api/v1/ubigeo")
+@RequestMapping(value = "/api/v1/ubigeo", produces = MediaType.APPLICATION_JSON_VALUE)
 @Validated
 @Tag(name = "ubigeo")
 public class UbigeoController {

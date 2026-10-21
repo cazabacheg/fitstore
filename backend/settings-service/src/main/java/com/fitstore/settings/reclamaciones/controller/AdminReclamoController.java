@@ -11,6 +11,7 @@ import com.fitstore.settings.reclamaciones.model.EstadoReclamo;
 import com.fitstore.settings.reclamaciones.model.TipoReclamo;
 import com.fitstore.settings.reclamaciones.service.ReclamoService;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Max;
@@ -25,6 +26,7 @@ import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.validation.annotation.Validated;
+import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -36,8 +38,9 @@ import org.springframework.web.bind.annotation.RestController;
 
 /** Atención de reclamos en el backoffice: el OPERADOR consulta, solo el ADMIN toma y responde. */
 @RestController
-@RequestMapping("/api/v1/admin/reclamos")
+@RequestMapping(value = "/api/v1/admin/reclamos", produces = MediaType.APPLICATION_JSON_VALUE)
 @Validated
+@SecurityRequirement(name = "bearerAuth")
 @Tag(name = "reclamos")
 public class AdminReclamoController {
 

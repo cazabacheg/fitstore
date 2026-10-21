@@ -7,10 +7,12 @@ import com.fitstore.settings.configuracion.dto.PublicarPoliticaRequest;
 import com.fitstore.settings.configuracion.dto.VersionPoliticaDto;
 import com.fitstore.settings.configuracion.service.PoliticaService;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
 import java.util.List;
+import org.springframework.http.MediaType;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
@@ -26,7 +28,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 /** Lectura pública de las políticas y publicación de versiones nuevas por el ADMIN. */
 @RestController
-@RequestMapping("/api/v1")
+@RequestMapping(value = "/api/v1", produces = MediaType.APPLICATION_JSON_VALUE)
 @Validated
 @Tag(name = "politicas")
 public class PoliticaController {
@@ -46,6 +48,7 @@ public class PoliticaController {
 
     @GetMapping("/admin/settings/politicas/{tipo}/versiones")
     @PreAuthorize("hasRole('ADMIN')")
+    @SecurityRequirement(name = "bearerAuth")
     @Operation(operationId = "listarVersionesPolitica", summary = "Historial de versiones de una política")
     public ApiResponse<List<VersionPoliticaDto>> versiones(@PathVariable String tipo) {
         return ApiResponse.ok(politicas.versiones(tipo));
@@ -53,6 +56,7 @@ public class PoliticaController {
 
     @PostMapping("/admin/settings/politicas/{tipo}")
     @PreAuthorize("hasRole('ADMIN')")
+    @SecurityRequirement(name = "bearerAuth")
     @ResponseStatus(HttpStatus.CREATED)
     @Operation(operationId = "publicarPolitica", summary = "Publicar una nueva versión")
     public ApiResponse<PoliticaDto> publicar(@PathVariable String tipo,
