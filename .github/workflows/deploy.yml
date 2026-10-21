@@ -81,4 +81,6 @@ jobs:
               --env-var "demoPassword=$DEMO_PASSWORD" --env-var "passwordDemo=$DEMO_PASSWORD" \
               --env-var "operadorPassword=$DEMO_PASSWORD"
           done
+      # Criterios manuales de la nube (sin paso automático): CA-8-23 (webhooks reales), CA-8-29 (recorrido con tiempos) y
+      # CA-8-30 (lista previa y plan B) están en docs/demo/guion.md; CA-8-28 (encender y apagar la VM) en docs/despliegue.md.
       # Volver atrás: ejecutar este flujo a mano con la etiqueta anterior (docs/despliegue.md, sección "Volver atrás")

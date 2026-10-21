@@ -109,5 +109,28 @@ verificar "CA-8-18 /swagger-ui pide contraseña (401 sin credenciales)" bash -c 
 if [[ -n "${SWAGGER_PASSWORD:-}" ]]; then
   verificar "CA-8-18 /swagger-ui abre con usuario y contraseña" bash -c "[[ \"\$(curl -s -o /dev/null -w '%{http_code}' --max-time 20 -u '$SWAGGER_USER:$SWAGGER_PASSWORD' '$ADMIN/swagger-ui/index.html')\" == 200 ]]"
 fi
+# --- Verificaciones que se hacen dentro de la VM ---
+remoto() { "${SSH[@]}" "VM_DIR='$VM_DIR' bash -s"; }
+# CA-8-16 La suma de mem_limit es ≤ 6,5 GB y todo reinicia solo (restart: unless-stopped)
+verificar "CA-8-16 suma de mem_limit ≤ 6,5 GB y restart unless-stopped" remoto <<'REMOTO'
+set -e
+cd ~/"$VM_DIR"
+ids=$(docker compose -f infra/docker-compose.yml -f infra/docker-compose.cloud.yml ps -q)
+suma=$(docker inspect -f '{{.HostConfig.Memory}}' $ids | paste -sd+ | bc)
+[ "$suma" -le 6500000000 ]
+! docker inspect -f '{{.Name}} {{.HostConfig.RestartPolicy.Name}}' $ids | grep -v -E 'garage-init|unless-stopped'
+REMOTO
+# CA-8-25 El proveedor simulado queda disponible en la nube como respaldo
+verificar "CA-8-25 PAGOS_SIMULADO_HABILITADO=true en la VM" "${SSH[@]}" "grep -q '^PAGOS_SIMULADO_HABILITADO=true' ~/$VM_DIR/infra/.env"
+# CA-8-31 Las cuentas demo solo entran con DEMO_PASSWORD: la contraseña de desarrollo NO funciona en la nube
+login_demo() { # contraseña -> código HTTP
+  curl -s -o /dev/null -w '%{http_code}' --max-time 20 -X POST -H 'Content-Type: application/json' \
+    -d "{\"email\":\"lucia.mendoza@fitstore.demo\",\"password\":\"$1\"}" "$TIENDA/api/v1/auth/login"
+}
+verificar "CA-8-31 la contraseña de desarrollo (FitStoreDemo2026) es rechazada" bash -c "[[ \"$(login_demo FitStoreDemo2026)\" == 401 ]]"
+DEMO_PASSWORD_VM="$("${SSH[@]}" "grep '^DEMO_PASSWORD=' ~/$VM_DIR/infra/.env | cut -d= -f2-" | tr -d "'\"")"
+if [[ -n "$DEMO_PASSWORD_VM" ]]; then
+  verificar "CA-8-31 la cuenta demo entra con DEMO_PASSWORD" bash -c "[[ \"$(login_demo "$DEMO_PASSWORD_VM")\" == 200 ]]"
+fi
 if (( FALLOS > 0 )); then echo "Despliegue con $FALLOS verificación(es) fallida(s)" >&2; exit 1; fi
 echo "== Despliegue correcto: $TIENDA · $ADMIN (etiqueta $ETIQUETA)"

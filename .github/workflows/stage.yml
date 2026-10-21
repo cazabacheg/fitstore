@@ -101,6 +101,7 @@ jobs:
           name: lighthouse-resultados
           path: frontend/lighthouse-resultados
           if-no-files-found: ignore
+      # CA-8-13 Las pruebas k6 (catálogo y checkout) no corren aquí: las mide el lead en Lyanna antes de promover a main.
       - name: Registros de los contenedores si algo falló
         if: failure()
         run: |
