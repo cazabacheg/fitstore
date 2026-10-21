@@ -119,6 +119,8 @@ docker exec pg-prueba psql -U postgres -c '\l'            # deben aparecer las 7
 docker exec pg-prueba psql -U postgres -d order_db -c 'select count(*) from pedido'
 docker rm -f pg-prueba
 ```
+En ese PostgreSQL desechable aparecen errores `role "auth_user" does not exist` (y los de las otras bases): son esperados, porque el respaldo conserva a los dueños de las tablas y esos usuarios solo existen en la plataforma real. Los datos se restauran igual (verificado: las 7 bases y los pedidos de demo). Sobre la plataforma real los usuarios existen y no hay errores.
+
 Para restaurar de verdad sobre la plataforma: detén los servicios de negocio, ejecuta el mismo `gunzip | psql` contra el contenedor `postgres` del compose (el respaldo usa `--clean --if-exists`, así que reemplaza las bases) y vuelve a levantar. Es una demo académica: no hay copia fuera de la VM; si se pierde todo, se vuelve a desplegar y el perfil `demo` recarga los datos.
 
 ## 8. Verificaciones desde fuera (CA-8-15, 16, 17, 18)
