@@ -7,6 +7,7 @@ import com.fitstore.payment.dto.CargoRequest;
 import com.fitstore.payment.dto.PaginaPago;
 import com.fitstore.payment.dto.ResultadoCargoDto;
 import com.fitstore.payment.model.Transaccion;
+import com.fitstore.payment.service.BoletaService;
 import com.fitstore.payment.service.CobroService;
 import com.fitstore.payment.service.PagoService;
 import com.fitstore.payment.service.ResultadoCobro;
@@ -31,10 +32,12 @@ public class PagoController {
 
     private final PagoService pagos;
     private final CobroService cobros;
+    private final BoletaService boletas;
 
-    public PagoController(PagoService pagos, CobroService cobros) {
+    public PagoController(PagoService pagos, CobroService cobros, BoletaService boletas) {
         this.pagos = pagos;
         this.cobros = cobros;
+        this.boletas = boletas;
     }
 
     @GetMapping("/{codigoPedido}")
@@ -58,6 +61,11 @@ public class PagoController {
             case RECHAZADA, ERROR -> throw new FitstoreException(HttpStatus.PAYMENT_REQUIRED, "PAGO_RECHAZADO",
                     t.getMensaje() == null ? "Pago rechazado" : t.getMensaje());
         };
+    }
+
+    @GetMapping("/{codigoPedido}/boleta")
+    public ResponseEntity<byte[]> descargarMiBoleta(@PathVariable String codigoPedido, Authentication autenticacion) {
+        return BoletaRespuestas.pdf(boletas.descargarDeLaClienta(codigoPedido, clienteId(autenticacion)));
     }
 
     /** El id de la clienta sale del token; un token de staff no puede pagar. */

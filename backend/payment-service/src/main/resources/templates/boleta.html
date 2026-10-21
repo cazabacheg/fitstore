@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <title th:text="'Boleta ' + ${numero}">Boleta</title>
+  <style>
+    @page { size: A4; margin: 16mm 16mm 18mm 16mm; }
+    body { font-family: sans-serif; font-size: 10pt; color: #111111; }
+    h1 { font-size: 15pt; margin: 0 0 2pt 0; }
+    .emisor { width: 100%; border-bottom: 2pt solid #111111; padding-bottom: 8pt; margin-bottom: 10pt; }
+    .emisor td { vertical-align: top; }
+    .logo { max-height: 42pt; max-width: 120pt; }
+    .caja { border: 1.2pt solid #111111; padding: 6pt 8pt; text-align: center; width: 190pt; }
+    .caja .tipo { font-size: 11pt; font-weight: bold; }
+    .caja .numero { font-size: 13pt; font-weight: bold; margin-top: 3pt; }
+    .datos { width: 100%; margin-bottom: 10pt; }
+    .datos td { padding: 2pt 0; vertical-align: top; }
+    .etiqueta { color: #444444; width: 85pt; }
+    table.items { width: 100%; border-collapse: collapse; margin-bottom: 8pt; }
+    table.items th { border-top: 1pt solid #111111; border-bottom: 1pt solid #111111; padding: 4pt 3pt; text-align: left; font-size: 9pt; }
+    table.items td { border-bottom: 0.5pt solid #bbbbbb; padding: 4pt 3pt; vertical-align: top; }
+    .der { text-align: right; }
+    .totales { width: 55%; margin-left: 45%; border-collapse: collapse; }
+    .totales td { padding: 2pt 3pt; }
+    .totales .total td { border-top: 1pt solid #111111; font-weight: bold; font-size: 12pt; padding-top: 4pt; }
+    .igv { color: #444444; font-size: 9pt; }
+    .leyenda { margin-top: 22pt; border: 1pt dashed #111111; padding: 7pt; text-align: center; font-weight: bold; }
+  </style>
+</head>
+<body>
+  <table class="emisor">
+    <tr>
+      <td>
+        <img class="logo" th:if="${logo != null}" th:src="${logo}" alt="" />
+        <h1 th:text="${emisor.razonSocial}">Razón social</h1>
+        <div th:text="'RUC ' + ${emisor.ruc}">RUC</div>
+        <div th:text="${emisor.direccionFiscal}">Dirección</div>
+      </td>
+      <td>
+        <div class="caja">
+          <div class="tipo">BOLETA DE VENTA SIMULADA</div>
+          <div class="numero" th:text="${numero}">B001-00000001</div>
+        </div>
+      </td>
+    </tr>
+  </table>
+
+  <table class="datos">
+    <tr><td class="etiqueta">Fecha de emisión</td><td th:text="${fecha}">01/01/2026</td></tr>
+    <tr><td class="etiqueta">Cliente</td><td th:text="${cliente.nombre}">Cliente</td></tr>
+    <tr><td class="etiqueta">DNI</td><td th:text="${cliente.dni}">DNI</td></tr>
+    <tr><td class="etiqueta">Pedido</td><td th:text="${codigoPedido}">FS-000001</td></tr>
+    <tr><td class="etiqueta">Medio de pago</td><td th:text="${medioPago}">Medio</td></tr>
+  </table>
+
+  <table class="items">
+    <thead>
+      <tr>
+        <th>Descripción</th>
+        <th class="der">Cant.</th>
+        <th class="der">P. unit. (S/)</th>
+        <th class="der">Dscto. (S/)</th>
+        <th class="der">Importe (S/)</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr th:each="linea : ${lineas}">
+        <td>
+          <div th:text="${linea.producto}">Producto</div>
+          <div class="igv" th:text="${linea.detalle}">Talla / color</div>
+        </td>
+        <td class="der" th:text="${linea.cantidad}">1</td>
+        <td class="der" th:text="${linea.precio}">0.00</td>
+        <td class="der" th:text="${linea.descuento}">0.00</td>
+        <td class="der" th:text="${linea.total}">0.00</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <table class="totales">
+    <tr><td>Subtotal</td><td class="der" th:text="'S/ ' + ${subtotal}">S/ 0.00</td></tr>
+    <tr><td>Descuentos</td><td class="der" th:text="'- S/ ' + ${descuentos}">S/ 0.00</td></tr>
+    <tr><td>Envío</td><td class="der" th:text="'S/ ' + ${envio}">S/ 0.00</td></tr>
+    <tr class="total"><td>TOTAL</td><td class="der" th:text="'S/ ' + ${total}">S/ 0.00</td></tr>
+    <tr><td class="igv">Incluye IGV (18 %)</td><td class="der igv" th:text="'S/ ' + ${igv}">S/ 0.00</td></tr>
+  </table>
+
+  <div class="leyenda" th:text="${leyenda}">Documento simulado sin validez tributaria</div>
+</body>
+</html>
