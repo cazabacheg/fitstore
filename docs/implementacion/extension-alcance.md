@@ -20,6 +20,45 @@
 | 7 | HU-7-06 Editar los textos de los correos · P-7-02, P-7-03 | CA-7-23, CA-7-24, CA-7-25, CA-7-26, CA-7-27, CA-7-30 | Los correos usan los textos predeterminados de las plantillas. La ruta `/notificaciones/plantillas` muestra "Próximamente" |
 | 7 | HU-7-07 No guardar datos personales más de lo necesario | CA-7-28 | Sin la limpieza diaria de retención |
 
+## Desvíos acordados al desplegar (SPEC-8)
+
+| Tema | Lo que dice la spec | Lo que se hace en esta entrega | Por qué |
+|---|---|---|---|
+| Correo en la nube | Amazon SES con remitente verificado (CA-8-24) | Mailpit en la VM, sin publicar, visto por túnel SSH (el plan B que ya prevé el guion de demo) | SES exige otra cuenta (AWS) con tarjeta; para la demo los correos se ven igual |
+| IP pública y DuckDNS | IP dinámica y contenedor que actualiza DuckDNS cada 5 min (CA-8-19) | IP pública estática de Azure; el autor la registra una vez en DuckDNS | La IP no cambia al apagar la VM y no hace falta guardar el token de DuckDNS |
+| Tamaño de la VM | `B2ms` (2 vCPU, 8 GB) | `B2as_v2` (2 vCPU, 8 GB) en Chile Central | La suscripción de estudiante solo permite cinco regiones; en Chile Central, la más cercana, solo existe la serie Bv2, y es más barata |
+
+## Deuda menor anotada durante la implementación
+
+No son historias nuevas: son detalles que se dejaron simples para llegar a tiempo.
+
+| Spec | Detalle | Estado actual |
+|---|---|---|
+| 1 | Invitación de staff de punta a punta (P-1-04) con el correo real | Se probó por API; falta recorrerla en la demo con el correo en Mailpit |
+| 2 | El kardex muestra el UUID de quien hizo el movimiento | Debería mostrar su nombre |
+| 2 | El slug del producto no se edita | El contrato no lo incluye en la edición |
+| 2 | La tarjeta de producto no dice "Desde" cuando las variantes tienen precios distintos | Muestra el precio base |
+| 3 | Políticas y ubigeo sin caché en el servidor | Se leen de la base en cada petición |
+| 5 | La configuración de la tienda se guarda en memoria en payment (5 min), no en Redis | Funciona igual; el micro dice Redis |
+| 6 | Servicios de delivery como clases concretas, sin interfaz e `Impl` | ADR-015 pide la interfaz |
+| 0b | En varias specs las pruebas del frontend se escribieron junto con la pantalla, no antes | El backend sí tiene sus commits en rojo |
+
+## Orden de prioridad para después del MVP
+
+Si hay tiempo para extender el alcance, se retoma en este orden (primero lo que más se nota en la demo y cuesta menos):
+
+1. **HU-4-02** Conservar el carrito al iniciar sesión: corta, y el usuario lo nota en la primera compra.
+2. **HU-5-04 Yape** y **HU-5-03 Culqi**: Yape es el medio de pago más usado por los clientes de Gamarra.
+3. **HU-7-06** Editar los textos de los correos (P-7-02 y P-7-03): completa el white-label.
+4. **HU-4-11** Datos de ventas y el dashboard completo de la SPEC-8.
+5. **Reembolsos** como un solo bloque: HU-5-10, HU-5-12 con P-5-05 y HU-4-12 (dependen entre sí).
+6. **HU-6-08** Planificar el día y la hoja de ruta (P-6-03).
+7. **HU-6-10** Devolver a la tienda una entrega no concretada (después de los reembolsos).
+8. **P-2-09** Pantalla de carga masiva (el backend ya existe).
+9. **HU-7-07** Limpieza de retención de datos.
+10. **Nube real:** SES con dominio verificado y el contenedor de DuckDNS, si la tienda pasa a producción.
+11. La deuda menor de la tabla anterior, cuando se toque cada módulo.
+
 ## Cómo se retoma
 
 Cada historia mantiene su texto, sus criterios y sus pantallas en la spec, marcados como **extensión de alcance**. Para retomarla basta un brief nuevo con esa historia (B2 contra la sección 7 de su spec) y quitarla de esta tabla.
