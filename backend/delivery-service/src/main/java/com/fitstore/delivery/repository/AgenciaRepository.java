@@ -10,4 +10,9 @@ public interface AgenciaRepository extends JpaRepository<Agencia, Long> {
     List<Agencia> findByActivaTrueOrderByOrdenAsc();
 
     boolean existsByNombreIgnoreCase(String nombre);
+
+    boolean existsByNombreIgnoreCaseAndIdNot(String nombre, Long id);
+
+    /** Todas las agencias, activas o no, en su orden (backoffice). */
+    List<Agencia> findAllByOrderByOrdenAscIdAsc();
 }
