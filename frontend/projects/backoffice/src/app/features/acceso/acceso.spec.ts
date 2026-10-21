@@ -60,7 +60,7 @@ describe('Ingresar al backoffice (P-1-07)', () => {
     await p.estabilizar();
     expect(TestBed.inject(Router).url).toBe('/clientes');
 
-    TestBed.inject(SesionStore).cerrarSesion();
+    TestBed.resetTestingModule();
     const q = await abrir('/ingresar?returnUrl=https%3A%2F%2Fmalo.com');
     await q.escribir('Correo', 'admin@fitstore.pe');
     await q.escribir('Contraseña', 'Gamarra2026');
@@ -76,12 +76,18 @@ describe('Ingresar al backoffice (P-1-07)', () => {
     await p.escribir('Contraseña', 'Gamarra2026');
     await p.enviar();
     p.pedido('/api/v1/auth/staff/login').flush(
-      { success: false, mensaje: 'Correo o contraseña incorrectos', codigo: 'CREDENCIALES_INVALIDAS' },
+      {
+        success: false,
+        mensaje: 'Correo o contraseña incorrectos',
+        codigo: 'CREDENCIALES_INVALIDAS',
+      },
       { status: 401, statusText: 'Unauthorized' },
     );
     await p.estabilizar();
 
-    expect(p.el().querySelector('[role="alert"]')?.textContent).toContain('Correo o contraseña incorrectos');
+    expect(p.el().querySelector('[role="alert"]')?.textContent).toContain(
+      'Correo o contraseña incorrectos',
+    );
     expect(TestBed.inject(SesionStore).autenticado()).toBe(false);
   });
 
@@ -96,7 +102,9 @@ describe('Ingresar al backoffice (P-1-07)', () => {
     );
     await p.estabilizar();
 
-    expect(p.el().querySelector('[role="alert"]')?.textContent).toContain('Cuenta bloqueada temporalmente');
+    expect(p.el().querySelector('[role="alert"]')?.textContent).toContain(
+      'Cuenta bloqueada temporalmente',
+    );
   });
 
   it('CA-1-22 un error del servidor muestra un mensaje genérico y un formulario vacío no envía nada', async () => {
@@ -198,7 +206,9 @@ describe('Restablecer / crear contraseña del staff (P-1-04)', () => {
     await p.estabilizar();
 
     expect(p.el().textContent).toContain('Enlace inválido o expirado');
-    expect(p.el().querySelector('a[href="/recuperar"]')?.textContent).toContain('Pedir otro enlace');
+    expect(p.el().querySelector('a[href="/recuperar"]')?.textContent).toContain(
+      'Pedir otro enlace',
+    );
   });
 
   it('CA-1-14 sin token en la dirección muestra directamente el enlace inválido', async () => {
