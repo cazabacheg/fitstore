@@ -12,6 +12,8 @@ import com.fitstore.order.pruebas.Sesiones;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.nio.charset.StandardCharsets;
+import org.springframework.core.io.ClassPathResource;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -78,6 +80,17 @@ class DatosDemoTest {
         assertThat(filas.get(3)).containsEntry("id", "b7655951-8c1f-4f51-9a90-39534aa106d9")
                 .containsEntry("cliente", "a3d50456-6d33-4e6e-80fc-62563fc46808").containsEntry("estado", "LISTO_DESPACHO")
                 .containsEntry("dir_ubigeo", "070101");
+    }
+
+    @Test
+    @DisplayName("Demo: las miniaturas usan la base pública de imágenes del entorno (MEDIA_BASE_URL), no un host fijo")
+    void miniaturasConLaBaseDelEntorno() throws Exception {
+        String script = new String(new ClassPathResource("db/dev/R__pedidos_demo.sql").getInputStream().readAllBytes(),
+                StandardCharsets.UTF_8);
+        assertThat(script).contains("'${mediaBaseUrl}/productos/'").doesNotContain("localhost");
+        assertThat(jdbc.queryForList("SELECT DISTINCT imagen_url FROM pedido_item", String.class))
+                .isNotEmpty()
+                .allSatisfy(url -> assertThat(url).contains("/productos/").endsWith("-400.jpg"));
     }
 
     @Test
