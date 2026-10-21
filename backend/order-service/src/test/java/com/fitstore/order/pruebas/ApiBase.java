@@ -7,6 +7,7 @@ import com.fitstore.order.pedidos.repository.PedidoRepository;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.web.servlet.MockMvc;
 import tools.jackson.databind.JsonNode;
@@ -22,10 +23,13 @@ public abstract class ApiBase {
     @Autowired protected PedidoRepository pedidos;
     @Autowired protected CarritoRepository carritos;
     @Autowired protected OutboxEventoRepository outbox;
+    @Autowired protected StringRedisTemplate redis;
 
     @BeforeEach
     void reiniciarDependencias() {
         EntornoApi.SERVICIOS.resetAll();
+        // El caché de los parámetros de settings (5 min) viviría entre pruebas
+        redis.delete("order:settings:public");
     }
 
     protected JsonNode cuerpo(org.springframework.test.web.servlet.ResultActions resultado) throws Exception {
