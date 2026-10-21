@@ -33,7 +33,7 @@ describe('Catálogo /_ui', () => {
     expect(el.querySelector('fs-estado-error')).not.toBeNull();
     expect(el.querySelector('fs-tabla')).not.toBeNull();
     expect(el.querySelector('fs-selector-ubigeo')).not.toBeNull();
-  });
+  }, 20_000); // Monta todos los componentes de ui/: con la suite completa en paralelo pasa de los 5 s por defecto.
 
   it('CA-0b-25 /_ui es pública: se ve sin sesión, porque no depende de la API', async () => {
     const harness = await montar(undefined, { url: '/_ui' });

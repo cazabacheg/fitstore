@@ -6,6 +6,15 @@ spring:
   jpa:
     hibernate:
       ddl-auto: validate
+  servlet:
+    multipart:
+      max-file-size: 5MB
+      max-request-size: 6MB
+  rabbitmq:
+    publisher-confirm-type: correlated
+  data:
+    redis:
+      timeout: 500ms
   security:
     oauth2:
       resourceserver:
@@ -18,8 +27,29 @@ eureka:
 fitstore:
   eventos:
     servicio: catalog
+    # Las pruebas de eventos lo encienden con un RabbitMQ en Testcontainers
+    escuchar: false
+    enlaces:
+      - order.pedido.pagado
+      - order.pedido.cancelado
+      - order.pedido.expirado
   outbox:
-    habilitado: false
+    # Habilitado para poder leer outbox_evento; el publicador solo corre cada hora (las pruebas de eventos lo aceleran)
+    habilitado: true
+    intervalo-ms: 3600000
+  storage:
+    # Sin Garage: el endpoint no se consulta. ImagenServiceTest lo apunta a un Garage en Testcontainers.
+    habilitado: true
+    endpoint: http://localhost:9
+    access-key: GKprueba
+    secret-key: clave-de-prueba-sin-valor
+    media-base-url: http://media.prueba/media
+  catalogo:
+    cache:
+      # Las pruebas de caché lo encienden con un Redis en Testcontainers
+      habilitado: false
+  inventario:
+    liberador-reservas-cron: "-"
 springdoc:
   api-docs:
     version: openapi_3_0
