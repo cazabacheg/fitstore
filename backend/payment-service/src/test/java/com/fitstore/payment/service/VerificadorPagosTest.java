@@ -130,4 +130,15 @@ class VerificadorPagosTest extends PagoApiBase {
         assertThat(estadoTransaccion(tAntigua.getId())).isEqualTo("ERROR");
         assertThat(estadoIntencion(antigua.getId())).isEqualTo("PENDIENTE");
     }
+
+    @Test
+    @DisplayName("CA-5-22 una transacción de un proveedor sin adaptador (Culqi, extensión de alcance) se deja como está")
+    void proveedorSinAdaptador() {
+        IntencionPago i = intencion(clienta);
+        Transaccion t = transaccionProcesando(i, Proveedor.CULQI, "chr_123", 5);
+
+        verificador.verificar();
+
+        assertThat(estadoTransaccion(t.getId())).isEqualTo("PROCESANDO");
+    }
 }

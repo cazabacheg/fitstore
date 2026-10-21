@@ -141,4 +141,26 @@ class IntencionPagoConsumidorIT {
 
         assertThat(estado(pedido)).isEqualTo("PAGADA");
     }
+
+    @Test
+    @DisplayName("CA-5-02 los eventos de reembolso (extensión de alcance) se reciben y se ignoran sin tocar la intención")
+    void eventosDeReembolsoSeIgnoran() {
+        UUID pedido = UUID.randomUUID();
+        crear(pedido, "FS-100006");
+
+        UUID evento = RabbitPrueba.publicar(rabbit, UUID.randomUUID(), "order.pago.no-aplicable", "PagoNoAplicable",
+                "{\"pedidoId\":\"" + pedido + "\",\"codigo\":\"FS-100006\",\"motivo\":\"EXPIRADO\"}");
+        esperarProcesado(evento);
+
+        assertThat(estado(pedido)).isEqualTo("PENDIENTE");
+    }
+
+    @Test
+    @DisplayName("CA-5-02 un PedidoExpirado de un pedido sin intención no falla")
+    void expiradoSinIntencion() {
+        UUID evento = RabbitPrueba.publicar(rabbit, UUID.randomUUID(), "order.pedido.expirado", "PedidoExpirado",
+                "{\"pedidoId\":\"" + UUID.randomUUID() + "\",\"codigo\":\"FS-100007\"}");
+
+        esperarProcesado(evento);
+    }
 }

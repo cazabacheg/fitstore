@@ -121,4 +121,45 @@ class BoletaServiceTest extends BoletaApiBase {
         assertThat(emitidas).isGreaterThanOrEqualTo(1);
         assertThat(numeroDeBoleta(i.getId())).matches("B001-\\d{8}");
     }
+
+    @Test
+    @DisplayName("CA-5-26 un logo que no es PNG ni JPG, o que no existe en el bucket, se omite y la boleta se emite igual")
+    void logoNoUsable() throws Exception {
+        for (String logo : List.of("/media/logos/logo.svg", "/media/logos/no-existe.png", "https://otro.dominio/logo.png")) {
+            when(tienda.publica()).thenReturn(Optional.of(new ConfiguracionPublica(
+                    new ConfiguracionPublica.Identidad("Moda Activa", "Moda Activa S.A.C.", "20123456789",
+                            "Jr. Gamarra 123, La Victoria", logo),
+                    new ConfiguracionPublica.Parametros(List.of("MERCADO_PAGO")))));
+            IntencionPago i = intencionPagada(clienta);
+
+            Boleta boleta = boletas.emitir(i.getId());
+
+            assertThat(textoDelPdf(almacenamiento.leer(TipoBucket.PRIVADO, boleta.getClave()))).contains("Moda Activa S.A.C.");
+        }
+    }
+
+    @Test
+    @DisplayName("CA-5-26 el medio de pago del pago de prueba, y los ítems sin talla ni color, se muestran bien")
+    void medioSimuladoEItemsSimples() throws Exception {
+        IntencionPago i = intencionPagada(clienta);
+        i.setItems(List.of(java.util.Map.of("producto", "Gorra", "cantidad", 1, "precioUnitario", 129.80, "total", 129.80)));
+        intenciones.saveAndFlush(i);
+        jdbc.update("UPDATE transaccion SET proveedor = 'SIMULADO', respuesta = NULL WHERE intencion_id = ?", i.getId());
+
+        Boleta boleta = boletas.emitir(i.getId());
+
+        String texto = textoDelPdf(almacenamiento.leer(TipoBucket.PRIVADO, boleta.getClave()));
+        assertThat(texto).contains("Pago de prueba").contains("Gorra");
+    }
+
+    @Test
+    @DisplayName("CA-5-26 una boleta sin cobro aprobado muestra un guion como medio de pago")
+    void sinCobroAprobado() throws Exception {
+        IntencionPago i = intencionPagada(clienta);
+        jdbc.update("UPDATE transaccion SET estado = 'RECHAZADA' WHERE intencion_id = ?", i.getId());
+
+        Boleta boleta = boletas.emitir(i.getId());
+
+        assertThat(textoDelPdf(almacenamiento.leer(TipoBucket.PRIVADO, boleta.getClave()))).contains("Medio de pago -");
+    }
 }

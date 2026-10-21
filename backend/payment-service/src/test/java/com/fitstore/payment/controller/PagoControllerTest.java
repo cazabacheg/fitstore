@@ -134,4 +134,21 @@ class PagoControllerTest extends PagoApiBase {
                 .andExpect(jsonPath("$.data.medios", not(hasSize(0))))
                 .andExpect(jsonPath("$.data.medios[?(@.proveedor=='SIMULADO')]").isNotEmpty());
     }
+
+    @Test
+    @DisplayName("CA-5-03 la página lista los intentos rechazados con su motivo")
+    void intentosRechazados() throws Exception {
+        IntencionPago i = intencion(clienta);
+        com.fitstore.payment.model.Transaccion rechazada = com.fitstore.payment.pruebas.Datos.transaccion(i.getId(),
+                com.fitstore.payment.model.EstadoTransaccion.RECHAZADA, UUID.randomUUID().toString());
+        rechazada.setMensaje("Fondos insuficientes");
+        transacciones.saveAndFlush(rechazada);
+
+        mvc.perform(get("/api/v1/pagos/" + i.getCodigoPedido()).with(Sesiones.cliente(clienta)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.intentosRechazados", hasSize(1)))
+                .andExpect(jsonPath("$.data.intentosRechazados[0].motivo").value("Fondos insuficientes"))
+                .andExpect(jsonPath("$.data.intentosRechazados[0].proveedor").value("SIMULADO"))
+                .andExpect(jsonPath("$.data.procesando").value(false));
+    }
 }

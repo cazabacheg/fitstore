@@ -177,4 +177,28 @@ class WebhookControllerTest extends PagoApiBase {
 
         assertThat(webhooksGuardados(notificacion)).isZero();
     }
+
+    @Test
+    @DisplayName("CA-5-20 si no se puede confirmar con la pasarela responde 200 igual y el reenvío del aviso lo procesa")
+    void confirmacionFallidaYReenvio() throws Exception {
+        long idPago = idUnico();
+        long notificacion = idUnico();
+        IntencionPago i = intencion(clienta);
+        Transaccion t = transaccionProcesando(i, Proveedor.MERCADO_PAGO, String.valueOf(idPago), 0);
+        String cuerpo = cuerpo(notificacion, "payment", String.valueOf(idPago));
+        String firma = firma(String.valueOf(idPago), "req-8", "1700000008", SECRETO);
+        WireMockPrueba.servidor().stubFor(consultarPagoMp(idPago).willReturn(respuesta(503, "{}")));
+
+        webhook(cuerpo, firma, "req-8").andExpect(status().isOk());
+
+        assertThat(estadoTransaccion(t.getId())).isEqualTo("PROCESANDO");
+        assertThat(jdbc.queryForObject("SELECT procesado_en IS NULL FROM webhook_recibido WHERE evento_id_proveedor = ?",
+                Boolean.class, String.valueOf(notificacion))).isTrue();
+
+        WireMockPrueba.servidor().stubFor(consultarPagoMp(idPago).willReturn(respuesta(200, pagoMp(idPago, "approved", "accredited"))));
+        webhook(cuerpo, firma, "req-8").andExpect(status().isOk());
+
+        assertThat(estadoTransaccion(t.getId())).isEqualTo("APROBADA");
+        assertThat(webhooksGuardados(notificacion)).isEqualTo(1);
+    }
 }

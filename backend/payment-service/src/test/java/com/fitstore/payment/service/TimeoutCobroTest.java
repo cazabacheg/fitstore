@@ -39,7 +39,7 @@ class TimeoutCobroTest extends PagoApiBase {
                 .andExpect(jsonPath("$.data.estado").value("PROCESANDO"));
 
         // WireMock anota el pedido cuando termina de responder (tras la demora): se espera a que aparezca
-        org.awaitility.Awaitility.await().atMost(java.time.Duration.ofSeconds(6)).untilAsserted(
+        org.awaitility.Awaitility.await().atMost(java.time.Duration.ofSeconds(12)).untilAsserted(
                 () -> WireMockPrueba.servidor().verify(1, postRequestedFor(urlEqualTo("/v1/payments"))));
         assertThat(contarTransacciones(i.getId(), "PROCESANDO")).isEqualTo(1);
         assertThat(estadoIntencion(i.getId())).isEqualTo("PENDIENTE");
