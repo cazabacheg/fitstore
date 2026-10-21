@@ -59,7 +59,10 @@ describe('Selector de ubigeo de ui/', () => {
     proc.on('uncaughtException', capturar);
     u.ctrl
       .expectOne('/api/v1/ubigeo/departamentos')
-      .flush({ success: false, mensaje: 'Error', codigo: 'ERROR' }, { status: 500, statusText: 'Error' });
+      .flush(
+        { success: false, mensaje: 'Error', codigo: 'ERROR' },
+        { status: 500, statusText: 'Error' },
+      );
     await u.estabilizar();
     await new Promise((r) => setTimeout(r, 0));
     proc.off('uncaughtException', capturar);

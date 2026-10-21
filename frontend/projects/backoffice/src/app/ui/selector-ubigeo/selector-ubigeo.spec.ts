@@ -87,7 +87,10 @@ describe('SelectorUbigeo', () => {
     proc.on('uncaughtException', capturar);
     ctrl
       .expectOne('/api/v1/ubigeo/departamentos')
-      .flush({ success: false, mensaje: 'Error', codigo: 'ERROR' }, { status: 500, statusText: 'Error' });
+      .flush(
+        { success: false, mensaje: 'Error', codigo: 'ERROR' },
+        { status: 500, statusText: 'Error' },
+      );
     await estable(f);
     await new Promise((r) => setTimeout(r, 0));
     proc.off('uncaughtException', capturar);
