@@ -238,6 +238,76 @@ class AdminPedidoControllerTest extends ApiBase {
                 .andExpect(status().isBadRequest());
     }
 
+    // ---------- HU-4-08: lista, filtros y contadores ----------
+
+    @Test
+    @DisplayName("CA-4-40 la tabla trae código, fecha, cliente, modalidad, estado y total, con lo que hay que preparar primero y un contador por estado")
+    void listaConContadores() throws Exception {
+        pedido(cliente, EstadoPedido.ENTREGADO, Modalidad.DELIVERY_LOCAL);
+        Pedido pagado = pedido(cliente, EstadoPedido.PAGADO, Modalidad.AGENCIA);
+        pedido(cliente, EstadoPedido.PENDIENTE_PAGO, Modalidad.RECOJO);
+        pedido(cliente, EstadoPedido.PAGADO, Modalidad.RECOJO);
+
+        mvc.perform(get("/api/v1/admin/pedidos").with(Sesiones.operador()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.contenido", hasSize(4)))
+                .andExpect(jsonPath("$.data.totalElementos").value(4))
+                .andExpect(jsonPath("$.data.contenido[0].estado").value("PAGADO"))
+                .andExpect(jsonPath("$.data.contenido[0].id").value(pagado.getId().toString()))
+                .andExpect(jsonPath("$.data.contenido[0].codigo").value(pagado.getCodigo()))
+                .andExpect(jsonPath("$.data.contenido[0].clienteNombre").value("Ana Quispe"))
+                .andExpect(jsonPath("$.data.contenido[0].modalidad").value("AGENCIA"))
+                .andExpect(jsonPath("$.data.contenido[0].total").value(128.0))
+                .andExpect(jsonPath("$.data.contenido[2].estado").value("ENTREGADO"))
+                .andExpect(jsonPath("$.data.contadores.PAGADO").value(2))
+                .andExpect(jsonPath("$.data.contadores.PENDIENTE_PAGO").value(1))
+                .andExpect(jsonPath("$.data.contadores.ENTREGADO").value(1))
+                .andExpect(jsonPath("$.data.contadores.CANCELADO").value(0));
+    }
+
+    @Test
+    @DisplayName("CA-4-41 los filtros de estado, modalidad, fechas, código y cliente se combinan y los contadores ignoran el estado")
+    void filtrosCombinados() throws Exception {
+        Pedido a = pedido(cliente, EstadoPedido.PAGADO, Modalidad.DELIVERY_LOCAL);
+        pedido(cliente, EstadoPedido.PAGADO, Modalidad.RECOJO);
+        pedido(cliente, EstadoPedido.ENTREGADO, Modalidad.DELIVERY_LOCAL);
+        String hoy = java.time.LocalDate.now(java.time.ZoneId.of("America/Lima")).toString();
+
+        mvc.perform(get("/api/v1/admin/pedidos?estado=PAGADO&modalidad=DELIVERY_LOCAL&cliente=quispe&desde=" + hoy
+                + "&hasta=" + hoy + "&codigo=" + a.getCodigo()).with(Sesiones.operador()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.contenido", hasSize(1)))
+                .andExpect(jsonPath("$.data.contenido[0].codigo").value(a.getCodigo()))
+                .andExpect(jsonPath("$.data.contadores.PAGADO").value(1))
+                .andExpect(jsonPath("$.data.contadores.ENTREGADO").value(0));
+        mvc.perform(get("/api/v1/admin/pedidos?estado=EXPIRADO&modalidad=DELIVERY_LOCAL").with(Sesiones.admin()))
+                .andExpect(jsonPath("$.data.contenido", hasSize(0)))
+                .andExpect(jsonPath("$.data.contadores.PAGADO").value(1))
+                .andExpect(jsonPath("$.data.contadores.ENTREGADO").value(1));
+        mvc.perform(get("/api/v1/admin/pedidos?desde=2020-01-01&hasta=2020-01-31").with(Sesiones.operador()))
+                .andExpect(jsonPath("$.data.contenido", hasSize(0)));
+        mvc.perform(get("/api/v1/admin/pedidos?codigo=abc").with(Sesiones.operador())).andExpect(status().isBadRequest());
+        mvc.perform(get("/api/v1/admin/pedidos?estado=VOLANDO").with(Sesiones.operador()))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    @DisplayName("CA-4-42 con clienteId solo se ven los pedidos de ese cliente; un orden explícito se respeta")
+    void porClienteYOrden() throws Exception {
+        UUID otro = UUID.randomUUID();
+        pedido(cliente, EstadoPedido.PAGADO, Modalidad.DELIVERY_LOCAL);
+        Pedido barato = pedido(cliente, EstadoPedido.PAGADO, Modalidad.RECOJO);
+        jdbc.update("UPDATE pedido SET total = 10.00 WHERE id = ?", barato.getId());
+        pedido(otro, EstadoPedido.PAGADO, Modalidad.DELIVERY_LOCAL);
+        sincronizar();
+
+        mvc.perform(get("/api/v1/admin/pedidos?clienteId=" + cliente + "&sort=total,asc").with(Sesiones.operador()))
+                .andExpect(jsonPath("$.data.contenido", hasSize(2)))
+                .andExpect(jsonPath("$.data.contenido[0].total").value(10.0));
+        mvc.perform(get("/api/v1/admin/pedidos?clienteId=" + cliente + "&sort=total,desc&sort=noexiste").with(Sesiones.operador()))
+                .andExpect(jsonPath("$.data.contenido[0].total").value(128.0));
+    }
+
     // ---------- extensión de alcance: responden 501 con la misma firma del contrato ----------
 
     @Test
