@@ -10,3 +10,4 @@ settings-service
 order-service
 payment-service
 delivery-service
+notification-service
