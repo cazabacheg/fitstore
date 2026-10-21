@@ -1,0 +1,17 @@
+# Alcance de la SPEC-8 (sección 8 v3), con el recorte de la extensión de alcance.
+frontend/projects/backoffice/src/app/features/dashboard/*
+frontend/e2e/*
+frontend/lighthouserc.json
+frontend/playwright.config.ts
+frontend/package.json
+frontend/package-lock.json
+infra/docker-compose.cloud.yml
+infra/caddy/*
+infra/scripts/respaldo.sh
+infra/config-repo/*-cloud.yml
+infra/config-repo/*-demo.yml
+.github/workflows/deploy.yml
+.github/workflows/stage.yml
+postman/entornos/cloud.json
+docs/despliegue.md
+docs/demo/guion.md

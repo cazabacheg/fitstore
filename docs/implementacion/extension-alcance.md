@@ -19,6 +19,8 @@
 | 6 | HU-6-10 Devolver a la tienda una entrega que no se concretó | CA-6-33, CA-6-34 | Una entrega FALLIDA o no recogida queda en ese estado |
 | 7 | HU-7-06 Editar los textos de los correos · P-7-02, P-7-03 | CA-7-23, CA-7-24, CA-7-25, CA-7-26, CA-7-27, CA-7-30 | Los correos usan los textos predeterminados de las plantillas. La ruta `/notificaciones/plantillas` muestra "Próximamente" |
 | 7 | HU-7-07 No guardar datos personales más de lo necesario | CA-7-28 | Sin la limpieza diaria de retención |
+| 8 | HU-8-02 (parte) Prueba E2E de postventa y devolución | CA-8-08 | Depende de los reembolsos (HU-4-12 y HU-5-10), que ya son extensión |
+| 8 | HU-8-01 (parte) Ventas y top de productos del dashboard | — | Dependen de `GET /admin/pedidos/resumen` (HU-4-11). El dashboard muestra pedidos por estado, stock bajo, entregas por estado y reclamos por vencer |
 
 ## Desvíos acordados al desplegar (SPEC-8)
 
