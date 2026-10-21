@@ -372,9 +372,18 @@ export class ContenidoTab {
     return e;
   });
 
+  /** Todo menos las imágenes: subir o reordenar una imagen no borra lo que se está escribiendo. */
+  private readonly base = computed(
+    () => {
+      const { imagenesLanding: _imagenes, ...resto } = this.contenido();
+      return resto;
+    },
+    { equal: (a, b) => JSON.stringify(a) === JSON.stringify(b) },
+  );
+
   constructor() {
     effect(() => {
-      const c = this.contenido();
+      const c = this.base();
       this.heroTitulo.set(c.heroTitulo);
       this.heroSubtitulo.set(c.heroSubtitulo ?? '');
       this.heroCtaTexto.set(c.heroCtaTexto ?? '');
@@ -394,7 +403,7 @@ export class ContenidoTab {
     });
     effect(() => {
       const actual = JSON.stringify(this.datos());
-      const original = JSON.stringify(this.datosDe(this.contenido()));
+      const original = JSON.stringify(this.datosDe(this.base()));
       this.sinGuardar.emit(actual !== original);
     });
   }
@@ -464,7 +473,7 @@ export class ContenidoTab {
     };
   }
 
-  private datosDe(c: settingsApi.Contenido): DatosContenido {
+  private datosDe(c: Omit<settingsApi.Contenido, 'imagenesLanding'>): DatosContenido {
     return {
       heroTitulo: c.heroTitulo,
       heroSubtitulo: nulo(c.heroSubtitulo ?? ''),

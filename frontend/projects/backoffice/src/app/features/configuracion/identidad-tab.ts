@@ -257,21 +257,36 @@ export class IdentidadTab {
     return e;
   });
 
+  /** Solo los datos de texto: si cambia un logo, lo que la persona está escribiendo no se pierde. */
+  private readonly base = computed(
+    () => {
+      const i = this.identidad();
+      return {
+        nombre: i.nombre,
+        eslogan: i.eslogan ?? '',
+        razonSocial: i.razonSocial,
+        ruc: i.ruc,
+        direccionFiscal: i.direccionFiscal,
+      };
+    },
+    { equal: (a, b) => JSON.stringify(a) === JSON.stringify(b) },
+  );
+
   constructor() {
     effect(() => {
-      const i = this.identidad();
+      const i = this.base();
       this.nombre.set(i.nombre);
-      this.eslogan.set(i.eslogan ?? '');
+      this.eslogan.set(i.eslogan);
       this.razonSocial.set(i.razonSocial);
       this.ruc.set(i.ruc);
       this.direccionFiscal.set(i.direccionFiscal);
       this.intentado.set(false);
     });
     effect(() => {
-      const i = this.identidad();
+      const i = this.base();
       this.sinGuardar.emit(
         this.nombre() !== i.nombre ||
-          this.eslogan() !== (i.eslogan ?? '') ||
+          this.eslogan() !== i.eslogan ||
           this.razonSocial() !== i.razonSocial ||
           this.ruc() !== i.ruc ||
           this.direccionFiscal() !== i.direccionFiscal,
