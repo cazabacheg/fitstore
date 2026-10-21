@@ -10,4 +10,10 @@ public interface TallaRepository extends JpaRepository<Talla, Long> {
     Optional<Talla> findByCodigo(String codigo);
 
     List<Talla> findAllByOrderByOrdenAsc();
+
+    List<Talla> findByActivoTrueOrderByOrdenAsc();
+
+    boolean existsByCodigoIgnoreCase(String codigo);
+
+    Optional<Talla> findByCodigoIgnoreCase(String codigo);
 }

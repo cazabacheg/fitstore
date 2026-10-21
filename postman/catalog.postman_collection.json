@@ -1,0 +1,1542 @@
+{
+  "info": {
+    "name": "FitStore - catalog (SPEC-2)",
+    "description": "Flujo admin (categorías, producto, matriz, imágenes, entrada de stock, publicar) y flujo de tienda (listar, filtrar, detalle, cotizar) a través del gateway, más CA-2-54 (/internal responde 404). Necesita la plataforma levantada con el ADMIN inicial (variables adminEmail y adminPassword) y corre desde la raíz del repositorio (las fotos se toman de backend/catalog-service/src/main/resources/demo/imagenes).",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "adminEmail",
+      "value": "admin@fitstore.local"
+    },
+    {
+      "key": "adminPassword",
+      "value": "dev-admin-clave"
+    }
+  ],
+  "item": [
+    {
+      "name": "Flujo admin",
+      "description": "",
+      "item": [
+        {
+          "name": "Admin 0 · Iniciar sesión como staff",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/staff/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "staff",
+                "login"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"email\": \"{{adminEmail}}\", \"password\": \"{{adminPassword}}\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (!pm.collectionVariables.get('sufijo')) {",
+                  "  const n = Date.now().toString();",
+                  "  pm.collectionVariables.set('sufijo', n.slice(-6));",
+                  "  pm.collectionVariables.set('letras', 'PM' + n.slice(-6));",
+                  "}"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('CA-2-17 el ADMIN inicia sesión para administrar el catálogo', function () { pm.response.to.have.status(200); });",
+                  "pm.collectionVariables.set('adminToken', pm.response.json().data.accessToken);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Admin 1 · Crear categoría raíz",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/admin/categorias",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "categorias"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"nombre\": \"Postman {{sufijo}}\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('CA-2-17 crea la categoría raíz', function () { pm.response.to.have.status(201); });",
+                  "pm.test('CA-2-17 trae slug único', function () { pm.expect(pm.response.json().data.slug).to.include('postman'); });",
+                  "pm.collectionVariables.set('catRaizId', pm.response.json().data.id);",
+                  "pm.collectionVariables.set('catRaizSlug', pm.response.json().data.slug);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Admin 2 · Crear categoría hija",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/admin/categorias",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "categorias"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"nombre\": \"Hija {{sufijo}}\", \"padreId\": {{catRaizId}}}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('CA-2-17 crea la categoría hija', function () { pm.response.to.have.status(201); });",
+                  "pm.collectionVariables.set('catHijaId', pm.response.json().data.id);",
+                  "pm.collectionVariables.set('catHijaSlug', pm.response.json().data.slug);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Admin 3 · Una hija no puede tener hijas",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/admin/categorias",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "categorias"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"nombre\": \"Nieta {{sufijo}}\", \"padreId\": {{catHijaId}}}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('CA-2-17 máximo 2 niveles', function () { pm.response.to.have.status(400); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Admin 4 · Guardar la guía de tallas",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/admin/categorias/{{catRaizId}}/guia-tallas",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "categorias",
+                "{{catRaizId}}",
+                "guia-tallas"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"columnas\": [\"Talla\", \"Cintura (cm)\", \"Largo (cm)\"], \"filas\": [[\"S\", \"64-68\", \"86\"], [\"M\", \"68-72\", \"88\"]]}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('CA-2-20 guarda la guía de tallas', function () { pm.response.to.have.status(200); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Admin 5 · Reordenar la categoría",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/admin/categorias/{{catHijaId}}/orden",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "categorias",
+                "{{catHijaId}}",
+                "orden"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"orden\": 0}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('CA-2-18 reordena y devuelve el árbol', function () { pm.response.to.have.status(200); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Admin 6 · Tallas y colores para armar la matriz",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/admin/tallas",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "tallas"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('CA-2-35 lista las tallas en su orden', function () { pm.response.to.have.status(200); });",
+                  "const t = pm.response.json().data; pm.collectionVariables.set('tallaS', t.find(x => x.codigo === 'S').id); pm.collectionVariables.set('tallaM', t.find(x => x.codigo === 'M').id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Admin 7 · Colores",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/admin/colores",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "colores"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('CA-2-33 lista los colores', function () { pm.response.to.have.status(200); });",
+                  "const c = pm.response.json().data; pm.collectionVariables.set('colorNegro', c.find(x => x.nombre.toLowerCase() === 'negro').id); pm.collectionVariables.set('colorRojo', c.find(x => x.nombre.toLowerCase() === 'rojo').id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Admin 8 · Crear el producto en BORRADOR",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/admin/productos",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "productos"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"codigo\": \"{{letras}}\", \"nombre\": \"Legging Postman {{sufijo}}\", \"descripcion\": \"Producto de prueba de Postman\", \"precioBase\": 59.9, \"categoriaIds\": [{{catHijaId}}]}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('CA-2-21 crea el producto', function () { pm.response.to.have.status(201); });",
+                  "pm.test('CA-2-21 queda en BORRADOR con slug', function () { const p = pm.response.json().data; pm.expect(p.estado).to.eql('BORRADOR'); pm.expect(p.slug).to.include('legging-postman'); });",
+                  "pm.collectionVariables.set('productoId', pm.response.json().data.id); pm.collectionVariables.set('productoSlug', pm.response.json().data.slug); pm.collectionVariables.set('productoVersion', pm.response.json().data.version);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Admin 9 · Publicar sin variantes ni fotos (409)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/admin/productos/{{productoId}}/publicar",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "productos",
+                "{{productoId}}",
+                "publicar"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('CA-2-24 no se publica un producto incompleto', function () { pm.response.to.have.status(409); });",
+                  "pm.test('CA-2-24 trae la lista de faltantes', function () { pm.expect(pm.response.json().detalles.faltantes.length).to.be.above(0); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Admin 10 · Generar la matriz de variantes",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/admin/productos/{{productoId}}/variantes/matriz",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "productos",
+                "{{productoId}}",
+                "variantes",
+                "matriz"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"tallaIds\": [{{tallaS}}, {{tallaM}}], \"colorIds\": [{{colorNegro}}, {{colorRojo}}]}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('CA-2-22 crea la matriz', function () { pm.response.to.have.status(201); });",
+                  "pm.test('CA-2-22 crea 4 variantes con SKU', function () { const v = pm.response.json().data.variantes; pm.expect(v.length).to.eql(4); pm.expect(v[0].sku).to.include('{{letras}}'); });",
+                  "pm.collectionVariables.set('varianteId', pm.response.json().data.variantes[0].id); pm.collectionVariables.set('varianteId2', pm.response.json().data.variantes[1].id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Admin 11 · Subir la foto del color negro",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/admin/productos/{{productoId}}/imagenes",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "productos",
+                "{{productoId}}",
+                "imagenes"
+              ]
+            },
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "archivo",
+                  "type": "file",
+                  "src": "backend/catalog-service/src/main/resources/demo/imagenes/p1001-negro.jpg"
+                },
+                {
+                  "key": "colorId",
+                  "value": "{{colorNegro}}",
+                  "type": "text"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('CA-2-29 sube la imagen y la guarda en dos tamaños', function () { pm.response.to.have.status(201); });",
+                  "pm.test('CA-2-32 la primera imagen queda como principal', function () { pm.expect(pm.response.json().data.imagenes[0].principal).to.eql(true); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Admin 12 · Subir la foto del color rojo",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/admin/productos/{{productoId}}/imagenes",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "productos",
+                "{{productoId}}",
+                "imagenes"
+              ]
+            },
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "archivo",
+                  "type": "file",
+                  "src": "backend/catalog-service/src/main/resources/demo/imagenes/p1001-rojo.jpg"
+                },
+                {
+                  "key": "colorId",
+                  "value": "{{colorRojo}}",
+                  "type": "text"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('CA-2-32 sube la imagen del segundo color', function () { pm.response.to.have.status(201); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Admin 13 · Un archivo que no es imagen (400)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/admin/productos/{{productoId}}/imagenes",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "productos",
+                "{{productoId}}",
+                "imagenes"
+              ]
+            },
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "archivo",
+                  "type": "file",
+                  "src": "postman/catalog.postman_collection.json"
+                },
+                {
+                  "key": "colorId",
+                  "value": "{{colorNegro}}",
+                  "type": "text"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('CA-2-30 rechaza el tipo de archivo', function () { pm.response.to.have.status(400); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Admin 14 · Entrada de stock",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/admin/inventario/entradas",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "inventario",
+                "entradas"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"lineas\": [{\"varianteId\": {{varianteId}}, \"cantidad\": 20}, {\"varianteId\": {{varianteId2}}, \"cantidad\": 3}], \"motivo\": \"Postman\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('CA-2-39 registra la entrada de varias líneas', function () { pm.response.to.have.status(201); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Admin 15 · Kardex del SKU",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/admin/inventario/{{varianteId}}/movimientos",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "inventario",
+                "{{varianteId}}",
+                "movimientos"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('CA-2-41 muestra el kardex', function () { pm.response.to.have.status(200); });",
+                  "pm.test('CA-2-41 trae la entrada', function () { pm.expect(pm.response.json().data.movimientos.contenido[0].tipo).to.eql('ENTRADA'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Admin 16 · Publicar el producto completo",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/admin/productos/{{productoId}}/publicar",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "productos",
+                "{{productoId}}",
+                "publicar"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('CA-2-25 publica el producto', function () { pm.response.to.have.status(200); });",
+                  "pm.test('CA-2-25 queda ACTIVO', function () { pm.expect(pm.response.json().data.estado).to.eql('ACTIVO'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Admin 17 · Marcar como destacado",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/admin/productos/{{productoId}}/destacado",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "productos",
+                "{{productoId}}",
+                "destacado"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"destacado\": true, \"orden\": 1}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('CA-2-27 marca el destacado', function () { pm.response.to.have.status(200); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Admin 18 · Política global de descuentos",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/admin/descuentos",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "descuentos"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('CA-2-36 devuelve los tramos globales', function () { pm.response.to.have.status(200); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Admin 19 · Inventario con filtro de stock bajo",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/admin/inventario?soloStockBajo=true&size=5",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "inventario"
+              ],
+              "query": [
+                {
+                  "key": "soloStockBajo",
+                  "value": "true"
+                },
+                {
+                  "key": "size",
+                  "value": "5"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('CA-2-44 filtra por stock bajo', function () { pm.response.to.have.status(200); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Admin 20 · Plantilla de carga masiva (CSV)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/admin/productos/carga-masiva/plantilla?formato=csv",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "productos",
+                "carga-masiva",
+                "plantilla"
+              ],
+              "query": [
+                {
+                  "key": "formato",
+                  "value": "csv"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('CA-2-58 descarga la plantilla', function () { pm.response.to.have.status(200); });",
+                  "pm.test('CA-2-58 trae las columnas', function () { pm.expect(pm.response.text()).to.include('precio_variante'); });"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Flujo tienda",
+      "description": "",
+      "item": [
+        {
+          "name": "Tienda 1 · Árbol de categorías",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/categorias",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "categorias"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('CA-2-18 el menú muestra las categorías', function () { pm.response.to.have.status(200); });",
+                  "pm.test('CA-2-18 incluye la categoría recién creada', function () { pm.expect(JSON.stringify(pm.response.json().data)).to.include('{{catRaizSlug}}'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Tienda 2 · Listar productos de la categoría padre",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/productos?categoria={{catRaizSlug}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "productos"
+              ],
+              "query": [
+                {
+                  "key": "categoria",
+                  "value": "{{catRaizSlug}}"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('CA-2-01 lista los productos de la categoría y sus hijas', function () { pm.response.to.have.status(200); });",
+                  "pm.test('CA-2-01 aparece el producto publicado una sola vez', function () { const c = pm.response.json().data.contenido; pm.expect(c.filter(p => p.slug === '{{productoSlug}}').length).to.eql(1); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Tienda 3 · Buscar sin tildes",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/productos?q=LEGGING POSTMAN",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "productos"
+              ],
+              "query": [
+                {
+                  "key": "q",
+                  "value": "LEGGING POSTMAN"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('CA-2-02 busca sin importar mayúsculas', function () { pm.response.to.have.status(200); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Tienda 4 · Filtrar por talla, color, precio y disponibilidad",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/productos?talla=S&color={{colorNegro}}&precioMin=40&precioMax=60&disponible=true&sort=precio,asc",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "productos"
+              ],
+              "query": [
+                {
+                  "key": "talla",
+                  "value": "S"
+                },
+                {
+                  "key": "color",
+                  "value": "{{colorNegro}}"
+                },
+                {
+                  "key": "precioMin",
+                  "value": "40"
+                },
+                {
+                  "key": "precioMax",
+                  "value": "60"
+                },
+                {
+                  "key": "disponible",
+                  "value": "true"
+                },
+                {
+                  "key": "sort",
+                  "value": "precio,asc"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('CA-2-03 filtra el listado', function () { pm.response.to.have.status(200); });",
+                  "pm.test('CA-2-04 respeta la página de 24', function () { pm.expect(pm.response.json().data.tamano).to.eql(24); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Tienda 5 · Detalle del producto",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/productos/{{productoSlug}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "productos",
+                "{{productoSlug}}"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('CA-2-08 muestra el detalle', function () { pm.response.to.have.status(200); });",
+                  "pm.test('CA-2-09 trae la disponibilidad por variante sin números exactos', function () { const v = pm.response.json().data.variantes[0]; pm.expect(['DISPONIBLE','ULTIMAS','AGOTADO']).to.include(v.disponibilidad); });",
+                  "pm.test('CA-2-08 trae las imágenes por color', function () { pm.expect(pm.response.json().data.imagenes.length).to.eql(2); });",
+                  "pm.test('CA-2-10 indica que hay guía de tallas', function () { pm.expect(pm.response.json().data.tieneGuiaTallas).to.eql(true); });",
+                  "pm.test('CA-2-11 trae los tramos de descuento', function () { pm.expect(pm.response.json().data.tramos.length).to.be.above(0); });",
+                  "pm.collectionVariables.set('varianteTienda', pm.response.json().data.variantes[0].id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Tienda 6 · Guía de tallas heredada",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/categorias/{{catHijaSlug}}/guia-tallas",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "categorias",
+                "{{catHijaSlug}}",
+                "guia-tallas"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('CA-2-10 la hija usa la guía de su padre', function () { pm.response.to.have.status(200); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Tienda 7 · Cotizar 3 unidades",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/precios/cotizar",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "precios",
+                "cotizar"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"lineas\": [{\"varianteId\": {{varianteTienda}}, \"cantidad\": 3}]}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('CA-2-13 cotiza', function () { pm.response.to.have.status(200); });",
+                  "pm.test('CA-2-13 aplica el tramo de 3 unidades (5 %)', function () { const l = pm.response.json().data.lineas[0]; pm.expect(l.descuentoPorcentaje).to.eql(5); pm.expect(l.estado).to.eql('OK'); });",
+                  "pm.test('CA-2-14 dice cuánto falta para el siguiente tramo', function () { pm.expect(pm.response.json().data.productos[0].siguienteTramo.faltan).to.eql(3); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Tienda 8 · Cotizar más de 50 líneas (400)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/precios/cotizar",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "precios",
+                "cotizar"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const l = []; for (let i = 1; i <= 51; i++) { l.push({varianteId: i, cantidad: 1}); }",
+                  "pm.request.body.raw = JSON.stringify({lineas: l});"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('CA-2-16 rechaza más de 50 líneas', function () { pm.response.to.have.status(400); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Tienda 9 · Destacados de la landing",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/productos/destacados",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "productos",
+                "destacados"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('CA-2-27 lista los destacados', function () { pm.response.to.have.status(200); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Tienda 10 · Un producto en BORRADOR no se ve (404)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/productos/no-existe-{{sufijo}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "productos",
+                "no-existe-{{sufijo}}"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('CA-2-07 responde 404', function () { pm.response.to.have.status(404); });"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Seguridad y limpieza",
+      "description": "",
+      "item": [
+        {
+          "name": "Seguridad 1 · Sin sesión el backoffice responde 401",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/admin/productos",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "productos"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('CA-2-28 exige sesión', function () { pm.response.to.have.status(401); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Seguridad 2 · /internal a través del gateway responde 404",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/internal/v1/inventario/reservas",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "internal",
+                "v1",
+                "inventario",
+                "reservas"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"pedidoId\": \"9f2c6a1e-0000-4000-8000-0000000000aa\", \"expiraEnPedido\": \"2030-01-01T10:30:00Z\", \"items\": [{\"varianteId\": 1, \"cantidad\": 1}]}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('CA-2-54 el gateway no enruta /internal (el navegador no puede reservar)', function () { pm.response.to.have.status(404); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Seguridad 3 · Desactivar el producto de prueba",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/admin/productos/{{productoId}}/desactivar",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "productos",
+                "{{productoId}}",
+                "desactivar"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('CA-2-25 al desactivar deja de aparecer en la tienda', function () { pm.response.to.have.status(200); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Seguridad 4 · El producto desactivado ya no se ve (404)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/productos/{{productoSlug}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "productos",
+                "{{productoSlug}}"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('CA-2-07 un producto INACTIVO responde 404', function () { pm.response.to.have.status(404); });"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
