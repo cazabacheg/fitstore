@@ -5,26 +5,73 @@ import { KardexPage } from './kardex.page';
 
 @Component({ selector: 'fs-falso', template: '' })
 class Falso {}
-const RUTAS = [{ path: 'inventario/:varianteId', component: KardexPage }, { path: '**', component: Falso }];
+const RUTAS = [
+  { path: 'inventario/:varianteId', component: KardexPage },
+  { path: '**', component: Falso },
+];
 
 const STOCK: catalogApi.Stock = {
-  varianteId: 101, sku: 'LEG01-NEG-S', productoId: 7, producto: 'Legging Pro', talla: 'S', color: 'Negro',
-  fisico: 10, reservado: 2, disponible: 8, minimo: 5, minimoPropio: false, estado: 'OK',
+  varianteId: 101,
+  sku: 'LEG01-NEG-S',
+  productoId: 7,
+  producto: 'Legging Pro',
+  talla: 'S',
+  color: 'Negro',
+  fisico: 10,
+  reservado: 2,
+  disponible: 8,
+  minimo: 5,
+  minimoPropio: false,
+  estado: 'OK',
 };
 const MOVIMIENTOS: catalogApi.Movimiento[] = [
-  { id: 3, tipo: 'VENTA', cantidad: -2, saldoFisico: 10, motivo: null, referencia: 'FS-000124', usuarioNombre: null, creadoEn: '2026-10-20T15:30:00Z' },
-  { id: 2, tipo: 'AJUSTE', cantidad: -1, saldoFisico: 12, motivo: 'Prenda dañada', referencia: null, usuarioNombre: 'Omar Operador', creadoEn: '2026-10-19T10:00:00Z' },
-  { id: 1, tipo: 'ENTRADA', cantidad: 13, saldoFisico: 13, motivo: 'Compra a proveedor', referencia: null, usuarioNombre: 'Carla Admin', creadoEn: '2026-10-18T09:00:00Z' },
+  {
+    id: 3,
+    tipo: 'VENTA',
+    cantidad: -2,
+    saldoFisico: 10,
+    motivo: null,
+    referencia: 'FS-000124',
+    usuarioNombre: null,
+    creadoEn: '2026-10-20T15:30:00Z',
+  },
+  {
+    id: 2,
+    tipo: 'AJUSTE',
+    cantidad: -1,
+    saldoFisico: 12,
+    motivo: 'Prenda dañada',
+    referencia: null,
+    usuarioNombre: 'Omar Operador',
+    creadoEn: '2026-10-19T10:00:00Z',
+  },
+  {
+    id: 1,
+    tipo: 'ENTRADA',
+    cantidad: 13,
+    saldoFisico: 13,
+    motivo: 'Compra a proveedor',
+    referencia: null,
+    usuarioNombre: 'Carla Admin',
+    creadoEn: '2026-10-18T09:00:00Z',
+  },
 ];
 const esperar = () => new Promise((r) => setTimeout(r, 400));
 
 async function abrir() {
   const t = await armar(RUTAS, '/inventario/101');
-  atender(t.ctrl, { '/admin/inventario/101/movimientos': { stock: STOCK, movimientos: pagina(MOVIMIENTOS) } });
+  atender(t.ctrl, {
+    '/admin/inventario/101/movimientos': { stock: STOCK, movimientos: pagina(MOVIMIENTOS) },
+  });
   await asentar(t.fixture);
   return t;
 }
-const escribir = async (raiz: ParentNode, fixture: Parameters<typeof asentar>[0], selector: string, valor: string) => {
+const escribir = async (
+  raiz: ParentNode,
+  fixture: Parameters<typeof asentar>[0],
+  selector: string,
+  valor: string,
+) => {
   const campo = raiz.querySelector<HTMLInputElement>(selector)!;
   campo.value = valor;
   campo.dispatchEvent(new Event('input'));

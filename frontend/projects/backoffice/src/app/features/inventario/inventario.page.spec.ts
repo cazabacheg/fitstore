@@ -6,13 +6,33 @@ import { InventarioPage } from './inventario.page';
 
 @Component({ selector: 'fs-falso', template: '' })
 class Falso {}
-const RUTAS = [{ path: 'inventario', component: InventarioPage }, { path: 'inventario/:varianteId', component: Falso }];
+const RUTAS = [
+  { path: 'inventario', component: InventarioPage },
+  { path: 'inventario/:varianteId', component: Falso },
+];
 
-const base = { productoId: 7, producto: 'Legging Pro', talla: 'S', color: 'Negro', fisico: 10, reservado: 2, minimo: 5, minimoPropio: false };
+const base = {
+  productoId: 7,
+  producto: 'Legging Pro',
+  talla: 'S',
+  color: 'Negro',
+  fisico: 10,
+  reservado: 2,
+  minimo: 5,
+  minimoPropio: false,
+};
 const STOCK: catalogApi.Stock[] = [
   { ...base, varianteId: 101, sku: 'LEG01-NEG-S', disponible: 8, estado: 'OK' },
   { ...base, varianteId: 102, sku: 'LEG01-AZU-S', disponible: 4, estado: 'BAJO' },
-  { ...base, varianteId: 103, sku: 'LEG01-ROJ-S', fisico: 2, reservado: 2, disponible: 0, estado: 'AGOTADO' },
+  {
+    ...base,
+    varianteId: 103,
+    sku: 'LEG01-ROJ-S',
+    fisico: 2,
+    reservado: 2,
+    disponible: 0,
+    estado: 'AGOTADO',
+  },
 ];
 const esperar = () => new Promise((r) => setTimeout(r, 400));
 
@@ -22,7 +42,12 @@ async function abrir(url = '/inventario', sesion?: Parameters<typeof armar>[2]) 
   await asentar(t.fixture);
   return t;
 }
-const escribir = async (raiz: ParentNode, fixture: Parameters<typeof asentar>[0], selector: string, valor: string) => {
+const escribir = async (
+  raiz: ParentNode,
+  fixture: Parameters<typeof asentar>[0],
+  selector: string,
+  valor: string,
+) => {
   const campo = raiz.querySelector<HTMLInputElement>(selector)!;
   campo.value = valor;
   campo.dispatchEvent(new Event('input'));
@@ -56,9 +81,14 @@ describe('InventarioPage (P-2-07)', () => {
 
   it('CA-2-41 el SKU es un enlace al kardex y la fila lleva "Kardex ›" y "Mínimo"', async () => {
     const { el } = await abrir();
-    expect(el.querySelector<HTMLAnchorElement>('a.fs-codigo')!.getAttribute('href')).toBe('/inventario/101');
+    expect(el.querySelector<HTMLAnchorElement>('a.fs-codigo')!.getAttribute('href')).toBe(
+      '/inventario/101',
+    );
     const fila = el.querySelector('tr.mat-mdc-row')!;
-    expect(Array.from(fila.querySelectorAll('button')).map((b) => b.textContent?.trim())).toEqual(['Kardex ›', 'Mínimo']);
+    expect(Array.from(fila.querySelectorAll('button')).map((b) => b.textContent?.trim())).toEqual([
+      'Kardex ›',
+      'Mínimo',
+    ]);
   });
 
   it('CA-2-39 registra una entrada de varias líneas con su motivo', async () => {
@@ -80,7 +110,10 @@ describe('InventarioPage (P-2-07)', () => {
     const req = t.ctrl.expectOne('/api/v1/admin/inventario/entradas');
     expect(req.request.method).toBe('POST');
     expect(req.request.body).toEqual({
-      lineas: [{ varianteId: 101, cantidad: 12 }, { varianteId: 102, cantidad: 6 }],
+      lineas: [
+        { varianteId: 101, cantidad: 12 },
+        { varianteId: 102, cantidad: 6 },
+      ],
       motivo: 'Compra a proveedor',
     });
   });
@@ -100,7 +133,9 @@ describe('InventarioPage (P-2-07)', () => {
 
   it('CA-2-43 cambia el mínimo propio de un SKU', async () => {
     const t = await abrir();
-    Array.from(t.el.querySelectorAll('tr.mat-mdc-row')[0].querySelectorAll('button')).find((b) => b.textContent?.includes('Mínimo'))!.click();
+    Array.from(t.el.querySelectorAll('tr.mat-mdc-row')[0].querySelectorAll('button'))
+      .find((b) => b.textContent?.includes('Mínimo'))!
+      .click();
     await esperar();
     await asentar(t.fixture);
     const d = document.querySelector<HTMLElement>('mat-dialog-container')!;
@@ -115,14 +150,18 @@ describe('InventarioPage (P-2-07)', () => {
 
   it('CA-2-43 dejar el mínimo vacío vuelve al de la tienda', async () => {
     const t = await abrir();
-    Array.from(t.el.querySelectorAll('tr.mat-mdc-row')[0].querySelectorAll('button')).find((b) => b.textContent?.includes('Mínimo'))!.click();
+    Array.from(t.el.querySelectorAll('tr.mat-mdc-row')[0].querySelectorAll('button'))
+      .find((b) => b.textContent?.includes('Mínimo'))!
+      .click();
     await esperar();
     await asentar(t.fixture);
     const d = document.querySelector<HTMLElement>('mat-dialog-container')!;
     boton(d, 'Usar el de la tienda')!.click();
     await esperar();
     await asentar(t.fixture);
-    expect(t.ctrl.expectOne('/api/v1/admin/inventario/101/minimo').request.body).toEqual({ minimo: null });
+    expect(t.ctrl.expectOne('/api/v1/admin/inventario/101/minimo').request.body).toEqual({
+      minimo: null,
+    });
   });
 
   it('CA-2-39 el OPERADOR también registra entradas (la pantalla es de OPERADOR y ADMIN)', async () => {
