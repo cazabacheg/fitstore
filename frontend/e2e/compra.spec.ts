@@ -43,7 +43,9 @@ test.describe('Compra completa (HU-8-02)', () => {
       .first()
       .click();
     await page.getByRole('button', { name: 'Agregar al carrito' }).click();
-    await page.goto(`${TIENDA}/carrito`);
+    // Se espera la insignia del carrito y se navega por el enlace (una recarga inmediata aborta el alta en una red lenta)
+    await expect(page.getByRole('link', { name: /Carrito/ })).toContainText('1');
+    await page.getByRole('link', { name: /Carrito/ }).click();
     await expect(page.getByText('Legging Pro Compresión').first()).toBeVisible();
     await page.getByRole('link', { name: 'Ir al checkout' }).click();
     // Si la sesión no sobrevivió a la recarga, el login devuelve al checkout con returnUrl
