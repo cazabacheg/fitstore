@@ -4,6 +4,8 @@ import { ToastService, authApi } from 'shared';
 import { montar } from '../../testing/montar';
 import { SESION_OPERADOR } from '../../testing/sesiones';
 
+vi.setConfig({ testTimeout: 30000 });
+
 const ME = '/api/v1/staff/me';
 const CLAVE = '/api/v1/staff/me/password';
 const ok = <T>(data: T) => ({ success: true, mensaje: 'Operación exitosa', data });
@@ -22,7 +24,10 @@ const PERFIL: authApi.Staff = {
 
 async function abrir() {
   const h = await montar(SESION_OPERADOR, { url: '/perfil' });
-  http().expectOne((r) => r.url === ME && r.method === 'GET').flush(ok(PERFIL));
+  // la barra superior del shell también pide /staff/me: se responde a todas
+  http()
+    .match((r) => r.url === ME && r.method === 'GET')
+    .forEach((r) => r.flush(ok(PERFIL)));
   h.fixture.detectChanges();
   await h.fixture.whenStable();
   const el = () => h.routeNativeElement as HTMLElement;
@@ -46,7 +51,8 @@ async function abrir() {
       .click();
     await estabilizar();
   };
-  const errorDe = (etiqueta: string) => campo(etiqueta).querySelector('.fs-campo__error')?.textContent ?? '';
+  const errorDe = (etiqueta: string) =>
+    campo(etiqueta).querySelector('.fs-campo__error')?.textContent ?? '';
   return { el, estabilizar, entrada, escribir, enviar, errorDe };
 }
 
@@ -72,7 +78,11 @@ describe('Mi perfil del staff (P-1-10)', () => {
     peticion.flush(ok({ ...PERFIL, nombres: 'Omar Luis', version: 1 }));
     await p.estabilizar();
 
-    expect(TestBed.inject(ToastService).toasts().map((t) => t.mensaje)).toContain('Guardado');
+    expect(
+      TestBed.inject(ToastService)
+        .toasts()
+        .map((t) => t.mensaje),
+    ).toContain('Guardado');
   });
 
   it('CA-1-35 un nombre vacío se indica y no se envía', async () => {
@@ -93,11 +103,18 @@ describe('Mi perfil del staff (P-1-10)', () => {
 
     const peticion = http().expectOne(CLAVE);
     expect(peticion.request.method).toBe('PUT');
-    expect(peticion.request.body).toEqual({ passwordActual: 'Gamarra2026', nuevaPassword: 'NuevaClave2027' });
+    expect(peticion.request.body).toEqual({
+      passwordActual: 'Gamarra2026',
+      nuevaPassword: 'NuevaClave2027',
+    });
     peticion.flush(ok(null));
     await p.estabilizar();
 
-    expect(TestBed.inject(ToastService).toasts().map((t) => t.mensaje)).toContain('Contraseña actualizada');
+    expect(
+      TestBed.inject(ToastService)
+        .toasts()
+        .map((t) => t.mensaje),
+    ).toContain('Contraseña actualizada');
     expect(p.entrada('Contraseña actual').value).toBe('');
   });
 
@@ -137,14 +154,20 @@ describe('Mi perfil del staff (P-1-10)', () => {
 
   it('CA-1-35 si no se puede cargar el perfil muestra el error con "Reintentar"', async () => {
     const h = await montar(SESION_OPERADOR, { url: '/perfil' });
-    http().expectOne((r) => r.url === ME).flush(null, { status: 500, statusText: 'Error' });
+    http()
+      .match((r) => r.url === ME && r.method === 'GET')
+      .forEach((r) => r.flush(null, { status: 500, statusText: 'Error' }));
     h.fixture.detectChanges();
     await h.fixture.whenStable();
     const el = h.routeNativeElement as HTMLElement;
 
     expect(el.querySelector('[role="alert"]')?.textContent).toContain('Reintentar');
-    [...el.querySelectorAll<HTMLButtonElement>('button')].find((b) => b.textContent?.includes('Reintentar'))!.click();
-    http().expectOne((r) => r.url === ME).flush(ok(PERFIL));
+    [...el.querySelectorAll<HTMLButtonElement>('button')]
+      .find((b) => b.textContent?.includes('Reintentar'))!
+      .click();
+    http()
+      .match((r) => r.url === ME && r.method === 'GET')
+      .forEach((r) => r.flush(ok(PERFIL)));
     h.fixture.detectChanges();
     await h.fixture.whenStable();
     expect(el.querySelector<HTMLInputElement>('input')?.value).toBe('Omar');

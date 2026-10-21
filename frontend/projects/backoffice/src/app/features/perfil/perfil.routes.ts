@@ -1,11 +1,11 @@
 import { Routes } from '@angular/router';
-import { Proximamente } from '../../ui/proximamente/proximamente';
+import { PerfilStaffPage } from './perfil-staff.page';
 
 /**
- * Marcador "Próximamente" (CA-0b-15): la spec dueña reemplaza el contenido de esta carpeta.
- * El shell (`app.routes.ts`) carga este arreglo y aplica la guarda de rol.
+ * Mi perfil del backoffice (P-1-10). El shell (`app.routes.ts`) carga este arreglo y aplica la guarda de rol;
+ * `pantalla` identifica la pantalla de la carpeta (R2).
  */
 export const PERFIL_ROUTES: Routes = [
-  { path: '', component: Proximamente, data: { pantalla: 'perfil' } },
-  { path: '**', component: Proximamente, data: { pantalla: 'perfil' } },
+  { path: '', component: PerfilStaffPage, data: { pantalla: 'perfil' } },
+  { path: '**', redirectTo: '' },
 ];

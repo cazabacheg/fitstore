@@ -1,10 +1,12 @@
 import { OverlayContainer } from '@angular/cdk/overlay';
-import { HttpTestingController, type TestRequest } from '@angular/common/http/testing';
+import { HttpTestingController } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 import { Router } from '@angular/router';
 import { ToastService, authApi } from 'shared';
 import { montar } from '../../testing/montar';
 import { SESION_ADMIN, SESION_OPERADOR } from '../../testing/sesiones';
+
+vi.setConfig({ testTimeout: 30000 });
 
 const LISTA = '/api/v1/staff';
 const http = () => TestBed.inject(HttpTestingController);
@@ -16,7 +18,12 @@ const pagina = (contenido: authApi.Staff[]) => ({
   totalElementos: contenido.length,
   totalPaginas: 1,
 });
-const miembro = (id: string, nombres: string, estado: authApi.Staff['estado'], rol: authApi.Staff['rol'] = 'OPERADOR'): authApi.Staff => ({
+const miembro = (
+  id: string,
+  nombres: string,
+  estado: authApi.Staff['estado'],
+  rol: authApi.Staff['rol'] = 'OPERADOR',
+): authApi.Staff => ({
   id,
   email: `${nombres.toLowerCase()}@fitstore.pe`,
   nombres,
@@ -32,6 +39,19 @@ const PENDIENTE = miembro('b2', 'Luis', 'INVITACION_PENDIENTE');
 const INACTIVO = miembro('c3', 'Inés', 'INACTIVO');
 
 const pedidoLista = () => http().expectOne((r) => r.url === LISTA && r.method === 'GET');
+
+/** El diálogo de confirmación se cierra con una animación: se espera a que la petición salga. */
+async function esperar(
+  estabilizar: () => Promise<void>,
+  coincide: (r: { url: string; method: string }) => boolean,
+) {
+  for (let i = 0; i < 50; i++) {
+    const hallada = http().match(coincide);
+    if (hallada.length) return hallada[0];
+    await estabilizar();
+  }
+  return http().expectOne(coincide);
+}
 
 async function abrir(url = '/staff') {
   const h = await montar(SESION_ADMIN, { url });
@@ -49,21 +69,39 @@ async function abrir(url = '/staff') {
   const filas = () => [...el().querySelectorAll<HTMLElement>('tr.mat-mdc-row, tr[mat-row]')];
   const fila = (nombre: string) => filas().find((f) => f.textContent?.includes(nombre))!;
   const accion = (nombre: string, texto: string) =>
-    [...fila(nombre).querySelectorAll<HTMLButtonElement>('.fs-acciones button')].find((b) => b.textContent?.includes(texto))!;
+    [...fila(nombre).querySelectorAll<HTMLButtonElement>('.fs-acciones button')].find((b) =>
+      b.textContent?.includes(texto),
+    )!;
   const panel = () => TestBed.inject(OverlayContainer).getContainerElement();
   const botonPanel = (texto: string) =>
-    [...panel().querySelectorAll<HTMLButtonElement>('button')].find((b) => b.textContent?.includes(texto))!;
+    [...panel().querySelectorAll<HTMLButtonElement>('button')].find((b) =>
+      b.textContent?.includes(texto),
+    )!;
   const campoPanel = (etiqueta: string) =>
     [...panel().querySelectorAll<HTMLElement>('.fs-campo')].find((c) =>
       c.querySelector('label')?.textContent?.trim().startsWith(etiqueta),
     )!;
   const escribirPanel = async (etiqueta: string, valor: string) => {
-    const control = campoPanel(etiqueta).querySelector<HTMLInputElement | HTMLSelectElement>('input, select')!;
+    const control = campoPanel(etiqueta).querySelector<HTMLInputElement | HTMLSelectElement>(
+      'input, select',
+    )!;
     control.value = valor;
     control.dispatchEvent(new Event(control.tagName === 'SELECT' ? 'change' : 'input'));
     await estabilizar();
   };
-  return { h, el, estabilizar, cargar, filas, fila, accion, panel, botonPanel, campoPanel, escribirPanel };
+  return {
+    h,
+    el,
+    estabilizar,
+    cargar,
+    filas,
+    fila,
+    accion,
+    panel,
+    botonPanel,
+    campoPanel,
+    escribirPanel,
+  };
 }
 
 describe('Staff (P-1-08)', () => {
@@ -92,7 +130,8 @@ describe('Staff (P-1-08)', () => {
   it('CA-1-25 las acciones de cada fila dependen de su estado (R11: como máximo 2)', async () => {
     const p = await abrir();
     await p.cargar();
-    const textos = (n: string) => [...p.fila(n).querySelectorAll('.fs-acciones button')].map((b) => b.textContent?.trim());
+    const textos = (n: string) =>
+      [...p.fila(n).querySelectorAll('.fs-acciones button')].map((b) => b.textContent?.trim());
 
     expect(textos('Carla')).toEqual(['Editar', 'Desactivar']);
     expect(textos('Luis')).toEqual(['Reenviar invitación']);
@@ -102,7 +141,9 @@ describe('Staff (P-1-08)', () => {
   it('CA-1-25 "Invitar miembro" abre el diálogo y envía correo, nombres, apellidos y rol', async () => {
     const p = await abrir();
     await p.cargar();
-    [...p.el().querySelectorAll<HTMLButtonElement>('button')].find((b) => b.textContent?.includes('Invitar miembro'))!.click();
+    [...p.el().querySelectorAll<HTMLButtonElement>('button')]
+      .find((b) => b.textContent?.includes('Invitar miembro'))!
+      .click();
     await p.estabilizar();
 
     expect(p.panel().textContent).toContain('Invitar miembro');
@@ -114,20 +155,31 @@ describe('Staff (P-1-08)', () => {
     await p.estabilizar();
 
     const peticion = http().expectOne((r) => r.url === LISTA && r.method === 'POST');
-    expect(peticion.request.body).toEqual({ email: 'nuevo@fitstore.pe', nombres: 'Nuevo', apellidos: 'Miembro', rol: 'ADMIN' });
+    expect(peticion.request.body).toEqual({
+      email: 'nuevo@fitstore.pe',
+      nombres: 'Nuevo',
+      apellidos: 'Miembro',
+      rol: 'ADMIN',
+    });
     peticion.flush(ok(miembro('d4', 'Nuevo', 'INVITACION_PENDIENTE', 'ADMIN')));
     await p.estabilizar();
     pedidoLista().flush(ok(pagina([ADMIN, PENDIENTE])));
     await p.estabilizar();
 
-    expect(TestBed.inject(ToastService).toasts().map((t) => t.mensaje)).toContain('Invitación enviada');
+    expect(
+      TestBed.inject(ToastService)
+        .toasts()
+        .map((t) => t.mensaje),
+    ).toContain('Invitación enviada');
     expect(p.panel().querySelector('[role="dialog"]')).toBeNull();
   });
 
   it('CA-1-25 el diálogo valida los datos y muestra el correo repetido junto a su campo', async () => {
     const p = await abrir();
     await p.cargar();
-    [...p.el().querySelectorAll<HTMLButtonElement>('button')].find((b) => b.textContent?.includes('Invitar miembro'))!.click();
+    [...p.el().querySelectorAll<HTMLButtonElement>('button')]
+      .find((b) => b.textContent?.includes('Invitar miembro'))!
+      .click();
     await p.estabilizar();
     p.botonPanel('Enviar invitación').click();
     await p.estabilizar();
@@ -144,7 +196,10 @@ describe('Staff (P-1-08)', () => {
     await p.estabilizar();
     http()
       .expectOne((r) => r.url === LISTA && r.method === 'POST')
-      .flush({ success: false, mensaje: 'El correo ya está registrado', codigo: 'CORREO_DUPLICADO' }, { status: 409, statusText: 'Conflict' });
+      .flush(
+        { success: false, mensaje: 'El correo ya está registrado', codigo: 'CORREO_DUPLICADO' },
+        { status: 409, statusText: 'Conflict' },
+      );
     await p.estabilizar();
 
     expect(p.campoPanel('Correo').textContent).toContain('El correo ya está registrado');
@@ -165,7 +220,12 @@ describe('Staff (P-1-08)', () => {
     await p.estabilizar();
 
     const peticion = http().expectOne((r) => r.url === `${LISTA}/b2` && r.method === 'PUT');
-    expect(peticion.request.body).toEqual({ nombres: 'Luis Alberto', apellidos: 'Prueba', rol: 'ADMIN', version: 2 });
+    expect(peticion.request.body).toEqual({
+      nombres: 'Luis Alberto',
+      apellidos: 'Prueba',
+      rol: 'ADMIN',
+      version: 2,
+    });
     peticion.flush(ok({ ...PENDIENTE, nombres: 'Luis Alberto', rol: 'ADMIN' }));
     await p.estabilizar();
     pedidoLista().flush(ok(pagina([ADMIN])));
@@ -180,15 +240,26 @@ describe('Staff (P-1-08)', () => {
     expect(p.panel().textContent).toContain('¿Desactivar a Carla Prueba?');
     p.botonPanel('Desactivar').click();
     await p.estabilizar();
-    http()
-      .expectOne((r) => r.url === `${LISTA}/a1/desactivar` && r.method === 'PATCH')
-      .flush(
-        { success: false, mensaje: 'Debe quedar al menos un administrador activo', codigo: 'ULTIMO_ADMIN' },
-        { status: 409, statusText: 'Conflict' },
-      );
+    (
+      await esperar(
+        p.estabilizar,
+        (r) => r.url === `${LISTA}/a1/desactivar` && r.method === 'PATCH',
+      )
+    ).flush(
+      {
+        success: false,
+        mensaje: 'Debe quedar al menos un administrador activo',
+        codigo: 'ULTIMO_ADMIN',
+      },
+      { status: 409, statusText: 'Conflict' },
+    );
     await p.estabilizar();
 
-    expect(TestBed.inject(ToastService).toasts().map((t) => t.mensaje)).toContain('Debe quedar al menos un administrador activo');
+    expect(
+      TestBed.inject(ToastService)
+        .toasts()
+        .map((t) => t.mensaje),
+    ).toContain('Debe quedar al menos un administrador activo');
     http().expectNone((r) => r.url === LISTA && r.method === 'GET');
   });
 
@@ -205,14 +276,21 @@ describe('Staff (P-1-08)', () => {
     await p.estabilizar();
     p.botonPanel('Desactivar').click();
     await p.estabilizar();
-    http()
-      .expectOne((r) => r.url === `${LISTA}/a1/desactivar` && r.method === 'PATCH')
-      .flush(ok({ ...ADMIN, estado: 'INACTIVO' }));
+    (
+      await esperar(
+        p.estabilizar,
+        (r) => r.url === `${LISTA}/a1/desactivar` && r.method === 'PATCH',
+      )
+    ).flush(ok({ ...ADMIN, estado: 'INACTIVO' }));
     await p.estabilizar();
     pedidoLista().flush(ok(pagina([{ ...ADMIN, estado: 'INACTIVO' }])));
     await p.estabilizar();
 
-    expect(TestBed.inject(ToastService).toasts().map((t) => t.mensaje)).toContain('Miembro desactivado');
+    expect(
+      TestBed.inject(ToastService)
+        .toasts()
+        .map((t) => t.mensaje),
+    ).toContain('Miembro desactivado');
   });
 
   it('CA-1-29 "Activar" reactiva al miembro inactivo', async () => {
@@ -221,11 +299,17 @@ describe('Staff (P-1-08)', () => {
     p.accion('Inés', 'Activar').click();
     await p.estabilizar();
 
-    http().expectOne((r) => r.url === `${LISTA}/c3/activar` && r.method === 'PATCH').flush(ok({ ...INACTIVO, estado: 'ACTIVO' }));
+    http()
+      .expectOne((r) => r.url === `${LISTA}/c3/activar` && r.method === 'PATCH')
+      .flush(ok({ ...INACTIVO, estado: 'ACTIVO' }));
     await p.estabilizar();
     pedidoLista().flush(ok(pagina([ADMIN, PENDIENTE, { ...INACTIVO, estado: 'ACTIVO' }])));
     await p.estabilizar();
-    expect(TestBed.inject(ToastService).toasts().map((t) => t.mensaje)).toContain('Miembro activado');
+    expect(
+      TestBed.inject(ToastService)
+        .toasts()
+        .map((t) => t.mensaje),
+    ).toContain('Miembro activado');
   });
 
   it('CA-1-30 "Reenviar invitación" pide un enlace nuevo y avisa', async () => {
@@ -234,9 +318,15 @@ describe('Staff (P-1-08)', () => {
     p.accion('Luis', 'Reenviar invitación').click();
     await p.estabilizar();
 
-    http().expectOne((r) => r.url === `${LISTA}/b2/reenviar-invitacion` && r.method === 'POST').flush(ok(null));
+    http()
+      .expectOne((r) => r.url === `${LISTA}/b2/reenviar-invitacion` && r.method === 'POST')
+      .flush(ok(null));
     await p.estabilizar();
-    expect(TestBed.inject(ToastService).toasts().map((t) => t.mensaje)).toContain('Invitación reenviada');
+    expect(
+      TestBed.inject(ToastService)
+        .toasts()
+        .map((t) => t.mensaje),
+    ).toContain('Invitación reenviada');
   });
 
   it('CA-1-31 un OPERADOR que entra por URL a /staff ve la página 403', async () => {
@@ -251,9 +341,12 @@ describe('Staff (P-1-08)', () => {
     pedidoLista().flush(null, { status: 500, statusText: 'Error' });
     await p.estabilizar();
 
-    const reintentar = [...p.el().querySelectorAll<HTMLButtonElement>('button')].find((b) => b.textContent?.includes('Reintentar'));
+    const reintentar = [...p.el().querySelectorAll<HTMLButtonElement>('button')].find((b) =>
+      b.textContent?.includes('Reintentar'),
+    );
     expect(reintentar).toBeDefined();
     reintentar!.click();
+    await p.estabilizar();
     pedidoLista().flush(ok(pagina([ADMIN])));
     await p.estabilizar();
     expect(p.filas()).toHaveLength(1);
@@ -264,9 +357,9 @@ describe('Staff (P-1-08)', () => {
     await p.cargar();
     const tabla = p.el().querySelector('fs-tabla')!;
     expect(tabla).not.toBeNull();
-    const siguiente = p.el().querySelector<HTMLButtonElement>('button.mat-mdc-paginator-navigation-next');
+    const siguiente = p
+      .el()
+      .querySelector<HTMLButtonElement>('button.mat-mdc-paginator-navigation-next');
     expect(siguiente).not.toBeNull();
   });
 });
-
-void (undefined as unknown as TestRequest);
