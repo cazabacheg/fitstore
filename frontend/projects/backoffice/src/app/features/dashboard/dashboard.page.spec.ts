@@ -42,22 +42,36 @@ function abrir() {
 }
 
 /** Responde las cinco consultas de una carga; `entregas` en `null` simula el servicio caído. */
-function responder(entregas: object | null = { PENDIENTE_ASIGNACION: 3, EN_RUTA: 4, ENTREGADA: 7, FALLIDA: 1 }) {
-  http().expectOne((r) => r.url === '/api/v1/admin/pedidos').flush(pagina([], 0, { contadores: CONTADORES_PEDIDOS }));
-  http().expectOne((r) => r.url === '/api/v1/admin/inventario').flush(pagina(STOCK, 2));
+function responder(
+  entregas: object | null = { PENDIENTE_ASIGNACION: 3, EN_RUTA: 4, ENTREGADA: 7, FALLIDA: 1 },
+) {
+  http()
+    .expectOne((r) => r.url === '/api/v1/admin/pedidos')
+    .flush(pagina([], 0, { contadores: CONTADORES_PEDIDOS }));
+  http()
+    .expectOne((r) => r.url === '/api/v1/admin/inventario')
+    .flush(pagina(STOCK, 2));
   const e = http().expectOne((r) => r.url === '/api/v1/admin/entregas');
   if (entregas) e.flush(pagina([], 15, { contadores: entregas }));
   else e.flush(ok(null), { status: 503, statusText: 'Servicio no disponible' });
   const reclamos = http().match((r) => r.url === '/api/v1/admin/reclamos');
   expect(reclamos.length).toBe(2);
-  for (const r of reclamos) r.flush(pagina([], r.request.params.get('porVencer') === 'true' ? 2 : 0));
+  for (const r of reclamos)
+    r.flush(pagina([], r.request.params.get('porVencer') === 'true' ? 2 : 0));
   fixture.detectChanges();
 }
 
-const enlaces = () => [...(fixture.nativeElement as HTMLElement).querySelectorAll<HTMLAnchorElement>('a')];
-const href = (contiene: string) => enlaces().find((a) => a.textContent?.includes(contiene))?.getAttribute('href');
+const enlaces = () => [
+  ...(fixture.nativeElement as HTMLElement).querySelectorAll<HTMLAnchorElement>('a'),
+];
+const href = (contiene: string) =>
+  enlaces()
+    .find((a) => a.textContent?.includes(contiene))
+    ?.getAttribute('href');
 const boton = (contiene: string) =>
-  [...(fixture.nativeElement as HTMLElement).querySelectorAll('button')].find((b) => b.textContent?.includes(contiene));
+  [...(fixture.nativeElement as HTMLElement).querySelectorAll('button')].find((b) =>
+    b.textContent?.includes(contiene),
+  );
 
 describe('Dashboard del backoffice (P-8-01)', () => {
   afterEach(() => http().verify());
