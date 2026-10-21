@@ -15,7 +15,7 @@ import {
 import type { settingsApi } from 'shared';
 import { crearRutas } from '../app.routes';
 import { BarraAnuncio } from './barra-anuncio';
-import { montar } from '../testing';
+import { conPantallasDePrueba, montar } from '../testing';
 
 const estilos = readFileSync(`${process.cwd()}/projects/storefront/src/styles.css`, 'utf8');
 const ok = <T>(data: T) => ({ success: true, mensaje: 'Operación exitosa', data });
@@ -101,7 +101,7 @@ async function abrir({
       provideZonelessChangeDetection(),
       provideFitstoreHttp({ carrito: true }),
       provideHttpClientTesting(),
-      provideRouter(crearRutas(true)),
+      provideRouter(conPantallasDePrueba(crearRutas(true))),
       provideSesionConfig({ tipo: 'CLIENTE', rutaLogin: '/ingresar', rutaSinPermiso: '/403' }),
     ],
   });

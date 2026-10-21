@@ -24,6 +24,7 @@ async function navegar(url: string, sesion?: typeof SESION_CLIENTE, dev = true) 
   // El shell y las pantallas piden datos: aquí no importan (responden con error y cada pantalla muestra su estado).
   TestBed.inject(HttpTestingController)
     .match(() => true)
+    .filter((r) => !r.cancelled)
     .forEach((r) =>
       r.flush(
         { success: false, mensaje: 'Error', codigo: 'ERROR' },
