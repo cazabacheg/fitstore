@@ -13,7 +13,8 @@
     "importHelpers": true,
     "strict": true,
     "paths": {
-      "shared": ["./projects/shared/src/public-api.ts"]
+      "shared": ["./projects/shared/src/public-api.ts"],
+      "shared/api/*": ["./projects/shared/src/lib/api/*/index.ts"]
     },
     "target": "ES2022",
     "module": "preserve"

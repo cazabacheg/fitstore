@@ -8,6 +8,13 @@ eureka:
     prefer-ip-address: true
 
 spring:
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          # Todos los servicios validan los JWT con la clave pública de auth (SPEC-1 A5); la cachean y solo la piden
+          # de nuevo si llega un kid desconocido
+          jwk-set-uri: http://auth-service:8081/.well-known/jwks.json
   rabbitmq:
     host: ${RABBITMQ_HOST:rabbitmq}
     port: 5672

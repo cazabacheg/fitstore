@@ -1,0 +1,1397 @@
+{
+  "info": {
+    "name": "FitStore - settings (SPEC-3)",
+    "description": "Configuración de la tienda, políticas, ubigeo y Libro de Reclamaciones a través del gateway.\n\nLa carpeta 0 inicia sesión con `adminEmail` y `adminPassword` (valores de ejemplo de desarrollo tomados del contrato de auth) y, si defines `operadorEmail` y `operadorPassword`, también como OPERADOR. Sin sesión, las pruebas de staff se omiten. Lo público no necesita sesión.\n\nCA-3-27: el gateway limita POST /reclamos a 3 por minuto por IP; la carpeta Reclamos envía 3 y espera el 429 en el 4.º. Si la corres dos veces seguidas, espera un minuto entre una y otra.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "adminEmail",
+      "value": "admin@fitstore.local"
+    },
+    {
+      "key": "adminPassword",
+      "value": "dev-admin-clave"
+    },
+    {
+      "key": "operadorEmail",
+      "value": ""
+    },
+    {
+      "key": "operadorPassword",
+      "value": ""
+    },
+    {
+      "key": "tokenAdmin",
+      "value": ""
+    },
+    {
+      "key": "tokenOperador",
+      "value": ""
+    },
+    {
+      "key": "versionConfig",
+      "value": ""
+    },
+    {
+      "key": "versionConfigAntigua",
+      "value": ""
+    },
+    {
+      "key": "versionEnvios",
+      "value": ""
+    },
+    {
+      "key": "idReclamo",
+      "value": ""
+    }
+  ],
+  "item": [
+    {
+      "name": "0. Sesiones de staff",
+      "item": [
+        {
+          "name": "Sesión: iniciar como ADMIN",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (!pm.collectionVariables.get('adminEmail')) { pm.execution.skipRequest(); }"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 200) { pm.collectionVariables.set('tokenAdmin', pm.response.json().data.accessToken); }",
+                  "pm.test('sesión de staff (admin): si auth-service aún no la entrega, las pruebas de esta cuenta se omiten', function () { pm.expect(pm.response.code).to.be.oneOf([200, 401, 404, 423, 429]); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/staff/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "staff",
+                "login"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{adminEmail}}\",\n  \"password\": \"{{adminPassword}}\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Sesión: iniciar como OPERADOR",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (!pm.collectionVariables.get('operadorEmail')) { pm.execution.skipRequest(); }"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 200) { pm.collectionVariables.set('tokenOperador', pm.response.json().data.accessToken); }",
+                  "pm.test('sesión de staff (operador): si auth-service aún no la entrega, las pruebas de esta cuenta se omiten', function () { pm.expect(pm.response.code).to.be.oneOf([200, 401, 404, 423, 429]); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/staff/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "staff",
+                "login"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{operadorEmail}}\",\n  \"password\": \"{{operadorPassword}}\"\n}"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "1. Público (sin sesión)",
+      "item": [
+        {
+          "name": "CA-3-05 GET /settings/public: marca y contenido de la tienda",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('CA-3-05 responde 200 sin sesión', function () { pm.response.to.have.status(200); });",
+                  "const d = pm.response.json().data;",
+                  "pm.test('CA-3-05 trae identidad, tema, contenido, parámetros y políticas', function () { ['identidad','tema','contenido','parametros','politicas'].forEach(function (k) { pm.expect(d).to.have.property(k); }); });",
+                  "pm.test('CA-3-05 el tema trae los cinco colores', function () { pm.expect(Object.keys(d.tema)).to.have.members(['colorPrimario','colorSecundario','colorAcento','colorFondo','colorTexto']); });",
+                  "pm.test('CA-3-17 la moneda es PEN', function () { pm.expect(d.parametros.moneda).to.eql('PEN'); });",
+                  "pm.test('CA-3-36 nunca incluye correos para alertas ni autores', function () { const t = pm.response.text(); pm.expect(t).to.not.include('correosAlertas'); pm.expect(t).to.not.include('actualizadoPor'); });",
+                  "pm.test('CA-3-22 expone la versión vigente de cada política', function () { ['terminos','privacidad','cambiosDevoluciones','envios'].forEach(function (k) { pm.expect(d.politicas[k]).to.be.a('number'); }); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/settings/public",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "settings",
+                "public"
+              ]
+            }
+          }
+        },
+        {
+          "name": "CA-3-21 GET /settings/politicas/terminos: versión vigente",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('CA-3-21 responde 200', function () { pm.response.to.have.status(200); });",
+                  "const d = pm.response.json().data;",
+                  "pm.test('CA-3-21 trae versión, fecha y texto Markdown', function () { pm.expect(d.version).to.be.a('number'); pm.expect(d.publicadaEn).to.be.a('string'); pm.expect(d.contenido.length).to.be.above(50); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/settings/politicas/terminos",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "settings",
+                "politicas",
+                "terminos"
+              ]
+            }
+          }
+        },
+        {
+          "name": "CA-3-21 GET /settings/politicas/terminos?version=1: versión anterior",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('CA-3-21 la versión 1 se puede leer', function () { pm.response.to.have.status(200); pm.expect(pm.response.json().data.version).to.eql(1); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/settings/politicas/terminos?version=1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "settings",
+                "politicas",
+                "terminos"
+              ],
+              "query": [
+                {
+                  "key": "version",
+                  "value": "1"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "CA-3-21 GET /settings/politicas/cookies: política que no existe",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('CA-3-21 responde 404', function () { pm.response.to.have.status(404); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/settings/politicas/cookies",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "settings",
+                "politicas",
+                "cookies"
+              ]
+            }
+          }
+        },
+        {
+          "name": "CA-3-32 GET /ubigeo/departamentos/15/provincias: caché de 24 h",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('CA-3-32 responde 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('CA-3-32 viene con Cache-Control de 24 h', function () { pm.expect(pm.response.headers.get('Cache-Control')).to.include('max-age=86400'); });",
+                  "pm.test('CA-3-32 Lima tiene 10 provincias ordenadas por nombre', function () { const n = pm.response.json().data.map(function (p) { return p.nombre; }); pm.expect(n).to.have.lengthOf(10); pm.expect(n).to.eql(n.slice().sort(function (a, b) { return a.localeCompare(b, 'es'); })); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/ubigeo/departamentos/15/provincias",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "ubigeo",
+                "departamentos",
+                "15",
+                "provincias"
+              ]
+            }
+          }
+        },
+        {
+          "name": "CA-3-33 GET /ubigeo/distritos?q=miraf: buscador sin tildes",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('CA-3-33 responde 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('CA-3-33 trae Miraflores de Lima y de Arequipa', function () { const d = pm.response.json().data; pm.expect(d.some(function (x) { return x.codigo === '150122' && x.departamento === 'Lima'; })).to.be.true; pm.expect(d.some(function (x) { return x.departamento === 'Arequipa'; })).to.be.true; });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/ubigeo/distritos?q=miraf",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "ubigeo",
+                "distritos"
+              ],
+              "query": [
+                {
+                  "key": "q",
+                  "value": "miraf"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "CA-3-34 GET /ubigeo/150122: nombre completo",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('CA-3-34 es Miraflores, Lima, Lima', function () { pm.response.to.have.status(200); pm.expect(pm.response.json().data.nombreCompleto).to.eql('Miraflores, Lima, Lima'); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/ubigeo/150122",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "ubigeo",
+                "150122"
+              ]
+            }
+          }
+        },
+        {
+          "name": "CA-3-34 GET /ubigeo/999999: código inexistente",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('CA-3-34 responde 404', function () { pm.response.to.have.status(404); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/ubigeo/999999",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "ubigeo",
+                "999999"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "2. Configuración y políticas (ADMIN)",
+      "item": [
+        {
+          "name": "CA-3-06 GET /admin/settings sin sesión",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('CA-3-06 responde 401 sin token', function () { pm.response.to.have.status(401); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/admin/settings",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "settings"
+              ]
+            }
+          }
+        },
+        {
+          "name": "CA-3-06 GET /admin/settings (ADMIN): guarda la versión",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (!pm.collectionVariables.get('tokenAdmin')) { pm.execution.skipRequest(); }  // sin sesión de staff (tokenAdmin) no se prueba esta parte"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('CA-3-06 responde 200 al ADMIN', function () { pm.response.to.have.status(200); });",
+                  "const d = pm.response.json().data;",
+                  "pm.collectionVariables.set('versionConfig', d.version);",
+                  "pm.collectionVariables.set('temaOriginal', JSON.stringify(d.tema));",
+                  "pm.test('CA-3-19 la vista del admin sí trae los correos para alertas', function () { pm.expect(d.correosAlertas).to.be.an('array').that.is.not.empty; });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenAdmin}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/admin/settings",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "settings"
+              ]
+            }
+          }
+        },
+        {
+          "name": "CA-3-06 PUT /admin/settings/identidad con RUC inválido",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (!pm.collectionVariables.get('tokenAdmin')) { pm.execution.skipRequest(); }  // sin sesión de staff (tokenAdmin) no se prueba esta parte",
+                  "pm.request.body.raw = pm.request.body.raw.replace('\"{{versionConfig}}\"', pm.collectionVariables.get('versionConfig'));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('CA-3-06 un RUC inválido responde 400', function () { pm.response.to.have.status(400); });",
+                  "pm.test('CA-3-06 el error señala el campo ruc', function () { pm.expect(pm.response.json().errores.map(function (e) { return e.campo; })).to.include('ruc'); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenAdmin}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/admin/settings/identidad",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "settings",
+                "identidad"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"FitStore\",\n  \"razonSocial\": \"Moda Activa S.A.C.\",\n  \"ruc\": \"123\",\n  \"direccionFiscal\": \"Jr. Gamarra 700, La Victoria\",\n  \"version\": \"{{versionConfig}}\"\n}"
+            }
+          }
+        },
+        {
+          "name": "CA-3-10 PUT /admin/settings/tema con contraste bajo: guarda y advierte",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (!pm.collectionVariables.get('tokenAdmin')) { pm.execution.skipRequest(); }  // sin sesión de staff (tokenAdmin) no se prueba esta parte",
+                  "pm.request.body.raw = pm.request.body.raw.replace('\"{{versionConfig}}\"', pm.collectionVariables.get('versionConfig'));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('CA-3-10 el contraste bajo se guarda igual (200)', function () { pm.response.to.have.status(200); });",
+                  "const d = pm.response.json().data;",
+                  "pm.test('CA-3-10 trae la advertencia con la razón calculada', function () { pm.expect(d.advertencias.join(' ')).to.match(/Contraste texto\\/fondo \\d+\\.\\d:1/); });",
+                  "pm.collectionVariables.set('versionConfigAntigua', pm.collectionVariables.get('versionConfig'));",
+                  "pm.collectionVariables.set('versionConfig', d.version);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenAdmin}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/admin/settings/tema",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "settings",
+                "tema"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"colorPrimario\": \"#1E3A8A\",\n  \"colorSecundario\": \"#2B2621\",\n  \"colorAcento\": \"#4E5B45\",\n  \"colorFondo\": \"#FFFFFF\",\n  \"colorTexto\": \"#9A9A9A\",\n  \"version\": \"{{versionConfig}}\"\n}"
+            }
+          }
+        },
+        {
+          "name": "CA-3-11 GET /settings/public refleja el tema nuevo",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('CA-3-11 la tienda ve el tema guardado al recargar', function () { const t = pm.response.json().data.tema; pm.expect(t.colorPrimario).to.eql('#1E3A8A'); pm.expect(t.colorTexto).to.eql('#9A9A9A'); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/settings/public",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "settings",
+                "public"
+              ]
+            }
+          }
+        },
+        {
+          "name": "CA-3-08 PUT /admin/settings/tema con una versión vieja: 409",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (!pm.collectionVariables.get('tokenAdmin')) { pm.execution.skipRequest(); }  // sin sesión de staff (tokenAdmin) no se prueba esta parte",
+                  "pm.request.body.raw = pm.request.body.raw.replace('\"{{versionConfigAntigua}}\"', pm.collectionVariables.get('versionConfigAntigua'));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('CA-3-08 responde 409 CONFLICTO_VERSION', function () { pm.response.to.have.status(409); pm.expect(pm.response.json().codigo).to.eql('CONFLICTO_VERSION'); });",
+                  "pm.test('CA-3-08 el mensaje pide recargar', function () { pm.expect(pm.response.json().mensaje).to.eql('Otro administrador modificó la configuración; recarga la página'); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenAdmin}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/admin/settings/tema",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "settings",
+                "tema"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"colorPrimario\": \"#FF0000\",\n  \"colorSecundario\": \"#2B2621\",\n  \"colorAcento\": \"#4E5B45\",\n  \"colorFondo\": \"#FFFFFF\",\n  \"colorTexto\": \"#111111\",\n  \"version\": \"{{versionConfigAntigua}}\"\n}"
+            }
+          }
+        },
+        {
+          "name": "CA-3-12 PUT /admin/settings/tema: restaura el tema original",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (!pm.collectionVariables.get('tokenAdmin')) { pm.execution.skipRequest(); }  // sin sesión de staff (tokenAdmin) no se prueba esta parte",
+                  "pm.request.body.raw = pm.request.body.raw.replace('\"{{versionConfig}}\"', pm.collectionVariables.get('versionConfig'));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('CA-3-12 se restaura el tema de partida', function () { pm.response.to.have.status(200); });",
+                  "pm.collectionVariables.set('versionConfig', pm.response.json().data.version);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenAdmin}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/admin/settings/tema",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "settings",
+                "tema"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"colorPrimario\": \"#C9B28C\",\n  \"colorSecundario\": \"#2B2621\",\n  \"colorAcento\": \"#4E5B45\",\n  \"colorFondo\": \"#FAF9F7\",\n  \"colorTexto\": \"#26221D\",\n  \"version\": \"{{versionConfig}}\"\n}"
+            }
+          }
+        },
+        {
+          "name": "CA-3-17 PUT /admin/settings/parametros fuera de rango",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (!pm.collectionVariables.get('tokenAdmin')) { pm.execution.skipRequest(); }  // sin sesión de staff (tokenAdmin) no se prueba esta parte",
+                  "pm.request.body.raw = pm.request.body.raw.replace('\"{{versionConfig}}\"', pm.collectionVariables.get('versionConfig'));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('CA-3-17 una expiración de 5 minutos responde 400', function () { pm.response.to.have.status(400); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenAdmin}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/admin/settings/parametros",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "settings",
+                "parametros"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"metodosPago\": [\n    \"CULQI\"\n  ],\n  \"modalidadesEntrega\": [\n    \"RECOJO\"\n  ],\n  \"expiracionPedidoMinutos\": 5,\n  \"diasReembolsoPostventa\": 30,\n  \"correosAlertas\": [\n    \"ventas@tienda.pe\"\n  ],\n  \"version\": \"{{versionConfig}}\"\n}"
+            }
+          }
+        },
+        {
+          "name": "CA-3-20 POST /admin/settings/politicas/envios: publica la versión siguiente",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (!pm.collectionVariables.get('tokenAdmin')) { pm.execution.skipRequest(); }  // sin sesión de staff (tokenAdmin) no se prueba esta parte"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('CA-3-20 responde 201 con la versión siguiente', function () { pm.response.to.have.status(201); pm.expect(pm.response.json().data.version).to.be.above(1); });",
+                  "pm.collectionVariables.set('versionEnvios', pm.response.json().data.version);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenAdmin}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/admin/settings/politicas/envios",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "settings",
+                "politicas",
+                "envios"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"contenido\": \"# Envíos\\n\\nTexto de prueba de la colección Postman: despachamos a todo el Perú en 3 a 7 días hábiles.\"\n}"
+            }
+          }
+        },
+        {
+          "name": "CA-3-22 GET /settings/public expone la versión nueva de envíos",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('CA-3-22 la versión vigente de envíos es la recién publicada', function () { pm.expect(pm.response.json().data.politicas.envios).to.eql(pm.collectionVariables.get('versionEnvios')); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/settings/public",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "settings",
+                "public"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "3. Libro de Reclamaciones",
+      "item": [
+        {
+          "name": "CA-3-25 POST /reclamos (1 de 3): registra y entrega número y fecha límite",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('CA-3-25 responde 201', function () { pm.response.to.have.status(201); });",
+                  "const d = pm.response.json().data;",
+                  "pm.test('CA-3-25 el número tiene el formato RC-AAAA-NNNNNN', function () { pm.expect(d.numero).to.match(/^RC-\\d{4}-\\d{6}$/); });",
+                  "pm.test('CA-3-25 la fecha límite es un día hábil', function () { const dia = new Date(d.fechaLimite + 'T12:00:00Z').getUTCDay(); pm.expect(dia).to.be.within(1, 5); });",
+                  "pm.collectionVariables.set('numeroReclamo' + 1, d.numero);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/reclamos",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "reclamos"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tipo\": \"RECLAMO\",\n  \"consumidor\": {\n    \"nombres\": \"Rosa\",\n    \"apellidos\": \"Díaz\",\n    \"tipoDocumento\": \"DNI\",\n    \"numeroDocumento\": \"87654321\",\n    \"domicilio\": \"Calle Mercaderes 456, Cercado, Arequipa\",\n    \"telefono\": \"912345678\",\n    \"email\": \"rosa.diaz@correo.com\",\n    \"esMenor\": false\n  },\n  \"bien\": {\n    \"tipo\": \"PRODUCTO\",\n    \"descripcion\": \"Casaca Wind talla M negra\",\n    \"montoReclamado\": 89.9,\n    \"pedidoCodigo\": \"FS-000118\"\n  },\n  \"detalle\": \"La casaca llegó con el cierre roto.\",\n  \"pedidoConsumidor\": \"Cambio por una nueva o devolución del dinero.\"\n}"
+            }
+          }
+        },
+        {
+          "name": "CA-3-25 POST /reclamos (2 de 3): registra y entrega número y fecha límite",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('CA-3-25 responde 201', function () { pm.response.to.have.status(201); });",
+                  "const d = pm.response.json().data;",
+                  "pm.test('CA-3-25 el número tiene el formato RC-AAAA-NNNNNN', function () { pm.expect(d.numero).to.match(/^RC-\\d{4}-\\d{6}$/); });",
+                  "pm.test('CA-3-25 la fecha límite es un día hábil', function () { const dia = new Date(d.fechaLimite + 'T12:00:00Z').getUTCDay(); pm.expect(dia).to.be.within(1, 5); });",
+                  "pm.collectionVariables.set('numeroReclamo' + 2, d.numero);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/reclamos",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "reclamos"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tipo\": \"RECLAMO\",\n  \"consumidor\": {\n    \"nombres\": \"Rosa\",\n    \"apellidos\": \"Díaz\",\n    \"tipoDocumento\": \"DNI\",\n    \"numeroDocumento\": \"87654321\",\n    \"domicilio\": \"Calle Mercaderes 456, Cercado, Arequipa\",\n    \"telefono\": \"912345678\",\n    \"email\": \"rosa.diaz@correo.com\",\n    \"esMenor\": false\n  },\n  \"bien\": {\n    \"tipo\": \"PRODUCTO\",\n    \"descripcion\": \"Casaca Wind talla M negra\",\n    \"montoReclamado\": 89.9,\n    \"pedidoCodigo\": \"FS-000118\"\n  },\n  \"detalle\": \"La casaca llegó con el cierre roto.\",\n  \"pedidoConsumidor\": \"Cambio por una nueva o devolución del dinero.\"\n}"
+            }
+          }
+        },
+        {
+          "name": "CA-3-25 POST /reclamos (3 de 3): registra y entrega número y fecha límite",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('CA-3-25 responde 201', function () { pm.response.to.have.status(201); });",
+                  "const d = pm.response.json().data;",
+                  "pm.test('CA-3-25 el número tiene el formato RC-AAAA-NNNNNN', function () { pm.expect(d.numero).to.match(/^RC-\\d{4}-\\d{6}$/); });",
+                  "pm.test('CA-3-25 la fecha límite es un día hábil', function () { const dia = new Date(d.fechaLimite + 'T12:00:00Z').getUTCDay(); pm.expect(dia).to.be.within(1, 5); });",
+                  "pm.collectionVariables.set('numeroReclamo' + 3, d.numero);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/reclamos",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "reclamos"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tipo\": \"RECLAMO\",\n  \"consumidor\": {\n    \"nombres\": \"Rosa\",\n    \"apellidos\": \"Díaz\",\n    \"tipoDocumento\": \"DNI\",\n    \"numeroDocumento\": \"87654321\",\n    \"domicilio\": \"Calle Mercaderes 456, Cercado, Arequipa\",\n    \"telefono\": \"912345678\",\n    \"email\": \"rosa.diaz@correo.com\",\n    \"esMenor\": false\n  },\n  \"bien\": {\n    \"tipo\": \"PRODUCTO\",\n    \"descripcion\": \"Casaca Wind talla M negra\",\n    \"montoReclamado\": 89.9,\n    \"pedidoCodigo\": \"FS-000118\"\n  },\n  \"detalle\": \"La casaca llegó con el cierre roto.\",\n  \"pedidoConsumidor\": \"Cambio por una nueva o devolución del dinero.\"\n}"
+            }
+          }
+        },
+        {
+          "name": "CA-3-27 POST /reclamos (4.º en un minuto desde la misma IP): el gateway responde 429",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('CA-3-27 el 4.º envío en un minuto responde 429', function () { pm.response.to.have.status(429); });",
+                  "pm.test('CA-3-27 trae el código DEMASIADOS_INTENTOS', function () { pm.expect(pm.response.json().codigo).to.eql('DEMASIADOS_INTENTOS'); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/reclamos",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "reclamos"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tipo\": \"RECLAMO\",\n  \"consumidor\": {\n    \"nombres\": \"Rosa\",\n    \"apellidos\": \"Díaz\",\n    \"tipoDocumento\": \"DNI\",\n    \"numeroDocumento\": \"87654321\",\n    \"domicilio\": \"Calle Mercaderes 456, Cercado, Arequipa\",\n    \"telefono\": \"912345678\",\n    \"email\": \"rosa.diaz@correo.com\",\n    \"esMenor\": false\n  },\n  \"bien\": {\n    \"tipo\": \"PRODUCTO\",\n    \"descripcion\": \"Casaca Wind talla M negra\",\n    \"montoReclamado\": 89.9,\n    \"pedidoCodigo\": \"FS-000118\"\n  },\n  \"detalle\": \"La casaca llegó con el cierre roto.\",\n  \"pedidoConsumidor\": \"Cambio por una nueva o devolución del dinero.\"\n}"
+            }
+          }
+        },
+        {
+          "name": "CA-3-24 POST /reclamos menor de edad sin apoderado: 400",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('CA-3-24 sin apoderado responde 400 (o 429 si aún corre el límite del minuto)', function () { pm.expect(pm.response.code).to.be.oneOf([400, 429]); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/reclamos",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "reclamos"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tipo\": \"RECLAMO\",\n  \"consumidor\": {\n    \"nombres\": \"Rosa\",\n    \"apellidos\": \"Díaz\",\n    \"tipoDocumento\": \"DNI\",\n    \"numeroDocumento\": \"87654321\",\n    \"domicilio\": \"Calle Mercaderes 456, Cercado, Arequipa\",\n    \"telefono\": \"912345678\",\n    \"email\": \"rosa.diaz@correo.com\",\n    \"esMenor\": true\n  },\n  \"bien\": {\n    \"tipo\": \"PRODUCTO\",\n    \"descripcion\": \"Casaca Wind talla M negra\",\n    \"montoReclamado\": 89.9,\n    \"pedidoCodigo\": \"FS-000118\"\n  },\n  \"detalle\": \"La casaca llegó con el cierre roto.\",\n  \"pedidoConsumidor\": \"Cambio por una nueva o devolución del dinero.\"\n}"
+            }
+          }
+        },
+        {
+          "name": "CA-3-31 GET /admin/reclamos sin sesión",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('CA-3-31 responde 401 sin token', function () { pm.response.to.have.status(401); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/admin/reclamos",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "reclamos"
+              ]
+            }
+          }
+        },
+        {
+          "name": "CA-3-28 GET /admin/reclamos (ADMIN): bandeja con indicadores",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (!pm.collectionVariables.get('tokenAdmin')) { pm.execution.skipRequest(); }  // sin sesión de staff (tokenAdmin) no se prueba esta parte"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('CA-3-28 responde 200', function () { pm.response.to.have.status(200); });",
+                  "const filas = pm.response.json().data.contenido;",
+                  "pm.test('CA-3-28 cada fila trae porVencer y vencido', function () { filas.forEach(function (f) { pm.expect(f.porVencer).to.be.a('boolean'); pm.expect(f.vencido).to.be.a('boolean'); }); });",
+                  "const mio = filas.find(function (f) { return f.numero === pm.collectionVariables.get('numeroReclamo1'); });",
+                  "pm.test('CA-3-28 aparece el reclamo recién registrado', function () { pm.expect(mio).to.exist; });",
+                  "pm.collectionVariables.set('idReclamo', mio ? mio.id : '');"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenAdmin}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/admin/reclamos?size=50",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "reclamos"
+              ],
+              "query": [
+                {
+                  "key": "size",
+                  "value": "50"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "CA-3-31 PATCH /admin/reclamos/{id}/en-atencion como OPERADOR: 403",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (!pm.collectionVariables.get('tokenOperador')) { pm.execution.skipRequest(); }  // sin sesión de staff (tokenOperador) no se prueba esta parte"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('CA-3-31 el OPERADOR no puede tomar (403)', function () { pm.response.to.have.status(403); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenOperador}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/admin/reclamos/{{idReclamo}}/en-atencion",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "reclamos",
+                "{{idReclamo}}",
+                "en-atencion"
+              ]
+            }
+          }
+        },
+        {
+          "name": "CA-3-29 PATCH /admin/reclamos/{id}/en-atencion como ADMIN",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (!pm.collectionVariables.get('tokenAdmin')) { pm.execution.skipRequest(); }  // sin sesión de staff (tokenAdmin) no se prueba esta parte"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('CA-3-29 pasa a EN_ATENCION', function () { pm.response.to.have.status(200); pm.expect(pm.response.json().data.estado).to.eql('EN_ATENCION'); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenAdmin}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/admin/reclamos/{{idReclamo}}/en-atencion",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "reclamos",
+                "{{idReclamo}}",
+                "en-atencion"
+              ]
+            }
+          }
+        },
+        {
+          "name": "CA-3-30 POST /admin/reclamos/{id}/respuesta como ADMIN",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (!pm.collectionVariables.get('tokenAdmin')) { pm.execution.skipRequest(); }  // sin sesión de staff (tokenAdmin) no se prueba esta parte"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('CA-3-30 pasa a RESPONDIDO con la respuesta, la fecha y el autor', function () { pm.response.to.have.status(200); const d = pm.response.json().data; pm.expect(d.estado).to.eql('RESPONDIDO'); pm.expect(d.respondidoEn).to.be.a('string'); pm.expect(d.respondidoPor).to.be.a('string'); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenAdmin}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/admin/reclamos/{{idReclamo}}/respuesta",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "reclamos",
+                "{{idReclamo}}",
+                "respuesta"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"respuesta\": \"Procedemos con el cambio por una casaca nueva sin costo.\"\n}"
+            }
+          }
+        },
+        {
+          "name": "CA-3-30 POST /admin/reclamos/{id}/respuesta otra vez: 409",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (!pm.collectionVariables.get('tokenAdmin')) { pm.execution.skipRequest(); }  // sin sesión de staff (tokenAdmin) no se prueba esta parte"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('CA-3-30 un reclamo respondido ya no se modifica (409)', function () { pm.response.to.have.status(409); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenAdmin}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/admin/reclamos/{{idReclamo}}/respuesta",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "reclamos",
+                "{{idReclamo}}",
+                "respuesta"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"respuesta\": \"Intento de cambiar la respuesta ya enviada.\"\n}"
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

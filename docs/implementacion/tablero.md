@@ -36,6 +36,14 @@
 | SPEC-2.2 Catálogo: frontend | Sonnet | `spec/2-catalogo` | ⏳ | — | — | Tras 2.1, en la misma rama |
 | SPEC-3 Tienda y reclamos | Sonnet | `spec/3-tienda` | 📝 brief listo | — | — | [Brief](briefs/SPEC-3.md) |
 
+## Ola 2b — SPEC-4, 5 y 6 (recortadas)
+
+| Paso | Agente | Rama | Estado | Ronda | PR | Bloqueos / notas |
+|---|---|---|---|---|---|---|
+| SPEC-4 Pedidos | Sonnet | `spec/4-pedidos` | 📝 brief listo | — | — | [Brief](briefs/SPEC-4.md) |
+| SPEC-5 Pagos | Sonnet | `spec/5-pagos` | 📝 brief listo | — | — | [Brief](briefs/SPEC-5.md); Mercado Pago + simulado |
+| SPEC-6 Envíos | Sonnet | `spec/6-envios` | 📝 brief listo | — | — | [Brief](briefs/SPEC-6.md); entra al terminar 2.2 |
+
 ## Próximas olas
 
 | Ola | Specs | Estado |

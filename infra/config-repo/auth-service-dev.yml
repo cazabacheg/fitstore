@@ -10,3 +10,6 @@ fitstore:
   auth:
     cookie:
       secure: false
+    # Sin archivos PEM montados se genera un par RSA al arrancar (los tokens no sobreviven al reinicio)
+    claves:
+      generar-si-faltan: true

@@ -24,4 +24,24 @@ public class PostgresPrueba implements ApplicationContextInitializer<Configurabl
                 "spring.datasource.username=" + POSTGRES.getUsername(),
                 "spring.datasource.password=" + POSTGRES.getPassword()).applyTo(contexto);
     }
+
+    static String host() {
+        return POSTGRES.getHost();
+    }
+
+    static int puerto() {
+        return POSTGRES.getMappedPort(5432);
+    }
+
+    static String usuario() {
+        return POSTGRES.getUsername();
+    }
+
+    static String clave() {
+        return POSTGRES.getPassword();
+    }
+
+    static String urlAdministracion() {
+        return POSTGRES.getJdbcUrl();
+    }
 }
