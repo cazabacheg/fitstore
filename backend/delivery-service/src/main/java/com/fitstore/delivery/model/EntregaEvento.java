@@ -48,6 +48,14 @@ public class EntregaEvento {
     @Column(name = "actor_id")
     private UUID actorId;
 
+    /** Nombre del staff, tomado de su sesión; vacío cuando el actor es el sistema. */
+    @Column(name = "actor_nombre", length = 120)
+    private String actorNombre;
+
+    /** Número de intento de entrega en el que ocurrió el paso (0 antes de la primera asignación). */
+    @Column(nullable = false)
+    private int intento;
+
     @Column(name = "creado_en", nullable = false)
     private Instant creadoEn;
 }

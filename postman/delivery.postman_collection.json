@@ -1,0 +1,2338 @@
+{
+  "info": {
+    "name": "FitStore - delivery (SPEC-6)",
+    "description": "Envíos a través del gateway: cotizar (distrito propio, provincia, departamento, sin cobertura), tarifas, agencias, repartidores, flujo local con un intento fallido y flujo por agencia. Requiere la plataforma levantada con el perfil dev (datos de demostración de delivery: entregas FS-000103 y FS-000104, repartidor 101) y las credenciales del ADMIN en adminEmail y adminPassword. Las entregas de demostración avanzan al correrla: para repetirla, reinicia delivery con la base de demostración limpia. La devolución a la tienda y las entregas del día son extensión de alcance y no se prueban aquí. Cada petición lleva en el nombre el id del criterio que verifica.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Cotizar y opciones (HU-6-01)",
+      "item": [
+        {
+          "name": "CA-6-02 Cotizar local en La Victoria (tarifa del distrito)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/envios/cotizar",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "envios",
+                "cotizar"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"modalidad\": \"DELIVERY_LOCAL\", \"ubigeo\": \"150115\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('CA-6-02 responde 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('CA-6-02 usa la tarifa de nivel DISTRITO (150115)', function () { const d = pm.response.json().data; pm.expect(d.nivelTarifa).to.eql('DISTRITO'); pm.expect(d.ubigeoTarifa).to.eql('150115'); pm.expect(d.costo).to.eql(7); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "CA-6-02 Cotizar local en Miraflores (sube a la provincia 1501)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/envios/cotizar",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "envios",
+                "cotizar"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"modalidad\": \"DELIVERY_LOCAL\", \"ubigeo\": \"150122\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('CA-6-02 responde 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('CA-6-02 usa la tarifa de nivel PROVINCIA (1501)', function () { const d = pm.response.json().data; pm.expect(d.nivelTarifa).to.eql('PROVINCIA'); pm.expect(d.ubigeoTarifa).to.eql('1501'); pm.expect(d.costo).to.eql(10); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "CA-6-01 Cotizar agencia a Arequipa (sube al departamento 04)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/envios/cotizar",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "envios",
+                "cotizar"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"modalidad\": \"AGENCIA\", \"ubigeo\": \"040101\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('CA-6-01 responde 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('CA-6-01 usa la tarifa de nivel DEPARTAMENTO (04)', function () { const d = pm.response.json().data; pm.expect(d.nivelTarifa).to.eql('DEPARTAMENTO'); pm.expect(d.ubigeoTarifa).to.eql('04'); pm.expect(d.costo).to.eql(18); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "CA-6-04 Agencia a Miraflores: sin cobertura (422)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/envios/cotizar",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "envios",
+                "cotizar"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"modalidad\": \"AGENCIA\", \"ubigeo\": \"150122\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('CA-6-04 responde 422', function () { pm.response.to.have.status(422); });",
+                  "pm.test('CA-6-04 dice SIN_COBERTURA', function () { pm.expect(pm.response.json().codigo).to.eql('SIN_COBERTURA'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "CA-6-03 Cotizar sin distrito (400)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/envios/cotizar",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "envios",
+                "cotizar"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"modalidad\": \"AGENCIA\", \"ubigeo\": \"04\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('CA-6-03 responde 400', function () { pm.response.to.have.status(400); });",
+                  "pm.test('CA-6-03 pide elegir el distrito', function () { pm.expect(pm.response.json().mensaje).to.eql('Elige el distrito de destino'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "CA-6-05 Local fuera de Lima y Callao (400)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/envios/cotizar",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "envios",
+                "cotizar"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"modalidad\": \"DELIVERY_LOCAL\", \"ubigeo\": \"040101\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('CA-6-05 responde 400', function () { pm.response.to.have.status(400); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "CA-6-06 Opciones de Miraflores",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/envios/opciones?ubigeo=150122",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "envios",
+                "opciones"
+              ],
+              "query": [
+                {
+                  "key": "ubigeo",
+                  "value": "150122"
+                }
+              ]
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('CA-6-06 responde 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('CA-6-06 ofrece delivery local con costo y plazo', function () { const d = pm.response.json().data; pm.expect(d.length).to.eql(1); pm.expect(d[0].modalidad).to.eql('DELIVERY_LOCAL'); pm.expect(d[0].plazoDiasMax).to.be.a('number'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "CA-6-06 Agencias activas del checkout",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/agencias",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "agencias"
+              ]
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('CA-6-06 responde 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('CA-6-06 trae las agencias en su orden', function () { const d = pm.response.json().data; pm.expect(d.length).to.be.at.least(1); pm.expect(d.every(a => a.activa)).to.eql(true); });"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Tarifas (HU-6-02, ADMIN)",
+      "item": [
+        {
+          "name": "Ingreso del ADMIN",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/staff/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "staff",
+                "login"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"email\": \"{{adminEmail}}\", \"password\": \"{{adminPassword}}\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('CA-6-12 responde 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('CA-6-12 guarda el token del ADMIN', function () { pm.collectionVariables.set('adminToken', pm.response.json().data.accessToken); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "CA-6-07 Crear tarifa de Cusco (departamento)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/admin/tarifas",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "tarifas"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"modalidad\": \"AGENCIA\", \"ubigeo\": \"0801\", \"costo\": 21.5, \"plazoDiasMin\": 2, \"plazoDiasMax\": 4}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// Elimina la tarifa de una corrida anterior, si quedó",
+                  "pm.sendRequest({url: pm.variables.get('baseUrl') + '/api/v1/admin/tarifas?modalidad=AGENCIA&nivel=PROVINCIA', method: 'GET', header: {Authorization: 'Bearer ' + pm.collectionVariables.get('adminToken')}}, function (e, r) { if (e) { return; } (r.json().data || []).filter(x => x.ubigeo === '0801').forEach(x => pm.sendRequest({url: pm.variables.get('baseUrl') + '/api/v1/admin/tarifas/' + x.id, method: 'DELETE', header: {Authorization: 'Bearer ' + pm.collectionVariables.get('adminToken')}})); });"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('CA-6-07 responde 201', function () { pm.response.to.have.status(201); });",
+                  "pm.test('CA-6-07 guarda el nivel DEPARTAMENTO', function () { const d = pm.response.json().data; pm.expect(d.nivel).to.eql('DEPARTAMENTO'); pm.collectionVariables.set('tarifaId', d.id); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "CA-6-08 Repetir modalidad y destino (409)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/admin/tarifas",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "tarifas"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"modalidad\": \"AGENCIA\", \"ubigeo\": \"0801\", \"costo\": 20, \"plazoDiasMin\": 2, \"plazoDiasMax\": 4}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('CA-6-08 responde 409', function () { pm.response.to.have.status(409); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "CA-6-09 Costo negativo (400 en el campo)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/admin/tarifas",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "tarifas"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"modalidad\": \"AGENCIA\", \"ubigeo\": \"0802\", \"costo\": -1, \"plazoDiasMin\": 2, \"plazoDiasMax\": 4}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('CA-6-09 responde 400', function () { pm.response.to.have.status(400); });",
+                  "pm.test('CA-6-09 señala el costo', function () { pm.expect(pm.response.json().errores[0].campo).to.eql('costo'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "CA-6-11 Probar cotización con la tarifa nueva",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/envios/cotizar",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "envios",
+                "cotizar"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"modalidad\": \"AGENCIA\", \"ubigeo\": \"080101\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('CA-6-11 responde 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('CA-6-11 aplica la tarifa de la provincia', function () { const d = pm.response.json().data; pm.expect(d.nivelTarifa).to.eql('PROVINCIA'); pm.expect(d.costo).to.eql(21.5); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "CA-6-10 Desactivar la tarifa",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/admin/tarifas/{{tarifaId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "tarifas",
+                "{{tarifaId}}"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"modalidad\": \"AGENCIA\", \"ubigeo\": \"0801\", \"costo\": 21.5, \"plazoDiasMin\": 2, \"plazoDiasMax\": 4, \"activa\": false}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('CA-6-10 responde 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('CA-6-10 queda inactiva', function () { pm.expect(pm.response.json().data.activa).to.eql(false); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "CA-6-10 Eliminar la tarifa",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/admin/tarifas/{{tarifaId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "tarifas",
+                "{{tarifaId}}"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('CA-6-10 responde 200', function () { pm.response.to.have.status(200); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Ingreso del OPERADOR",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/staff/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "staff",
+                "login"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"email\": \"{{demoOperadorEmail}}\", \"password\": \"{{demoPassword}}\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('CA-6-12 responde 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('CA-6-12 guarda el token del OPERADOR', function () { pm.collectionVariables.set('operadorToken', pm.response.json().data.accessToken); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "CA-6-12 El OPERADOR no ve las tarifas (403)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/admin/tarifas",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "tarifas"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{operadorToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('CA-6-12 responde 403', function () { pm.response.to.have.status(403); });"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Agencias y repartidores (HU-6-03 y 04)",
+      "item": [
+        {
+          "name": "CA-6-13 Crear agencia con URL de rastreo",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/admin/agencias",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "agencias"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"nombre\": \"Transportes Postman {{$timestamp}}\", \"urlSeguimiento\": \"https://rastreo.ejemplo.pe/postman?codigo={codigo}\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('CA-6-13 responde 201', function () { pm.response.to.have.status(201); });",
+                  "pm.test('CA-6-13 guarda la agencia', function () { pm.collectionVariables.set('agenciaId', pm.response.json().data.id); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "CA-6-13 URL sin {codigo} (400)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/admin/agencias",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "agencias"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"nombre\": \"Sin codigo {{$timestamp}}\", \"urlSeguimiento\": \"https://rastreo.ejemplo.pe/x\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('CA-6-13 responde 400', function () { pm.response.to.have.status(400); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "CA-6-14 Desactivar la agencia",
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/admin/agencias/{{agenciaId}}/desactivar",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "agencias",
+                "{{agenciaId}}",
+                "desactivar"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('CA-6-14 responde 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('CA-6-14 queda inactiva', function () { pm.expect(pm.response.json().data.activa).to.eql(false); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "CA-6-15 Eliminar la agencia sin entregas",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/admin/agencias/{{agenciaId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "agencias",
+                "{{agenciaId}}"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('CA-6-15 responde 200', function () { pm.response.to.have.status(200); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "CA-6-16 Registrar repartidor en moto",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/admin/repartidores",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "repartidores"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"nombres\": \"Repartidor Postman\", \"telefono\": \"987000111\", \"vehiculo\": \"MOTO\", \"placa\": \"PST-001\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{operadorToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('CA-6-16 responde 201', function () { pm.response.to.have.status(201); });",
+                  "pm.test('CA-6-16 guarda el repartidor', function () { pm.collectionVariables.set('repartidorNuevoId', pm.response.json().data.id); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "CA-6-16 Moto sin placa (400)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/admin/repartidores",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "repartidores"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"nombres\": \"Sin Placa\", \"telefono\": \"987000112\", \"vehiculo\": \"MOTO\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{operadorToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('CA-6-16 responde 400', function () { pm.response.to.have.status(400); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "CA-6-17 Desactivar al repartidor",
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/admin/repartidores/{{repartidorNuevoId}}/desactivar",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "repartidores",
+                "{{repartidorNuevoId}}",
+                "desactivar"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{operadorToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('CA-6-17 responde 200', function () { pm.response.to.have.status(200); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "CA-6-18 Eliminar al repartidor sin entregas",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/admin/repartidores/{{repartidorNuevoId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "repartidores",
+                "{{repartidorNuevoId}}"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{operadorToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('CA-6-18 responde 200', function () { pm.response.to.have.status(200); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "CA-6-18 Eliminar al repartidor demo con entregas (409)",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/admin/repartidores/101",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "repartidores",
+                "101"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{operadorToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('CA-6-18 responde 409', function () { pm.response.to.have.status(409); });"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Flujo local con un intento fallido (HU-6-06)",
+      "item": [
+        {
+          "name": "Ingreso del OPERADOR",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/staff/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "staff",
+                "login"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"email\": \"{{demoOperadorEmail}}\", \"password\": \"{{demoPassword}}\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('CA-6-12 responde 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('CA-6-12 guarda el token del OPERADOR', function () { pm.collectionVariables.set('operadorToken', pm.response.json().data.accessToken); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Repartidor activo para asignar",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/admin/repartidores",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "repartidores"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"nombres\": \"Reparto Postman\", \"telefono\": \"987000333\", \"vehiculo\": \"BICICLETA\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{operadorToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const d = new Date(Date.now() - 5 * 3600 * 1000); pm.collectionVariables.set('fechaHoy', d.toISOString().slice(0, 10));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('CA-6-20 responde 201', function () { pm.response.to.have.status(201); });",
+                  "pm.test('CA-6-20 guarda el repartidor', function () { pm.collectionVariables.set('repartidorId', pm.response.json().data.id); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "CA-6-31 Buscar la entrega demo FS-000104 por código",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/admin/entregas?codigo=FS-000104",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "entregas"
+              ],
+              "query": [
+                {
+                  "key": "codigo",
+                  "value": "FS-000104"
+                }
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{operadorToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('CA-6-31 responde 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('CA-6-31 encuentra la entrega y guarda su id y versión', function () { const e = pm.response.json().data.contenido[0]; pm.expect(e).to.be.an('object'); pm.collectionVariables.set('entregaId', e.id); pm.collectionVariables.set('pedidoCodigo', e.codigoPedido); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "CA-6-31 Detalle de la entrega pendiente de asignar",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/admin/entregas/{{entregaId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "entregas",
+                "{{entregaId}}"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{operadorToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('CA-6-31 responde 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('CA-6-31 trae la versión y las acciones permitidas', function () { const d = pm.response.json().data; pm.collectionVariables.set('version', d.version); pm.expect(d.accionesPermitidas).to.be.an('array'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "CA-6-23 En ruta sin asignar (409 con el estado actual)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/admin/entregas/{{entregaId}}/en-ruta",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "entregas",
+                "{{entregaId}}",
+                "en-ruta"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"version\": 0}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{operadorToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('CA-6-23 responde 409', function () { pm.response.to.have.status(409); });",
+                  "pm.test('CA-6-23 informa el estado actual', function () { pm.expect(pm.response.json().detalles.estadoActual).to.eql('PENDIENTE_ASIGNACION'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "CA-6-20 Asignar repartidor y fecha",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/admin/entregas/{{entregaId}}/asignar",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "entregas",
+                "{{entregaId}}",
+                "asignar"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"repartidorId\": {{repartidorId}}, \"fechaProgramada\": \"{{fechaHoy}}\", \"version\": {{version}}}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{operadorToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('CA-6-20 responde 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('CA-6-20 queda en ASIGNADA', function () { const d = pm.response.json().data; pm.expect(d.estado).to.eql('ASIGNADA'); pm.collectionVariables.set('version', d.version); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "CA-6-21 En ruta",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/admin/entregas/{{entregaId}}/en-ruta",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "entregas",
+                "{{entregaId}}",
+                "en-ruta"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"version\": {{version}}}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{operadorToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('CA-6-21 responde 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('CA-6-21 queda en EN_RUTA', function () { const d = pm.response.json().data; pm.expect(d.estado).to.eql('EN_RUTA'); pm.collectionVariables.set('version', d.version); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "CA-6-22 No se pudo entregar (observación)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/admin/entregas/{{entregaId}}/fallida",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "entregas",
+                "{{entregaId}}",
+                "fallida"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"observacion\": \"No había nadie\", \"version\": {{version}}}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{operadorToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('CA-6-22 responde 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('CA-6-22 queda en FALLIDA', function () { const d = pm.response.json().data; pm.expect(d.estado).to.eql('FALLIDA'); pm.collectionVariables.set('version', d.version); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "CA-6-22 Reprogramar: vuelve a ASIGNADA con el intento 2",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/admin/entregas/{{entregaId}}/asignar",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "entregas",
+                "{{entregaId}}",
+                "asignar"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"repartidorId\": {{repartidorId}}, \"fechaProgramada\": \"{{fechaHoy}}\", \"version\": {{version}}}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{operadorToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('CA-6-22 responde 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('CA-6-22 queda en ASIGNADA', function () { const d = pm.response.json().data; pm.expect(d.estado).to.eql('ASIGNADA'); pm.collectionVariables.set('version', d.version); pm.expect(d.intento).to.eql(2); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "CA-6-21 En ruta (segundo intento)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/admin/entregas/{{entregaId}}/en-ruta",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "entregas",
+                "{{entregaId}}",
+                "en-ruta"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"version\": {{version}}}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{operadorToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('CA-6-21 responde 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('CA-6-21 queda en EN_RUTA', function () { const d = pm.response.json().data; pm.expect(d.estado).to.eql('EN_RUTA'); pm.collectionVariables.set('version', d.version); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "CA-6-21 Entregada",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/admin/entregas/{{entregaId}}/entregada",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "entregas",
+                "{{entregaId}}",
+                "entregada"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"version\": {{version}}}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{operadorToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('CA-6-21 responde 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('CA-6-21 queda en ENTREGADA', function () { const d = pm.response.json().data; pm.expect(d.estado).to.eql('ENTREGADA'); pm.collectionVariables.set('version', d.version); pm.expect(d.accionesPermitidas.length).to.eql(0); pm.expect(d.eventos.length).to.be.at.least(6); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "CA-6-24 Avance con la versión vieja (409)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/admin/entregas/{{entregaId}}/en-ruta",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "entregas",
+                "{{entregaId}}",
+                "en-ruta"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"version\": 0}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{operadorToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('CA-6-24 responde 409', function () { pm.response.to.have.status(409); });"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Flujo por agencia (HU-6-07)",
+      "item": [
+        {
+          "name": "CA-6-27 Buscar la entrega demo FS-000103 (enviada por Shalom)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/admin/entregas?codigo=FS-000103",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "entregas"
+              ],
+              "query": [
+                {
+                  "key": "codigo",
+                  "value": "FS-000103"
+                }
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{operadorToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('CA-6-27 responde 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('CA-6-27 encuentra la entrega y guarda su id y versión', function () { const e = pm.response.json().data.contenido[0]; pm.expect(e).to.be.an('object'); pm.collectionVariables.set('entregaId', e.id); pm.collectionVariables.set('pedidoCodigo', e.codigoPedido); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "CA-6-26 La entrega ya trae el código y la URL de rastreo",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/admin/entregas/{{entregaId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "entregas",
+                "{{entregaId}}"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{operadorToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('CA-6-26 responde 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('CA-6-26 muestra el código y la URL armada con la plantilla', function () { const d = pm.response.json().data; pm.collectionVariables.set('version', d.version); pm.expect(d.codigoSeguimiento).to.be.a('string'); pm.expect(d.urlSeguimiento).to.contain(d.codigoSeguimiento); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "CA-6-26 Registrar el envío de nuevo en ENVIADO_AGENCIA (409)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/admin/entregas/{{entregaId}}/enviada-agencia",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "entregas",
+                "{{entregaId}}",
+                "enviada-agencia"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"codigoSeguimiento\": \"SH-000000\", \"version\": 0}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{operadorToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('CA-6-26 responde 409', function () { pm.response.to.have.status(409); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "CA-6-27 Disponible en agencia",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/admin/entregas/{{entregaId}}/disponible-agencia",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "entregas",
+                "{{entregaId}}",
+                "disponible-agencia"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"version\": {{version}}}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{operadorToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('CA-6-27 responde 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('CA-6-27 queda en DISPONIBLE_EN_AGENCIA', function () { const d = pm.response.json().data; pm.expect(d.estado).to.eql('DISPONIBLE_EN_AGENCIA'); pm.collectionVariables.set('version', d.version); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "CA-6-27 Recogido por el cliente",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/admin/entregas/{{entregaId}}/entregada",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "entregas",
+                "{{entregaId}}",
+                "entregada"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"version\": {{version}}}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{operadorToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('CA-6-27 responde 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('CA-6-27 queda en ENTREGADA', function () { const d = pm.response.json().data; pm.expect(d.estado).to.eql('ENTREGADA'); pm.collectionVariables.set('version', d.version); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "CA-6-23 Acción local en una entrega por agencia (409)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/admin/entregas/{{entregaId}}/en-ruta",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "entregas",
+                "{{entregaId}}",
+                "en-ruta"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"version\": {{version}}}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{operadorToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('CA-6-23 responde 409', function () { pm.response.to.have.status(409); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "CA-6-32 Filtrar por estado y modalidad",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/admin/entregas?modalidad=AGENCIA&estado=ENTREGADA",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "entregas"
+              ],
+              "query": [
+                {
+                  "key": "modalidad",
+                  "value": "AGENCIA"
+                },
+                {
+                  "key": "estado",
+                  "value": "ENTREGADA"
+                }
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{operadorToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('CA-6-32 responde 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('CA-6-32 todas cumplen el filtro', function () { const d = pm.response.json().data; pm.expect(d.contenido.every(e => e.modalidad === 'AGENCIA' && e.estado === 'ENTREGADA')).to.eql(true); pm.expect(d.contadores).to.be.an('object'); });"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// adminEmail y adminPassword pueden venir del entorno de Postman; si no, se usan los de la colección",
+          "['adminEmail', 'adminPassword'].forEach(function (k) { const v = pm.environment.get(k); if (v) { pm.collectionVariables.set(k, v); } });"
+        ]
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8080"
+    },
+    {
+      "key": "demoOperadorEmail",
+      "value": "diana.flores@fitstore.demo",
+      "description": "OPERADOR de demostración (datos de auth, perfil dev)"
+    },
+    {
+      "key": "demoPassword",
+      "value": "FitStoreDemo2026",
+      "description": "Contraseña común de DESARROLLO de las cuentas de demostración (no es un secreto)"
+    },
+    {
+      "key": "adminEmail",
+      "value": "",
+      "description": "Correo del ADMIN inicial (FITSTORE_ADMIN_EMAIL)"
+    },
+    {
+      "key": "adminPassword",
+      "value": "",
+      "description": "Contraseña del ADMIN inicial (FITSTORE_ADMIN_PASSWORD)"
+    }
+  ]
+}

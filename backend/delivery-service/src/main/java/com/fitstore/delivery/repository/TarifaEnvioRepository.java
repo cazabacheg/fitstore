@@ -12,6 +12,10 @@ public interface TarifaEnvioRepository extends JpaRepository<TarifaEnvio, Long> 
 
     List<TarifaEnvio> findByModalidad(Modalidad modalidad);
 
+    boolean existsByModalidadAndUbigeo(Modalidad modalidad, String ubigeo);
+
+    boolean existsByModalidadAndUbigeoAndIdNot(Modalidad modalidad, String ubigeo, Long id);
+
     /**
      * Búsqueda jerárquica en una sola sentencia (micro 4.2 y 10.2): la tarifa activa más específica entre el distrito
      * ({@code d6}), su provincia ({@code p4}) y su departamento ({@code d2}); el código más largo gana.
