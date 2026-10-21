@@ -1,11 +1,12 @@
 # SPEC-4 — Pedidos
 
-> Versión: **v10 (aprobado)** — 2026-10-19 · Estados: ✅ decidido · 🟡 propuesto · ❓ abierto
+> Versión: **v11 (aprobado)** — 2026-10-20 · Estados: ✅ decidido · 🟡 propuesto · ❓ abierto
 > **Dueña de:** `backend/order-service` (carrito, checkout, pedidos, saga) · tienda: `features/carrito`, `features/checkout`, `features/mis-pedidos` · backoffice: `features/pedidos`.
 > **Depende de:** 0a, 0b, 1 (sesión y direcciones) · usa los contratos de catalog (cotizar, reservar), auth (cliente y dirección), delivery (opciones y cotización de envío) y settings (parámetros y ubigeo) · **Habilita:** 5 (pago del pedido), 6 (entrega desde `PedidoListoDespacho`), 7 (correos del pedido), 8 (dashboard y E2E).
 > **Contratos:** `contracts/openapi/order-service.yaml`; eventos que publica `PedidoCreado`, `PedidoPagado`, `PedidoCancelado`, `PedidoExpirado`, `PagoNoAplicable`, `PedidoListoDespacho`, `PedidoListoRecojo`, `PedidoRecogido`, `ReembolsoSolicitado`; consume `PagoConfirmado`, `PagoRechazado`, `BoletaEmitida`, `PagoReembolsado`, `EntregaActualizada`.
 
 **Historial:**
+- v11 (2026-10-20): **recorte de alcance** (decisión del autor): HU-4-02 (carrito al iniciar sesión), HU-4-11 (datos de ventas) y HU-4-12 (reembolso postventa) pasan a [extensión de alcance](../implementacion/extension-alcance.md). Siguen especificadas aquí, marcadas, pero no cuentan para el terminado de esta spec.
 - v10 (2026-10-19): etapa de diseño cerrada: diseños de alta fidelidad enlazados (P-4-01, P-4-02, P-4-03, P-4-04, P-4-05, P-4-06).
 - v9 (2026-10-19): ajustes de la etapa de contratos: el bloque de pago de P-4-06 sale del propio pedido (order guarda proveedor y medio desde `PagoConfirmado`).
 - v8 (2026-10-19): revisión de coherencia: "No incluye" deja explícito que exportar pedidos a CSV (RF-BO-03, C) es alcance futuro.
@@ -32,6 +33,7 @@ Al cerrar esta spec, el cliente **arma su carrito** (con o sin sesión), ve sus 
 - Colección Postman `order` y prueba de carga k6 del checkout.
 
 **No incluye (y dónde va):**
+- **Extensión de alcance** (decisión del autor, 2026-10-20) → [`extension-alcance.md`](../implementacion/extension-alcance.md): HU-4-02 (carrito al iniciar sesión), HU-4-11 (datos de ventas) y HU-4-12 (reembolso postventa).
 - Página de pago, cobro, reembolso y boleta → spec 5 (aquí se publica `PedidoCreado`, se consumen sus eventos y se muestra el enlace a la boleta).
 - Crear y avanzar la entrega (repartidor, agencia, intentos) → spec 6 (aquí se publica `PedidoListoDespacho` y se consume `EntregaActualizada`).
 - Correos del pedido → spec 7.
@@ -80,7 +82,7 @@ CA-4-08  Dado un carrito vacío
          Entonces veo "Tu carrito está vacío" con un enlace a la tienda (y el pie al fondo, CA-0b-20b)
 ```
 
-### HU-4-02 — Conservar mi carrito al iniciar sesión
+### HU-4-02 — Conservar mi carrito al iniciar sesión (extensión de alcance)
 
 Como visitante, quiero que lo que agregué sin cuenta se mantenga al iniciar sesión, para no armar el carrito otra vez. · Cubre: RF-CRT-03, 04 · Pantallas: [P-4-01](#p-4-01--carrito)
 
@@ -294,7 +296,7 @@ CA-4-50  Dado un pedido en LISTO_DESPACHO o posterior
          Entonces no puedo cancelarlo (botón oculto, API 409)
 ```
 
-### HU-4-11 — Datos de ventas para el dashboard
+### HU-4-11 — Datos de ventas para el dashboard (extensión de alcance)
 
 Como administrador, quiero ver las ventas y los pedidos por estado, para saber cómo va la tienda. · Cubre: RF-BO-01 · Pantallas: no aplica (la pantalla es de la spec 8)
 
@@ -310,7 +312,7 @@ CA-4-52  Las ventas cuentan los pedidos pagados según la fecha en que pasaron a
 CA-4-53  Un OPERADOR recibe 403 en el resumen; solo ADMIN
 ```
 
-### HU-4-12 — Reembolsar un pedido entregado o devuelto
+### HU-4-12 — Reembolsar un pedido entregado o devuelto (extensión de alcance)
 
 Como administrador, quiero devolver todo o parte de lo pagado por un pedido ya entregado o devuelto a la tienda, para resolver una prenda defectuosa, una talla o modelo equivocado, una clienta no conforme o un pedido que no se pudo entregar. · Cubre: CU-25, RF-ORD-11, RF-PAY-06 · Pantallas: [P-4-06](#p-4-06--detalle-de-pedido-backoffice), [P-4-04](#p-4-04--detalle-de-mi-pedido)
 
@@ -472,7 +474,7 @@ Todo según el micro de order. Decisiones de implementación de esta spec:
 
 ## 9. Definición de terminado
 
-- [ ] CA-4-01 a CA-4-60 cumplidos en CI (el 26 en `stage`).
+- [ ] CA-4-01 a CA-4-60 cumplidos en CI (el 26 en `stage`), salvo los de extensión de alcance.
 - [ ] Postman `order` en verde y k6 con p95 < 2 s.
 - [ ] El OpenAPI de order coincide con lo implementado; los eventos coinciden con el AsyncAPI.
 - [ ] Demostración: carrito anónimo → login → checkout → pedido en PENDIENTE_PAGO → (pago simulado) → el operador lo prepara y despacha → el cliente ve la línea de tiempo → el admin registra un reembolso postventa parcial.
