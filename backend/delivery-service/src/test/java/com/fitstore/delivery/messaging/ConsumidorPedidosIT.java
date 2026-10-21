@@ -81,12 +81,17 @@ class ConsumidorPedidosIT {
         // El mismo evento otra vez, y otro evento distinto para el mismo pedido
         rabbit.convertAndSend("fitstore.eventos", "order.pedido.listo-despacho", sobre(eventoId, pedidoId));
         rabbit.convertAndSend("fitstore.eventos", "order.pedido.listo-despacho", sobre(UUID.randomUUID(), pedidoId));
+        // Un evento de otro tipo que llegara a la cola se ignora
+        Map<String, Object> ajeno = new java.util.HashMap<>(sobre(UUID.randomUUID(), UUID.randomUUID()));
+        ajeno.put("tipo", "PedidoCreado");
+        rabbit.convertAndSend("fitstore.eventos", "order.pedido.listo-despacho", ajeno);
         UUID otroPedido = UUID.randomUUID();
         rabbit.convertAndSend("fitstore.eventos", "order.pedido.listo-despacho", sobre(UUID.randomUUID(), otroPedido));
         // Cuando el pedido que llegó al final ya está, los duplicados anteriores ya se procesaron (misma cola, en orden)
         await().atMost(Duration.ofSeconds(30)).untilAsserted(() -> assertThat(entregasDelPedido(otroPedido)).isEqualTo(1));
 
         assertThat(entregasDelPedido(pedidoId)).isEqualTo(1);
+        assertThat(jdbc.queryForObject("SELECT count(*) FROM entrega", Integer.class)).isEqualTo(2);
         assertThat(jdbc.queryForObject("SELECT estado FROM entrega WHERE pedido_id = ?", String.class, pedidoId))
                 .isEqualTo("PENDIENTE_ASIGNACION");
         assertThat(jdbc.queryForObject("SELECT count(*) FROM outbox_evento WHERE tipo = 'EntregaActualizada'", Integer.class))
