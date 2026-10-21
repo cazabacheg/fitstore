@@ -51,8 +51,9 @@ class EntregaServiceTest extends PruebaApi {
     }
 
     private List<String> eventos() {
+        // jsonb devuelve el texto con espacios después de los dos puntos: se normaliza a JSON compacto
         return jdbc.queryForList("SELECT payload::text FROM outbox_evento WHERE tipo = 'EntregaActualizada' ORDER BY creado_en",
-                String.class);
+                String.class).stream().map(texto -> json.readTree(texto).toString()).toList();
     }
 
     private String ultimoEvento() {

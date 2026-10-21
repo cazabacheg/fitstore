@@ -8,6 +8,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.Map;
 import java.util.UUID;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -45,6 +46,7 @@ class ConsumidorPedidosIT {
     @Autowired JdbcTemplate jdbc;
 
     @BeforeEach
+    @AfterEach
     void limpiar() {
         jdbc.update("DELETE FROM entrega_evento");
         jdbc.update("DELETE FROM entrega");

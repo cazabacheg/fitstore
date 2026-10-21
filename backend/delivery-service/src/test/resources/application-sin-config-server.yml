@@ -49,4 +49,6 @@ fitstore:
     enlaces:
       - order.pedido.listo-despacho
   outbox:
-    habilitado: false
+    # El registrador del outbox está activo; el publicador programado espera una hora (no hay RabbitMQ en las pruebas)
+    habilitado: true
+    intervalo-ms: 3600000
