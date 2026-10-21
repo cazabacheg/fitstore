@@ -24,8 +24,8 @@ import { EtiquetaEstado } from './etiqueta-estado';
   styles: [
     ESTILOS_PANTALLA,
     `
+      /* Va dentro del marco de "Mi cuenta", que ya pone el contenedor y el espacio vertical */
       .pedidos {
-        padding-block: 40px 80px;
         display: grid;
         gap: 24px;
         align-content: start;
@@ -86,9 +86,6 @@ import { EtiquetaEstado } from './etiqueta-estado';
         justify-content: center;
       }
       @media (max-width: 720px) {
-        .pedidos {
-          padding-block: 24px 48px;
-        }
         .fs-tarjeta-pedido {
           grid-template-columns: 48px minmax(0, 1fr) auto;
           gap: 12px;
@@ -100,7 +97,7 @@ import { EtiquetaEstado } from './etiqueta-estado';
     `,
   ],
   template: `
-    <section class="fs-pagina pedidos">
+    <section class="pedidos">
       <div style="display: grid; gap: 4px">
         <h1 class="fs-titulo-pagina">Mis pedidos</h1>
         <span class="fs-suave">Aquí ves el estado de cada compra.</span>
