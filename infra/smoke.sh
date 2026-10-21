@@ -134,11 +134,11 @@ for s in "${SERVICIOS[@]}"; do
   read -r nombre puerto base prefijo <<<"$s"
   usuario_var="${prefijo}_DB_USER"; clave_var="${prefijo}_DB_PASSWORD"
   esperadas="$(ls "$RAIZ/backend/$nombre/src/main/resources/db/migration/" 2>/dev/null \
-    | sed -nE 's/^V([0-9]+)__.*\.sql$/\1/p' | sort -n | paste -sd ' ' -)"
+    | sed -nE 's/^V([0-9_]+)__.*\.sql$/\1/p' | tr '_' '.' | sort -V | paste -sd ' ' -)"
   aplicadas="$("${COMPOSE[@]}" exec -T -e PGPASSWORD="${!clave_var}" postgres \
     psql -h 127.0.0.1 -U "${!usuario_var}" -d "$base" -At \
-    -c "SELECT version FROM flyway_schema_history WHERE success ORDER BY installed_rank" 2>/dev/null \
-    | sort -n | paste -sd ' ' -)"
+    -c "SELECT version FROM flyway_schema_history WHERE success AND version IS NOT NULL" 2>/dev/null \
+    | sort -V | paste -sd ' ' -)"
   fallidas="$("${COMPOSE[@]}" exec -T -e PGPASSWORD="${!clave_var}" postgres \
     psql -h 127.0.0.1 -U "${!usuario_var}" -d "$base" -At \
     -c "SELECT count(*) FROM flyway_schema_history WHERE NOT success" 2>/dev/null)"
