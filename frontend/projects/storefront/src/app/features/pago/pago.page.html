@@ -1,0 +1,165 @@
+<main class="fs-pagina" style="padding-block: 40px 80px; display: grid; gap: 28px">
+  @switch (fase()) {
+    @case ('cargando') {
+      <fs-estado-cargando [filas]="4" />
+    }
+    @case ('preparando') {
+      <div class="fs-estado" role="status">
+        <span class="fs-icono" aria-hidden="true">hourglass_top</span>
+        <h1 class="fs-estado__titulo">Preparando tu pago…</h1>
+        <p class="fs-suave">Esto toma unos segundos.</p>
+      </div>
+    }
+    @case ('error') {
+      <fs-estado-error
+        titulo="No pudimos preparar tu pago"
+        texto="Revisa tu conexión e inténtalo de nuevo. Si el problema sigue, mira el estado en tus pedidos."
+        (reintentar)="reintentarCarga()"
+      />
+    }
+    @case ('listo') {
+      @if (pagina(); as p) {
+        @switch (vista()) {
+          @case ('resultado') {
+            <fs-resultado-pago
+              [tipo]="tipoResultado()"
+              [codigo]="p.codigoPedido"
+              [motivo]="resultado()?.motivo ?? 'El pago no se pudo completar'"
+              [boletaDisponible]="p.boletaDisponible"
+              [descargando]="descargando()"
+              (reintentar)="reintentarPago()"
+              (descargarBoleta)="descargarBoleta()"
+            />
+          }
+          @case ('pagado') {
+            <section class="fs-estado">
+              <span class="fs-icono" aria-hidden="true">task_alt</span>
+              <h1 class="fs-estado__titulo">Ya pagaste este pedido</h1>
+              <p class="fs-suave">El pedido <span class="fs-codigo">{{ p.codigoPedido }}</span> está pagado.</p>
+              <div style="display: flex; gap: 12px; flex-wrap: wrap; justify-content: center">
+                <a fsBoton [routerLink]="['/cuenta/pedidos', p.codigoPedido]">Ver mi pedido</a>
+                @if (p.boletaDisponible) {
+                  <button type="button" fsBoton variante="contorno" [disabled]="descargando()" (click)="descargarBoleta()">
+                    <span class="fs-icono" aria-hidden="true">receipt_long</span>Descargar boleta
+                  </button>
+                }
+              </div>
+            </section>
+          }
+          @case ('anulado') {
+            <section class="fs-estado">
+              <span class="fs-icono" aria-hidden="true">block</span>
+              <h1 class="fs-estado__titulo">Este pedido fue cancelado</h1>
+              <p class="fs-suave">Ya no se puede pagar.</p>
+              <a fsBoton [routerLink]="['/cuenta/pedidos', p.codigoPedido]">Ver mi pedido</a>
+            </section>
+          }
+          @case ('vencido') {
+            <section class="fs-estado">
+              <span class="fs-icono" aria-hidden="true">schedule</span>
+              <h1 class="fs-estado__titulo">El plazo para pagar venció</h1>
+              <p class="fs-suave">Liberamos las prendas de tu pedido <span class="fs-codigo">{{ p.codigoPedido }}</span>.</p>
+              <a fsBoton [routerLink]="['/cuenta/pedidos', p.codigoPedido]">Ver mi pedido</a>
+            </section>
+          }
+          @default {
+            <div class="fs-entre" style="flex-wrap: wrap; align-items: flex-end">
+              <div style="display: grid; gap: 4px">
+                <span class="fs-eyebrow fs-suave">Pedido <span class="fs-codigo">{{ p.codigoPedido }}</span></span>
+                <h1 class="fs-titulo-pagina">Paga tu pedido</h1>
+              </div>
+              <div
+                role="timer"
+                style="display: inline-flex; gap: 8px; align-items: center; padding: 8px 14px; border-radius: var(--fs-radio-md); background: var(--fs-color-aviso-suave); color: var(--fs-color-aviso); font-weight: 600"
+              >
+                <span class="fs-icono" aria-hidden="true">schedule</span>Apartamos tus prendas por
+                <span style="font-variant-numeric: tabular-nums">{{ cuentaRegresiva() }}</span>
+              </div>
+            </div>
+
+            <div class="fs-dos-columnas" style="gap: 48px">
+              <section class="fs-tarjeta" style="display: grid; gap: 24px">
+                <div style="display: grid; gap: 12px">
+                  <h2 class="fs-titulo-seccion">Elige cómo pagar</h2>
+                  @if (p.medios.length === 0) {
+                    <p class="fs-suave">Por ahora no hay medios de pago disponibles. Inténtalo en unos minutos.</p>
+                  }
+                  <div class="pago-medios" role="radiogroup" aria-label="Medio de pago">
+                    @for (m of p.medios; track claveDe(m)) {
+                      <div
+                        class="pago-medio"
+                        role="radio"
+                        tabindex="0"
+                        [attr.aria-checked]="claveDe(m) === medioElegido()"
+                        [attr.aria-disabled]="!m.disponible"
+                        (click)="elegir(m)"
+                        (keydown.enter)="elegir(m)"
+                        (keydown.space)="elegir(m); $event.preventDefault()"
+                      >
+                        <span class="fs-icono" style="font-size: 26px" aria-hidden="true">{{ iconoDe(m) }}</span>
+                        {{ nombreDe(m) }}
+                        @if (!m.disponible && m.motivoNoDisponible) {
+                          <span class="fs-suave pago-medio__motivo">{{ m.motivoNoDisponible }}</span>
+                        }
+                      </div>
+                    }
+                  </div>
+                </div>
+
+                @if (medio(); as elegido) {
+                  <hr class="fs-linea" />
+                  @if (elegido.proveedor === 'MERCADO_PAGO') {
+                    <fs-brick-mercado-pago
+                      [clavePublica]="elegido.clavePublica ?? ''"
+                      [monto]="p.monto"
+                      (enviado)="alEnviarBrick($event)"
+                    />
+                  } @else if (elegido.proveedor === 'SIMULADO') {
+                    <fs-formulario-simulado />
+                    <button
+                      type="button"
+                      fsBoton
+                      tamano="lg"
+                      [bloque]="true"
+                      [disabled]="procesando() || !simulado()?.token()"
+                      (click)="pagarSimulado()"
+                    >
+                      {{ procesando() ? 'Procesando…' : 'Pagar ' + (p.monto | precio) }}
+                    </button>
+                  }
+                  @if (errorCobro()) {
+                    <p class="fs-campo__error" role="alert">
+                      <span class="fs-icono" aria-hidden="true">error</span>{{ errorCobro() }}
+                    </p>
+                  }
+                }
+              </section>
+
+              <aside class="fs-tarjeta" style="display: grid; gap: 14px; background: var(--fs-color-superficie-alterna); border-color: transparent">
+                <h2 class="fs-titulo-seccion">Tu pedido</h2>
+                @for (i of p.items; track $index) {
+                  <div class="pago-fila">
+                    <span>
+                      {{ i.producto }} <span class="fs-suave">× {{ i.cantidad }}</span>
+                      @if (i.talla || i.color) {
+                        <span class="fs-suave" style="display: block; font-size: 13px">
+                          {{ i.talla ? 'Talla ' + i.talla : '' }}{{ i.talla && i.color ? ' · ' : '' }}{{ i.color }}
+                        </span>
+                      }
+                    </span>
+                    <span>{{ i.total | precio }}</span>
+                  </div>
+                }
+                <hr class="fs-linea" />
+                <div class="pago-fila"><span>Envío</span><span>{{ p.costoEnvio | precio }}</span></div>
+                <div class="pago-fila" style="font-size: 18px; font-weight: 700">
+                  <span>Total</span><span>{{ p.monto | precio }}</span>
+                </div>
+              </aside>
+            </div>
+          }
+        }
+      }
+    }
+  }
+</main>
