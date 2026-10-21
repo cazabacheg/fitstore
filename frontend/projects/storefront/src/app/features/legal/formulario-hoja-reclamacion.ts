@@ -7,7 +7,8 @@ import {
   output,
   signal,
 } from '@angular/core';
-import { SIN_TOAST, camposConError, settingsApi } from 'shared';
+import { SIN_TOAST, camposConError } from 'shared';
+import { ReclamosService } from 'shared/api/settings-service';
 import { FsBoton } from '../../ui/boton/boton';
 import { FsCampo } from '../../ui/campo/campo';
 import { FsCheckbox } from '../../ui/checkbox/checkbox';
@@ -241,7 +242,7 @@ const BIENES: OpcionSelect[] = [
   `,
 })
 export class FormularioHojaReclamacion {
-  private readonly api = inject(settingsApi.ReclamosService);
+  private readonly api = inject(ReclamosService);
 
   readonly enviado = output<ReclamoEnviado>();
 

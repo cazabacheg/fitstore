@@ -1,7 +1,8 @@
 import { HttpContext } from '@angular/common/http';
 import { Component, computed, inject, signal } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
-import { SIN_TOAST, authApi, camposConError, comoApiError } from 'shared';
+import { SIN_TOAST, camposConError, comoApiError } from 'shared';
+import { AutenticacionService } from 'shared/api/auth-service';
 import { FsBoton } from '../../../ui/boton/boton';
 import { FsCampo } from '../../../ui/campo/campo';
 import { errorPassword } from '../validaciones';
@@ -60,7 +61,7 @@ import { errorPassword } from '../validaciones';
   `,
 })
 export class RestablecerPage {
-  private readonly api = inject(authApi.AutenticacionService);
+  private readonly api = inject(AutenticacionService);
   private readonly token = inject(ActivatedRoute).snapshot.queryParamMap.get('token');
 
   protected readonly estado = signal<'formulario' | 'listo' | 'invalido'>(

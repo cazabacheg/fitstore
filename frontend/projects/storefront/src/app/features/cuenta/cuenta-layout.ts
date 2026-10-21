@@ -1,7 +1,8 @@
 import { HttpContext } from '@angular/common/http';
 import { Component, inject } from '@angular/core';
 import { Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
-import { SIN_TOAST, SesionStore, authApi } from 'shared';
+import { SIN_TOAST, SesionStore } from 'shared';
+import { AutenticacionService } from 'shared/api/auth-service';
 
 /** Marco de "Mi cuenta" (P-1-05): menú lateral con Perfil, Direcciones, Mis pedidos y Cerrar sesión (CA-1-10). */
 @Component({
@@ -59,7 +60,7 @@ import { SIN_TOAST, SesionStore, authApi } from 'shared';
   `,
 })
 export class CuentaLayout {
-  private readonly api = inject(authApi.AutenticacionService);
+  private readonly api = inject(AutenticacionService);
   private readonly sesion = inject(SesionStore);
   private readonly router = inject(Router);
 

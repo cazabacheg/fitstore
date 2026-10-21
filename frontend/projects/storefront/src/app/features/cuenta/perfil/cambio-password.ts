@@ -1,6 +1,7 @@
 import { HttpContext } from '@angular/common/http';
 import { Component, computed, inject, signal } from '@angular/core';
-import { SIN_TOAST, ToastService, authApi, camposConError } from 'shared';
+import { SIN_TOAST, ToastService, camposConError } from 'shared';
+import { ClienteService } from 'shared/api/auth-service';
 import { FsBoton } from '../../../ui/boton/boton';
 import { FsCampo } from '../../../ui/campo/campo';
 import { errorPassword } from '../../acceso/validaciones';
@@ -48,7 +49,7 @@ import { errorPassword } from '../../acceso/validaciones';
   `,
 })
 export class CambioPassword {
-  private readonly clientes = inject(authApi.ClienteService);
+  private readonly clientes = inject(ClienteService);
   private readonly toasts = inject(ToastService);
 
   protected readonly actual = signal('');

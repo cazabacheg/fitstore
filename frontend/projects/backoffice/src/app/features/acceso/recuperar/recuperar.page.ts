@@ -1,7 +1,8 @@
 import { HttpContext } from '@angular/common/http';
 import { Component, computed, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { SIN_TOAST, authApi } from 'shared';
+import { SIN_TOAST } from 'shared';
+import { AutenticacionService } from 'shared/api/auth-service';
 import { CampoFormulario } from '../campo-formulario';
 import { errorCorreo } from '../validaciones';
 
@@ -70,7 +71,7 @@ const MENSAJE = 'Si el correo está registrado, te enviaremos un enlace';
   `,
 })
 export class RecuperarPage {
-  private readonly api = inject(authApi.AutenticacionService);
+  private readonly api = inject(AutenticacionService);
 
   protected readonly mensaje = MENSAJE;
   protected readonly email = signal('');

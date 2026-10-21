@@ -31,6 +31,23 @@ module.exports = defineConfig([
       ],
     },
   },
+  // Un servicio usado como valor desde el espacio de nombres (`catalogApi.TiendaService`) arrastra el cliente
+  // entero al bundle inicial. Los servicios se importan desde 'shared/api/<servicio>'; los tipos pueden
+  // seguir con el espacio de nombres.
+  {
+    files: ['**/*.ts'],
+    ignores: ['**/*.spec.ts', '**/testing/**', '**/testing.ts'],
+    rules: {
+      'no-restricted-syntax': [
+        'error',
+        {
+          selector:
+            'MemberExpression[object.name=/^(auth|catalog|delivery|notification|order|payment|settings)Api$/][property.name=/Service$/]',
+          message: "Importa el servicio desde 'shared/api/<servicio>' en lugar de usar el espacio de nombres.",
+        },
+      ],
+    },
+  },
   {
     files: ['**/*.html'],
     extends: [angular.configs.templateRecommended, angular.configs.templateAccessibility],

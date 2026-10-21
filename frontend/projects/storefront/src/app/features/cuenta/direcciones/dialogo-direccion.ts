@@ -1,6 +1,7 @@
 import { HttpContext } from '@angular/common/http';
 import { Component, OnInit, computed, inject, input, output, signal } from '@angular/core';
 import { SIN_TOAST, authApi, camposConError, comoApiError } from 'shared';
+import { ClienteService } from 'shared/api/auth-service';
 import { FsBoton } from '../../../ui/boton/boton';
 import { FsCampo } from '../../../ui/campo/campo';
 import { FsDialogo } from '../../../ui/dialogo/dialogo';
@@ -70,7 +71,7 @@ import { errorCelular } from '../../acceso/validaciones';
   `,
 })
 export class DialogoDireccion implements OnInit {
-  private readonly clientes = inject(authApi.ClienteService);
+  private readonly clientes = inject(ClienteService);
 
   /** Dirección que se edita; sin ella, se crea una nueva. */
   readonly direccion = input<authApi.Direccion | null>(null);

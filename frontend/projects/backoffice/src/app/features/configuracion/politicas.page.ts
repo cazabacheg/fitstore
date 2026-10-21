@@ -2,6 +2,7 @@ import { HttpContext } from '@angular/common/http';
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { SIN_TOAST, comoApiError, settingsApi } from 'shared';
+import { PoliticasService } from 'shared/api/settings-service';
 import { EncabezadoPagina } from '../../layout/encabezado-pagina';
 import { EstadoCargando } from '../../ui/estados/estado-cargando';
 import { EstadoError } from '../../ui/estados/estado-error';
@@ -193,7 +194,7 @@ export function urlTienda(origen: string = window.location.origin): string {
   `,
 })
 export class PoliticasPage {
-  private readonly ajustes = inject(settingsApi.PoliticasService);
+  private readonly ajustes = inject(PoliticasService);
   private readonly sinAviso = new HttpContext().set(SIN_TOAST, true);
 
   protected readonly tipos = TIPOS;

@@ -1,6 +1,7 @@
 import { HttpContext } from '@angular/common/http';
 import { Component, computed, inject, signal } from '@angular/core';
 import { SIN_TOAST, ToastService, authApi, camposConError } from 'shared';
+import { AutenticacionService, ClienteService } from 'shared/api/auth-service';
 import { FsBoton } from '../../../ui/boton/boton';
 import { FsCampo } from '../../../ui/campo/campo';
 import { EstadoCargando, EstadoError } from '../../../ui/estados/estados';
@@ -54,8 +55,8 @@ import { CambioPassword } from './cambio-password';
   `,
 })
 export class PerfilPage {
-  private readonly api = inject(authApi.AutenticacionService);
-  private readonly clientes = inject(authApi.ClienteService);
+  private readonly api = inject(AutenticacionService);
+  private readonly clientes = inject(ClienteService);
   private readonly toasts = inject(ToastService);
 
   protected readonly estado = signal<'cargando' | 'listo' | 'error'>('cargando');
