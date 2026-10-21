@@ -1,0 +1,1163 @@
+{
+  "info": {
+    "name": "FitStore - order (SPEC-4)",
+    "description": "Pedidos: carrito anónimo y de cliente, resumen y confirmación idempotente, pago simulado (PagoConfirmado publicado a mano en RabbitMQ), seguimiento del cliente y flujo del operador hasta entregado en recojo. Sin fusión de carritos ni reembolso postventa (extensión de alcance). Requiere la plataforma local con los datos de demostración.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "varianteId",
+      "value": "10002"
+    },
+    {
+      "key": "emailCliente",
+      "value": "lucia.mendoza@fitstore.demo"
+    },
+    {
+      "key": "emailStaff",
+      "value": "diana.flores@fitstore.demo"
+    },
+    {
+      "key": "passwordDemo",
+      "value": "FitStoreDemo2026"
+    },
+    {
+      "key": "rabbitUrl",
+      "value": "http://localhost:15672"
+    },
+    {
+      "key": "rabbitUser",
+      "value": "guest"
+    },
+    {
+      "key": "rabbitPassword",
+      "value": "guest"
+    }
+  ],
+  "item": [
+    {
+      "name": "CA-4-01 Carrito anónimo: agregar una variante",
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "if (!pm.collectionVariables.get('carritoId')) { pm.collectionVariables.set('carritoId', pm.variables.replaceIn('{{$guid}}')); }"
+            ]
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('CA-4-01 agrega la variante y recibe el carrito', function () { pm.response.to.have.status(200); });",
+              "pm.test('CA-4-01 el contador suma 2 unidades', function () { pm.expect(pm.response.json().data.cantidadTotal).to.eql(2); });"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "X-Carrito-Id",
+            "value": "{{carritoId}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/carrito/items",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "carrito",
+            "items"
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\"varianteId\": {{varianteId}}, \"cantidad\": 2}"
+        }
+      }
+    },
+    {
+      "name": "CA-4-02 Carrito anónimo: ver montos y tramo",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('CA-4-02 devuelve el carrito cotizado', function () { pm.response.to.have.status(200); });",
+              "pm.test('CA-4-02 trae subtotal, descuento y total sin envío', function () { var d = pm.response.json().data; pm.expect(d.subtotal).to.be.a('number'); pm.expect(d.total).to.be.a('number'); pm.expect(d.lineas.length).to.eql(1); });"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "X-Carrito-Id",
+            "value": "{{carritoId}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/carrito",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "carrito"
+          ]
+        }
+      }
+    },
+    {
+      "name": "CA-4-03 Carrito anónimo: cambiar la cantidad",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('CA-4-03 recalcula con la nueva cantidad', function () { pm.response.to.have.status(200); });",
+              "pm.test('CA-4-03 ahora son 3 unidades', function () { pm.expect(pm.response.json().data.cantidadTotal).to.eql(3); });"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "X-Carrito-Id",
+            "value": "{{carritoId}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/carrito/items/{{varianteId}}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "carrito",
+            "items",
+            "{{varianteId}}"
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\"cantidad\": 3}"
+        }
+      }
+    },
+    {
+      "name": "CA-4-05 Carrito anónimo: más de 100 unidades responde 400",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('CA-4-05 rechaza superar el límite', function () { pm.response.to.have.status(400); });",
+              "pm.test('CA-4-05 el código es LIMITE_CARRITO', function () { pm.expect(pm.response.json().codigo).to.eql('LIMITE_CARRITO'); });"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "X-Carrito-Id",
+            "value": "{{carritoId}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/carrito/items/{{varianteId}}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "carrito",
+            "items",
+            "{{varianteId}}"
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\"cantidad\": 101}"
+        }
+      }
+    },
+    {
+      "name": "CA-4-03 Carrito anónimo: vaciar",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('CA-4-08 queda vacío', function () { pm.response.to.have.status(200); });",
+              "pm.test('CA-4-08 el carrito vacío no puede ir al checkout', function () { var d = pm.response.json().data; pm.expect(d.lineas.length).to.eql(0); pm.expect(d.puedeIrAlCheckout).to.eql(false); });"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "DELETE",
+        "header": [
+          {
+            "key": "X-Carrito-Id",
+            "value": "{{carritoId}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/carrito",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "carrito"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Login del cliente demo",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('CA-4-19 inicia sesión', function () { pm.response.to.have.status(200); });",
+              "pm.collectionVariables.set('tokenCliente', pm.response.json().data.accessToken);"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/auth/login",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "auth",
+            "login"
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\"email\": \"{{emailCliente}}\", \"password\": \"{{passwordDemo}}\"}"
+        }
+      }
+    },
+    {
+      "name": "CA-4-01 Carrito del cliente: agregar una variante",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('CA-4-01 agrega al carrito del cliente', function () { pm.response.to.have.status(200); });",
+              "pm.test('CA-4-01 el contador del cliente suma 1', function () { pm.expect(pm.response.json().data.cantidadTotal).to.eql(1); });"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{tokenCliente}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/carrito/items",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "carrito",
+            "items"
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\"varianteId\": {{varianteId}}, \"cantidad\": 1}"
+        }
+      }
+    },
+    {
+      "name": "CA-4-16 Resumen del checkout (recojo, sin crear nada)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('CA-4-16 calcula el resumen', function () { pm.response.to.have.status(200); });",
+              "pm.test('CA-4-25 total = subtotal - descuento + envío', function () { var d = pm.response.json().data; pm.expect(d.total).to.be.closeTo(d.subtotal - d.descuentoTotal + d.costoEnvio, 0.005); pm.collectionVariables.set('totalEsperado', d.total); });",
+              "pm.test('CA-4-13 el recojo no tiene costo de envío', function () { pm.expect(pm.response.json().data.costoEnvio).to.eql(0); });"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{tokenCliente}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/checkout/resumen",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "checkout",
+            "resumen"
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\"modalidad\": \"RECOJO\"}"
+        }
+      }
+    },
+    {
+      "name": "CA-4-19 Confirmar el pedido (Idempotency-Key)",
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.collectionVariables.set('claveIdempotencia', pm.variables.replaceIn('{{$guid}}'));"
+            ]
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('CA-4-19 crea el pedido en PENDIENTE_PAGO', function () { pm.response.to.have.status(201); });",
+              "pm.test('CA-4-19 devuelve el código FS-… y cuándo vence', function () { var d = pm.response.json().data; pm.expect(d.codigo).to.match(/^FS-\\d{6}$/); pm.expect(d.expiraEn).to.be.a('string'); pm.collectionVariables.set('codigoPedido', d.codigo); });"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Idempotency-Key",
+            "value": "{{claveIdempotencia}}"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{tokenCliente}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/pedidos",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "pedidos"
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\"modalidad\": \"RECOJO\", \"notas\": \"Postman\", \"totalEsperado\": {{totalEsperado}}}"
+        }
+      }
+    },
+    {
+      "name": "CA-4-20 Repetir la confirmación con la misma clave devuelve el mismo pedido",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('CA-4-20 responde 200 con el pedido ya creado', function () { pm.response.to.have.status(200); });",
+              "pm.test('CA-4-20 el código es el mismo', function () { pm.expect(pm.response.json().data.codigo).to.eql(pm.collectionVariables.get('codigoPedido')); });"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Idempotency-Key",
+            "value": "{{claveIdempotencia}}"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{tokenCliente}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/pedidos",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "pedidos"
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\"modalidad\": \"RECOJO\", \"notas\": \"Postman\", \"totalEsperado\": {{totalEsperado}}}"
+        }
+      }
+    },
+    {
+      "name": "CA-4-21 Un total distinto al visto responde 409 PRECIO_CAMBIADO",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('CA-4-21 no crea nada', function () { pm.response.to.have.status(409); });",
+              "pm.test('CA-4-21 el código es PRECIO_CAMBIADO', function () { pm.expect(pm.response.json().codigo).to.eql('PRECIO_CAMBIADO'); });"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Idempotency-Key",
+            "value": "{{claveIdempotencia}}x"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{tokenCliente}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/pedidos",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "pedidos"
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\"modalidad\": \"RECOJO\", \"totalEsperado\": 0.5}"
+        }
+      }
+    },
+    {
+      "name": "CA-4-33 Mis pedidos",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('CA-4-33 lista mis pedidos', function () { pm.response.to.have.status(200); });",
+              "pm.test('CA-4-33 el pedido nuevo está primero', function () { pm.expect(pm.response.json().data.contenido[0].codigo).to.eql(pm.collectionVariables.get('codigoPedido')); });"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{tokenCliente}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/pedidos",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "pedidos"
+          ]
+        }
+      }
+    },
+    {
+      "name": "CA-4-35 Detalle del pedido pendiente de pago",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('CA-4-35 trae el detalle', function () { pm.response.to.have.status(200); });",
+              "pm.test('CA-4-35 se puede pagar y tiene vencimiento', function () { var d = pm.response.json().data; pm.expect(d.estado).to.eql('PENDIENTE_PAGO'); pm.expect(d.puedePagar).to.eql(true); pm.expect(d.expiraEn).to.be.a('string'); });"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{tokenCliente}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/pedidos/{{codigoPedido}}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "pedidos",
+            "{{codigoPedido}}"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Login del operador demo",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('CA-4-40 inicia sesión como operador', function () { pm.response.to.have.status(200); });",
+              "pm.collectionVariables.set('tokenStaff', pm.response.json().data.accessToken);"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/auth/staff/login",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "auth",
+            "staff",
+            "login"
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\"email\": \"{{emailStaff}}\", \"password\": \"{{passwordDemo}}\"}"
+        }
+      }
+    },
+    {
+      "name": "CA-4-41 Buscar el pedido por código en el backoffice",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('CA-4-41 filtra por código', function () { pm.response.to.have.status(200); });",
+              "pm.test('CA-4-40 trae un contador por estado', function () { pm.expect(pm.response.json().data.contadores.PENDIENTE_PAGO).to.be.at.least(1); });",
+              "pm.test('CA-4-41 encuentra solo ese pedido', function () { var c = pm.response.json().data.contenido; pm.expect(c.length).to.eql(1); pm.collectionVariables.set('pedidoId', c[0].id); });"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{tokenStaff}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/admin/pedidos?codigo={{codigoPedido}}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "admin",
+            "pedidos?codigo={{codigoPedido}}"
+          ]
+        }
+      }
+    },
+    {
+      "name": "CA-4-47 Avanzar un pedido sin pagar responde 409",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('CA-4-47 rechaza la transición', function () { pm.response.to.have.status(409); });",
+              "pm.test('CA-4-47 el código es TRANSICION_INVALIDA', function () { pm.expect(pm.response.json().codigo).to.eql('TRANSICION_INVALIDA'); });"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "PATCH",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{tokenStaff}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/admin/pedidos/{{pedidoId}}/estado",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "admin",
+            "pedidos",
+            "{{pedidoId}}",
+            "estado"
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\"nuevoEstado\": \"EN_PREPARACION\", \"version\": 0}"
+        }
+      }
+    },
+    {
+      "name": "CA-4-27 Pago simulado: publicar PagoConfirmado en RabbitMQ (a mano)",
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "var ahora = new Date().toISOString();",
+              "var sobre = {eventoId: pm.variables.replaceIn('{{$guid}}'), tipo: 'PagoConfirmado', version: 1, ocurridoEn: ahora, datos: {pedidoId: pm.collectionVariables.get('pedidoId'), intencionId: pm.variables.replaceIn('{{$guid}}'), transaccionId: pm.variables.replaceIn('{{$guid}}'), proveedor: 'SIMULADO', medio: 'TARJETA', monto: pm.collectionVariables.get('totalEsperado'), confirmadoEn: ahora}};",
+              "pm.collectionVariables.set('cuerpoPublicacion', JSON.stringify({properties: {content_type: 'application/json'}, routing_key: 'payment.pago.confirmado', payload: JSON.stringify(sobre), payload_encoding: 'string'}));"
+            ]
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('CA-4-27 RabbitMQ acepta el evento', function () { pm.response.to.have.status(200); });",
+              "pm.test('CA-4-27 el evento llegó a la cola de order', function () { pm.expect(pm.response.json().routed).to.eql(true); });"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{rabbitUrl}}/api/exchanges/%2F/fitstore.eventos/publish",
+          "host": [
+            "{{rabbitUrl}}"
+          ],
+          "path": [
+            "api/exchanges/%2F/fitstore.eventos/publish"
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{{cuerpoPublicacion}}"
+        },
+        "auth": {
+          "type": "basic",
+          "basic": [
+            {
+              "key": "username",
+              "value": "{{rabbitUser}}"
+            },
+            {
+              "key": "password",
+              "value": "{{rabbitPassword}}"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "CA-4-27 El pedido pasó a PAGADO",
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "setTimeout(function () {}, 2500);"
+            ]
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('CA-4-27 trae el detalle', function () { pm.response.to.have.status(200); });",
+              "pm.test('CA-4-27 el pedido está PAGADO y el historial anota el pago', function () { var d = pm.response.json().data; pm.expect(d.estado).to.eql('PAGADO'); pm.expect(d.pago.proveedor).to.eql('SIMULADO'); });"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{tokenCliente}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/pedidos/{{codigoPedido}}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "pedidos",
+            "{{codigoPedido}}"
+          ]
+        }
+      }
+    },
+    {
+      "name": "CA-4-44 Preparar el pedido",
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.sendRequest({url: pm.variables.replaceIn('{{baseUrl}}/api/v1/admin/pedidos/{{pedidoId}}'), method: 'GET', header: {Authorization: 'Bearer ' + pm.collectionVariables.get('tokenStaff')}}, function (err, res) { pm.collectionVariables.set('version', res.json().data.version); });",
+              "setTimeout(function () {}, 800);"
+            ]
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('CA-4-44 avanza a EN_PREPARACION', function () { pm.response.to.have.status(200); });",
+              "pm.test('CA-4-44 el estado es EN_PREPARACION' , function () { pm.expect(pm.response.json().data.estado).to.eql('EN_PREPARACION'); });"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "PATCH",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{tokenStaff}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/admin/pedidos/{{pedidoId}}/estado",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "admin",
+            "pedidos",
+            "{{pedidoId}}",
+            "estado"
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\"nuevoEstado\": \"EN_PREPARACION\", \"version\": {{version}}}"
+        }
+      }
+    },
+    {
+      "name": "CA-4-46 Dejar el recojo listo",
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.sendRequest({url: pm.variables.replaceIn('{{baseUrl}}/api/v1/admin/pedidos/{{pedidoId}}'), method: 'GET', header: {Authorization: 'Bearer ' + pm.collectionVariables.get('tokenStaff')}}, function (err, res) { pm.collectionVariables.set('version', res.json().data.version); });",
+              "setTimeout(function () {}, 800);"
+            ]
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('CA-4-46 avanza a LISTO_RECOJO', function () { pm.response.to.have.status(200); });",
+              "pm.test('CA-4-46 el estado es LISTO_RECOJO' , function () { pm.expect(pm.response.json().data.estado).to.eql('LISTO_RECOJO'); });"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "PATCH",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{tokenStaff}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/admin/pedidos/{{pedidoId}}/estado",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "admin",
+            "pedidos",
+            "{{pedidoId}}",
+            "estado"
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\"nuevoEstado\": \"LISTO_RECOJO\", \"version\": {{version}}}"
+        }
+      }
+    },
+    {
+      "name": "CA-4-46 Recogido sin verificar el DNI responde 400",
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.sendRequest({url: pm.variables.replaceIn('{{baseUrl}}/api/v1/admin/pedidos/{{pedidoId}}'), method: 'GET', header: {Authorization: 'Bearer ' + pm.collectionVariables.get('tokenStaff')}}, function (err, res) { pm.collectionVariables.set('version', res.json().data.version); });",
+              "setTimeout(function () {}, 800);"
+            ]
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('CA-4-46 exige verificar el DNI', function () { pm.response.to.have.status(400); });"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "PATCH",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{tokenStaff}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/admin/pedidos/{{pedidoId}}/estado",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "admin",
+            "pedidos",
+            "{{pedidoId}}",
+            "estado"
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\"nuevoEstado\": \"ENTREGADO\", \"version\": {{version}}}"
+        }
+      }
+    },
+    {
+      "name": "CA-4-46 Marcar recogido (DNI verificado)",
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.sendRequest({url: pm.variables.replaceIn('{{baseUrl}}/api/v1/admin/pedidos/{{pedidoId}}'), method: 'GET', header: {Authorization: 'Bearer ' + pm.collectionVariables.get('tokenStaff')}}, function (err, res) { pm.collectionVariables.set('version', res.json().data.version); });",
+              "setTimeout(function () {}, 800);"
+            ]
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('CA-4-46 avanza a ENTREGADO', function () { pm.response.to.have.status(200); });",
+              "pm.test('CA-4-46 el estado es ENTREGADO' , function () { pm.expect(pm.response.json().data.estado).to.eql('ENTREGADO'); });"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "PATCH",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{tokenStaff}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/admin/pedidos/{{pedidoId}}/estado",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "admin",
+            "pedidos",
+            "{{pedidoId}}",
+            "estado"
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\"nuevoEstado\": \"ENTREGADO\", \"version\": {{version}}, \"dniVerificado\": true}"
+        }
+      }
+    },
+    {
+      "name": "CA-4-34 El cliente ve la línea de tiempo completa",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('CA-4-34 trae el detalle', function () { pm.response.to.have.status(200); });",
+              "pm.test('CA-4-34 llegó a ENTREGADO pasando por cada paso', function () { var d = pm.response.json().data; pm.expect(d.estado).to.eql('ENTREGADO'); var pasos = d.historial.map(function (h) { return h.estadoNuevo; }); pm.expect(pasos).to.eql(['PENDIENTE_PAGO', 'PAGADO', 'EN_PREPARACION', 'LISTO_RECOJO', 'ENTREGADO']); });"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{tokenCliente}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/pedidos/{{codigoPedido}}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "pedidos",
+            "{{codigoPedido}}"
+          ]
+        }
+      }
+    },
+    {
+      "name": "CA-4-39 Un pedido entregado ya no se puede cancelar",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('CA-4-39 responde 409', function () { pm.response.to.have.status(409); });",
+              "pm.test('CA-4-39 el código es NO_CANCELABLE', function () { pm.expect(pm.response.json().codigo).to.eql('NO_CANCELABLE'); });"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "PATCH",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{tokenCliente}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/pedidos/{{codigoPedido}}/cancelar",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "pedidos",
+            "{{codigoPedido}}",
+            "cancelar"
+          ]
+        }
+      }
+    },
+    {
+      "name": "CA-4-37 Un código ajeno responde 404",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('CA-4-37 no revela si existe', function () { pm.response.to.have.status(404); });"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{tokenCliente}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/pedidos/FS-999999",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "pedidos",
+            "FS-999999"
+          ]
+        }
+      }
+    }
+  ]
+}

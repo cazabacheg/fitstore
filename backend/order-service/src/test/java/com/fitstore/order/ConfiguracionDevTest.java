@@ -4,7 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import com.fitstore.common.event.EventosProperties;
 import com.fitstore.order.config.PropiedadesOrder;
-import com.fitstore.order.pruebas.EntornoPrueba;
+import com.fitstore.order.pruebas.EntornoDemo;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Duration;
@@ -27,10 +27,11 @@ import org.yaml.snakeyaml.Yaml;
  */
 @SpringBootTest(properties = {
     "spring.config.import=file:../../infra/config-repo/order-service.yml,file:../../infra/config-repo/order-service-dev.yml",
-    "fitstore.outbox.habilitado=false"
+    "fitstore.outbox.habilitado=true",
+    "fitstore.outbox.intervalo-ms=3600000"
 })
 @ActiveProfiles({"sin-config-server", "dev"})
-@ContextConfiguration(initializers = EntornoPrueba.class)
+@ContextConfiguration(initializers = EntornoDemo.class)
 class ConfiguracionDevTest {
 
     private static final Path ASYNCAPI = Path.of("../../contracts/asyncapi/fitstore-eventos.yaml");
@@ -41,7 +42,7 @@ class ConfiguracionDevTest {
     @Autowired PropiedadesOrder propiedades;
 
     @Test
-    @DisplayName("CA-0a-05 con el perfil dev Flyway incluye classpath:db/dev y aplica V1 aunque db/dev no exista")
+    @DisplayName("CA-0a-05 con el perfil dev Flyway incluye classpath:db/dev y aplica V1 y los datos de demostración de db/dev")
     void flywayConDbDev() {
         assertThat(entorno.getProperty("spring.flyway.locations")).contains("classpath:db/dev");
         assertThat(entorno.getProperty("server.port")).isEqualTo("8083");
