@@ -15,6 +15,15 @@ spring:
   jpa:
     hibernate:
       ddl-auto: validate
+  mail:
+    # GreenMail de las pruebas de envío (ServerSetupTest.SMTP); sin él, el envío falla como un SMTP caído
+    host: localhost
+    port: 3025
+  rabbitmq:
+    listener:
+      simple:
+        # Solo las pruebas de integración con RabbitMQ (EnrutadorEventosIT) arrancan el consumidor
+        auto-startup: false
 eureka:
   client:
     enabled: false
@@ -31,5 +40,36 @@ management:
 fitstore:
   eventos:
     servicio: notification
+    enlaces:
+      - auth.cliente.registrado
+      - auth.password.reset-solicitado
+      - auth.password.cambiado
+      - catalog.stock.bajo
+      - catalog.stock.no-confirmado
+      - order.pedido.creado
+      - order.pedido.pagado
+      - order.pedido.cancelado
+      - order.pedido.listo-recojo
+      - order.pedido.recogido
+      - payment.boleta.emitida
+      - payment.reembolso.completado
+      - payment.reembolso.fallido
+      - delivery.entrega.actualizada
+      - settings.configuracion.actualizada
+      - settings.reclamo.registrado
+      - settings.reclamo.respondido
+    esperaInicialMs: 50
   outbox:
     habilitado: false
+  notificacion:
+    remitente: tienda@fitstore.test
+    ritmo-por-segundo: 2
+    reintentos: [1m, 5m, 15m, 60m]
+    confirmacion-sin-boleta-tras: 10m
+    retencion: 180d
+    programacion-habilitada: false   # las pruebas llaman a despachar() y revisar() a mano
+    payment-url: ""
+    settings-url: ""
+    enlaces:
+      storefront: http://tienda.test
+      backoffice: http://admin.test
