@@ -90,7 +90,8 @@ interface Opciones {
 }
 
 async function abrir({
-  url = '/',
+  // Una ruta sin pantalla propia (la 404 dentro del shell): las pantallas de las specs no interfieren con el shell.
+  url = '/prueba-del-shell',
   categorias = CATEGORIAS,
   falloCategorias = false,
   config = CONFIG,
@@ -113,14 +114,18 @@ async function abrir({
   }
   const harness = await RouterTestingHarness.create();
   await harness.navigateByUrl(url);
-  const peticion = ctrl.expectOne('/api/v1/categorias');
-  if (falloCategorias) {
-    peticion.flush(
-      { success: false, mensaje: 'Error interno', errores: [] },
-      { status: 500, statusText: 'Server Error' },
-    );
-  } else {
-    peticion.flush(ok(categorias));
+  // La cabecera pide las categorías; una pantalla de las specs puede pedirlas también: se responden todas igual.
+  const peticiones = ctrl.match((r) => r.url === '/api/v1/categorias');
+  expect(peticiones.length).toBeGreaterThan(0);
+  for (const peticion of peticiones) {
+    if (falloCategorias) {
+      peticion.flush(
+        { success: false, mensaje: 'Error interno', errores: [] },
+        { status: 500, statusText: 'Server Error' },
+      );
+    } else {
+      peticion.flush(ok(categorias));
+    }
   }
   const estabilizar = async () => {
     harness.fixture.detectChanges();

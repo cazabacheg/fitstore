@@ -67,13 +67,14 @@ async function arrancar(sesion?: Parameters<SesionStore['iniciarSesion']>[0], de
 
 describe('Rutas del backoffice', () => {
   it.each([...RUTAS_PROTEGIDAS, ...RUTAS_PUBLICAS.map((r) => r)])(
-    'CA-0b-15 %s carga de forma diferida y muestra "Próximamente"',
+    // Su pantalla puede ser el marcador "Próximamente" o la de su spec: lo que se exige es que la ruta exista.
+    'CA-0b-15 %s carga su pantalla de forma diferida (no cae en la 404)',
     async (ruta) => {
       const publica = RUTAS_PUBLICAS.includes(ruta);
       const harness = await arrancar(publica ? undefined : SESION_ADMIN);
       await harness.navigateByUrl(ruta);
       expect(TestBed.inject(Router).url).toBe(ruta);
-      expect(harness.routeNativeElement?.textContent).toContain('Próximamente');
+      expect(harness.routeNativeElement?.textContent).not.toContain('Página no encontrada');
     },
   );
 
