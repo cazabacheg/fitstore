@@ -9,7 +9,10 @@ import static org.mockito.Mockito.when;
 
 import com.fitstore.payment.client.ConfiguracionTienda;
 import com.fitstore.payment.dto.ConfiguracionPublica;
+import com.fitstore.payment.model.EstadoTransaccion;
 import com.fitstore.payment.model.IntencionPago;
+import com.fitstore.payment.model.Proveedor;
+import com.fitstore.payment.model.Transaccion;
 import com.fitstore.payment.repository.IntencionPagoRepository;
 import com.fitstore.payment.repository.TransaccionRepository;
 import com.github.tomakehurst.wiremock.client.MappingBuilder;
@@ -80,6 +83,23 @@ public abstract class PagoApiBase {
         i.setExpiraEn(expiraEn);
         i.setCodigoPedido("FS-%06d".formatted(ThreadLocalRandom.current().nextInt(100_000, 999_999)));
         return intenciones.saveAndFlush(i);
+    }
+
+    /** Transacción PROCESANDO de la intención, cuyo último movimiento fue hace {@code minutos} minutos. */
+    protected Transaccion transaccionProcesando(IntencionPago intencion, Proveedor proveedor, String idProveedor,
+            int minutos) {
+        Transaccion t = Datos.transaccion(intencion.getId(), EstadoTransaccion.PROCESANDO, UUID.randomUUID().toString());
+        t.setProveedor(proveedor);
+        t.setMonto(intencion.getMonto());
+        t.setIdProveedor(idProveedor);
+        t = transacciones.saveAndFlush(t);
+        jdbc.update("UPDATE transaccion SET actualizado_en = ? WHERE id = ?",
+                java.sql.Timestamp.from(Instant.now().minus(minutos, ChronoUnit.MINUTES)), t.getId());
+        return t;
+    }
+
+    protected String estadoTransaccion(UUID transaccionId) {
+        return jdbc.queryForObject("SELECT estado FROM transaccion WHERE id = ?", String.class, transaccionId);
     }
 
     protected int contarTransacciones(UUID intencionId, String estado) {
