@@ -43,10 +43,11 @@ public final class EventosDePrueba {
 
     private static Map<String, Object> item(String sku, String producto, String talla, String color, String precio,
             int cantidad, String total) {
-        return Map.of("varianteId", 10002, "productoId", 1001, "sku", sku, "producto", producto, "talla", talla,
-                "color", color, "precioUnitario", new BigDecimal(precio), "cantidad", cantidad,
-                "descuentoPorcentaje", BigDecimal.ZERO, "descuentoMonto", BigDecimal.ZERO,
-                "total", new BigDecimal(total));
+        return Map.ofEntries(Map.entry("varianteId", 10002), Map.entry("productoId", 1001), Map.entry("sku", sku),
+                Map.entry("producto", producto), Map.entry("talla", talla), Map.entry("color", color),
+                Map.entry("precioUnitario", new BigDecimal(precio)), Map.entry("cantidad", cantidad),
+                Map.entry("descuentoPorcentaje", BigDecimal.ZERO), Map.entry("descuentoMonto", BigDecimal.ZERO),
+                Map.entry("total", new BigDecimal(total)));
     }
 
     public static Map<String, Object> persona(String nombre, String email) {

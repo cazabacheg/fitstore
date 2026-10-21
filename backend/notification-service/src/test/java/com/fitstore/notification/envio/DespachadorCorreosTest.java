@@ -22,6 +22,7 @@ import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -58,6 +59,12 @@ class DespachadorCorreosTest {
     void preparar() {
         LimpiezaBd.limpiar(jdbc);
         pausa.limpiar();
+    }
+
+    /** Las pruebas comparten un solo PostgreSQL con las de repositorio, que esperan la base recién migrada. */
+    @AfterEach
+    void dejarLaBaseComoLaMigracion() {
+        LimpiezaBd.limpiar(jdbc);
     }
 
     private EnvioCorreo pendiente(String destinatario) {
@@ -228,11 +235,27 @@ class DespachadorCorreosTest {
         enviado.setProximoIntentoEn(Instant.now());
         envios.saveAndFlush(enviado);
 
-        despachador.despachar();
+        try {
+            despachador.despachar();
 
-        assertThat(smtp.getReceivedMessages()).hasSize(2);
-        assertThat(com.icegreen.greenmail.util.GreenMailUtil.getWholeMessage(smtp.getReceivedMessages()[1]))
-                .contains("Título nuevo de la bienvenida");
-        jdbc.update("UPDATE plantilla SET titulo = 'Qué gusto tenerte con nosotros' WHERE codigo = 'BIENVENIDA'");
+            assertThat(smtp.getReceivedMessages()).hasSize(2);
+            assertThat(textoDe(smtp.getReceivedMessages()[1])).contains("Título nuevo de la bienvenida");
+        } finally {
+            jdbc.update("UPDATE plantilla SET titulo = 'Qué gusto tenerte con nosotros' WHERE codigo = 'BIENVENIDA'");
+        }
+    }
+
+    /** Texto de todas las partes (el cuerpo viaja codificado en quoted-printable o base64). */
+    private static String textoDe(jakarta.mail.Part parte) throws Exception {
+        StringBuilder sb = new StringBuilder();
+        if (parte.isMimeType("multipart/*")) {
+            var multi = (jakarta.mail.Multipart) parte.getContent();
+            for (int i = 0; i < multi.getCount(); i++) {
+                sb.append(textoDe(multi.getBodyPart(i)));
+            }
+        } else if (parte.isMimeType("text/*")) {
+            sb.append(parte.getContent());
+        }
+        return sb.toString();
     }
 }

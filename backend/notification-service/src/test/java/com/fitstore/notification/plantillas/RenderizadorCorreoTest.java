@@ -67,7 +67,7 @@ class RenderizadorCorreoTest {
                 .contains("Lunes a sábado de 9:00 a 19:00")
                 .contains("https://instagram.com/fitstore").contains("https://facebook.com/fitstore")
                 .contains("http://tienda.test/politicas/terminos").contains("http://tienda.test/politicas/privacidad")
-                .doesNotContain("{{").doesNotContain("th:");
+                .doesNotContain("{{").doesNotContain(" th:").doesNotContain("<th:");
         assertThat(correo.texto()).isNotBlank().doesNotContain("<").doesNotContain("{{")
                 .contains("FitStore Gamarra").contains("Galería Gamarra, Jr. Gamarra 700, tienda 210");
     }

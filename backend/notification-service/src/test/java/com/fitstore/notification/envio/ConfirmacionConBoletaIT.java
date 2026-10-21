@@ -34,6 +34,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -58,7 +59,8 @@ import org.springframework.test.context.DynamicPropertySource;
 class ConfirmacionConBoletaIT {
 
     private static final String NUMERO = "B001-00000124";
-    private static final byte[] PDF = "%PDF-1.4\n% boleta de prueba FS-000124\n%%EOF".getBytes(StandardCharsets.ISO_8859_1);
+    private static final byte[] PDF = "%PDF-1.4\n%\u00e2\u00e3\u00cf\u00d3\n% boleta de prueba FS-000124\n%%EOF"
+            .getBytes(StandardCharsets.ISO_8859_1); // como todo PDF real, lleva bytes no ASCII en la segunda línea
     private static final WireMockServer PAYMENT = new WireMockServer(WireMockConfiguration.options().dynamicPort());
 
     static {
@@ -86,6 +88,12 @@ class ConfirmacionConBoletaIT {
         PAYMENT.resetAll();
         PAYMENT.stubFor(get(urlEqualTo("/internal/v1/boletas/" + NUMERO))
                 .willReturn(aResponse().withStatus(200).withHeader("Content-Type", "application/pdf").withBody(PDF)));
+    }
+
+    /** Las pruebas comparten un solo PostgreSQL con las de repositorio, que esperan la base recién migrada. */
+    @AfterEach
+    void dejarLaBaseComoLaMigracion() {
+        LimpiezaBd.limpiar(jdbc);
     }
 
     @AfterAll

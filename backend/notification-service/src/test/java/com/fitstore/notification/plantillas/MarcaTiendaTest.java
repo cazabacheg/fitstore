@@ -15,6 +15,7 @@ import com.fitstore.notification.pruebas.PostgresInicializador;
 import com.fitstore.notification.repository.MarcaTiendaRepository;
 import java.util.List;
 import java.util.Map;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -42,6 +43,12 @@ class MarcaTiendaTest {
     void preparar() {
         LimpiezaBd.limpiar(jdbc);
         reset(settings);
+    }
+
+    /** Las pruebas comparten un solo PostgreSQL con las de repositorio, que esperan la base recién migrada. */
+    @AfterEach
+    void dejarLaBaseComoLaMigracion() {
+        LimpiezaBd.limpiar(jdbc);
     }
 
     private static Map<String, Object> configuracion(String nombre, String primario, String logo) {

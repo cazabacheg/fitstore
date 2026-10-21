@@ -23,6 +23,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -51,6 +52,12 @@ class AdminNotificacionControllerTest {
 
     @BeforeEach
     void preparar() {
+        LimpiezaBd.limpiar(jdbc);
+    }
+
+    /** Las pruebas comparten un solo PostgreSQL con las de repositorio, que esperan la base recién migrada. */
+    @AfterEach
+    void dejarLaBaseComoLaMigracion() {
         LimpiezaBd.limpiar(jdbc);
     }
 

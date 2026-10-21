@@ -51,4 +51,12 @@ public class PedidoResumen {
 
     @Column(name = "creado_en", nullable = false)
     private Instant creadoEn;
+
+    /** Cuándo llegó PedidoPagado; inicia el respaldo de 10 minutos de la confirmación (micro 4.3). */
+    @Column(name = "pagado_en")
+    private Instant pagadoEn;
+
+    /** La confirmación del pedido ya se envió (con boleta o por el respaldo): no se envía una segunda. */
+    @Column(name = "confirmacion_enviada", nullable = false)
+    private boolean confirmacionEnviada;
 }
