@@ -7,11 +7,11 @@
   "variable": [
     {
       "key": "adminEmail",
-      "value": "admin@modaactiva.pe"
+      "value": "admin@fitstore.local"
     },
     {
       "key": "adminPassword",
-      "value": "CambiarEsta1"
+      "value": "dev-admin-clave"
     },
     {
       "key": "operadorEmail",
