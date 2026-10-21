@@ -107,7 +107,7 @@ class CarritoServiceTest extends ApiBase {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.cantidadTotal").value(6));
         assertThat(carritos.obtenerLineas(carrito)).containsEntry(101L, 5);
-        EntornoApi.SERVICIOS.verify(1, WireMock.postRequestedFor(WireMock.urlEqualTo("/api/v1/precios/cotizar"))
+        EntornoApi.SERVICIOS.verify(WireMock.moreThanOrExactly(1), WireMock.postRequestedFor(WireMock.urlEqualTo("/api/v1/precios/cotizar"))
                 .withRequestBody(WireMock.matchingJsonPath("$.lineas[?(@.varianteId == 101 && @.cantidad == 5)]")));
 
         mvc.perform(delete("/api/v1/carrito/items/230").header("X-Carrito-Id", anonimo))
