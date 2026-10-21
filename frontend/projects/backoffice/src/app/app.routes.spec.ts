@@ -65,8 +65,13 @@ async function arrancar(sesion?: Parameters<SesionStore['iniciarSesion']>[0], de
   return RouterTestingHarness.create();
 }
 
+// Acceso, perfil, staff y clientes (SPEC-1) ya no son marcadores: sus pantallas tienen sus propias pruebas en features/.
+const DE_LA_SPEC_1 = ['/ingresar', '/recuperar', '/restablecer', '/perfil', '/staff', '/clientes'];
+
 describe('Rutas del backoffice', () => {
-  it.each([...RUTAS_PROTEGIDAS, ...RUTAS_PUBLICAS.map((r) => r)])(
+  it.each(
+    [...RUTAS_PROTEGIDAS, ...RUTAS_PUBLICAS.map((r) => r)].filter((r) => !DE_LA_SPEC_1.includes(r)),
+  )(
     'CA-0b-15 %s carga de forma diferida y muestra "Próximamente"',
     async (ruta) => {
       const publica = RUTAS_PUBLICAS.includes(ruta);
