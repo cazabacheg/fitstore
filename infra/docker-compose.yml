@@ -164,7 +164,7 @@ services:
       context: ..
       dockerfile: backend/auth-service/Dockerfile
     image: fitstore/auth-service:dev
-    mem_limit: 448m
+    mem_limit: 512m
 
   catalog-service:
     <<: *servicio-java
@@ -172,7 +172,7 @@ services:
       context: ..
       dockerfile: backend/catalog-service/Dockerfile
     image: fitstore/catalog-service:dev
-    mem_limit: 448m
+    mem_limit: 512m
     depends_on:
       <<: *espera-servicio
       garage-init:
@@ -184,7 +184,7 @@ services:
       context: ..
       dockerfile: backend/settings-service/Dockerfile
     image: fitstore/settings-service:dev
-    mem_limit: 448m
+    mem_limit: 512m
     depends_on:
       <<: *espera-servicio
       garage-init:
@@ -196,7 +196,7 @@ services:
       context: ..
       dockerfile: backend/order-service/Dockerfile
     image: fitstore/order-service:dev
-    mem_limit: 448m
+    mem_limit: 512m
 
   payment-service:
     <<: *servicio-java
@@ -204,7 +204,7 @@ services:
       context: ..
       dockerfile: backend/payment-service/Dockerfile
     image: fitstore/payment-service:dev
-    mem_limit: 448m
+    mem_limit: 512m
     depends_on:
       <<: *espera-servicio
       garage-init:
@@ -216,7 +216,7 @@ services:
       context: ..
       dockerfile: backend/delivery-service/Dockerfile
     image: fitstore/delivery-service:dev
-    mem_limit: 448m
+    mem_limit: 512m
 
   notification-service:
     <<: *servicio-java
@@ -224,7 +224,7 @@ services:
       context: ..
       dockerfile: backend/notification-service/Dockerfile
     image: fitstore/notification-service:dev
-    mem_limit: 448m
+    mem_limit: 512m
 
   # --- Punto de entrada ---
   api-gateway:
