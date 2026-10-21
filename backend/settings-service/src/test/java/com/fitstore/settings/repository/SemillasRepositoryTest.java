@@ -116,12 +116,13 @@ class SemillasRepositoryTest extends PruebaDatos {
 
     @ParameterizedTest
     @EnumSource(TipoPolitica.class)
-    @DisplayName("CA-0a-06 V3: cada política tiene su versión 1 de ejemplo")
+    @DisplayName("CA-0a-06 V3: cada política tiene su versión 1 (SPEC-3 reemplazó el ejemplo por el texto modelo)")
     void politicasIniciales(TipoPolitica tipo) {
         Politica p = politicas.findFirstByTipoOrderByVersionDesc(tipo).orElseThrow();
 
         assertThat(p.getVersion()).isEqualTo(1);
-        assertThat(p.getContenido()).contains("contenido de ejemplo").contains("backoffice");
+        // V3 la creó con un texto de ejemplo; V20261020_1100 (SPEC-3) lo reemplaza por la plantilla a revisar
+        assertThat(p.getContenido()).contains("Plantilla a revisar por la tienda");
         assertThat(politicas.findByTipoOrderByVersionDesc(tipo)).hasSize(1);
     }
 }

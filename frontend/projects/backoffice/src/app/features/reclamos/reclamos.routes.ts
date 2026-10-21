@@ -1,11 +1,16 @@
 import { Routes } from '@angular/router';
-import { Proximamente } from '../../ui/proximamente/proximamente';
+import { ReclamoDetallePage } from './reclamo-detalle.page';
+import { ReclamosPage } from './reclamos.page';
 
 /**
- * Marcador "Próximamente" (CA-0b-15): la spec dueña reemplaza el contenido de esta carpeta.
- * El shell (`app.routes.ts`) carga este arreglo y aplica la guarda de rol.
+ * Reclamos (P-3-06): bandeja y detalle. El shell (`app.routes.ts`) carga este arreglo con la guarda de rol OPERADOR;
+ * tomar y responder los restringe la propia pantalla (y el servidor) al ADMIN.
  */
 export const RECLAMOS_ROUTES: Routes = [
-  { path: '', component: Proximamente, data: { pantalla: 'reclamos' } },
-  { path: '**', component: Proximamente, data: { pantalla: 'reclamos' } },
+  { path: '', component: ReclamosPage, data: { pantalla: 'reclamos' } },
+  {
+    path: ':id',
+    component: ReclamoDetallePage,
+    data: { pantalla: 'reclamos', titulo: 'Detalle del reclamo', migas: ['Reclamos', 'Detalle'] },
+  },
 ];
