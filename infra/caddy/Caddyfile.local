@@ -21,6 +21,7 @@
 }
 
 http://:4200 {
+	encode zstd gzip
 	import rutas
 	handle {
 		root * /srv/tienda
@@ -30,6 +31,7 @@ http://:4200 {
 }
 
 http://:4300 {
+	encode zstd gzip
 	import rutas
 	handle {
 		root * /srv/admin
