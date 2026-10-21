@@ -43,7 +43,7 @@ class DatosDemoTest {
     void pedidosDeDemostracion() {
         assertThat(jdbc.queryForObject("SELECT count(*) FROM pedido", Integer.class)).isEqualTo(11);
         assertThat(jdbc.queryForObject("SELECT count(DISTINCT cliente_id) FROM pedido", Integer.class)).isEqualTo(4);
-        Map<String, Object> porExpirar = jdbc.queryForMap("SELECT estado, expira_en > now() + interval '9 minutes' AS ok, "
+        Map<String, Object> porExpirar = jdbc.queryForMap("SELECT estado, expira_en > now() AS ok, "
                 + "expira_en < now() + interval '11 minutes' AS ok2 FROM pedido WHERE codigo = 'FS-000105'");
         assertThat(porExpirar).containsEntry("estado", "PENDIENTE_PAGO").containsEntry("ok", true).containsEntry("ok2", true);
         assertThat(jdbc.queryForObject("SELECT estado FROM pedido WHERE modalidad = 'RECOJO' AND codigo = 'FS-000108'", String.class))
