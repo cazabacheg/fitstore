@@ -17,7 +17,7 @@ import org.springframework.test.context.ContextConfiguration;
  */
 @SpringBootTest(properties = {
     "spring.config.import=file:../../infra/config-repo/payment-service.yml,file:../../infra/config-repo/payment-service-cloud.yml",
-    "fitstore.outbox.habilitado=false",
+    "fitstore.outbox.intervalo-ms=3600000",
     "S3_ENDPOINT=http://localhost:3900",
     "S3_ACCESS_KEY=clave-de-prueba",
     "S3_SECRET_KEY=secreto-de-prueba"

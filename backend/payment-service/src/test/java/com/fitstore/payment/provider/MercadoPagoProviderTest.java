@@ -118,7 +118,9 @@ class MercadoPagoProviderTest {
 
         assertThatThrownBy(() -> proveedor(Duration.ofMillis(500)).crearCargo(cargo("119.80")))
                 .isInstanceOf(PasarelaSinRespuestaException.class);
-        mp.verify(1, postRequestedFor(urlEqualTo("/v1/payments")));
+        // WireMock anota el pedido cuando termina de responder (tras la demora): se espera a que aparezca
+        org.awaitility.Awaitility.await().atMost(java.time.Duration.ofSeconds(6))
+                .untilAsserted(() -> mp.verify(1, postRequestedFor(urlEqualTo("/v1/payments"))));
     }
 
     @Test
