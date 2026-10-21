@@ -4,11 +4,21 @@ import com.fitstore.payment.config.PropiedadesPagos;
 import com.fitstore.payment.model.EstadoTransaccion;
 import com.fitstore.payment.model.Medio;
 import com.fitstore.payment.model.Proveedor;
+import com.fitstore.payment.provider.ConsultaRechazadaException;
 import com.fitstore.payment.provider.PasarelaSinRespuestaException;
 import com.fitstore.payment.provider.PaymentProvider;
 import com.fitstore.payment.provider.ResultadoCargo;
 import com.fitstore.payment.provider.SolicitudCargo;
+import com.fitstore.payment.provider.EventoProveedor;
+import com.fitstore.payment.provider.FirmaInvalidaException;
+import com.fitstore.payment.provider.WebhookEntrante;
 import java.net.http.HttpClient;
+import java.nio.charset.StandardCharsets;
+import java.security.GeneralSecurityException;
+import java.security.MessageDigest;
+import java.util.HexFormat;
+import javax.crypto.Mac;
+import javax.crypto.spec.SecretKeySpec;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -104,9 +114,78 @@ public class MercadoPagoProvider implements PaymentProvider {
                     .retrieve()
                     .body(JsonNode.class);
             return traducir(pago);
-        } catch (HttpClientErrorException | HttpServerErrorException | ResourceAccessException e) {
+        } catch (HttpClientErrorException e) {
+            LOG.warn("Mercado Pago no reconoce el pago {}: HTTP {}", idProveedor, e.getStatusCode().value());
+            throw new ConsultaRechazadaException("Mercado Pago rechazó la consulta del pago", e);
+        } catch (HttpServerErrorException | ResourceAccessException e) {
             LOG.warn("No se pudo consultar el pago {} en Mercado Pago: {}", idProveedor, e.getClass().getSimpleName());
             throw new PasarelaSinRespuestaException("No se pudo consultar Mercado Pago", e);
+        }
+    }
+
+    @Override
+    public ResultadoCargo consultarPorReferencia(String referencia) {
+        try {
+            JsonNode resultado = cliente.get()
+                    .uri(u -> u.path("/v1/payments/search").queryParam("external_reference", referencia)
+                            .queryParam("sort", "date_created").queryParam("criteria", "desc").build())
+                    .header("Authorization", "Bearer " + configuracion.accessToken())
+                    .retrieve()
+                    .body(JsonNode.class);
+            JsonNode lista = resultado == null ? null : resultado.path("results");
+            return lista == null || !lista.isArray() || lista.isEmpty() ? null : traducir(lista.get(0));
+        } catch (HttpClientErrorException e) {
+            LOG.warn("Mercado Pago rechazó la búsqueda del cargo {}: HTTP {}", referencia, e.getStatusCode().value());
+            throw new ConsultaRechazadaException("Mercado Pago rechazó la búsqueda del pago", e);
+        } catch (HttpServerErrorException | ResourceAccessException e) {
+            LOG.warn("No se pudo buscar el cargo {} en Mercado Pago: {}", referencia, e.getClass().getSimpleName());
+            throw new PasarelaSinRespuestaException("No se pudo consultar Mercado Pago", e);
+        }
+    }
+
+    /**
+     * Valida la cabecera {@code x-signature} ({@code ts=…,v1=…}): HMAC-SHA256 con el secreto de webhooks del manifiesto
+     * {@code id:<data.id>;request-id:<x-request-id>;ts:<ts>;} (CA-5-21).
+     */
+    @Override
+    public EventoProveedor verificarWebhook(WebhookEntrante webhook) {
+        String secreto = configuracion.webhookSecret();
+        if (secreto == null || secreto.isBlank() || webhook.firma() == null || webhook.idPeticion() == null) {
+            throw new FirmaInvalidaException();
+        }
+        String ts = null;
+        String v1 = null;
+        for (String parte : webhook.firma().split(",")) {
+            String[] clave = parte.trim().split("=", 2);
+            if (clave.length == 2 && "ts".equals(clave[0])) {
+                ts = clave[1];
+            } else if (clave.length == 2 && "v1".equals(clave[0])) {
+                v1 = clave[1];
+            }
+        }
+        Map<String, Object> cuerpo = webhook.cuerpo() == null ? Map.of() : webhook.cuerpo();
+        Object data = cuerpo.get("data");
+        String idPago = data instanceof Map<?, ?> d && d.get("id") != null ? d.get("id").toString().toLowerCase() : null;
+        if (ts == null || v1 == null || idPago == null) {
+            throw new FirmaInvalidaException();
+        }
+        String manifiesto = "id:" + idPago + ";request-id:" + webhook.idPeticion() + ";ts:" + ts + ";";
+        if (!MessageDigest.isEqual(hmacHex(secreto, manifiesto).getBytes(StandardCharsets.UTF_8),
+                v1.getBytes(StandardCharsets.UTF_8))) {
+            throw new FirmaInvalidaException();
+        }
+        String eventoId = cuerpo.get("id") != null ? cuerpo.get("id").toString() : ts + "-" + idPago;
+        Object tipo = cuerpo.get("type") != null ? cuerpo.get("type") : cuerpo.get("topic");
+        return new EventoProveedor(eventoId, "payment".equals(tipo) ? idPago : null);
+    }
+
+    private static String hmacHex(String secreto, String mensaje) {
+        try {
+            Mac mac = Mac.getInstance("HmacSHA256");
+            mac.init(new SecretKeySpec(secreto.getBytes(StandardCharsets.UTF_8), "HmacSHA256"));
+            return HexFormat.of().formatHex(mac.doFinal(mensaje.getBytes(StandardCharsets.UTF_8)));
+        } catch (GeneralSecurityException e) {
+            throw new IllegalStateException("HmacSHA256 no está disponible", e);
         }
     }
 
@@ -136,6 +215,7 @@ public class MercadoPagoProvider implements PaymentProvider {
         respuesta.put("payment_method_id", metodo);
         respuesta.put("payment_type_id", pago.path("payment_type_id").asText(null));
         respuesta.put("last_four_digits", ultimos);
+        respuesta.put("external_reference", pago.path("external_reference").asText(null));
         String descripcion = descripcionMedio(metodo, ultimos);
 
         return switch (estado) {

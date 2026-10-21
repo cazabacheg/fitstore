@@ -23,6 +23,12 @@ class VerificadorPagosTest extends PagoApiBase {
 
     private final UUID clienta = UUID.randomUUID();
 
+    /** Las pruebas comparten base de datos: lo que dejaron en curso otras pruebas no debe entrar a esta pasada. */
+    @org.junit.jupiter.api.BeforeEach
+    void aislar() {
+        jdbc.update("UPDATE transaccion SET estado = 'ERROR' WHERE estado = 'PROCESANDO'");
+    }
+
     private static long idUnico() {
         return ThreadLocalRandom.current().nextLong(10_000_000L, 99_999_999L);
     }
