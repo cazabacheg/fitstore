@@ -6,6 +6,8 @@ spring:
   jpa:
     hibernate:
       ddl-auto: validate
+  rabbitmq:
+    publisher-confirm-type: correlated
   security:
     oauth2:
       resourceserver:
@@ -18,8 +20,33 @@ eureka:
 fitstore:
   eventos:
     servicio: payment
+    # Las pruebas de eventos lo encienden con un RabbitMQ en Testcontainers
+    escuchar: false
+    enlaces:
+      - order.pedido.creado
+      - order.pedido.cancelado
+      - order.pedido.expirado
+      - order.pago.no-aplicable
+      - order.reembolso.solicitado
   outbox:
-    habilitado: false
+    # Habilitado para poder leer outbox_evento; el publicador solo corre cada hora (las pruebas de eventos lo aceleran)
+    habilitado: true
+    intervalo-ms: 3600000
+  storage:
+    # Sin Garage: el endpoint no se consulta. Las pruebas de boleta lo apuntan a un Garage en Testcontainers.
+    habilitado: true
+    endpoint: http://localhost:9
+    access-key: GKprueba
+    secret-key: clave-de-prueba-sin-valor
+  pagos:
+    # Las tareas programadas (verificador, boletas) se invocan a mano en las pruebas
+    tareas.habilitadas: false
+    mercadopago:
+      public-key: TEST-clave-publica-de-prueba
+      access-token: TEST-token-de-prueba
+      webhook-secret: secreto-de-prueba
+      url: http://localhost:9
+    simulado.habilitado: true
 springdoc:
   api-docs:
     version: openapi_3_0
