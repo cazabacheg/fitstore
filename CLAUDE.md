@@ -43,6 +43,7 @@ Reglas que no se rompen:
 - Migraciones nuevas: `VAAAAMMDD_HHMM__descripcion.sql` (las `V1`–`V3` son de 0a).
 - `contracts/implementados.txt` no lo tocas: el lead agrega tu servicio en tu PR al verificar el contrato (V5).
 - Clientes de API del frontend: siempre generados desde OpenAPI en `frontend/projects/shared/src/lib/api`; nunca a mano.
+- Servicios de API en el frontend: impórtalos desde `shared/api/<servicio>` (`import { TiendaService } from 'shared/api/catalog-service'`), no como `catalogApi.TiendaService`. El espacio de nombres mete el cliente entero en el bundle inicial; para tipos sí puedes usarlo. ESLint lo revisa.
 - Rutas del frontend: conserva el nombre del arreglo que importa el *shell* (`STAFF_ROUTES`, `PEDIDOS_ROUTES`…) y pon `data: { pantalla: '<id>' }` en cada ruta de tu carpeta, con el id que ya tenía el marcador. Las pruebas de rutas de 0b lo revisan.
 
 ## 4. Cuándo detenerte y preguntar al lead

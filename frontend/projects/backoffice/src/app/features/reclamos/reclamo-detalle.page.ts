@@ -1,15 +1,8 @@
 import { HttpContext, HttpErrorResponse } from '@angular/common/http';
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
-import {
-  FechaPipe,
-  PrecioPipe,
-  SIN_TOAST,
-  SesionStore,
-  ToastService,
-  comoApiError,
-  settingsApi,
-} from 'shared';
+import { FechaPipe, PrecioPipe, SIN_TOAST, SesionStore, ToastService, comoApiError, settingsApi } from 'shared';
+import { ReclamosService } from 'shared/api/settings-service';
 import { EncabezadoPagina } from '../../layout/encabezado-pagina';
 import { DialogoService } from '../../ui/dialogo/dialogo.service';
 import { EstadoCargando } from '../../ui/estados/estado-cargando';
@@ -208,7 +201,7 @@ const MAXIMO = 3000;
   `,
 })
 export class ReclamoDetallePage {
-  private readonly api = inject(settingsApi.ReclamosService);
+  private readonly api = inject(ReclamosService);
   private readonly ruta = inject(ActivatedRoute);
   private readonly dialogo = inject(DialogoService);
   private readonly avisos = inject(ToastService);

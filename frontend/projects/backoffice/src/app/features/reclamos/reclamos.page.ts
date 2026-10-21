@@ -13,6 +13,7 @@ import {
   tap,
 } from 'rxjs';
 import { FechaPipe, SIN_TOAST, settingsApi, type ConsultaPagina, type Pagina } from 'shared';
+import { ReclamosService } from 'shared/api/settings-service';
 import { EncabezadoPagina } from '../../layout/encabezado-pagina';
 import { BarraFiltros, type ChipFiltro, type SelectFiltro } from '../../ui/filtros/barra-filtros';
 import { EstadoError } from '../../ui/estados/estado-error';
@@ -76,7 +77,7 @@ const FECHA = new FechaPipe();
   `,
 })
 export class ReclamosPage {
-  private readonly api = inject(settingsApi.ReclamosService);
+  private readonly api = inject(ReclamosService);
   private readonly ruta = inject(ActivatedRoute);
   private readonly router = inject(Router);
 

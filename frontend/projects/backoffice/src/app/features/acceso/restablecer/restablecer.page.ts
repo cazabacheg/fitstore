@@ -1,7 +1,8 @@
 import { HttpContext } from '@angular/common/http';
 import { Component, computed, inject, signal } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
-import { SIN_TOAST, authApi, camposConError, comoApiError } from 'shared';
+import { SIN_TOAST, camposConError, comoApiError } from 'shared';
+import { AutenticacionService } from 'shared/api/auth-service';
 import { CampoFormulario } from '../campo-formulario';
 import { errorPassword } from '../validaciones';
 
@@ -92,7 +93,7 @@ import { errorPassword } from '../validaciones';
   `,
 })
 export class RestablecerPage {
-  private readonly api = inject(authApi.AutenticacionService);
+  private readonly api = inject(AutenticacionService);
   private readonly parametros = inject(ActivatedRoute).snapshot.queryParamMap;
   private readonly token = this.parametros.get('token');
 

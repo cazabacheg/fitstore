@@ -10,6 +10,7 @@ import {
 import { RouterLink } from '@angular/router';
 import type { Observable } from 'rxjs';
 import { SIN_TOAST, ToastService, camposConError, comoApiError, settingsApi } from 'shared';
+import { ConfiguracionAdminService } from 'shared/api/settings-service';
 import { EncabezadoPagina } from '../../layout/encabezado-pagina';
 import { EstadoCargando } from '../../ui/estados/estado-cargando';
 import { EstadoError } from '../../ui/estados/estado-error';
@@ -183,7 +184,7 @@ const igual = <T>(a: T, b: T) => JSON.stringify(a) === JSON.stringify(b);
   `,
 })
 export class ConfiguracionPage implements ConCambiosSinGuardar {
-  private readonly api = inject(settingsApi.ConfiguracionAdminService);
+  private readonly api = inject(ConfiguracionAdminService);
   private readonly avisos = inject(ToastService);
   private readonly sinAviso = new HttpContext().set(SIN_TOAST, true);
 

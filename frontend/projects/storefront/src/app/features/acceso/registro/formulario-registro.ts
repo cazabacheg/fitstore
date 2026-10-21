@@ -1,7 +1,9 @@
 import { HttpContext } from '@angular/common/http';
 import { Component, computed, inject, input, signal } from '@angular/core';
 import { Router } from '@angular/router';
-import { SIN_TOAST, SesionStore, authApi, camposConError, comoApiError, settingsApi } from 'shared';
+import { SIN_TOAST, SesionStore, camposConError, comoApiError, settingsApi } from 'shared';
+import { AutenticacionService } from 'shared/api/auth-service';
+import { ConfiguracionPublicaService } from 'shared/api/settings-service';
 import { FsBoton } from '../../../ui/boton/boton';
 import { FsCampo } from '../../../ui/campo/campo';
 import { EstadoError } from '../../../ui/estados/estados';
@@ -139,8 +141,8 @@ type Politicas = Pick<settingsApi.VersionesPoliticas, 'terminos' | 'privacidad'>
   `,
 })
 export class FormularioRegistro {
-  private readonly auth = inject(authApi.AutenticacionService);
-  private readonly publica = inject(settingsApi.ConfiguracionPublicaService);
+  private readonly auth = inject(AutenticacionService);
+  private readonly publica = inject(ConfiguracionPublicaService);
   private readonly sesion = inject(SesionStore);
   private readonly router = inject(Router);
 

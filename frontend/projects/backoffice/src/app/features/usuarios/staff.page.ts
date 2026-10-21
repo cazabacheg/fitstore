@@ -13,6 +13,7 @@ import {
   type Observable,
 } from 'rxjs';
 import { SIN_TOAST, ToastService, authApi, type ConsultaPagina, type Pagina } from 'shared';
+import { StaffService } from 'shared/api/auth-service';
 import { EncabezadoPagina } from '../../layout/encabezado-pagina';
 import { DialogoService } from '../../ui/dialogo/dialogo.service';
 import { EstadoError } from '../../ui/estados/estado-error';
@@ -66,7 +67,7 @@ const VARIANTE_ESTADO: Record<string, string> = {
   `,
 })
 export class StaffPage {
-  private readonly api = inject(authApi.StaffService);
+  private readonly api = inject(StaffService);
   private readonly dialogos = inject(MatDialog);
   private readonly confirmacion = inject(DialogoService);
   private readonly toasts = inject(ToastService);

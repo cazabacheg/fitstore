@@ -3,6 +3,8 @@ import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/cor
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { catchError, of } from 'rxjs';
 import { SIN_TOAST, catalogApi, settingsApi } from 'shared';
+import { TiendaService } from 'shared/api/catalog-service';
+import { ConfiguracionPublicaService } from 'shared/api/settings-service';
 import { CarruselHero } from './carrusel-hero';
 import { CategoriasRaiz } from './categorias-raiz';
 import { Destacados } from './destacados';
@@ -57,8 +59,8 @@ import { TiendaFisica } from './tienda-fisica';
   `,
 })
 export class InicioPage {
-  private readonly ajustes = inject(settingsApi.ConfiguracionPublicaService);
-  private readonly tienda = inject(catalogApi.TiendaService);
+  private readonly ajustes = inject(ConfiguracionPublicaService);
+  private readonly tienda = inject(TiendaService);
 
   protected readonly config = signal<settingsApi.ConfiguracionPublica | null>(null);
   protected readonly falloLaConfiguracion = signal(false);

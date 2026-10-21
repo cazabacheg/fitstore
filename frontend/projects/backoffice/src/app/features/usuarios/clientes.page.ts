@@ -4,6 +4,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute } from '@angular/router';
 import { BehaviorSubject, EMPTY, catchError, combineLatest, switchMap, tap } from 'rxjs';
 import { SIN_TOAST, authApi, type ConsultaPagina, type Pagina } from 'shared';
+import { ClientesAdminService } from 'shared/api/auth-service';
 import { EncabezadoPagina } from '../../layout/encabezado-pagina';
 import { EstadoError } from '../../ui/estados/estado-error';
 import { BarraFiltros, type SelectFiltro } from '../../ui/filtros/barra-filtros';
@@ -44,7 +45,7 @@ type Fila = authApi.ClienteResumen;
   `,
 })
 export class ClientesPage {
-  private readonly api = inject(authApi.ClientesAdminService);
+  private readonly api = inject(ClientesAdminService);
   private readonly ruta = inject(ActivatedRoute);
 
   protected readonly selects: SelectFiltro[] = [

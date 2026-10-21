@@ -12,6 +12,7 @@ import {
 } from '@angular/core';
 import { firstValueFrom, forkJoin, of } from 'rxjs';
 import { SIN_TOAST, comoApiError, settingsApi } from 'shared';
+import { ConfiguracionAdminService } from 'shared/api/settings-service';
 import { DialogoService } from '../../ui/dialogo/dialogo.service';
 import { SubidaImagenes } from '../../ui/subida-imagenes/subida-imagenes';
 
@@ -198,7 +199,7 @@ const aFila = (imagen: settingsApi.ImagenTienda): Fila => ({
   `,
 })
 export class ImagenesLanding {
-  private readonly api = inject(settingsApi.ConfiguracionAdminService);
+  private readonly api = inject(ConfiguracionAdminService);
   private readonly dialogo = inject(DialogoService);
 
   readonly imagenes = input.required<settingsApi.ImagenTienda[]>();

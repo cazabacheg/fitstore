@@ -4,6 +4,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute } from '@angular/router';
 import { BehaviorSubject, catchError, combineLatest, map, of, startWith, switchMap } from 'rxjs';
 import { SIN_TOAST, settingsApi } from 'shared';
+import { PoliticasService } from 'shared/api/settings-service';
 import { FsBoton } from '../../ui/boton/boton';
 import { fechaLarga } from './formato-fecha';
 import { renderizarMarkdownSeguro } from './markdown-seguro';
@@ -127,7 +128,7 @@ type Estado =
 })
 export class PoliticaPage {
   private readonly ruta = inject(ActivatedRoute);
-  private readonly api = inject(settingsApi.PoliticasService);
+  private readonly api = inject(PoliticasService);
 
   private readonly intento = new BehaviorSubject(0);
   protected readonly estado = signal<Estado>({ tipo: 'cargando' });
