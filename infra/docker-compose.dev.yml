@@ -1,13 +1,9 @@
 # FitStore: añadidos de desarrollo (infraestructura 6.3): Mailpit, puertos publicados en localhost para depurar,
-# perfil dev y el JWKS de prueba. Uso:
+# y perfil dev. Uso:
 #   docker compose -f infra/docker-compose.yml -f infra/docker-compose.dev.yml up -d
 x-java-dev: &java-dev
   environment:
     SPRING_PROFILES_ACTIVE: dev
-    # Mientras auth no firma (spec 1), validan con el JWKS de prueba (SPEC-0a I2)
-    FITSTORE_SECURITY_JWKS_ARCHIVO: /dev/jwks-prueba.json
-  volumes:
-    - ./dev/jwks-prueba.json:/dev/jwks-prueba.json:ro
 
 services:
   mailpit:

@@ -13,6 +13,7 @@ import { MatMenuModule } from '@angular/material/menu';
 import { NavigationEnd, Router, RouterLink } from '@angular/router';
 import { EMPTY, catchError, filter, map, of, startWith } from 'rxjs';
 import { SIN_TOAST, SesionStore, authApi } from 'shared';
+import { AutenticacionService, StaffPropioService } from 'shared/api/auth-service';
 import { migasDe } from '../core/migas';
 
 /** Barra superior del backoffice (P-0b-02): migas y menú de usuario (perfil, cambiar contraseña, salir). */
@@ -26,8 +27,8 @@ import { migasDe } from '../core/migas';
 export class BarraSuperior {
   private readonly router = inject(Router);
   private readonly sesion = inject(SesionStore);
-  private readonly auth = inject(authApi.AutenticacionService);
-  private readonly staffPropio = inject(authApi.StaffPropioService);
+  private readonly auth = inject(AutenticacionService);
+  private readonly staffPropio = inject(StaffPropioService);
 
   /** Muestra el botón ☰ (menú en tablet); con el menú fijo no hace falta. */
   readonly conBotonMenu = input(false);

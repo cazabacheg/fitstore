@@ -1,17 +1,18 @@
 import { Routes } from '@angular/router';
-import { Proximamente } from '../../ui/proximamente/proximamente';
+import { ClienteDetallePage } from './cliente-detalle.page';
+import { ClientesPage } from './clientes.page';
+import { StaffPage } from './staff.page';
 
 /**
- * Marcador "Próximamente" (CA-0b-15): la spec dueña reemplaza el contenido de esta carpeta.
- * Cada pantalla de la carpeta tiene su propio arreglo: el shell (`app.routes.ts`) carga cada uno con su URL
- * y su guarda de rol, así dos pantallas de la misma carpeta nunca reciben la misma ruta.
+ * Staff (P-1-08, ADMIN) y Clientes (P-1-09, OPERADOR y ADMIN). Cada pantalla tiene su propio arreglo: el shell
+ * (`app.routes.ts`) los carga con su URL y su guarda de rol (R2). `pantalla` identifica cada una.
  */
 export const STAFF_ROUTES: Routes = [
-  { path: '', component: Proximamente, data: { pantalla: 'staff' } },
-  { path: '**', component: Proximamente, data: { pantalla: 'staff' } },
+  { path: '', component: StaffPage, data: { pantalla: 'staff' } },
+  { path: '**', redirectTo: '' },
 ];
 
 export const CLIENTES_ROUTES: Routes = [
-  { path: '', component: Proximamente, data: { pantalla: 'clientes' } },
-  { path: '**', component: Proximamente, data: { pantalla: 'clientes' } },
+  { path: '', component: ClientesPage, data: { pantalla: 'clientes' } },
+  { path: ':id', component: ClienteDetallePage, data: { pantalla: 'clientes' } },
 ];

@@ -24,6 +24,14 @@ public class Staff extends Cuenta {
     @Column(name = "creado_por")
     private UUID creadoPor;
 
+    /** Pendiente = activo sin contraseña; inactivo = borrado lógico. */
+    public EstadoStaff estado() {
+        if (!isActivo()) {
+            return EstadoStaff.INACTIVO;
+        }
+        return getPasswordHash() == null ? EstadoStaff.INVITACION_PENDIENTE : EstadoStaff.ACTIVO;
+    }
+
     @Override
     public TipoCuenta tipo() {
         return TipoCuenta.STAFF;

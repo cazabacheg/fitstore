@@ -3,6 +3,8 @@
  * Cada servicio generado se expone en su propio espacio de nombres porque los 7 clientes repiten los modelos
  * comunes (ApiResponse, ApiError…): `authApi.AutenticacionService`, `settingsApi.UbigeoService`, etc.
  * Los tipos comunes propios (ApiResponse, ApiError, Pagina) están en `models`.
+ * Los servicios, en cambio, se importan desde 'shared/api/<servicio>': usarlos como valor desde el espacio de
+ * nombres mete el cliente entero en el bundle inicial.
  */
 export * as authApi from './lib/api/auth-service';
 export * as catalogApi from './lib/api/catalog-service';

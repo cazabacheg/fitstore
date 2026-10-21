@@ -10,7 +10,7 @@ spring:
     oauth2:
       resourceserver:
         jwt:
-          # Nunca se consulta: las pruebas no validan tokens. Evita que falle la creación del JwtDecoder.
+          # Nunca se consulta: auth valida con su propio JwtDecoder (clave local). Evita que falle la autoconfiguración.
           jwk-set-uri: http://localhost:9/.well-known/jwks.json
 eureka:
   client:
@@ -19,7 +19,23 @@ fitstore:
   eventos:
     servicio: auth
   outbox:
-    habilitado: false
+    # El registrador guarda los eventos en outbox_evento; el publicador casi nunca corre (las pruebas no levantan RabbitMQ)
+    habilitado: true
+    intervalo-ms: 3600000
+  auth:
+    issuer: http://localhost:8080
+    access-ttl: 15m
+    refresh-ttl: 7d
+    # Fuerza mínima de BCrypt, solo para que las pruebas sean rápidas (en los entornos reales es 10)
+    bcrypt-strength: 4
+    bloqueo: { intentos: 5, duracion: 15m }
+    token-recuperacion-ttl: 30m
+    token-invitacion-ttl: 24h
+    claves: { generar-si-faltan: true, kid: fs-prueba }
+    cookie: { nombre: fs_refresh, secure: false, same-site: Strict, path: /api/v1/auth }
+    enlaces:
+      storefront: http://tienda.prueba
+      backoffice: http://admin.prueba
 springdoc:
   api-docs:
     version: openapi_3_0
