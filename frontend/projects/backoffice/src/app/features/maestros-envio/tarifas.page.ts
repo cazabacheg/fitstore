@@ -2,16 +2,8 @@ import { HttpContext } from '@angular/common/http';
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { MatDialog } from '@angular/material/dialog';
 import { type Observable, catchError, forkJoin, map, of } from 'rxjs';
-import {
-  PrecioPipe,
-  SIN_TOAST,
-  ToastService,
-  UbigeoCatalogo,
-  comoApiError,
-  deliveryApi,
-  type Pagina,
-  type settingsApi,
-} from 'shared';
+import { PrecioPipe, SIN_TOAST, ToastService, UbigeoCatalogo, comoApiError, deliveryApi, type Pagina, type settingsApi } from 'shared';
+import { EnviosService, TarifasService } from 'shared/api/delivery-service';
 import { EncabezadoPagina } from '../../layout/encabezado-pagina';
 import { DialogoService } from '../../ui/dialogo/dialogo.service';
 import { EstadoError } from '../../ui/estados/estado-error';
@@ -169,8 +161,8 @@ function plazo(t: deliveryApi.Tarifa): string {
   `,
 })
 export class TarifasPage {
-  private readonly api = inject(deliveryApi.TarifasService);
-  private readonly envios = inject(deliveryApi.EnviosService);
+  private readonly api = inject(TarifasService);
+  private readonly envios = inject(EnviosService);
   private readonly catalogo = inject(UbigeoCatalogo);
   private readonly dialogos = inject(MatDialog);
   private readonly confirmacion = inject(DialogoService);

@@ -2,6 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import { MatDialog } from '@angular/material/dialog';
 import { type Observable, map, of, switchMap } from 'rxjs';
 import { deliveryApi } from 'shared';
+import { EntregasService } from 'shared/api/delivery-service';
 import {
   DialogoAsignar,
   DialogoEnvioAgencia,
@@ -16,7 +17,7 @@ import {
  */
 @Injectable({ providedIn: 'root' })
 export class AvanceEntrega {
-  private readonly api = inject(deliveryApi.EntregasService);
+  private readonly api = inject(EntregasService);
   private readonly dialogos = inject(MatDialog);
 
   /** Desde una fila del listado: la fila no trae la versión, así que primero se lee el detalle. */

@@ -12,14 +12,8 @@ import {
   switchMap,
   tap,
 } from 'rxjs';
-import {
-  FechaPipe,
-  SIN_TOAST,
-  ToastService,
-  deliveryApi,
-  type ConsultaPagina,
-  type Pagina,
-} from 'shared';
+import { FechaPipe, SIN_TOAST, ToastService, deliveryApi, type ConsultaPagina, type Pagina } from 'shared';
+import { EntregasService, RepartidoresService } from 'shared/api/delivery-service';
 import { EncabezadoPagina } from '../../layout/encabezado-pagina';
 import { EstadoError } from '../../ui/estados/estado-error';
 import { BarraFiltros, type ChipFiltro, type SelectFiltro } from '../../ui/filtros/barra-filtros';
@@ -131,8 +125,8 @@ const MODALIDADES = [
   `,
 })
 export class EntregasPage {
-  private readonly api = inject(deliveryApi.EntregasService);
-  private readonly repartidoresApi = inject(deliveryApi.RepartidoresService);
+  private readonly api = inject(EntregasService);
+  private readonly repartidoresApi = inject(RepartidoresService);
   private readonly avance = inject(AvanceEntrega);
   private readonly toasts = inject(ToastService);
   private readonly ruta = inject(ActivatedRoute);

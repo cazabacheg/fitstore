@@ -5,6 +5,7 @@ import { MatDialog } from '@angular/material/dialog';
 import { ActivatedRoute } from '@angular/router';
 import { map, type Observable } from 'rxjs';
 import { SIN_TOAST, ToastService, deliveryApi, type Pagina } from 'shared';
+import { RepartidoresService } from 'shared/api/delivery-service';
 import { EncabezadoPagina } from '../../layout/encabezado-pagina';
 import { DialogoService } from '../../ui/dialogo/dialogo.service';
 import { EstadoError } from '../../ui/estados/estado-error';
@@ -58,7 +59,7 @@ const VEHICULOS: Record<string, string> = { MOTO: 'Moto', AUTO: 'Auto', BICICLET
   `,
 })
 export class RepartidoresPage {
-  private readonly api = inject(deliveryApi.RepartidoresService);
+  private readonly api = inject(RepartidoresService);
   private readonly dialogos = inject(MatDialog);
   private readonly confirmacion = inject(DialogoService);
   private readonly toasts = inject(ToastService);

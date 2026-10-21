@@ -3,6 +3,7 @@ import { CdkDragDrop, DragDropModule, moveItemInArray } from '@angular/cdk/drag-
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { MatDialog } from '@angular/material/dialog';
 import { SIN_TOAST, ToastService, deliveryApi } from 'shared';
+import { AgenciasAdminService } from 'shared/api/delivery-service';
 import { EncabezadoPagina } from '../../layout/encabezado-pagina';
 import { DialogoService } from '../../ui/dialogo/dialogo.service';
 import { EstadoCargando } from '../../ui/estados/estado-cargando';
@@ -125,7 +126,7 @@ type Agencia = deliveryApi.Agencia;
   `,
 })
 export class AgenciasPage {
-  private readonly api = inject(deliveryApi.AgenciasAdminService);
+  private readonly api = inject(AgenciasAdminService);
   private readonly dialogos = inject(MatDialog);
   private readonly confirmacion = inject(DialogoService);
   private readonly toasts = inject(ToastService);

@@ -3,6 +3,7 @@ import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/cor
 import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
 import type { Observable } from 'rxjs';
 import { SIN_TOAST, camposConError, comoApiError, deliveryApi } from 'shared';
+import { EntregasService, EnviosService, RepartidoresService } from 'shared/api/delivery-service';
 import { CampoFormulario } from '../acceso/campo-formulario';
 import { hoyEnLima } from './acciones-entrega';
 
@@ -123,8 +124,8 @@ abstract class DialogoAvance {
   `,
 })
 export class DialogoAsignar extends DialogoAvance {
-  private readonly entregas = inject(deliveryApi.EntregasService);
-  private readonly api = inject(deliveryApi.RepartidoresService);
+  private readonly entregas = inject(EntregasService);
+  private readonly api = inject(RepartidoresService);
 
   protected readonly hoy = hoyEnLima();
   protected readonly repartidores = signal<deliveryApi.Repartidor[]>([]);
@@ -219,7 +220,7 @@ export class DialogoAsignar extends DialogoAvance {
   `,
 })
 export class DialogoFallida extends DialogoAvance {
-  private readonly entregas = inject(deliveryApi.EntregasService);
+  private readonly entregas = inject(EntregasService);
   protected readonly observacion = signal('');
 
   protected mensaje(): string {
@@ -300,8 +301,8 @@ export class DialogoFallida extends DialogoAvance {
   `,
 })
 export class DialogoEnvioAgencia extends DialogoAvance {
-  private readonly entregas = inject(deliveryApi.EntregasService);
-  private readonly envios = inject(deliveryApi.EnviosService);
+  private readonly entregas = inject(EntregasService);
+  private readonly envios = inject(EnviosService);
 
   protected readonly agencias = signal<deliveryApi.Agencia[]>([]);
   protected readonly agenciaId = signal(this.entrega.agenciaId ? '' + this.entrega.agenciaId : '');

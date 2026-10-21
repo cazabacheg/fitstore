@@ -2,6 +2,7 @@ import { HttpContext } from '@angular/common/http';
 import { Component, computed, inject, signal } from '@angular/core';
 import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
 import { SIN_TOAST, camposConError, comoApiError, deliveryApi } from 'shared';
+import { TarifasService } from 'shared/api/delivery-service';
 import { CampoFormulario } from '../acceso/campo-formulario';
 import { SelectorUbigeo, type HastaUbigeo } from '../../ui/selector-ubigeo/selector-ubigeo';
 
@@ -122,7 +123,7 @@ const NIVEL_DE_TARIFA: Record<string, HastaUbigeo> = {
   `,
 })
 export class DialogoTarifa {
-  private readonly api = inject(deliveryApi.TarifasService);
+  private readonly api = inject(TarifasService);
   private readonly ref =
     inject<MatDialogRef<DialogoTarifa, deliveryApi.Tarifa | undefined>>(MatDialogRef);
   private readonly datos = inject<DatosDialogoTarifa>(MAT_DIALOG_DATA);

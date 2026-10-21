@@ -2,6 +2,7 @@ import { HttpContext } from '@angular/common/http';
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { FechaPipe, SIN_TOAST, ToastService, deliveryApi } from 'shared';
+import { EntregasService } from 'shared/api/delivery-service';
 import { EncabezadoPagina } from '../../layout/encabezado-pagina';
 import { EstadoCargando } from '../../ui/estados/estado-cargando';
 import { InsigniaEstado } from '../../ui/insignia/insignia-estado';
@@ -193,7 +194,7 @@ import { AvanceEntrega } from './avance-entrega';
   `,
 })
 export class DetalleEntregaPage {
-  private readonly api = inject(deliveryApi.EntregasService);
+  private readonly api = inject(EntregasService);
   private readonly avance = inject(AvanceEntrega);
   private readonly toasts = inject(ToastService);
   private readonly id = inject(ActivatedRoute).snapshot.paramMap.get('id') ?? '';

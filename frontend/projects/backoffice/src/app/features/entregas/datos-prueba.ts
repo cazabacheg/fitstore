@@ -128,17 +128,25 @@ export async function abrirRuta(
       b.textContent?.includes(texto),
     )!;
   /** Espera (con la animación de los diálogos) a que salga la petición que cumple la condición. */
+  // Hasta 3 s de reloj real: con la suite completa en paralelo, unos pocos ciclos no siempre alcanzan.
+  const pausa = () => new Promise((r) => setTimeout(r, 10));
   const esperar = async (coincide: (r: { url: string; method: string }) => boolean) => {
-    for (let i = 0; i < 50; i++) {
+    const limite = Date.now() + 3000;
+    while (Date.now() < limite) {
       const hallada = ctrl.match(coincide);
       if (hallada.length) return hallada[0];
       await estabilizar();
+      await pausa();
     }
     return ctrl.expectOne(coincide);
   };
   /** Estabiliza la vista hasta que se cumpla la condición (el cierre de un diálogo termina con una animación). */
   const hasta = async (condicion: () => boolean) => {
-    for (let i = 0; i < 50 && !condicion(); i++) await estabilizar();
+    const limite = Date.now() + 3000;
+    while (Date.now() < limite && !condicion()) {
+      await estabilizar();
+      await pausa();
+    }
   };
   return { harness, el, ctrl, estabilizar, panel, botonPanel, esperar, hasta };
 }

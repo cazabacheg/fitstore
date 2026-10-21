@@ -2,6 +2,7 @@ import { HttpContext } from '@angular/common/http';
 import { Component, computed, inject, signal } from '@angular/core';
 import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
 import { SIN_TOAST, camposConError, comoApiError, deliveryApi } from 'shared';
+import { AgenciasAdminService } from 'shared/api/delivery-service';
 import { CampoFormulario } from '../acceso/campo-formulario';
 
 export interface DatosDialogoAgencia {
@@ -62,7 +63,7 @@ const CODIGO_EJEMPLO = 'ABC123';
   `,
 })
 export class DialogoAgencia {
-  private readonly api = inject(deliveryApi.AgenciasAdminService);
+  private readonly api = inject(AgenciasAdminService);
   private readonly ref =
     inject<MatDialogRef<DialogoAgencia, deliveryApi.Agencia | undefined>>(MatDialogRef);
   protected readonly agencia = inject<DatosDialogoAgencia>(MAT_DIALOG_DATA).agencia;

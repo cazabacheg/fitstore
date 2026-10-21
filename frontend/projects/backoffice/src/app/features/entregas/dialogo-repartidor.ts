@@ -2,6 +2,7 @@ import { HttpContext } from '@angular/common/http';
 import { Component, computed, inject, signal } from '@angular/core';
 import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
 import { SIN_TOAST, camposConError, comoApiError, deliveryApi } from 'shared';
+import { RepartidoresService } from 'shared/api/delivery-service';
 import { CampoFormulario } from '../acceso/campo-formulario';
 
 export interface DatosDialogoRepartidor {
@@ -73,7 +74,7 @@ export interface DatosDialogoRepartidor {
   `,
 })
 export class DialogoRepartidor {
-  private readonly api = inject(deliveryApi.RepartidoresService);
+  private readonly api = inject(RepartidoresService);
   private readonly ref =
     inject<MatDialogRef<DialogoRepartidor, deliveryApi.Repartidor | undefined>>(MatDialogRef);
   protected readonly repartidor = inject<DatosDialogoRepartidor>(MAT_DIALOG_DATA).repartidor;
