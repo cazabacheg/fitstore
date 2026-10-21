@@ -15,7 +15,12 @@ import org.springframework.test.context.ContextConfiguration;
 @SpringBootTest(properties = {
     "spring.config.import=file:../../infra/config-repo/catalog-service.yml,file:../../infra/config-repo/catalog-service-cloud.yml",
     "fitstore.outbox.habilitado=false",
-    "fitstore.storage.habilitado=false"
+    "fitstore.storage.habilitado=true",
+    "fitstore.storage.endpoint=http://localhost:9",
+    "fitstore.storage.access-key=GKprueba",
+    "fitstore.storage.secret-key=clave-de-prueba-sin-valor",
+    "fitstore.storage.media-base-url=http://media.prueba/media",
+    "fitstore.catalogo.demo.subir-imagenes=false"
 })
 @ActiveProfiles({"sin-config-server", "cloud"})
 @ContextConfiguration(initializers = PostgresPrueba.class)
