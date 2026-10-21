@@ -48,23 +48,6 @@ public abstract class BoletaApiBase extends PagoApiBase {
         return i;
     }
 
-    /**
-     * Las pruebas comparten la base de datos con las de repositorio, que usan correlativos fijos: al terminar cada prueba se
-     * devuelve la serie al estado de la migración (sin boletas y con el último correlativo en 0).
-     */
-    @org.junit.jupiter.api.AfterEach
-    void devolverLaSerie() {
-        jdbc.update("DELETE FROM boleta");
-        jdbc.update("UPDATE correlativo_boleta SET ultimo = 0");
-    }
-
-    /** Las pruebas comparten base de datos: deja fuera del proceso de boletas lo que otras pruebas dejaron sin boleta. */
-    protected void aislarPendientes() {
-        jdbc.update("""
-                UPDATE intencion_pago SET estado = 'ANULADA'
-                WHERE estado = 'PAGADA' AND NOT EXISTS (SELECT 1 FROM boleta b WHERE b.intencion_id = intencion_pago.id)""");
-    }
-
     protected static String textoDelPdf(byte[] pdf) throws IOException {
         try (PDDocument documento = Loader.loadPDF(pdf)) {
             return new PDFTextStripper().getText(documento).replaceAll("\\s+", " ");

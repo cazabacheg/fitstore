@@ -35,7 +35,6 @@ class BoletaGarageCaidoTest extends BoletaApiBase {
     @Test
     @DisplayName("CA-5-28 con Garage caído el pago sigue confirmado, no se consume el correlativo y la boleta se genera al reintentar")
     void garageCaido() {
-        aislarPendientes();
         IntencionPago i = intencionPagada(clienta);
         doThrow(new IllegalStateException("Garage no responde"))
                 .when(almacenamiento).guardar(eq(TipoBucket.PRIVADO), any(), any(), any());

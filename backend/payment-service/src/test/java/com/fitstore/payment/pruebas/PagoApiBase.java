@@ -70,6 +70,15 @@ public abstract class PagoApiBase {
                 new ConfiguracionPublica.Parametros(List.of("MERCADO_PAGO")))));
     }
 
+    /**
+     * Las pruebas comparten la base de datos con las de repositorio (que asumen tablas casi vacías y la serie de boletas en
+     * 0): al terminar cada prueba se vacían los datos que dejó y la serie vuelve al estado de la migración.
+     */
+    @org.junit.jupiter.api.AfterEach
+    void vaciarDatos() {
+        LimpiezaBd.vaciar(jdbc);
+    }
+
     /** Intención PENDIENTE de S/ 119.80 que vence en 30 minutos, con código único. */
     protected IntencionPago intencion(UUID clienteId) {
         return intencion(clienteId, "119.80", Instant.now().plus(30, ChronoUnit.MINUTES));

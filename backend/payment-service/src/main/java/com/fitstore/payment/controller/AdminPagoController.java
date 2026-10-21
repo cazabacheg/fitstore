@@ -18,6 +18,7 @@ import java.util.Map;
 import java.util.UUID;
 import org.springframework.data.domain.Sort;
 import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
@@ -29,7 +30,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 /** Pagos, intentos y boletas en el backoffice: solo ADMIN (CU-25, CA-5-35). */
 @RestController
-@RequestMapping("/api/v1/admin/pagos")
+@RequestMapping(path = "/api/v1/admin/pagos", produces = MediaType.APPLICATION_JSON_VALUE)
 @PreAuthorize("hasRole('ADMIN')")
 @Validated
 public class AdminPagoController {
@@ -66,7 +67,10 @@ public class AdminPagoController {
         return ApiResponse.ok(pagos.obtener(id));
     }
 
-    @GetMapping("/{id}/boleta")
+    @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Boleta simulada en PDF.",
+            content = @io.swagger.v3.oas.annotations.media.Content(mediaType = MediaType.APPLICATION_PDF_VALUE,
+                    schema = @io.swagger.v3.oas.annotations.media.Schema(type = "string", format = "binary")))
+    @GetMapping(path = "/{id}/boleta", produces = MediaType.APPLICATION_PDF_VALUE)
     public ResponseEntity<byte[]> descargarBoletaAdmin(@PathVariable UUID id) {
         return BoletaRespuestas.pdf(boletas.descargarDeLaIntencion(id));
     }

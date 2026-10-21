@@ -33,6 +33,11 @@ class IntencionPagoConsumidorIT {
     @Autowired RabbitTemplate rabbit;
     @Autowired JdbcTemplate jdbc;
 
+    @org.junit.jupiter.api.AfterEach
+    void vaciarDatos() {
+        com.fitstore.payment.pruebas.LimpiezaBd.vaciar(jdbc);
+    }
+
     private static String pedidoCreado(UUID pedidoId, String codigo) {
         return """
                 {"pedidoId":"%s","codigo":"%s","clienteId":"%s",

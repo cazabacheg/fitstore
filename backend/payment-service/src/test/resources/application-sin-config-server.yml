@@ -3,6 +3,11 @@ spring:
   cloud:
     config:
       enabled: false
+  datasource:
+    hikari:
+      # Muchos contextos de prueba conviven con un solo PostgreSQL (máximo 100 conexiones): pools pequeños
+      maximum-pool-size: 4
+      minimum-idle: 1
   jpa:
     hibernate:
       ddl-auto: validate

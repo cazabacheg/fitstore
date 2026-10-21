@@ -42,7 +42,9 @@ public class OpenApiConfig {
                 return;
             }
             openApi.getPaths().forEach((ruta, item) -> {
-                moverParametrosDeRuta(item);
+                if (!ruta.startsWith("/internal")) {
+                    moverParametrosDeRuta(item);
+                }
                 boolean publica = ruta.startsWith("/api/v1/pagos/webhooks") || ruta.startsWith("/internal");
                 for (Operation operacion : item.readOperations()) {
                     if (!publica) {

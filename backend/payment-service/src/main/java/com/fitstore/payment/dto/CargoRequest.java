@@ -2,6 +2,7 @@ package com.fitstore.payment.dto;
 
 import com.fitstore.payment.model.Medio;
 import com.fitstore.payment.model.Proveedor;
+import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
@@ -12,8 +13,8 @@ public record CargoRequest(
         @NotNull Proveedor proveedor,
         @NotNull Medio medio,
         @NotNull @Size(min = 4, max = 200) String token,
-        @Email String email,
-        Map<String, Object> datosAdicionales) {
+        @Schema(nullable = true) @Email String email,
+        @Schema(nullable = true) Map<String, Object> datosAdicionales) {
 
     /** No se imprime el token en ningún log. */
     @Override

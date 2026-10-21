@@ -13,6 +13,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -38,7 +39,7 @@ public class ExtensionAlcanceController {
                 "Esta función todavía no está disponible");
     }
 
-    @GetMapping("/api/v1/admin/reembolsos")
+    @GetMapping(path = "/api/v1/admin/reembolsos", produces = MediaType.APPLICATION_JSON_VALUE)
     @PreAuthorize("hasRole('ADMIN')")
     public ApiResponse<PaginaResponse<ReembolsoDto>> listarReembolsos(
             @RequestParam(required = false) List<EstadoReembolso> estado,
@@ -48,20 +49,20 @@ public class ExtensionAlcanceController {
         throw extensionDeAlcance();
     }
 
-    @PostMapping("/api/v1/admin/reembolsos/{id}/reintentar")
+    @PostMapping(path = "/api/v1/admin/reembolsos/{id}/reintentar", produces = MediaType.APPLICATION_JSON_VALUE)
     @PreAuthorize("hasRole('ADMIN')")
     public ApiResponse<ReembolsoDto> reintentarReembolso(@PathVariable UUID id) {
         throw extensionDeAlcance();
     }
 
-    @PatchMapping("/api/v1/admin/reembolsos/{id}/resuelto-manual")
+    @PatchMapping(path = "/api/v1/admin/reembolsos/{id}/resuelto-manual", produces = MediaType.APPLICATION_JSON_VALUE)
     @PreAuthorize("hasRole('ADMIN')")
     public ApiResponse<ReembolsoDto> resolverReembolsoManual(@PathVariable UUID id,
             @Valid @RequestBody ResolverManualRequest solicitud) {
         throw extensionDeAlcance();
     }
 
-    @PostMapping("/api/v1/pagos/webhooks/culqi")
+    @PostMapping(path = "/api/v1/pagos/webhooks/culqi", produces = MediaType.APPLICATION_JSON_VALUE)
     public ApiResponse<Void> recibirWebhookCulqi(@RequestBody Map<String, Object> cuerpo) {
         throw extensionDeAlcance();
     }

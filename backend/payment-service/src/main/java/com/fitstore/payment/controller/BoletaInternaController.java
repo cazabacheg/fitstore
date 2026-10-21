@@ -2,6 +2,7 @@ package com.fitstore.payment.controller;
 
 import com.fitstore.payment.service.BoletaService;
 import jakarta.validation.constraints.Pattern;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -21,7 +22,10 @@ public class BoletaInternaController {
         this.boletas = boletas;
     }
 
-    @GetMapping("/{numero}")
+    @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Boleta simulada en PDF.",
+            content = @io.swagger.v3.oas.annotations.media.Content(mediaType = MediaType.APPLICATION_PDF_VALUE,
+                    schema = @io.swagger.v3.oas.annotations.media.Schema(type = "string", format = "binary")))
+    @GetMapping(path = "/{numero}", produces = MediaType.APPLICATION_PDF_VALUE)
     public ResponseEntity<byte[]> obtenerBoletaInterna(@PathVariable @Pattern(regexp = "^B001-[0-9]{8}$") String numero) {
         return BoletaRespuestas.pdf(boletas.descargarPorNumero(numero));
     }

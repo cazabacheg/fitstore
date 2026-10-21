@@ -5,6 +5,7 @@ import com.fitstore.common.api.FitstoreException;
 import com.fitstore.common.security.UsuarioActual;
 import com.fitstore.payment.dto.CargoRequest;
 import com.fitstore.payment.dto.PaginaPago;
+import com.fitstore.payment.dto.RespuestaResultadoCargo;
 import com.fitstore.payment.dto.ResultadoCargoDto;
 import com.fitstore.payment.model.Transaccion;
 import com.fitstore.payment.service.BoletaService;
@@ -14,6 +15,7 @@ import com.fitstore.payment.service.ResultadoCobro;
 import jakarta.validation.Valid;
 import java.util.UUID;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.Authentication;
@@ -27,7 +29,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 /** Página de pago, cobro y boleta de la clienta dueña del pedido (sin lógica: delega en los servicios). */
 @RestController
-@RequestMapping("/api/v1/pagos")
+@RequestMapping(path = "/api/v1/pagos", produces = MediaType.APPLICATION_JSON_VALUE)
 public class PagoController {
 
     private final PagoService pagos;
@@ -46,6 +48,13 @@ public class PagoController {
     }
 
     @PostMapping("/{codigoPedido}/cargos")
+    @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Pago aprobado.",
+            content = @io.swagger.v3.oas.annotations.media.Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                    schema = @io.swagger.v3.oas.annotations.media.Schema(implementation = RespuestaResultadoCargo.class)))
+    @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "202",
+            description = "La pasarela no respondió a tiempo; la página consulta el estado cada 3 s (P4).",
+            content = @io.swagger.v3.oas.annotations.media.Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                    schema = @io.swagger.v3.oas.annotations.media.Schema(implementation = RespuestaResultadoCargo.class)))
     public ResponseEntity<ApiResponse<ResultadoCargoDto>> cobrarPedido(@PathVariable String codigoPedido,
             @RequestHeader("Idempotency-Key") String idempotencyKey, @Valid @RequestBody CargoRequest solicitud,
             Authentication autenticacion) {
@@ -63,7 +72,10 @@ public class PagoController {
         };
     }
 
-    @GetMapping("/{codigoPedido}/boleta")
+    @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Boleta simulada en PDF.",
+            content = @io.swagger.v3.oas.annotations.media.Content(mediaType = MediaType.APPLICATION_PDF_VALUE,
+                    schema = @io.swagger.v3.oas.annotations.media.Schema(type = "string", format = "binary")))
+    @GetMapping(path = "/{codigoPedido}/boleta", produces = MediaType.APPLICATION_PDF_VALUE)
     public ResponseEntity<byte[]> descargarMiBoleta(@PathVariable String codigoPedido, Authentication autenticacion) {
         return BoletaRespuestas.pdf(boletas.descargarDeLaClienta(codigoPedido, clienteId(autenticacion)));
     }
