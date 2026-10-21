@@ -19,7 +19,7 @@ public interface TransaccionRepository extends JpaRepository<Transaccion, UUID> 
 
     Optional<Transaccion> findByProveedorAndIdProveedor(Proveedor proveedor, String idProveedor);
 
-    long countByIntencionId(UUID intencionId);
+    List<Transaccion> findByIntencionIdIn(java.util.Collection<UUID> intencionIds);
 
     /** Las transacciones que el verificador debe consultar a la pasarela (por ejemplo, {@code PROCESANDO} con más de 2 min). */
     List<Transaccion> findByEstadoAndActualizadoEnBefore(EstadoTransaccion estado, Instant antesDe);
