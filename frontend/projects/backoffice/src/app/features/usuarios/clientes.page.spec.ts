@@ -53,15 +53,20 @@ const pagina = (contenido: authApi.ClienteResumen[]) => ({
   totalPaginas: 1,
 });
 
-/** El diálogo de confirmación se cierra con una animación: se espera a que la petición salga. */
+/**
+ * El diálogo de confirmación se cierra con una animación: se espera a que la petición salga, hasta 3 s de reloj
+ * real (con la suite completa corriendo en paralelo, unos pocos ciclos no siempre alcanzan).
+ */
 async function esperar(
   estabilizar: () => Promise<void>,
   coincide: (r: { url: string; method: string }) => boolean,
 ) {
-  for (let i = 0; i < 50; i++) {
+  const limite = Date.now() + 3000;
+  while (Date.now() < limite) {
     const hallada = http().match(coincide);
     if (hallada.length) return hallada[0];
     await estabilizar();
+    await new Promise((r) => setTimeout(r, 10));
   }
   return http().expectOne(coincide);
 }
