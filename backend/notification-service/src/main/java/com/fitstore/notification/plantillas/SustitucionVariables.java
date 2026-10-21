@@ -30,9 +30,14 @@ public final class SustitucionVariables {
 
     /** Escapa el mensaje y sus valores, y solo después convierte {@code **negrita**} y los saltos de línea. */
     public static String mensajeAHtml(String mensaje, Map<String, Object> variables) {
-        String escapado = reemplazar(HtmlUtils.htmlEscape(mensaje), variables, HtmlUtils::htmlEscape);
+        String escapado = reemplazar(escapar(mensaje), variables, SustitucionVariables::escapar);
         String conNegrita = NEGRITA.matcher(escapado).replaceAll("<strong>$1</strong>");
         return conNegrita.replace("\r\n", "\n").replace("\n", "<br/>");
+    }
+
+    /** Escapa solo lo que es marcado HTML ({@code < > & " '}); las tildes salen tal cual en UTF-8. */
+    private static String escapar(String texto) {
+        return HtmlUtils.htmlEscape(texto, "UTF-8");
     }
 
     private static String reemplazar(String texto, Map<String, Object> variables, UnaryOperator<String> formato) {
