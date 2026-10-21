@@ -7,10 +7,12 @@ import com.fitstore.order.carrito.dto.CambiarCantidadRequest;
 import com.fitstore.order.carrito.dto.CarritoDto;
 import com.fitstore.order.carrito.model.CarritoId;
 import com.fitstore.order.carrito.service.CarritoService;
+import com.fitstore.order.pedidos.controller.ExtensionDeAlcance;
 import jakarta.validation.Valid;
 import java.util.UUID;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -74,6 +76,14 @@ public class CarritoController {
             @RequestHeader(name = CABECERA, required = false) String carritoId, @PathVariable long varianteId) {
         CarritoId carrito = identificar(autenticacion, carritoId, true);
         return ApiResponse.ok(servicio.quitar(carrito, varianteId));
+    }
+
+    /** Extensión de alcance (HU-4-02): conserva la firma del contrato, sin lógica. */
+    @PostMapping("/fusionar")
+    @PreAuthorize("hasRole('CLIENTE')")
+    public ApiResponse<CarritoDto> fusionarCarrito(
+            @RequestHeader(name = CABECERA, required = false) String carritoId) {
+        throw ExtensionDeAlcance.de("Fusionar el carrito");
     }
 
     /**

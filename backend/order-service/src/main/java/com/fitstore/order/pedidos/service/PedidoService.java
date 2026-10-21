@@ -1,13 +1,21 @@
 package com.fitstore.order.pedidos.service;
 
+import com.fitstore.common.api.ConflictoNegocioException;
+import com.fitstore.common.api.FitstoreException;
+import com.fitstore.common.api.RecursoNoEncontradoException;
 import com.fitstore.common.event.OutboxRegistrador;
 import com.fitstore.order.event.BoletaEmitida;
 import com.fitstore.order.event.EntregaActualizada;
 import com.fitstore.order.event.PagoConfirmado;
 import com.fitstore.order.event.PagoNoAplicable;
 import com.fitstore.order.event.PagoRechazado;
+import com.fitstore.order.event.PedidoCancelado;
 import com.fitstore.order.event.PedidoExpirado;
+import com.fitstore.order.event.PedidoListoDespacho;
+import com.fitstore.order.event.PedidoListoRecojo;
 import com.fitstore.order.event.PedidoPagado;
+import com.fitstore.order.event.PedidoRecogido;
+import com.fitstore.order.pedidos.dto.AvanzarEstadoRequest;
 import com.fitstore.order.pedidos.model.EstadoPedido;
 import com.fitstore.order.pedidos.model.Pedido;
 import com.fitstore.order.pedidos.model.TipoActor;
@@ -16,9 +24,12 @@ import com.fitstore.order.pedidos.service.dominio.MaquinaEstadosPedido;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
+import java.util.Map;
 import java.util.UUID;
+import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionTemplate;
@@ -33,6 +44,10 @@ public class PedidoService {
 
     private static final Logger LOG = LoggerFactory.getLogger(PedidoService.class);
     private static final int MAX_COMENTARIO = 300;
+
+    /** Quién hace un cambio: el cliente, un miembro del staff (con su nombre del JWT) o el sistema. */
+    public record Actor(TipoActor tipo, UUID id, String nombre) {
+    }
 
     private final PedidoRepository pedidos;
     private final OutboxRegistrador outbox;
@@ -200,6 +215,109 @@ public class PedidoService {
         pedido.agregarHistorial(pedido.getEstado(), pedido.getEstado(), TipoActor.SISTEMA, null,
                 recortar("Intento fallido (" + evento.intento() + ")" + observacion));
         pedidos.save(pedido);
+    }
+
+    // ---------- cancelación (4.6) ----------
+
+    /** El cliente cancela su pedido en PENDIENTE_PAGO o PAGADO; uno ajeno responde 404. */
+    @Transactional
+    public Pedido cancelarComoCliente(UUID clienteId, String codigo) {
+        Pedido pedido = pedidos.findByCodigo(codigo).filter(p -> p.getClienteId().equals(clienteId))
+                .orElseThrow(() -> new RecursoNoEncontradoException("No encontramos ese pedido"));
+        return cancelar(pedido, new Actor(TipoActor.CLIENTE, clienteId, null), "Cancelado por el cliente");
+    }
+
+    /** El staff cancela hasta EN_PREPARACION con un motivo; {@code version} es la que vio el operador (O5). */
+    @Transactional
+    public Pedido cancelarComoStaff(UUID pedidoId, long version, String motivo, Actor actor) {
+        Pedido pedido = buscar(pedidoId);
+        verificarVersion(pedido, version);
+        return cancelar(pedido, actor, motivo.trim());
+    }
+
+    private Pedido cancelar(Pedido pedido, Actor actor, String motivo) {
+        EstadoPedido desde = pedido.getEstado();
+        if (!maquina.puedeCancelar(desde, actor.tipo())) {
+            throw new ConflictoNegocioException("NO_CANCELABLE",
+                    actor.tipo() == TipoActor.CLIENTE ? "El pedido ya está en preparación"
+                            : "El pedido ya no se puede cancelar",
+                    Map.<String, Object>of("estadoActual", desde.name()));
+        }
+        Pedido cancelado = transicionar(pedido.getId(), desde, EstadoPedido.CANCELADO)
+                .orElseThrow(PedidoService::conflictoDeVersion);
+        cancelado.agregarHistorial(desde, EstadoPedido.CANCELADO, actor.tipo(), actor.id(), actor.nombre(), motivo);
+        pedidos.save(cancelado);
+        outbox.registrar("PedidoCancelado", cancelado.getId().toString(),
+                new PedidoCancelado(cancelado.getId(), cancelado.getCodigo(), desde != EstadoPedido.PENDIENTE_PAGO,
+                        motivo, actor.tipo().name(), PedidoMapper.cantidades(cancelado)));
+        return cancelado;
+    }
+
+    // ---------- preparación y despacho (4.5) ----------
+
+    /** El staff avanza el pedido: preparar, dejarlo listo para despacho o recojo, entregarlo en tienda o devolverlo. */
+    @Transactional
+    public Pedido avanzar(UUID pedidoId, AvanzarEstadoRequest peticion, Actor actor) {
+        Pedido pedido = buscar(pedidoId);
+        verificarVersion(pedido, peticion.version());
+        EstadoPedido desde = pedido.getEstado();
+        EstadoPedido hacia = peticion.nuevoEstado();
+        maquina.validar(desde, hacia, TipoActor.STAFF, pedido.getModalidad());
+        if (maquina.transicionesDeStaff(desde, pedido.getModalidad()).stream().noneMatch(t -> t.estado() == hacia)) {
+            // Cancelar tiene su propio endpoint (con motivo obligatorio)
+            throw new ConflictoNegocioException("TRANSICION_INVALIDA",
+                    "No se puede pasar el pedido de " + desde + " a " + hacia,
+                    Map.<String, Object>of("estadoActual", desde.name()));
+        }
+        if (hacia == EstadoPedido.ENTREGADO && !Boolean.TRUE.equals(peticion.dniVerificado())) {
+            throw new FitstoreException(HttpStatus.BAD_REQUEST, "VALIDACION",
+                    "Confirma que verificaste el DNI del destinatario");
+        }
+        String comentario = peticion.comentario() == null || peticion.comentario().isBlank() ? null
+                : recortar(peticion.comentario().trim());
+        if (hacia == EstadoPedido.DEVUELTO && comentario == null) {
+            throw new FitstoreException(HttpStatus.BAD_REQUEST, "VALIDACION", "Indica el motivo");
+        }
+        Pedido avanzado = transicionar(pedido.getId(), desde, hacia).orElseThrow(PedidoService::conflictoDeVersion);
+        avanzado.agregarHistorial(desde, hacia, actor.tipo(), actor.id(), actor.nombre(), comentario);
+        pedidos.save(avanzado);
+        publicarAvance(avanzado, hacia);
+        return avanzado;
+    }
+
+    private void publicarAvance(Pedido p, EstadoPedido hacia) {
+        String id = p.getId().toString();
+        switch (hacia) {
+            case LISTO_DESPACHO -> outbox.registrar("PedidoListoDespacho", id, new PedidoListoDespacho(p.getId(),
+                    p.getCodigo(), p.getModalidad(), PedidoMapper.destinatarioEvento(p.getDestinatario()),
+                    PedidoMapper.direccionEvento(p.getDireccion()), p.getEnvio().getAgenciaId(),
+                    p.getEnvio().getAgenciaNombre(), resumenDeItems(p), 1));
+            case LISTO_RECOJO -> outbox.registrar("PedidoListoRecojo", id,
+                    new PedidoListoRecojo(p.getId(), p.getCodigo(), PedidoMapper.destinatarioEvento(p.getDestinatario())));
+            case ENTREGADO -> outbox.registrar("PedidoRecogido", id,
+                    new PedidoRecogido(p.getId(), p.getCodigo(), PedidoMapper.destinatarioEvento(p.getDestinatario())));
+            default -> { }
+        }
+    }
+
+    private static String resumenDeItems(Pedido p) {
+        return p.getItems().stream()
+                .map(i -> i.getCantidad() + " × " + i.getProductoNombre() + " " + i.getTalla() + " " + i.getColor())
+                .collect(Collectors.joining("; "));
+    }
+
+    private Pedido buscar(UUID pedidoId) {
+        return pedidos.findById(pedidoId).orElseThrow(() -> new RecursoNoEncontradoException("No encontramos ese pedido"));
+    }
+
+    private static void verificarVersion(Pedido pedido, long version) {
+        if (pedido.getVersion() == null || pedido.getVersion() != version) {
+            throw conflictoDeVersion();
+        }
+    }
+
+    static ConflictoNegocioException conflictoDeVersion() {
+        return new ConflictoNegocioException("CONFLICTO_VERSION", "El pedido cambió; recarga la página");
     }
 
     // ---------- comunes ----------
