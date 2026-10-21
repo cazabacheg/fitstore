@@ -256,7 +256,13 @@ const NOMBRE_MODALIDAD: Record<Modalidad, string> = {
                   <ul class="ck-items">
                     @for (i of r.items; track i.varianteId) {
                       <li>
-                        <span class="fs-miniatura" style="width: 48px"><span class="fs-icono" aria-hidden="true">checkroom</span></span>
+                        <span class="fs-miniatura" style="width: 48px">
+                          @if (i.imagenUrl) {
+                            <img [src]="i.imagenUrl" [alt]="i.producto" width="48" height="60" />
+                          } @else {
+                            <span class="fs-icono" aria-hidden="true">checkroom</span>
+                          }
+                        </span>
                         <span class="ck-item__texto">{{ i.producto }} · {{ i.talla }} · {{ i.color }} × {{ i.cantidad }}</span>
                         <span class="ck-item__total">— {{ i.total | precio }}</span>
                       </li>
