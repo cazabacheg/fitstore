@@ -1,6 +1,7 @@
 # Integración completa (ADR-021): PR y push a stage, PR a main. Construye las imágenes, levanta el compose completo
 # en el runner (entorno efímero), corre infra/smoke.sh y la colección Postman base con Newman.
-# Las pruebas E2E llegan desde la spec 8; deploy.yml (push a main) lo crea la spec 8.
+# SPEC-8: tras Newman corren las pruebas E2E con Playwright (CA-8-06 a CA-8-11) y Lighthouse CI (CA-8-12) contra los
+# frontends compilados y servidos por Caddy, sobre la misma plataforma. deploy.yml (push a main) despliega en la nube.
 name: stage
 
 on:
@@ -42,11 +43,73 @@ jobs:
             echo "== $coleccion =="
             npx --yes newman@6.2.2 run "$coleccion" --environment postman/local.postman_environment.json
           done
+      # CA-8-11 Frontends compilados y servidos por la misma imagen de Caddy que usa la nube (tienda :4200, backoffice :4300)
+      - name: Compilar los frontends y levantar Caddy local
+        run: |
+          # CA-8-11
+          set -euo pipefail
+          cd frontend
+          npm ci --no-audit --no-fund
+          npm run build
+          cd ..
+          docker run -d --name caddy-local --network host \
+            -v "$PWD/infra/caddy/Caddyfile.local:/etc/caddy/Caddyfile:ro" \
+            -v "$PWD/frontend/dist/storefront/browser:/srv/tienda:ro" \
+            -v "$PWD/frontend/dist/backoffice/browser:/srv/admin:ro" \
+            caddy:2.11.3
+          for i in $(seq 1 30); do curl -fsS http://localhost:4200/ >/dev/null && curl -fsS http://localhost:4300/ >/dev/null && exit 0; sleep 2; done
+          exit 1
+      # CA-8-06 a CA-8-11 Compra, despacho, white-label, reclamo y dashboard en Chromium, con el pago simulado y la API de
+      # Mailpit para los correos (I3). Las capturas y el video de cada fallo se suben como artefacto.
+      - name: E2E con Playwright
+        working-directory: frontend
+        env:
+          CI: 'true'
+        run: |
+          # CA-8-11
+          npx playwright install --with-deps chromium
+          npx playwright test
+      - name: Artefactos de las E2E (capturas y video de los fallos)
+        if: failure()
+        uses: actions/upload-artifact@v4.6.2
+        with:
+          name: e2e-resultados
+          path: |
+            frontend/e2e-resultados
+            frontend/playwright-report
+          if-no-files-found: ignore
+      # CA-8-12 Lighthouse móvil sobre la landing, el listado y el detalle. Umbral 85 en rendimiento y accesibilidad;
+      # según el brief, si no llega se reporta el puntaje y NO bloquea (continue-on-error).
+      - name: Lighthouse CI
+        id: lighthouse
+        continue-on-error: true
+        working-directory: frontend
+        env:
+          CHROME_PATH: /usr/bin/google-chrome
+        run: |
+          # CA-8-12
+          npx lhci autorun --config=lighthouserc.json
+      - name: Resultado de Lighthouse en el resumen
+        if: always()
+        run: |
+          echo "### Lighthouse CI (umbral 85, no bloqueante)" >> "$GITHUB_STEP_SUMMARY"
+          echo "Resultado del paso: ${{ steps.lighthouse.outcome }}" >> "$GITHUB_STEP_SUMMARY"
+      - name: Informes de Lighthouse
+        if: always()
+        uses: actions/upload-artifact@v4.6.2
+        with:
+          name: lighthouse-resultados
+          path: frontend/lighthouse-resultados
+          if-no-files-found: ignore
+      # CA-8-13 Las pruebas k6 (catálogo y checkout) no corren aquí: las mide el lead en Lyanna antes de promover a main.
       - name: Registros de los contenedores si algo falló
         if: failure()
         run: |
           docker compose -f infra/docker-compose.yml -f infra/docker-compose.dev.yml ps -a
           docker compose -f infra/docker-compose.yml -f infra/docker-compose.dev.yml logs --tail 200
+      - name: Bajar Caddy local
+        if: always()
+        run: docker rm -f caddy-local || true
       - name: Bajar la plataforma
         if: always()
         run: docker compose -f infra/docker-compose.yml -f infra/docker-compose.dev.yml down -v --remove-orphans

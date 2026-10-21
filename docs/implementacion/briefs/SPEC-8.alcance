@@ -8,6 +8,7 @@ frontend/package-lock.json
 infra/docker-compose.cloud.yml
 infra/caddy/*
 infra/scripts/respaldo.sh
+infra/scripts/desplegar.sh
 infra/config-repo/*-cloud.yml
 infra/config-repo/*-demo.yml
 .github/workflows/deploy.yml

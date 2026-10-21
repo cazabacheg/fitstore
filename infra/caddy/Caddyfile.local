@@ -1,0 +1,41 @@
+# Borde para las pruebas E2E en CI y en local (SPEC-8 CA-8-11): sirve los frontends ya compilados en HTTP, igual que
+# lo hace la nube, contra el compose de dev publicado en localhost. Se monta en la imagen oficial de Caddy con
+# --network host:  tienda -> http://localhost:4200 · backoffice -> http://localhost:4300
+{
+	auto_https off
+	admin off
+}
+
+(rutas) {
+	handle /api/* {
+		reverse_proxy localhost:8080
+	}
+	handle /.well-known/jwks.json {
+		reverse_proxy localhost:8080
+	}
+	handle_path /media/* {
+		reverse_proxy localhost:3902 {
+			header_up Host fitstore-media.web.localhost
+		}
+	}
+}
+
+http://:4200 {
+	encode zstd gzip
+	import rutas
+	handle {
+		root * /srv/tienda
+		try_files {path} /index.html
+		file_server
+	}
+}
+
+http://:4300 {
+	encode zstd gzip
+	import rutas
+	handle {
+		root * /srv/admin
+		try_files {path} /index.html
+		file_server
+	}
+}

@@ -1,0 +1,10 @@
+# Para la imagen del borde (infra/caddy/Dockerfile) el contexto sí necesita frontend/, que el .dockerignore de la raíz
+# excluye para las imágenes Java. BuildKit usa este archivo en lugar del de la raíz.
+.git
+.claude/
+backend/
+docs/
+**/target
+**/node_modules
+frontend/dist
+frontend/.angular
