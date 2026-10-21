@@ -6,6 +6,9 @@ spring:
   jpa:
     hibernate:
       ddl-auto: validate
+  flyway:
+    placeholders:
+      mediaBaseUrl: https://tienda.prueba.pe/media
   security:
     oauth2:
       resourceserver:

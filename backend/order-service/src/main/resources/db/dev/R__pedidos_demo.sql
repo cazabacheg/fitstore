@@ -160,7 +160,7 @@ ON CONFLICT (id) DO NOTHING;
 INSERT INTO pedido_item (pedido_id, variante_id, producto_id, sku, producto_nombre, talla, color, imagen_url,
                          precio_unitario, cantidad, descuento_porcentaje, descuento_monto, total)
 SELECT p.id, i.variante_id, i.producto_id, i.sku, i.nombre, i.talla, i.color,
-       'http://fitstore-media.web.localhost:3902/productos/' || i.producto_id || '/demo-negro-400.jpg',
+       '${mediaBaseUrl}/productos/' || i.producto_id || '/demo-negro-400.jpg',
        i.precio, i.cantidad, i.pct, i.descuento, i.precio * i.cantidad - i.descuento
 FROM (VALUES
     ('FS-000105', 10002, 1001, 'LEG01-NEG-M', 'Legging Pro Compresión', 'M', 'negro', 59.90, 2, 0.00, 0.00),

@@ -12,6 +12,9 @@ spring:
       ddl-auto: validate        # el esquema lo maneja Flyway
   flyway:
     locations: classpath:db/migration
+    # Base pública de las imágenes para los datos demo (db/dev): localhost en dev, https://tienda.<dominio>/media en la nube
+    placeholders:
+      mediaBaseUrl: ${MEDIA_BASE_URL:http://fitstore-media.web.localhost:3902}
   cloud:
     openfeign:
       circuitbreaker:
