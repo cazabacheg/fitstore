@@ -1,0 +1,84 @@
+# Despliegue en la nube (SPEC-8, ADR-021): push a main (al integrar un PR de stage) o a mano con la referencia a desplegar.
+# Desvío acordado (extensión de alcance): las imágenes se construyen EN LA VM, no en GHCR. infra/scripts/desplegar.sh
+# copia el código por SSH, escribe la etiqueta del commit en el .env de la VM, construye, levanta y verifica por HTTPS.
+# Secretos del repositorio: VM_HOST, VM_USER, VM_SSH_KEY (llave solo de despliegue) y VM_KNOWN_HOSTS.
+# El .env de la VM (con las claves de la nube) vive solo en la VM: aquí no hay ningún valor sensible.
+name: deploy
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      referencia:
+        description: 'Etiqueta (12 caracteres del commit), rama o tag a desplegar; vacío = la rama elegida. Para volver atrás: la etiqueta anterior'
+        required: false
+        default: ''
+
+permissions:
+  contents: read
+
+# Un despliegue a la vez: dos juntos pisarían la misma carpeta de la VM
+concurrency:
+  group: deploy-nube
+  cancel-in-progress: false
+
+jobs:
+  desplegar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v7.0.1
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v7.0.0
+        with:
+          node-version: '22'
+      # CA-8-22 La clave SSH y el known_hosts salen de GitHub Secrets; nada de esto queda en el repositorio
+      - name: Preparar SSH
+        env:
+          VM_SSH_KEY: ${{ secrets.VM_SSH_KEY }}
+          VM_KNOWN_HOSTS: ${{ secrets.VM_KNOWN_HOSTS }}
+        run: |
+          # CA-8-22
+          set -euo pipefail
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$VM_SSH_KEY" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          printf '%s\n' "$VM_KNOWN_HOSTS" > ~/.ssh/known_hosts
+      # CA-8-20 Copia el código, construye en la VM, levanta y espera a que todo esté healthy; verifica por HTTPS
+      - name: Desplegar en la VM
+        env:
+          VM_HOST: ${{ secrets.VM_HOST }}
+          VM_USER: ${{ secrets.VM_USER }}
+          REFERENCIA: ${{ inputs.referencia }}
+        run: |
+          # CA-8-20, CA-8-22 (workflow_dispatch con la referencia elegida)
+          set -euo pipefail
+          export SSH_OPCIONES="-i $HOME/.ssh/deploy_key -o IdentitiesOnly=yes"
+          infra/scripts/desplegar.sh "${REFERENCIA:-HEAD}"
+      # CA-8-21 Colecciones Postman con el entorno cloud. Las credenciales se leen del .env de la VM y se enmascaran.
+      # La colección base no corre aquí: apunta a /actuator y a la documentación del gateway, que Caddy no publica.
+      - name: Postman con Newman 6.2.2 contra la nube
+        env:
+          VM_HOST: ${{ secrets.VM_HOST }}
+          VM_USER: ${{ secrets.VM_USER }}
+        run: |
+          # CA-8-21
+          set -euo pipefail
+          SSH=(ssh -i "$HOME/.ssh/deploy_key" -o IdentitiesOnly=yes -o BatchMode=yes "$VM_USER@$VM_HOST")
+          leer() { "${SSH[@]}" "grep '^$1=' ~/fitstore/infra/.env | cut -d= -f2- | tr -d \"'\\\"\""; }
+          DOMINIO="$(leer DOMINIO)"
+          ADMIN_EMAIL="$(leer FITSTORE_ADMIN_EMAIL)"
+          ADMIN_PASSWORD="$(leer FITSTORE_ADMIN_PASSWORD)"
+          DEMO_PASSWORD="$(leer DEMO_PASSWORD)"
+          for v in "$ADMIN_PASSWORD" "$DEMO_PASSWORD"; do echo "::add-mask::$v"; done
+          for coleccion in $(ls postman/*.postman_collection.json | grep -v fitstore-base); do
+            echo "== $coleccion =="
+            npx --yes newman@6.2.2 run "$coleccion" --environment postman/entornos/cloud.json \
+              --env-var "baseUrl=https://tienda.$DOMINIO" \
+              --env-var "adminEmail=$ADMIN_EMAIL" --env-var "adminPassword=$ADMIN_PASSWORD" \
+              --env-var "demoPassword=$DEMO_PASSWORD" --env-var "passwordDemo=$DEMO_PASSWORD" \
+              --env-var "operadorPassword=$DEMO_PASSWORD"
+          done
+      # Volver atrás: ejecutar este flujo a mano con la etiqueta anterior (docs/despliegue.md, sección "Volver atrás")

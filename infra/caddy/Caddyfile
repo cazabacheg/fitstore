@@ -1,0 +1,63 @@
+# Borde de la nube (SPEC-8, infraestructura 5). Variables (las pasa docker-compose.cloud.yml desde infra/.env):
+#   DOMINIO               p. ej. fitstore.duckdns.org -> tienda.<DOMINIO> y admin.<DOMINIO>
+#   SWAGGER_USER / SWAGGER_PASSWORD_HASH   acceso a /swagger-ui (hash bcrypt: `caddy hash-password`)
+#   BUCKET_PUBLICO        bucket público de Garage con las imágenes
+# Caddy obtiene y renueva solo los certificados de Let's Encrypt (CA-8-14).
+
+(seguridad) {
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		X-Content-Type-Options "nosniff"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		# El hash es del único script en línea que genera Angular (carga diferida del CSS crítico); si cambia el
+		# constructor de Angular, se recalcula con el índice compilado (ver docs/despliegue.md).
+		# Solo la propia tienda, sus imágenes (/media), las fuentes de Google y los scripts de Culqi y Mercado Pago (CA-8-17)
+		Content-Security-Policy "default-src 'self'; script-src 'self' 'sha256-LMY6wYoFV9I4wWzxaq1N/dTpl4iurQktw706UCHK3vM=' https://checkout.culqi.com https://sdk.mercadopago.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob:; connect-src 'self' https://api.culqi.com https://secure.culqi.com https://api.mercadopago.com https://api.mercadolibre.com https://*.mercadopago.com; frame-src https://checkout.culqi.com https://*.mercadopago.com https://*.mercadolibre.com; object-src 'none'; base-uri 'self'; frame-ancestors 'none'"
+		-Server
+	}
+}
+
+# /api al gateway (la IP real del cliente viaja en X-Forwarded-For, que Caddy pone) y /media al bucket público de Garage
+(rutas_comunes) {
+	handle /api/* {
+		reverse_proxy api-gateway:8080
+	}
+	handle /.well-known/jwks.json {
+		reverse_proxy api-gateway:8080
+	}
+	handle_path /media/* {
+		reverse_proxy garage:3902 {
+			header_up Host {$BUCKET_PUBLICO}.web.localhost
+		}
+	}
+}
+
+tienda.{$DOMINIO} {
+	import seguridad
+	encode zstd gzip
+	import rutas_comunes
+	handle {
+		root * /srv/tienda
+		try_files {path} /index.html
+		file_server
+	}
+}
+
+admin.{$DOMINIO} {
+	import seguridad
+	encode zstd gzip
+	import rutas_comunes
+	# Swagger agregado del gateway, con usuario y contraseña (CA-8-18)
+	@swagger path /swagger-ui /swagger-ui/* /webjars/* /v3/api-docs /v3/api-docs/* /*-service/v3/api-docs
+	handle @swagger {
+		basic_auth {
+			{$SWAGGER_USER} {$SWAGGER_PASSWORD_HASH}
+		}
+		reverse_proxy api-gateway:8080
+	}
+	handle {
+		root * /srv/admin
+		try_files {path} /index.html
+		file_server
+	}
+}

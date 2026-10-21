@@ -1,0 +1,5 @@
+# delivery-service, perfil demo (SPEC-8 I7): se suma a cloud y reactiva los datos de demostración (db/dev).
+# Los ids son los de docs/demo/ids-demo.md, compartidos entre servicios.
+spring:
+  flyway:
+    locations: classpath:db/migration,classpath:db/dev

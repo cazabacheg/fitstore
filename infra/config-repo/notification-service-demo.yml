@@ -1,0 +1,9 @@
+# notification-service, perfil demo (SPEC-8 I7): reactiva los datos de demostración (db/dev). Los correos de la
+# demo salen a Mailpit (sin SES), que no tiene límite de ritmo (SPEC-7 N6).
+spring:
+  flyway:
+    locations: classpath:db/migration,classpath:db/dev
+
+fitstore:
+  notificacion:
+    ritmo-por-segundo: 10

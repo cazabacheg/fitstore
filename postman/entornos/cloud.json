@@ -1,0 +1,17 @@
+{
+  "id": "fitstore-cloud",
+  "name": "FitStore nube",
+  "values": [
+    { "key": "baseUrl", "value": "https://tienda.REEMPLAZAR.duckdns.org", "type": "default", "enabled": true },
+    { "key": "adminEmail", "value": "", "type": "default", "enabled": true },
+    { "key": "adminPassword", "value": "", "type": "secret", "enabled": true },
+    { "key": "demoOperadorEmail", "value": "diana.flores@fitstore.demo", "type": "default", "enabled": true },
+    { "key": "emailStaff", "value": "diana.flores@fitstore.demo", "type": "default", "enabled": true },
+    { "key": "operadorEmail", "value": "diana.flores@fitstore.demo", "type": "default", "enabled": true },
+    { "key": "demoPassword", "value": "", "type": "secret", "enabled": true },
+    { "key": "passwordDemo", "value": "", "type": "secret", "enabled": true },
+    { "key": "operadorPassword", "value": "", "type": "secret", "enabled": true }
+  ],
+  "_postman_variable_scope": "environment",
+  "_comment": "Sin secretos en el repositorio: deploy.yml pasa adminEmail, adminPassword y la contraseña demo (DEMO_PASSWORD) con --env-var leyéndolas del .env de la VM. Para correr a mano: newman run postman/<servicio>.postman_collection.json --environment postman/entornos/cloud.json --env-var baseUrl=https://tienda.<sub>.duckdns.org --env-var adminEmail=... --env-var adminPassword=... --env-var demoPassword=... --env-var passwordDemo=... --env-var operadorPassword=..."
+}

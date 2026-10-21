@@ -1,0 +1,116 @@
+# FitStore: añadidos de la nube (SPEC-8, infraestructura 6.3). Se usa SOLO junto con el compose base:
+#   docker compose -f infra/docker-compose.yml -f infra/docker-compose.cloud.yml up -d
+# Diferencias con dev:
+#   - Perfiles `cloud` (y `demo` en los servicios con datos de demostración, SPEC-8 I7).
+#   - Caddy es lo único que publica puertos (80 y 443): HTTPS, los dos frontends, /api, /media y Swagger con contraseña.
+#   - Mailpit recibe los correos (desvío acordado: sin SES). Las herramientas internas (Mailpit, Jaeger, RabbitMQ y Eureka)
+#     se publican SOLO en 127.0.0.1 de la VM y se ven por túnel SSH (CA-8-15, CA-8-27); desde internet solo responde Caddy.
+#   - Las imágenes se construyen en la VM y llevan la etiqueta del commit (FITSTORE_TAG, la escribe desplegar.sh).
+#   - Auth firma con las claves PEM que desplegar.sh genera una vez fuera del repositorio (JWT_DIR).
+# Memoria: la suma de mem_limit del base (5,6 GiB) más Mailpit y Caddy (128 MiB) queda bajo los 6,5 GB (CA-8-16).
+services:
+  mailpit:
+    image: axllent/mailpit:v1.31.1
+    restart: unless-stopped
+    mem_limit: 64m
+    ports:
+      - "127.0.0.1:8025:8025"   # bandeja: solo por túnel SSH; el SMTP (1025) no se publica
+    healthcheck:
+      test: ["CMD", "/mailpit", "readyz"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  caddy:
+    build:
+      context: ..
+      dockerfile: infra/caddy/Dockerfile
+    image: fitstore/caddy:${FITSTORE_TAG:-dev}
+    restart: unless-stopped
+    mem_limit: 64m
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    environment:
+      DOMINIO: ${DOMINIO:?define DOMINIO en infra/.env (p. ej. fitstore.duckdns.org)}
+      SWAGGER_USER: ${SWAGGER_USER}
+      SWAGGER_PASSWORD_HASH: ${SWAGGER_PASSWORD_HASH:?define SWAGGER_PASSWORD_HASH (hash bcrypt, ver docs/despliegue.md)}
+      BUCKET_PUBLICO: ${S3_BUCKET_PUBLICO}
+    volumes:
+      - caddy-datos:/data
+      - caddy-config:/config
+    depends_on:
+      api-gateway:
+        condition: service_healthy
+      garage:
+        condition: service_healthy
+
+  jaeger:
+    ports:
+      - "127.0.0.1:16686:16686"
+
+  rabbitmq:
+    ports:
+      - "127.0.0.1:15672:15672"
+
+  # --- Plataforma ---
+  config-server:
+    image: fitstore/config-server:${FITSTORE_TAG:-dev}
+
+  discovery-server:
+    image: fitstore/discovery-server:${FITSTORE_TAG:-dev}
+    ports:
+      - "127.0.0.1:8761:8761"
+
+  api-gateway:
+    image: fitstore/api-gateway:${FITSTORE_TAG:-dev}
+    environment:
+      SPRING_PROFILES_ACTIVE: cloud
+
+  # --- Servicios de negocio: cloud + demo ---
+  auth-service:
+    image: fitstore/auth-service:${FITSTORE_TAG:-dev}
+    environment:
+      SPRING_PROFILES_ACTIVE: cloud,demo
+      JWT_PRIVATE_KEY_PATH: /jwt/privada.pem
+      JWT_PUBLIC_KEY_PATH: /jwt/publica.pem
+    volumes:
+      - ${JWT_DIR:?define JWT_DIR en infra/.env (carpeta con las claves, ver docs/despliegue.md)}:/jwt:ro
+
+  catalog-service:
+    image: fitstore/catalog-service:${FITSTORE_TAG:-dev}
+    environment:
+      SPRING_PROFILES_ACTIVE: cloud,demo
+
+  settings-service:
+    image: fitstore/settings-service:${FITSTORE_TAG:-dev}
+    environment:
+      SPRING_PROFILES_ACTIVE: cloud,demo
+
+  order-service:
+    image: fitstore/order-service:${FITSTORE_TAG:-dev}
+    environment:
+      SPRING_PROFILES_ACTIVE: cloud,demo
+
+  payment-service:
+    image: fitstore/payment-service:${FITSTORE_TAG:-dev}
+    environment:
+      SPRING_PROFILES_ACTIVE: cloud,demo
+
+  delivery-service:
+    image: fitstore/delivery-service:${FITSTORE_TAG:-dev}
+    environment:
+      SPRING_PROFILES_ACTIVE: cloud,demo
+
+  notification-service:
+    image: fitstore/notification-service:${FITSTORE_TAG:-dev}
+    environment:
+      SPRING_PROFILES_ACTIVE: cloud,demo
+    depends_on:
+      mailpit:
+        condition: service_healthy
+
+volumes:
+  caddy-datos:
+  caddy-config:
