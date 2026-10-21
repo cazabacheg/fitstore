@@ -24,12 +24,14 @@ async function navegar(url: string, sesion?: typeof SESION_CLIENTE, dev = true) 
   // El shell y las pantallas piden datos: aquí no importan (responden con error y cada pantalla muestra su estado).
   TestBed.inject(HttpTestingController)
     .match(() => true)
-    .forEach((r) =>
-      r.flush(
-        { success: false, mensaje: 'Error', codigo: 'ERROR' },
-        { status: 500, statusText: 'Error' },
-      ),
-    );
+    .forEach((r) => {
+      // Responder una petición puede cancelar otra de la misma pantalla: se revisa justo antes de responder.
+      if (!r.cancelled)
+        r.flush(
+          { success: false, mensaje: 'Error', codigo: 'ERROR' },
+          { status: 500, statusText: 'Error' },
+        );
+    });
   harness.fixture.detectChanges();
   return { router: TestBed.inject(Router), texto: harness.routeNativeElement?.textContent ?? '' };
 }
