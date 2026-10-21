@@ -135,7 +135,7 @@ export class VariantesProducto {
   /** Se borró una variante: la respuesta no trae el producto, así que se pide que se recargue. */
   readonly recargar = output<void>();
 
-  protected readonly precios = signal<Record<number, string>>({});
+  protected readonly precios = signal<Record<number, string | undefined>>({});
   protected readonly existentes = computed(() =>
     this.producto().variantes.map((v) => ({ tallaId: v.tallaId, colorId: v.colorId })),
   );

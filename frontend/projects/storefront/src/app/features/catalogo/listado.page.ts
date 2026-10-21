@@ -5,7 +5,7 @@ import { catalogApi } from 'shared';
 import { combineLatest, map } from 'rxjs';
 import { FsPaginador } from '../../ui/paginador/paginador';
 import { FsTarjetaProducto } from '../../ui/tarjeta-producto/tarjeta-producto';
-import { EstadoCargando, EstadoError, EstadoVacio } from '../../ui/estados/estados';
+import { EstadoError, EstadoVacio } from '../../ui/estados/estados';
 import { ChipsFiltrosActivos } from './chips-filtros-activos';
 import {
   ORDENES,
@@ -26,7 +26,6 @@ import { PanelFiltros } from './panel-filtros';
     ChipsFiltrosActivos,
     FsTarjetaProducto,
     FsPaginador,
-    EstadoCargando,
     EstadoVacio,
     EstadoError,
   ],
