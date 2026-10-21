@@ -1,11 +1,12 @@
 # SPEC-2 — Catálogo e inventario
 
-> Versión: **v9 (aprobado)** — 2026-10-20 · Estados: ✅ decidido · 🟡 propuesto · ❓ abierto
+> Versión: **v10 (aprobado)** — 2026-10-20 · Estados: ✅ decidido · 🟡 propuesto · ❓ abierto
 > **Dueña de:** `backend/catalog-service` (módulos catálogo e inventario) · tienda: `features/catalogo` · backoffice: `features/catalogo`, `features/inventario`.
 > **Depende de:** 0a, 0b, 1 (sesión de staff) · **Habilita:** 3 (destacados de la landing), 4 (cotización y reserva), 8.
 > **Contratos:** `contracts/openapi/catalog-service.yaml` (incluye `/internal/v1/inventario/reservas`); usa el contrato de order (`POST /carrito/items`); eventos `StockBajo`, `StockNoConfirmado` (publica) y `PedidoPagado`, `PedidoCancelado`, `PedidoExpirado` (consume).
 
 **Historial:**
+- v10 (2026-10-20): **recorte de alcance** (decisión del autor): la pantalla P-2-09 (carga masiva); su backend se conserva pasan a [extensión de alcance](../implementacion/extension-alcance.md). Siguen especificadas aquí, marcadas, pero no cuentan para el terminado de esta spec.
 - v9 (2026-10-20): al preparar la ola 2a (decisiones del autor): el WebP se lee con TwelveMonkeys (stack v10) y la salida es JPG; el script de fotos de demostración usa Python + Pillow; sus JPG se versionan en los recursos de catalog, que las sube a Garage al arrancar con `dev` o `demo`; IDs fijos de la demo en `docs/demo/ids-demo.md`. La spec se construye en dos pasos (backend y luego frontend).
 - v8 (2026-10-19): etapa de diseño cerrada: diseños de alta fidelidad enlazados (P-2-01, P-2-02, P-2-04).
 - v7 (2026-10-19): revisión de coherencia: P-2-07 ya no menciona la configuración de inventario (se movió a P-3-04 en la v4).
@@ -33,6 +34,7 @@ Al cerrar esta spec, el admin **arma el catálogo completo** (categorías con gu
 - Colección Postman `catalog`.
 
 **No incluye (y dónde va):**
+- **Extensión de alcance** (decisión del autor, 2026-10-20) → [`extension-alcance.md`](../implementacion/extension-alcance.md): la pantalla P-2-09 (carga masiva); su backend se conserva.
 - Landing y su sección de destacados → spec 3 (usa `GET /productos/destacados`).
 - Carrito, checkout y la llamada a la reserva → spec 4 (aquí se implementa el endpoint de reserva; order lo llama).
 - Correos de las alertas de stock → spec 7 (aquí solo se publican los eventos).
@@ -393,7 +395,7 @@ CA-2-57  Dado Redis caído
 - **Tabla (0b R11):** el **SKU** abre el kardex (`/inventario/:varianteId`, P-2-08); acciones: "Kardex ›" y "Mínimo" (diálogo para el umbral propio del SKU, CA-2-43).
 - **Endpoints:** `GET /admin/inventario`, `POST /admin/inventario/entradas|ajustes`, `PATCH /admin/inventario/{varianteId}/minimo`. (`GET/PUT /admin/inventario/configuracion` lo implementa esta spec, pero lo usa P-3-04 de la SPEC-3.)
 
-### P-2-09 — Carga masiva
+### P-2-09 — Carga masiva (extensión de alcance)
 
 - **Ruta / proyecto:** `/catalogo/productos/carga-masiva` · backoffice · ADMIN.
 - **Boceto:** ![P-2-09](img/P-2-09-carga-masiva.png)
@@ -469,7 +471,7 @@ Todo según el micro de catalog. Decisiones de implementación de esta spec:
 
 ## 9. Definición de terminado
 
-- [ ] CA-2-01 a CA-2-61 cumplidos en CI (k6 en Lyanna).
+- [ ] CA-2-01 a CA-2-61 cumplidos en CI (k6 en Lyanna), salvo los de extensión de alcance.
 - [ ] Postman `catalog` en verde.
 - [ ] El OpenAPI de catalog coincide con lo implementado.
 - [ ] Demostración: cargar un producto completo desde el backoffice (matriz, fotos, publicar) y verlo en la tienda con filtros, detalle y descuento.

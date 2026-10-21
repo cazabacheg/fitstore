@@ -2,6 +2,7 @@ import { HttpContext } from '@angular/common/http';
 import { Component, inject, signal } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
 import { SIN_TOAST, catalogApi } from 'shared';
+import { TiendaService } from 'shared/api/catalog-service';
 import { BannerServicioNoDisponible } from '../ui/banner/banner';
 import { FsToast } from '../ui/toast/toast';
 import { BarraAnuncio } from './barra-anuncio';
@@ -26,7 +27,7 @@ import { Pie } from './pie';
   `,
 })
 export class TiendaShell {
-  private readonly api = inject(catalogApi.TiendaService);
+  private readonly api = inject(TiendaService);
 
   protected readonly categorias = signal<catalogApi.CategoriaNodo[]>([]);
 

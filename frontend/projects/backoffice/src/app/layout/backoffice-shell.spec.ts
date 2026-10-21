@@ -3,7 +3,7 @@ import { OverlayContainer } from '@angular/cdk/overlay';
 import { TestBed } from '@angular/core/testing';
 import { Router } from '@angular/router';
 import { CLAVE_RESPALDO_CONFIG, SesionStore, TemaService, provideContadorMenu } from 'shared';
-import { montar } from '../testing/montar';
+import { montarShell as montar } from '../testing/montar';
 import { SESION_ADMIN, SESION_OPERADOR } from '../testing/sesiones';
 
 function raiz(harness: { routeNativeElement: Element | null }): HTMLElement {

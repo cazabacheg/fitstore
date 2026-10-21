@@ -1,9 +1,19 @@
 import { Routes } from '@angular/router';
-import { Proximamente } from '../../ui/proximamente/proximamente';
+import { sinSesionGuard } from './sin-sesion.guard';
 
-/** Marcador "Próximamente" (CA-0b-15): la spec 1 reemplaza el contenido de esta carpeta. */
+/** Pantallas públicas del backoffice, fuera del shell: P-1-07, P-1-03 y P-1-04 (con los endpoints de staff). */
 export const ACCESO_ROUTES: Routes = [
-  { path: 'ingresar', component: Proximamente, data: { titulo: 'Ingresar' } },
-  { path: 'recuperar', component: Proximamente, data: { titulo: 'Recuperar contraseña' } },
-  { path: 'restablecer', component: Proximamente, data: { titulo: 'Restablecer contraseña' } },
+  {
+    path: 'ingresar',
+    canActivate: [sinSesionGuard],
+    loadComponent: () => import('./ingresar/ingresar-staff.page').then((m) => m.IngresarStaffPage),
+  },
+  {
+    path: 'recuperar',
+    loadComponent: () => import('./recuperar/recuperar.page').then((m) => m.RecuperarPage),
+  },
+  {
+    path: 'restablecer',
+    loadComponent: () => import('./restablecer/restablecer.page').then((m) => m.RestablecerPage),
+  },
 ];

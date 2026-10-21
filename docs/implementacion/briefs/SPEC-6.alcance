@@ -1,0 +1,7 @@
+# Alcance de la SPEC-6 (sección 8 v6).
+backend/delivery-service/*
+infra/config-repo/delivery-service.yml
+infra/config-repo/delivery-service-*.yml
+frontend/projects/backoffice/src/app/features/entregas/*
+frontend/projects/backoffice/src/app/features/maestros-envio/*
+postman/delivery.postman_collection.json

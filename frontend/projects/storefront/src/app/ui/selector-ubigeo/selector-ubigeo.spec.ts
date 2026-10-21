@@ -44,7 +44,32 @@ async function iniciar(entradas: Record<string, unknown> = {}) {
 /** El buscador espera 300 ms sin teclear antes de consultar. */
 const esperarBuscador = () => new Promise((r) => setTimeout(r, 350));
 
+/** Lo justo de `process` de Node para escuchar errores sin manejar (el proyecto no trae @types/node). */
+interface NodeLike {
+  on(evento: string, f: (e: unknown) => void): void;
+  off(evento: string, f: (e: unknown) => void): void;
+}
+
 describe('Selector de ubigeo de ui/', () => {
+  it('CA-0b-26 si /ubigeo falla, el selector queda vacío y no deja un error sin manejar', async () => {
+    const u = await iniciar();
+    const errores: unknown[] = [];
+    const capturar = (e: unknown) => errores.push(e);
+    const proc = (globalThis as unknown as { process: NodeLike }).process;
+    proc.on('uncaughtException', capturar);
+    u.ctrl
+      .expectOne('/api/v1/ubigeo/departamentos')
+      .flush(
+        { success: false, mensaje: 'Error', codigo: 'ERROR' },
+        { status: 500, statusText: 'Error' },
+      );
+    await u.estabilizar();
+    await new Promise((r) => setTimeout(r, 0));
+    proc.off('uncaughtException', capturar);
+    expect(errores).toEqual([]);
+    expect(u.selects()[0].options.length).toBe(1);
+  });
+
   it('CA-0b-26 el buscador espera a que se deje de escribir: una sola consulta con el texto final', async () => {
     const u = await iniciar();
     await u.responder('/api/v1/ubigeo/departamentos', DEPARTAMENTOS);

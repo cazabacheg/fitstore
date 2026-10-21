@@ -10,4 +10,6 @@ public interface ImagenTiendaRepository extends JpaRepository<ImagenTienda, Long
     List<ImagenTienda> findByTipoOrderByOrdenAsc(TipoImagen tipo);
 
     long countByTipo(TipoImagen tipo);
+
+    boolean existsByClave(String clave);
 }

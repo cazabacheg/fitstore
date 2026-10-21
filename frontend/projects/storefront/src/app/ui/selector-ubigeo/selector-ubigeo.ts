@@ -1,12 +1,17 @@
 import { Component, effect, inject, input, output, signal, untracked } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { Subject, catchError, debounceTime, of, switchMap } from 'rxjs';
+import { type OperatorFunction, Subject, catchError, debounceTime, of, switchMap } from 'rxjs';
 import { UbigeoCatalogo, departamentoDe, provinciaDe, type NivelUbigeo } from 'shared';
 import type { settingsApi } from 'shared';
 import { idUnico } from '../id-unico';
 
 /** Espera del buscador antes de consultar (la misma que el selector del backoffice). */
 const ESPERA_BUSCADOR_MS = 300;
+
+/** Si /ubigeo falla, la lista queda vacía: el selector sigue usable y no deja un error sin manejar. */
+function sinError<T>(): OperatorFunction<T[], T[]> {
+  return catchError(() => of([] as T[]));
+}
 
 /**
  * Selector de ubigeo en tres niveles con buscador de distritos; emite el código INEI (sistema de diseño:
@@ -114,7 +119,10 @@ export class FsSelectorUbigeo {
   private readonly busqueda = new Subject<string>();
 
   constructor() {
-    this.catalogo.departamentos().subscribe((lista) => this.departamentos.set(lista));
+    this.catalogo
+      .departamentos()
+      .pipe(sinError())
+      .subscribe((lista) => this.departamentos.set(lista));
     this.busqueda
       .pipe(
         debounceTime(ESPERA_BUSCADOR_MS),
@@ -189,10 +197,16 @@ export class FsSelectorUbigeo {
   }
 
   private cargarProvincias(departamento: string): void {
-    this.catalogo.provincias(departamento).subscribe((l) => this.provincias.set(l));
+    this.catalogo
+      .provincias(departamento)
+      .pipe(sinError())
+      .subscribe((l) => this.provincias.set(l));
   }
 
   private cargarDistritos(provincia: string): void {
-    this.catalogo.distritos(provincia).subscribe((l) => this.distritos.set(l));
+    this.catalogo
+      .distritos(provincia)
+      .pipe(sinError())
+      .subscribe((l) => this.distritos.set(l));
   }
 }

@@ -21,10 +21,17 @@ async function navegar(url: string, sesion?: typeof SESION_CLIENTE, dev = true) 
   if (sesion) TestBed.inject(SesionStore).iniciarSesion(sesion);
   const harness = await RouterTestingHarness.create();
   await harness.navigateByUrl(url);
-  // El shell pide las categorías y la configuración: aquí no importan.
+  // El shell y las pantallas piden datos: aquí no importan (responden con error y cada pantalla muestra su estado).
   TestBed.inject(HttpTestingController)
     .match(() => true)
-    .forEach((r) => r.flush({ success: true, mensaje: '', data: [] }));
+    .forEach((r) => {
+      // Responder una petición puede cancelar otra de la misma pantalla: se revisa justo antes de responder.
+      if (!r.cancelled)
+        r.flush(
+          { success: false, mensaje: 'Error', codigo: 'ERROR' },
+          { status: 500, statusText: 'Error' },
+        );
+    });
   harness.fixture.detectChanges();
   return { router: TestBed.inject(Router), texto: harness.routeNativeElement?.textContent ?? '' };
 }
@@ -54,18 +61,19 @@ const PROTEGIDAS = [
 
 describe('Rutas de la tienda', () => {
   for (const url of PUBLICAS) {
-    it(`CA-0b-15 ${url} carga de forma diferida y muestra "Próximamente"`, async () => {
+    // Su pantalla puede ser el marcador "Próximamente" o la de su spec: lo que se exige es que la ruta exista.
+    it(`CA-0b-15 ${url} carga su pantalla de forma diferida (no cae en la 404)`, async () => {
       const { router, texto } = await navegar(url);
       expect(router.url).toBe(url);
-      expect(texto).toContain('Próximamente');
+      expect(texto).not.toContain('Página no encontrada');
     });
   }
 
   for (const url of PROTEGIDAS) {
-    it(`CA-0b-15 ${url} con sesión de CLIENTE muestra "Próximamente"`, async () => {
+    it(`CA-0b-15 ${url} con sesión de CLIENTE carga su pantalla (no cae en la 404)`, async () => {
       const { router, texto } = await navegar(url, SESION_CLIENTE);
       expect(router.url).toBe(url);
-      expect(texto).toContain('Próximamente');
+      expect(texto).not.toContain('Página no encontrada');
     });
 
     it(`CA-0b-16 ${url} sin sesión lleva a /ingresar recordando la ruta`, async () => {

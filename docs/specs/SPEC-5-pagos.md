@@ -1,11 +1,12 @@
 # SPEC-5 — Pagos
 
-> Versión: **v9 (aprobado)** — 2026-10-19 · Estados: ✅ decidido · 🟡 propuesto · ❓ abierto
+> Versión: **v10 (aprobado)** — 2026-10-20 · Estados: ✅ decidido · 🟡 propuesto · ❓ abierto
 > **Dueña de:** `backend/payment-service` (intención, cobros, webhooks, reembolsos, boleta) · tienda: `features/pago` · backoffice: `features/pagos`.
 > **Depende de:** 0a, 0b, 1 (sesión) · usa el contrato de eventos de order (`PedidoCreado`, `PedidoCancelado`, `PedidoExpirado`, `PagoNoAplicable`, `ReembolsoSolicitado`) y `GET /settings/public` · **Habilita:** 4 (el pedido pasa a `PAGADO`, guarda la boleta y registra lo reembolsado), 7 (correos de pago, reembolso y alerta con la boleta adjunta), 8 (demo de punta a punta).
 > **Contratos:** `contracts/openapi/payment-service.yaml`; eventos que publica `PagoConfirmado`, `PagoRechazado`, `BoletaEmitida`, `PagoReembolsado`, `ReembolsoFallido`.
 
 **Historial:**
+- v10 (2026-10-20): **recorte de alcance** (decisión del autor): HU-5-03 (Culqi), HU-5-04 (Yape), HU-5-10 (reembolso automático), HU-5-12 y P-5-05 (reembolsos fallidos); queda Mercado Pago como pasarela real, más el proveedor simulado pasan a [extensión de alcance](../implementacion/extension-alcance.md). Siguen especificadas aquí, marcadas, pero no cuentan para el terminado de esta spec.
 - v9 (2026-10-19): etapa de diseño cerrada: diseños de alta fidelidad enlazados (P-5-01, P-5-02).
 - v8 (2026-10-19): revisión de coherencia: el contador de reembolsos fallidos se registra con `CONTADOR_MENU` de la SPEC-0b (R3), en lugar de que el *shell* lo consulte por su cuenta.
 - v7 (2026-10-19): los datos de demostración también se cargan en la nube con el perfil `demo` (SPEC-8 I7), con UUID fijos compartidos entre servicios (`docs/demo/ids-demo.md`).
@@ -31,6 +32,7 @@ Al cerrar esta spec, el cliente **paga su pedido** con tarjeta o Yape (Culqi), c
 - Colección Postman `payment`.
 
 **No incluye (y dónde va):**
+- **Extensión de alcance** (decisión del autor, 2026-10-20) → [`extension-alcance.md`](../implementacion/extension-alcance.md): HU-5-03 (Culqi), HU-5-04 (Yape), HU-5-10 (reembolso automático), HU-5-12 y P-5-05 (reembolsos fallidos); queda Mercado Pago como pasarela real, más el proveedor simulado.
 - Cambiar el estado del pedido → spec 4 (consume los eventos de esta spec).
 - Correos de pago confirmado (con la boleta adjunta), pago rechazado, reembolso y alerta de reembolso fallido → spec 7 (aquí se publican los eventos y se expone `/internal/v1/boletas/{numero}`).
 - **Registrar** un reembolso postventa (elegir prendas, monto, motivo y validar el plazo) → spec 4 (HU-4-12, desde el detalle del pedido). Esta spec solo lo **ejecuta** al recibir `ReembolsoSolicitado`.
@@ -86,7 +88,7 @@ CA-5-08  Dado que la cuenta regresiva llega a cero mientras estoy en la página
          Entonces el formulario se bloquea y veo "El plazo para pagar venció"
 ```
 
-### HU-5-03 — Pagar con tarjeta
+### HU-5-03 — Pagar con tarjeta (extensión de alcance)
 
 Como cliente, quiero pagar con mi tarjeta de crédito o débito sin salir de la tienda, para terminar mi compra. · Cubre: CU-10, RF-PAY-01, 05, RNF-06 · Pantallas: [P-5-01](#p-5-01--pago), [P-5-02](#p-5-02--resultado-del-pago)
 
@@ -106,7 +108,7 @@ CA-5-11  Dado un cargo rechazado (tarjeta de prueba de fondos insuficientes)
 CA-5-12  Ningún número de tarjeta ni CVV llega al backend ni a los logs (solo el token de un solo uso, que tampoco se registra)
 ```
 
-### HU-5-04 — Pagar con Yape
+### HU-5-04 — Pagar con Yape (extensión de alcance)
 
 Como cliente, quiero pagar con Yape usando el código de aprobación de mi app, para pagar desde el celular sin tarjeta. · Cubre: RF-PAY-09 · Pantallas: [P-5-01](#p-5-01--pago)
 
@@ -202,7 +204,7 @@ CA-5-29  Cuando descargo mi boleta (GET /pagos/{codigo}/boleta)
          Entonces recibo el PDF; la de otro cliente responde 404; no existe ninguna URL pública del archivo
 ```
 
-### HU-5-10 — Devolver el dinero automáticamente
+### HU-5-10 — Devolver el dinero automáticamente (extensión de alcance)
 
 Como cliente, quiero que me devuelvan el dinero si mi pedido pagado se cancela o si la tienda aprueba un reembolso de mi pedido entregado o devuelto, sin trámites extra. · Cubre: RF-PAY-06, CU-25, CU-41 · Pantallas: no aplica (se ve en P-5-04 y P-5-05)
 
@@ -243,7 +245,7 @@ CA-5-34  Cuando abro un pago
 CA-5-35  Un OPERADOR no ve el menú Pagos y la API le responde 403
 ```
 
-### HU-5-12 — Atender reembolsos fallidos
+### HU-5-12 — Atender reembolsos fallidos (extensión de alcance)
 
 Como administrador, quiero reintentar o cerrar los reembolsos que fallaron, para que ningún cliente se quede sin su dinero. · Cubre: CU-41, RF-PAY-06 · Pantallas: [P-5-05](#p-5-05--reembolsos-backoffice)
 
@@ -299,7 +301,7 @@ CA-5-38  Cuando lo marco como resuelto manualmente (p. ej. devolví por transfer
 - **Tabla (0b R11):** la tabla de intentos no tiene detalle (filas no clicables); el código del pedido del encabezado enlaza a `/pedidos/:id`.
 - **Endpoints:** `GET /admin/pagos/{id}`, `GET /admin/pagos/{id}/boleta`.
 
-### P-5-05 — Reembolsos (backoffice)
+### P-5-05 — Reembolsos (backoffice) (extensión de alcance)
 
 - **Ruta / proyecto:** `/reembolsos` · backoffice · ADMIN.
 - **Boceto:** ![P-5-05](img/P-5-05-reembolsos.png)
@@ -367,7 +369,7 @@ Todo según el micro de payment. Decisiones de implementación de esta spec:
 ## 9. Definición de terminado
 
 - [ ] Prueba de concepto documentada y spec ajustada a su resultado.
-- [ ] CA-5-01 a CA-5-40 cumplidos en CI.
+- [ ] CA-5-01 a CA-5-40 cumplidos en CI, salvo los de extensión de alcance.
 - [ ] Postman `payment` en verde.
 - [ ] El OpenAPI de payment coincide con lo implementado; los eventos coinciden con el AsyncAPI.
 - [ ] Demostración en sandbox: pago con tarjeta de Culqi, con Yape (o con el simulado si el sandbox no lo permite, documentado), con Mercado Pago, un rechazo con reintento, un reembolso tras cancelar y un reembolso postventa parcial.

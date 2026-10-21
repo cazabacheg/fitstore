@@ -1,0 +1,10 @@
+# Alcance de la SPEC-4 (sección 8 v11).
+backend/order-service/*
+infra/config-repo/order-service.yml
+infra/config-repo/order-service-*.yml
+frontend/projects/storefront/src/app/features/carrito/*
+frontend/projects/storefront/src/app/features/checkout/*
+frontend/projects/storefront/src/app/features/mis-pedidos/*
+frontend/projects/backoffice/src/app/features/pedidos/*
+postman/order.postman_collection.json
+k6/checkout.js

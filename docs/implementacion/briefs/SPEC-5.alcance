@@ -1,0 +1,9 @@
+# Alcance de la SPEC-5 (sección 8 v10).
+backend/payment-service/*
+infra/config-repo/payment-service.yml
+infra/config-repo/payment-service-*.yml
+frontend/projects/storefront/src/app/features/pago/*
+frontend/projects/backoffice/src/app/features/pagos/*
+postman/payment.postman_collection.json
+docs/pruebas/poc-pagos.md
+infra/.env.example

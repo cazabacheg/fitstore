@@ -17,7 +17,7 @@ import {
 } from '@angular/material/autocomplete';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
-import { Subject, catchError, debounceTime, of, switchMap } from 'rxjs';
+import { type OperatorFunction, Subject, catchError, debounceTime, of, switchMap } from 'rxjs';
 import { UbigeoCatalogo, departamentoDe, provinciaDe, settingsApi } from 'shared';
 
 /** Espera del buscador antes de consultar: solo se pide el texto final, no cada tecla. */
@@ -25,6 +25,11 @@ const ESPERA_BUSCADOR_MS = 300;
 
 /** Hasta qué nivel se elige: el código emitido tiene 2, 4 o 6 dígitos (CA-0b-26). */
 export type HastaUbigeo = 'departamento' | 'provincia' | 'distrito';
+
+/** Si /ubigeo falla, la lista queda vacía: el selector sigue usable y no deja un error sin manejar. */
+function sinError<T>(): OperatorFunction<T[], T[]> {
+  return catchError(() => of([] as T[]));
+}
 
 /**
  * Selector de ubigeo en tres niveles (departamento › provincia › distrito) con buscador de distritos.
@@ -62,7 +67,10 @@ export class SelectorUbigeo {
   private readonly busqueda = new Subject<string>();
 
   constructor() {
-    this.catalogo.departamentos().subscribe((lista) => this.departamentos.set(lista));
+    this.catalogo
+      .departamentos()
+      .pipe(sinError())
+      .subscribe((lista) => this.departamentos.set(lista));
     this.busqueda
       .pipe(
         debounceTime(ESPERA_BUSCADOR_MS),
@@ -90,7 +98,11 @@ export class SelectorUbigeo {
     this.distrito.set('');
     this.provincias.set([]);
     this.distritos.set([]);
-    if (codigo) this.catalogo.provincias(codigo).subscribe((lista) => this.provincias.set(lista));
+    if (codigo)
+      this.catalogo
+        .provincias(codigo)
+        .pipe(sinError())
+        .subscribe((lista) => this.provincias.set(lista));
     this.publicar();
   }
 
@@ -98,7 +110,11 @@ export class SelectorUbigeo {
     this.provincia.set(codigo);
     this.distrito.set('');
     this.distritos.set([]);
-    if (codigo) this.catalogo.distritos(codigo).subscribe((lista) => this.distritos.set(lista));
+    if (codigo)
+      this.catalogo
+        .distritos(codigo)
+        .pipe(sinError())
+        .subscribe((lista) => this.distritos.set(lista));
     this.publicar();
   }
 
@@ -135,9 +151,15 @@ export class SelectorUbigeo {
     this.provincias.set([]);
     this.distritos.set([]);
     if (this.departamento())
-      this.catalogo.provincias(this.departamento()).subscribe((l) => this.provincias.set(l));
+      this.catalogo
+        .provincias(this.departamento())
+        .pipe(sinError())
+        .subscribe((l) => this.provincias.set(l));
     if (this.provincia())
-      this.catalogo.distritos(this.provincia()).subscribe((l) => this.distritos.set(l));
+      this.catalogo
+        .distritos(this.provincia())
+        .pipe(sinError())
+        .subscribe((l) => this.distritos.set(l));
   }
 
   private publicar(): void {

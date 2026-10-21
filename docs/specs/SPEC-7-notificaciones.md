@@ -1,11 +1,12 @@
 # SPEC-7 — Notificaciones
 
-> Versión: **v5 (aprobado)** — 2026-10-19 · Estados: ✅ decidido · 🟡 propuesto · ❓ abierto
+> Versión: **v6 (aprobado)** — 2026-10-20 · Estados: ✅ decidido · 🟡 propuesto · ❓ abierto
 > **Dueña de:** `backend/notification-service` (enrutamiento de eventos, plantillas, envío, registro) · backoffice: `features/notificaciones`.
 > **Depende de:** 0a, 0b, 1 (sesión de staff) · consume los eventos de auth, order, payment, delivery, catalog y settings (AsyncAPI) y usa `/internal/v1/boletas/{numero}` de payment · **Habilita:** 8 (demo con todos los correos en Mailpit y SES).
 > **Contratos:** `contracts/openapi/notification-service.yaml`; no publica eventos; consume los de la sección 6 del micro.
 
 **Historial:**
+- v6 (2026-10-20): **recorte de alcance** (decisión del autor): HU-7-06, P-7-02 y P-7-03 (edición de textos de correos) y HU-7-07 (retención de datos) pasan a [extensión de alcance](../implementacion/extension-alcance.md). Siguen especificadas aquí, marcadas, pero no cuentan para el terminado de esta spec.
 - v5 (2026-10-19): etapa de diseño: en los correos el texto sobre el color primario se elige por contraste (blanco o color de texto), como en la tienda (CA-7-15; micro v12).
 - v4 (2026-10-19): revisión de coherencia: CA-7-03 aclara que `PedidoExpirado` y `PagoRechazado` no se escuchan (micro v10).
 - v3 (2026-10-19): los datos de demostración también se cargan en la nube con el perfil `demo` (SPEC-8 I7), con UUID fijos compartidos entre servicios (`docs/demo/ids-demo.md`).
@@ -27,6 +28,7 @@ Al cerrar esta spec, cada cosa importante que le pasa a un cliente o a la tienda
 - Colección Postman `notification`.
 
 **No incluye (y dónde va):**
+- **Extensión de alcance** (decisión del autor, 2026-10-20) → [`extension-alcance.md`](../implementacion/extension-alcance.md): HU-7-06, P-7-02 y P-7-03 (edición de textos de correos) y HU-7-07 (retención de datos).
 - Decidir cuándo ocurre cada evento → cada spec dueña (1 a 6) publica sus eventos; esta spec solo los escucha.
 - Configurar Amazon SES en la nube (dominio, verificación, credenciales) → spec 8. Aquí se usa Mailpit y se deja la configuración `cloud` lista.
 - SMS, WhatsApp, notificaciones push y correos de marketing → fuera de alcance (micro 1).
@@ -141,7 +143,7 @@ CA-7-21  Cuando reenvío un envío FALLIDO o ENVIADO (con confirmación)
 CA-7-22  Un OPERADOR no ve el menú Notificaciones y la API le responde 403
 ```
 
-### HU-7-06 — Editar los textos de los correos
+### HU-7-06 — Editar los textos de los correos (extensión de alcance)
 
 Como administrador, quiero cambiar el asunto y los textos de cada correo viendo cómo quedan, para hablarle a mis clientes con el tono de mi tienda. · Cubre: CU-33, RF-NOT-04 · Pantallas: [P-7-02](#p-7-02--plantillas), [P-7-03](#p-7-03--editor-de-plantilla)
 
@@ -169,7 +171,7 @@ CA-7-30  Cuando uso "Enviar prueba a mi correo"
          Y queda en el registro con referencia PRUEBA; como máximo 5 pruebas por minuto por admin
 ```
 
-### HU-7-07 — No guardar datos personales más de lo necesario
+### HU-7-07 — No guardar datos personales más de lo necesario (extensión de alcance)
 
 Como tienda, quiero que el registro de correos se borre solo después de un tiempo, para cumplir la Ley 29733. · Cubre: RNF de privacidad, Ley 29733 · Pantallas: no aplica
 
@@ -200,7 +202,7 @@ CA-7-29  Dado el compose de desarrollo
 - **Estados:** vacío, cargando, error.
 - **Endpoints:** `GET /admin/notificaciones?estado=&plantilla=&destinatario=&referencia=&desde=&hasta=&page=`, `GET /admin/notificaciones/{id}`, `POST /admin/notificaciones/{id}/reenviar`.
 
-### P-7-02 — Plantillas
+### P-7-02 — Plantillas (extensión de alcance)
 
 - **Ruta / proyecto:** `/notificaciones/plantillas` · backoffice · ADMIN.
 - **Boceto:** ![P-7-02](img/P-7-02-plantillas.png)
@@ -209,7 +211,7 @@ CA-7-29  Dado el compose de desarrollo
 - **Tabla (0b R11):** el **nombre** abre el editor (`/notificaciones/plantillas/:codigo`); acción: interruptor "Activa" (bloqueado en las obligatorias, con el texto "Obligatoria").
 - **Endpoints:** `GET /admin/notificaciones/plantillas`, `PUT /admin/notificaciones/plantillas/{codigo}` (solo `activa`).
 
-### P-7-03 — Editor de plantilla
+### P-7-03 — Editor de plantilla (extensión de alcance)
 
 - **Ruta / proyecto:** `/notificaciones/plantillas/:codigo` · backoffice · ADMIN.
 - **Boceto:** ![P-7-03](img/P-7-03-editor.png)
@@ -272,7 +274,7 @@ Todo según el micro de notification. Decisiones de implementación de esta spec
 
 ## 9. Definición de terminado
 
-- [ ] CA-7-01 a CA-7-30 cumplidos en CI.
+- [ ] CA-7-01 a CA-7-30 cumplidos en CI, salvo los de extensión de alcance.
 - [ ] Postman `notification` en verde.
 - [ ] El OpenAPI de notification coincide con lo implementado; los eventos consumidos coinciden con el AsyncAPI.
 - [ ] Demostración: una compra completa con todos sus correos en Mailpit, un correo fallido reenviado y un texto editado con vista previa.

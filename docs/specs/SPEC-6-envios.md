@@ -1,11 +1,12 @@
 # SPEC-6 — Envíos
 
-> Versión: **v5 (aprobado)** — 2026-10-19 · Estados: ✅ decidido · 🟡 propuesto · ❓ abierto
+> Versión: **v6 (aprobado)** — 2026-10-20 · Estados: ✅ decidido · 🟡 propuesto · ❓ abierto
 > **Dueña de:** `backend/delivery-service` (tarifas, cotización, agencias, repartidores, entregas) · backoffice: `features/entregas`, `features/maestros-envio`.
 > **Depende de:** 0a, 0b, 1 (sesión de staff) · usa el evento `PedidoListoDespacho` de order y `/ubigeo` de settings (en el frontend) · **Habilita:** 4 (cotización y opciones de envío en el checkout; el pedido pasa a `ENVIADO` y `ENTREGADO`), 7 (correos de la entrega), 8 (entregas del día en el dashboard).
 > **Contratos:** `contracts/openapi/delivery-service.yaml`; evento que publica `EntregaActualizada`; consume `PedidoListoDespacho`.
 
 **Historial:**
+- v6 (2026-10-20): **recorte de alcance** (decisión del autor): HU-6-08 y P-6-03 (entregas del día y hoja de ruta) y HU-6-10 (devolución a la tienda) pasan a [extensión de alcance](../implementacion/extension-alcance.md). Siguen especificadas aquí, marcadas, pero no cuentan para el terminado de esta spec.
 - v5 (2026-10-19): revisión de coherencia: orden de las rutas `/entregas/dia` y `/entregas/:id`.
 - v4 (2026-10-19): los datos de demostración también se cargan en la nube con el perfil `demo` (SPEC-8 I7), con UUID fijos compartidos entre servicios (`docs/demo/ids-demo.md`).
 - v3 (2026-10-19): revisada por el autor → **spec aprobada**.
@@ -27,6 +28,7 @@ Al cerrar esta spec, el checkout **cotiza el envío** a cualquier distrito con l
 - Colección Postman `delivery`.
 
 **No incluye (y dónde va):**
+- **Extensión de alcance** (decisión del autor, 2026-10-20) → [`extension-alcance.md`](../implementacion/extension-alcance.md): HU-6-08 y P-6-03 (entregas del día y hoja de ruta) y HU-6-10 (devolución a la tienda).
 - Recojo en tienda → spec 4 (lo gestiona order, sin entrega).
 - Estado del pedido y línea de tiempo del cliente → spec 4 (consume `EntregaActualizada`).
 - Correos "en camino", "intento fallido", "disponible en agencia", "entregado" y "pedido devuelto a la tienda" (C14) → spec 7.
@@ -176,7 +178,7 @@ CA-6-27  Cuando marco "Disponible en agencia" y luego "Recogido por el cliente"
          Entonces pasa a DISPONIBLE_EN_AGENCIA y luego a ENTREGADA, con su evento en cada paso
 ```
 
-### HU-6-08 — Planificar el día y la hoja de ruta
+### HU-6-08 — Planificar el día y la hoja de ruta (extensión de alcance)
 
 Como operador, quiero ver las entregas de un día por repartidor e imprimir su hoja de ruta, para organizar la salida de los pedidos. · Cubre: RF-DEL-07 · Pantallas: [P-6-03](#p-6-03--entregas-del-día-y-hoja-de-ruta)
 
@@ -205,7 +207,7 @@ CA-6-32  Cuando filtro por estado, fecha programada, repartidor o código de ped
          Entonces veo solo las que cumplen todos los filtros, y los filtros quedan en la URL
 ```
 
-### HU-6-10 — Devolver a la tienda una entrega que no se concretó
+### HU-6-10 — Devolver a la tienda una entrega que no se concretó (extensión de alcance)
 
 Como operador, quiero cerrar una entrega que ya no se puede completar, para que el pedido no quede trabado y la tienda pueda devolver el dinero. · Cubre: RF-DEL-02, RF-ORD-11 · Pantallas: [P-6-02](#p-6-02--detalle-de-entrega)
 
@@ -240,7 +242,7 @@ CA-6-34  Cuando intento devolver una entrega en otro estado (p. ej. ASIGNADA, EN
 - **Componentes:** `DetalleEntregaPage` con destinatario (DNI y teléfono visibles solo para staff), dirección, ítems, `AccionesEntrega` (según `accionesPermitidas` de la API, como en la spec 4), `DialogoAsignar`, `DialogoFallida` (observación obligatoria), `DialogoEnvioAgencia`, `DialogoDevuelta` (motivo obligatorio; solo en FALLIDA o DISPONIBLE_EN_AGENCIA), `SeguimientoEntrega` (eventos con fecha, actor, observación e intento) y el enlace al pedido.
 - **Endpoints:** `GET /admin/entregas/{id}`, `PATCH /admin/entregas/{id}/asignar|en-ruta|entregada|fallida|enviada-agencia|disponible-agencia|devuelta`.
 
-### P-6-03 — Entregas del día y hoja de ruta
+### P-6-03 — Entregas del día y hoja de ruta (extensión de alcance)
 
 - **Ruta / proyecto:** `/entregas/dia` · backoffice · OPERADOR, ADMIN (en `entregas.routes.ts` se declara antes que `/entregas/:id`, para que "dia" no se tome como un id).
 - **Boceto:** ![P-6-03](img/P-6-03-dia-hoja-ruta.png)
@@ -323,7 +325,7 @@ Todo según el micro de delivery. Decisiones de implementación de esta spec:
 
 ## 9. Definición de terminado
 
-- [ ] CA-6-01 a CA-6-34 cumplidos en CI.
+- [ ] CA-6-01 a CA-6-34 cumplidos en CI, salvo los de extensión de alcance.
 - [ ] Postman `delivery` en verde.
 - [ ] El OpenAPI de delivery coincide con lo implementado; el evento coincide con el AsyncAPI.
 - [ ] Demostración: configurar una tarifa y probarla; un pedido listo para despacho aparece como entrega, se asigna, sale en la hoja de ruta, falla una vez, se reprograma y se entrega; un envío por agencia con código y enlace de rastreo; una entrega devuelta a la tienda y su reembolso; el cliente ve cada paso en "Mis pedidos".

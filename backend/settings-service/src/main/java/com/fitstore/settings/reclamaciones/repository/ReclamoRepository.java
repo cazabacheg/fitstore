@@ -3,10 +3,12 @@ package com.fitstore.settings.reclamaciones.repository;
 import com.fitstore.settings.reclamaciones.model.EstadoReclamo;
 import com.fitstore.settings.reclamaciones.model.Reclamo;
 import com.fitstore.settings.reclamaciones.model.TipoReclamo;
+import jakarta.persistence.LockModeType;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.Repository;
 import org.springframework.data.repository.query.Param;
@@ -15,7 +17,7 @@ import org.springframework.data.repository.query.Param;
  * Los reclamos nunca se eliminan (D8): por eso extiende {@link Repository} y no {@code JpaRepository};
  * solo expone lo necesario para registrar, consultar y actualizar.
  */
-public interface ReclamoRepository extends Repository<Reclamo, Long> {
+public interface ReclamoRepository extends Repository<Reclamo, Long>, ReclamoBusqueda {
 
     Reclamo save(Reclamo reclamo);
 
@@ -26,6 +28,11 @@ public interface ReclamoRepository extends Repository<Reclamo, Long> {
     void flush();
 
     Optional<Reclamo> findById(Long id);
+
+    /** Bloquea la fila hasta el fin de la transacción: dos admins no pueden responder el mismo reclamo a la vez. */
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("SELECT r FROM Reclamo r WHERE r.id = :id")
+    Optional<Reclamo> findByIdParaActualizar(@Param("id") Long id);
 
     Optional<Reclamo> findByNumero(String numero);
 
