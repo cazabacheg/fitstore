@@ -12,6 +12,10 @@ spring:
       ddl-auto: validate
   rabbitmq:
     host: localhost
+    listener:
+      simple:
+        # Sin broker en las pruebas; ConsumidorPedidosIT lo enciende con RabbitMQ en Testcontainers
+        auto-startup: false
   security:
     oauth2:
       resourceserver:
