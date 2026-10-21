@@ -3,6 +3,7 @@ import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/cor
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { SIN_TOAST, settingsApi } from 'shared';
 import { ConfiguracionPublicaService } from 'shared/api/settings-service';
+import { ESTILOS_PANTALLA } from '../estilos-pantalla';
 import { ConfirmacionReclamo } from './confirmacion-reclamo';
 import { FormularioHojaReclamacion, type ReclamoEnviado } from './formulario-hoja-reclamacion';
 
@@ -16,10 +17,10 @@ import { FormularioHojaReclamacion, type ReclamoEnviado } from './formulario-hoj
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="fs-pagina libro">
-      <h1>Libro de Reclamaciones</h1>
+      <h1 class="fs-titulo-pagina">Libro de Reclamaciones</h1>
       @if (proveedor(); as p) {
         <section class="proveedor" data-testid="proveedor" aria-label="Datos del proveedor">
-          <h2>Datos del proveedor</h2>
+          <h2 class="fs-titulo-seccion">Datos del proveedor</h2>
           <dl>
             <dt>Razón social</dt>
             <dd>{{ p.razonSocial }}</dd>
@@ -41,7 +42,9 @@ import { FormularioHojaReclamacion, type ReclamoEnviado } from './formulario-hoj
       }
     </div>
   `,
-  styles: `
+  styles: [
+    ESTILOS_PANTALLA,
+    `
     .libro {
       display: grid;
       gap: 24px;
@@ -58,7 +61,6 @@ import { FormularioHojaReclamacion, type ReclamoEnviado } from './formulario-hoj
     }
     .proveedor h2 {
       margin: 0 0 8px;
-      font-size: 18px;
     }
     .proveedor dl {
       display: grid;
@@ -73,6 +75,7 @@ import { FormularioHojaReclamacion, type ReclamoEnviado } from './formulario-hoj
       margin: 0;
     }
   `,
+  ],
 })
 export class LibroReclamacionesPage {
   private readonly api = inject(ConfiguracionPublicaService);

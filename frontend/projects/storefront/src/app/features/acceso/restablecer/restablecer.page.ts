@@ -6,26 +6,45 @@ import { AutenticacionService } from 'shared/api/auth-service';
 import { FsBoton } from '../../../ui/boton/boton';
 import { FsCampo } from '../../../ui/campo/campo';
 import { errorPassword } from '../validaciones';
+import { ESTILOS_PANTALLA } from '../../estilos-pantalla';
 
 /** Restablecer contraseña (P-1-04): `/restablecer?token=…` con el token del correo (CA-1-13 y CA-1-14). */
 @Component({
   selector: 'fs-restablecer-page',
   imports: [FsCampo, FsBoton, RouterLink],
+  styles: [
+    ESTILOS_PANTALLA,
+    `
+      .acceso {
+        padding-block: 48px 80px;
+        max-width: 440px;
+      }
+      .acceso__tarjeta h1.fs-titulo-pagina {
+        margin-bottom: 20px;
+      }
+      @media (max-width: 720px) {
+        .acceso {
+          padding-block: 24px 48px;
+        }
+      }
+    `,
+  ],
   template: `
-    <section class="fs-pagina" style="padding-block: 48px; max-width: 440px">
+    <section class="fs-pagina acceso">
+      <div class="fs-tarjeta acceso__tarjeta">
       @switch (estado()) {
         @case ('listo') {
-          <h1 style="margin: 0 0 var(--espacio-4)">Tu contraseña se actualizó</h1>
+          <h1 class="fs-titulo-pagina">Tu contraseña se actualizó</h1>
           <p class="fs-suave">Ya puedes ingresar con tu nueva contraseña.</p>
           <a fsBoton variante="primario" routerLink="/ingresar">Ingresar</a>
         }
         @case ('invalido') {
-          <h1 style="margin: 0 0 var(--espacio-4)">Enlace inválido o expirado</h1>
+          <h1 class="fs-titulo-pagina">Enlace inválido o expirado</h1>
           <p class="fs-suave">El enlace ya se usó, venció o fue reemplazado por uno más nuevo.</p>
           <a fsBoton variante="primario" routerLink="/recuperar">Pedir otro enlace</a>
         }
         @default {
-          <h1 style="margin: 0 0 var(--espacio-5)">Crea tu nueva contraseña</h1>
+          <h1 class="fs-titulo-pagina">Crea tu nueva contraseña</h1>
           <form novalidate (submit)="enviar($event)" style="display: grid; gap: var(--espacio-4)">
             @if (errorGeneral()) {
               <div class="fs-aviso fs-aviso--error" role="alert">
@@ -57,6 +76,7 @@ import { errorPassword } from '../validaciones';
           </form>
         }
       }
+      </div>
     </section>
   `,
 })

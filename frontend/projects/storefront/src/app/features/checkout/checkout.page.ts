@@ -8,7 +8,7 @@ import { CheckoutService } from 'shared/api/order-service';
 import { ConfiguracionPublicaService } from 'shared/api/settings-service';
 import { FsBoton } from '../../ui/boton/boton';
 import { EstadoCargando, EstadoError } from '../../ui/estados/estados';
-import { ESTILOS_PANTALLA } from '../catalogo/estilos-pantalla';
+import { ESTILOS_PANTALLA } from '../estilos-pantalla';
 import { DialogoDireccionService } from '../cuenta/direcciones/dialogo-direccion.service';
 
 /** Máximo de direcciones por cliente (invariante 4 de auth). */

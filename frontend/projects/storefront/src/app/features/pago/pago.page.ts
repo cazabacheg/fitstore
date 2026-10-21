@@ -6,7 +6,7 @@ import { PagoService } from 'shared/api/payment-service';
 import { firstValueFrom } from 'rxjs';
 import { FsBoton } from '../../ui/boton/boton';
 import { EstadoCargando, EstadoError } from '../../ui/estados/estados';
-import { ESTILOS_PANTALLA } from '../catalogo/estilos-pantalla';
+import { ESTILOS_PANTALLA } from '../estilos-pantalla';
 import { BrickMercadoPago, type EnvioBrick } from './brick-mercado-pago';
 import { FormularioSimulado } from './formulario-simulado';
 import { ResultadoPago, type TipoResultado } from './resultado-pago';

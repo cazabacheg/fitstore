@@ -3,6 +3,7 @@ import { Component, inject } from '@angular/core';
 import { Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { SIN_TOAST, SesionStore } from 'shared';
 import { AutenticacionService } from 'shared/api/auth-service';
+import { ESTILOS_PANTALLA } from '../estilos-pantalla';
 
 /** Marco de "Mi cuenta" (P-1-05): menú lateral con Perfil, Direcciones, Mis pedidos y Cerrar sesión (CA-1-10). */
 @Component({
@@ -11,7 +12,7 @@ import { AutenticacionService } from 'shared/api/auth-service';
   template: `
     <section class="fs-pagina cuenta">
       <nav class="cuenta__menu" aria-label="Mi cuenta">
-        <h2 style="margin: 0 0 var(--espacio-3); font-size: 1rem">Mi cuenta</h2>
+        <h2 class="fs-titulo-seccion" style="margin-bottom: var(--espacio-3)">Mi cuenta</h2>
         <a routerLink="/cuenta/perfil" routerLinkActive="activo">Perfil</a>
         <a routerLink="/cuenta/direcciones" routerLinkActive="activo">Direcciones</a>
         <a routerLink="/cuenta/pedidos" routerLinkActive="activo">Mis pedidos</a>
@@ -26,7 +27,9 @@ import { AutenticacionService } from 'shared/api/auth-service';
       </div>
     </section>
   `,
-  styles: `
+  styles: [
+    ESTILOS_PANTALLA,
+    `
     .cuenta {
       display: grid;
       grid-template-columns: 220px minmax(0, 1fr);
@@ -58,6 +61,7 @@ import { AutenticacionService } from 'shared/api/auth-service';
       }
     }
   `,
+  ],
 })
 export class CuentaLayout {
   private readonly api = inject(AutenticacionService);

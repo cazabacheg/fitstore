@@ -6,6 +6,7 @@ import { AutenticacionService } from 'shared/api/auth-service';
 import { FsBoton } from '../../../ui/boton/boton';
 import { FsCampo } from '../../../ui/campo/campo';
 import { errorCorreo } from '../validaciones';
+import { ESTILOS_PANTALLA } from '../../estilos-pantalla';
 
 const MENSAJE = 'Si el correo está registrado, te enviaremos un enlace';
 
@@ -13,9 +14,27 @@ const MENSAJE = 'Si el correo está registrado, te enviaremos un enlace';
 @Component({
   selector: 'fs-recuperar-page',
   imports: [FsCampo, FsBoton, RouterLink],
+  styles: [
+    ESTILOS_PANTALLA,
+    `
+      .acceso {
+        padding-block: 48px 80px;
+        max-width: 440px;
+      }
+      .acceso__tarjeta h1.fs-titulo-pagina {
+        margin-bottom: 20px;
+      }
+      @media (max-width: 720px) {
+        .acceso {
+          padding-block: 24px 48px;
+        }
+      }
+    `,
+  ],
   template: `
-    <section class="fs-pagina" style="padding-block: 48px; max-width: 440px">
-      <h1 style="margin: 0 0 var(--espacio-5)">Recupera tu contraseña</h1>
+    <section class="fs-pagina acceso">
+      <div class="fs-tarjeta acceso__tarjeta">
+      <h1 class="fs-titulo-pagina">Recupera tu contraseña</h1>
       @if (enviado()) {
         <div class="fs-aviso fs-aviso--exito" role="status">
           <span class="fs-aviso__texto">{{ mensaje }}</span>
@@ -38,6 +57,7 @@ const MENSAJE = 'Si el correo está registrado, te enviaremos un enlace';
         </form>
         <p style="margin: var(--espacio-4) 0 0"><a routerLink="/ingresar">Volver a ingresar</a></p>
       }
+      </div>
     </section>
   `,
 })

@@ -1,7 +1,7 @@
 import { Component, input, output } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { FsBoton } from '../../ui/boton/boton';
-import { ESTILOS_PANTALLA } from '../catalogo/estilos-pantalla';
+import { ESTILOS_PANTALLA } from '../estilos-pantalla';
 
 export type TipoResultado = 'aprobado' | 'rechazado' | 'confirmando' | 'sin-confirmar';
 

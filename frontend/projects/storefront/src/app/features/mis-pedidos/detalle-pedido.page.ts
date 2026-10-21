@@ -13,7 +13,7 @@ import { MisPedidosService } from 'shared/api/order-service';
 import { FsBoton } from '../../ui/boton/boton';
 import { DialogoConfirmacion } from '../../ui/dialogo/dialogo-confirmacion';
 import { EstadoCargando, EstadoError } from '../../ui/estados/estados';
-import { ESTILOS_PANTALLA } from '../catalogo/estilos-pantalla';
+import { ESTILOS_PANTALLA } from '../estilos-pantalla';
 import { avisosDelHistorial, construirEtapas } from './etapas';
 import { EtiquetaEstado } from './etiqueta-estado';
 

@@ -4,7 +4,7 @@ import { PrecioPipe, orderApi } from 'shared';
 import { FsBoton } from '../../ui/boton/boton';
 import { DialogoConfirmacion } from '../../ui/dialogo/dialogo-confirmacion';
 import { EstadoCargando, EstadoError, EstadoVacio } from '../../ui/estados/estados';
-import { ESTILOS_PANTALLA } from '../catalogo/estilos-pantalla';
+import { ESTILOS_PANTALLA } from '../estilos-pantalla';
 import { CarritoService } from './carrito.service';
 
 /** Espera tras tocar "+" o "−" antes de llamar a la API (ficha `LineaCarrito`). */

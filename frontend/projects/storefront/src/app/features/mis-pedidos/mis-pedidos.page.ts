@@ -5,7 +5,7 @@ import { FechaPipe, PrecioPipe, SIN_TOAST, orderApi } from 'shared';
 import { MisPedidosService } from 'shared/api/order-service';
 import { EstadoCargando, EstadoError, EstadoVacio } from '../../ui/estados/estados';
 import { FsPaginador } from '../../ui/paginador/paginador';
-import { ESTILOS_PANTALLA } from '../catalogo/estilos-pantalla';
+import { ESTILOS_PANTALLA } from '../estilos-pantalla';
 import { EtiquetaEstado } from './etiqueta-estado';
 
 /** Mis pedidos (P-4-03): del más reciente al más antiguo, 10 por página (CA-4-33). */
