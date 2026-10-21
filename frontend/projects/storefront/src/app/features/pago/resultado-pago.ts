@@ -1,6 +1,7 @@
 import { Component, input, output } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { FsBoton } from '../../ui/boton/boton';
+import { ESTILOS_PANTALLA } from '../catalogo/estilos-pantalla';
 
 export type TipoResultado = 'aprobado' | 'rechazado' | 'confirmando' | 'sin-confirmar';
 
@@ -65,7 +66,9 @@ export type TipoResultado = 'aprobado' | 'rechazado' | 'confirmando' | 'sin-conf
       }
     </section>
   `,
-  styles: `
+  styles: [
+    ESTILOS_PANTALLA,
+    `
     .fs-resultado__icono {
       width: 72px;
       height: 72px;
@@ -86,6 +89,7 @@ export type TipoResultado = 'aprobado' | 'rechazado' | 'confirmando' | 'sin-conf
       color: var(--fs-color-info);
     }
   `,
+  ],
 })
 export class ResultadoPago {
   readonly tipo = input.required<TipoResultado>();

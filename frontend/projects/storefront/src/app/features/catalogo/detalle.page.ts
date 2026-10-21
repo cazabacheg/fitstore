@@ -47,14 +47,44 @@ const MAXIMO_SIN_DATO = 99;
   styles: `
     .detalle {
       display: grid;
-      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-      gap: 40px;
-      padding-block: 32px;
+      grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr);
+      gap: 56px;
+      padding-block: 24px 80px;
+      align-items: start;
+    }
+    .detalle > :is(fs-estado-vacio, fs-estado-error, fs-estado-cargando) {
+      grid-column: 1 / -1;
+    }
+    :host ::ng-deep .fs-galeria {
+      max-width: none;
     }
     .info {
       display: grid;
-      gap: 20px;
+      gap: 24px;
       align-content: start;
+    }
+    .migas {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      font-size: 13px;
+      line-height: 20px;
+      color: var(--fs-color-texto-suave);
+    }
+    .migas a {
+      color: var(--fs-color-texto-suave);
+      text-decoration: none;
+    }
+    h1 {
+      margin: 0;
+      font-size: 28px;
+      line-height: 34px;
+      font-weight: 700;
+      letter-spacing: -0.01em;
+    }
+    .descripcion {
+      margin: 0;
+      color: var(--fs-color-texto-suave);
     }
     .fila {
       display: flex;
@@ -78,6 +108,12 @@ const MAXIMO_SIN_DATO = 99;
     @media (max-width: 800px) {
       .detalle {
         grid-template-columns: minmax(0, 1fr);
+        gap: 24px;
+        padding-block: 16px 48px;
+      }
+      h1 {
+        font-size: 24px;
+        line-height: 30px;
       }
     }
   `,
@@ -97,7 +133,9 @@ const MAXIMO_SIN_DATO = 99;
       } @else if (producto.value(); as p) {
         <fs-galeria [imagenes]="galeria()" />
         <div class="info">
-          <nav aria-label="Migas"><a routerLink="/productos">Productos</a> / {{ p.nombre }}</nav>
+          <nav class="migas" aria-label="Migas">
+            <a routerLink="/productos">Productos</a><span aria-hidden="true">/</span><span>{{ p.nombre }}</span>
+          </nav>
           <h1>{{ p.nombre }}</h1>
           <fs-precio [monto]="precio()" />
           @if (agotadoTodo()) {
@@ -132,7 +170,7 @@ const MAXIMO_SIN_DATO = 99;
             />
             <button
               type="button"
-              class="fs-btn fs-btn--primario"
+              class="fs-btn fs-btn--primario fs-btn--lg"
               [disabled]="!puedeAgregar() || agregando()"
               (click)="agregar()"
             >
@@ -142,7 +180,7 @@ const MAXIMO_SIN_DATO = 99;
           @if (!tallaId() && !agotadoTodo()) {
             <small>Elige una talla para agregar el producto.</small>
           }
-          <p>{{ p.descripcion }}</p>
+          <p class="descripcion">{{ p.descripcion }}</p>
         </div>
         @if (p.categorias.length) {
           <fs-guia-tallas-modal [categoria]="p.categorias[0].slug" [(abierto)]="guiaAbierta" />

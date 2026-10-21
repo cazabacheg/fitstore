@@ -8,6 +8,7 @@ import { CheckoutService } from 'shared/api/order-service';
 import { ConfiguracionPublicaService } from 'shared/api/settings-service';
 import { FsBoton } from '../../ui/boton/boton';
 import { EstadoCargando, EstadoError } from '../../ui/estados/estados';
+import { ESTILOS_PANTALLA } from '../catalogo/estilos-pantalla';
 import { DialogoDireccionService } from '../cuenta/direcciones/dialogo-direccion.service';
 
 /** Máximo de direcciones por cliente (invariante 4 de auth). */
@@ -26,153 +27,307 @@ const NOMBRE_MODALIDAD: Record<Modalidad, string> = {
 @Component({
   selector: 'fs-checkout-page',
   imports: [RouterLink, PrecioPipe, FsBoton, EstadoCargando, EstadoError],
+  styles: [
+    ESTILOS_PANTALLA,
+    `
+      .checkout {
+        padding-block: 40px 80px;
+        display: grid;
+        gap: 28px;
+      }
+      .checkout__pasos {
+        display: grid;
+        gap: 32px;
+        align-content: start;
+      }
+      .ck-paso {
+        display: grid;
+        gap: 16px;
+        padding-bottom: 32px;
+        border-bottom: 1px solid var(--fs-color-linea);
+      }
+      .ck-paso--ultimo {
+        border-bottom: 0;
+      }
+      .ck-paso__titulo {
+        display: flex;
+        gap: 12px;
+        align-items: center;
+        margin: 0;
+        font-size: 17px;
+        line-height: 24px;
+        font-weight: 600;
+      }
+      .ck-num {
+        width: 28px;
+        height: 28px;
+        border-radius: var(--radio-pill);
+        background: var(--fs-color-texto);
+        color: var(--fs-color-superficie);
+        display: grid;
+        place-items: center;
+        font-size: 13px;
+        font-weight: 700;
+      }
+      .ck-opciones {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 12px;
+      }
+      .fs-opcion {
+        display: flex;
+        gap: 12px;
+        align-items: flex-start;
+        padding: 16px;
+        border: 1px solid var(--fs-color-borde-control);
+        border-radius: var(--fs-radio-md);
+        background: var(--fs-color-superficie);
+        cursor: pointer;
+      }
+      .fs-opcion--activa {
+        border: 2px solid var(--fs-color-texto);
+        padding: 15px;
+      }
+      .fs-opcion input[type='radio'] {
+        width: 18px;
+        height: 18px;
+        flex: none;
+        margin: 3px 0 0;
+        accent-color: var(--fs-color-texto);
+      }
+      .ck-opcion__texto {
+        flex: 1;
+        min-width: 0;
+      }
+      .ck-items {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        display: grid;
+        gap: 12px;
+      }
+      .ck-items li {
+        display: flex;
+        gap: 14px;
+        align-items: center;
+      }
+      .ck-item__texto {
+        flex: 1;
+        min-width: 0;
+        font-weight: 500;
+      }
+      .ck-item__total {
+        font-variant-numeric: tabular-nums;
+      }
+      .fs-resumen {
+        display: grid;
+        gap: 16px;
+      }
+      .fs-resumen__fila {
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+        font-variant-numeric: tabular-nums;
+      }
+      .fs-resumen__fila--descuento {
+        color: var(--fs-color-exito);
+      }
+      .fs-resumen__total {
+        font-size: 18px;
+      }
+      .fs-linea__error {
+        margin: 0;
+        font-size: 13px;
+        color: var(--fs-color-error);
+      }
+      textarea.fs-input {
+        min-height: 72px;
+        font-family: inherit;
+        resize: vertical;
+      }
+      @media (max-width: 720px) {
+        .checkout {
+          padding-block: 24px 48px;
+        }
+        .ck-opciones {
+          grid-template-columns: minmax(0, 1fr);
+        }
+      }
+    `,
+  ],
   template: `
-    <h1>Finalizar compra</h1>
-    @switch (estado()) {
-      @case ('cargando') {
-        <fs-estado-cargando />
-      }
-      @case ('error') {
-        <fs-estado-error titulo="No pudimos preparar tu compra" (reintentar)="iniciar()" />
-      }
-      @default {
-        <div class="fs-checkout" style="display: grid; gap: var(--espacio-5)">
-          <section aria-labelledby="sec-direccion">
-            <h2 id="sec-direccion">1. Dirección</h2>
-            @if (direcciones().length === 0) {
-              <p class="fs-suave">Aún no tienes direcciones: puedes recoger en tienda o agregar una.</p>
-            }
-            @for (d of direcciones(); track d.id) {
-              <label class="fs-opcion-direccion" style="display: block">
-                <input
-                  type="radio"
-                  name="direccion"
-                  [value]="d.id"
-                  [checked]="direccionId() === d.id"
-                  (change)="elegirDireccion(d.id)"
-                />
-                <strong>{{ d.alias }}</strong> · {{ d.direccion }}
-              </label>
-            }
-            <button
-              type="button"
-              fsBoton
-              variante="contorno"
-              [disabled]="limiteAlcanzado()"
-              (click)="agregarDireccion()"
-            >
-              Agregar dirección
-            </button>
-            @if (limiteAlcanzado()) {
-              <p class="fs-suave">
-                Llegaste al máximo de {{ maximoDirecciones }} direcciones. Elimina una para agregar otra.
-              </p>
-            }
-          </section>
-
-          <section aria-labelledby="sec-entrega">
-            <h2 id="sec-entrega">2. Entrega</h2>
-            @for (m of modalidades(); track m.modalidad) {
-              <label class="fs-opcion-modalidad" style="display: block">
-                <input
-                  type="radio"
-                  name="modalidad"
-                  [value]="m.modalidad"
-                  [checked]="modalidad() === m.modalidad"
-                  (change)="elegirModalidad(m.modalidad)"
-                />
-                <strong>{{ m.nombre }}</strong>
-                @if (m.modalidad === 'RECOJO') {
-                  · Sin costo
-                } @else {
-                  · {{ m.costo | precio }} · {{ m.plazoDiasMin }} a {{ m.plazoDiasMax }} días
+    <section class="fs-pagina checkout">
+      <div style="display: grid; gap: 8px">
+        <a fsBoton variante="texto" tamano="sm" routerLink="/carrito" style="justify-self: start; padding: 0">
+          <span class="fs-icono" aria-hidden="true">arrow_back</span>Volver al carrito
+        </a>
+        <h1 class="fs-titulo-pagina">Finalizar compra</h1>
+      </div>
+      @switch (estado()) {
+        @case ('cargando') {
+          <fs-estado-cargando />
+        }
+        @case ('error') {
+          <fs-estado-error titulo="No pudimos preparar tu compra" (reintentar)="iniciar()" />
+        }
+        @default {
+          <div class="fs-checkout fs-dos-columnas">
+            <div class="checkout__pasos">
+              <section class="ck-paso" aria-labelledby="sec-direccion">
+                <h2 id="sec-direccion" class="ck-paso__titulo"><span class="ck-num" aria-hidden="true">1</span>Dirección</h2>
+                @if (direcciones().length === 0) {
+                  <p class="fs-suave">Aún no tienes direcciones: puedes recoger en tienda o agregar una.</p>
                 }
-              </label>
-            }
-            @if (modalidad() === 'RECOJO') {
-              <p class="fs-tienda" style="margin-top: var(--espacio-2)">
-                {{ tienda() }}
-              </p>
-            }
-            @if (modalidad() === 'AGENCIA') {
-              <label class="fs-agencia" style="display: block; margin-top: var(--espacio-2)">
-                Agencia
-                <select [value]="agenciaId() ?? ''" (change)="elegirAgencia($event)">
-                  <option value="">Elige una agencia</option>
-                  @for (a of agencias(); track a.id) {
-                    <option [value]="a.id" [selected]="agenciaId() === a.id">{{ a.nombre }}</option>
+                <div class="ck-opciones">
+                  @for (d of direcciones(); track d.id) {
+                    <label class="fs-opcion-direccion fs-opcion" [class.fs-opcion--activa]="direccionId() === d.id">
+                      <input
+                        type="radio"
+                        name="direccion"
+                        [value]="d.id"
+                        [checked]="direccionId() === d.id"
+                        (change)="elegirDireccion(d.id)"
+                      />
+                      <span class="ck-opcion__texto"><strong>{{ d.alias }}</strong> · {{ d.direccion }}</span>
+                    </label>
                   }
-                </select>
-              </label>
-            }
-          </section>
-
-          <section aria-labelledby="sec-revision">
-            <h2 id="sec-revision">3. Revisa tu pedido</h2>
-            @if (resumen(); as r) {
-              <ul style="list-style: none; padding: 0">
-                @for (i of r.items; track i.varianteId) {
-                  <li>{{ i.producto }} · {{ i.talla }} · {{ i.color }} × {{ i.cantidad }} — {{ i.total | precio }}</li>
+                </div>
+                <button
+                  type="button"
+                  fsBoton
+                  variante="contorno"
+                  style="justify-self: start"
+                  [disabled]="limiteAlcanzado()"
+                  (click)="agregarDireccion()"
+                >
+                  <span class="fs-icono" aria-hidden="true">add</span>Agregar dirección
+                </button>
+                @if (limiteAlcanzado()) {
+                  <p class="fs-suave">
+                    Llegaste al máximo de {{ maximoDirecciones }} direcciones. Elimina una para agregar otra.
+                  </p>
                 }
-              </ul>
-            }
-          </section>
+              </section>
 
-          <aside class="fs-resumen" aria-live="polite" style="display: grid; gap: var(--espacio-2)">
-            <h2>Resumen</h2>
-            @if (errorEnvio()) {
-              <p class="fs-linea__error" role="alert">
-                No pudimos calcular el envío, inténtalo en un momento
-              </p>
-            }
-            @if (resumen(); as r) {
-              <div class="fs-resumen__fila"><span>Subtotal</span><span>{{ r.subtotal | precio }}</span></div>
-              <div class="fs-resumen__fila"><span>Descuento</span><span>-{{ r.descuentoTotal | precio }}</span></div>
-              <div class="fs-resumen__fila">
-                <span>Envío</span>
-                <span>
-                  {{ r.costoEnvio | precio }}
-                  @if (r.envio.plazoDiasMax) {
-                    · {{ r.envio.plazoDiasMin }} a {{ r.envio.plazoDiasMax }} días
+              <section class="ck-paso" aria-labelledby="sec-entrega">
+                <h2 id="sec-entrega" class="ck-paso__titulo"><span class="ck-num" aria-hidden="true">2</span>Entrega</h2>
+                <div style="display: grid; gap: 12px">
+                  @for (m of modalidades(); track m.modalidad) {
+                    <label class="fs-opcion-modalidad fs-opcion" [class.fs-opcion--activa]="modalidad() === m.modalidad">
+                      <input
+                        type="radio"
+                        name="modalidad"
+                        [value]="m.modalidad"
+                        [checked]="modalidad() === m.modalidad"
+                        (change)="elegirModalidad(m.modalidad)"
+                      />
+                      <span class="ck-opcion__texto">
+                        <strong>{{ m.nombre }}</strong>
+                        @if (m.modalidad === 'RECOJO') {
+                          · Sin costo
+                        } @else {
+                          · {{ m.costo | precio }} · {{ m.plazoDiasMin }} a {{ m.plazoDiasMax }} días
+                        }
+                      </span>
+                    </label>
                   }
-                </span>
-              </div>
-              <div class="fs-resumen__fila fs-resumen__total">
-                <strong>Total</strong><strong>{{ r.total | precio }}</strong>
-              </div>
-              <p class="fs-suave">Apartamos tu stock por {{ r.expiracionMinutos }} minutos.</p>
-            } @else if (recalculando()) {
-              <p class="fs-suave">Calculando…</p>
-            }
-            <label>
-              Notas (opcional)
-              <textarea
-                maxlength="300"
-                [value]="notas()"
-                (input)="notas.set(valorDe($event))"
-                aria-label="Notas del pedido"
-              ></textarea>
-            </label>
-            @if (mensaje(); as texto) {
-              <p class="fs-linea__error" role="alert">{{ texto }}</p>
-            }
-            <button
-              type="button"
-              fsBoton
-              variante="primario"
-              [bloque]="true"
-              [disabled]="!puedeConfirmar()"
-              (click)="confirmar()"
-            >
-              {{ confirmando() ? 'Confirmando…' : 'Confirmar pedido' }}
-            </button>
-            <p class="fs-suave">
-              Al confirmar aceptas los <a routerLink="/terminos">términos y condiciones</a>.
-            </p>
-          </aside>
-        </div>
+                </div>
+                @if (modalidad() === 'RECOJO') {
+                  <p class="fs-tienda fs-suave" style="margin: 0">
+                    {{ tienda() }}
+                  </p>
+                }
+                @if (modalidad() === 'AGENCIA') {
+                  <label class="fs-agencia fs-campo">
+                    <span class="fs-campo__etiqueta">Agencia</span>
+                    <select class="fs-select" [value]="agenciaId() ?? ''" (change)="elegirAgencia($event)">
+                      <option value="">Elige una agencia</option>
+                      @for (a of agencias(); track a.id) {
+                        <option [value]="a.id" [selected]="agenciaId() === a.id">{{ a.nombre }}</option>
+                      }
+                    </select>
+                  </label>
+                }
+              </section>
+
+              <section class="ck-paso ck-paso--ultimo" aria-labelledby="sec-revision">
+                <h2 id="sec-revision" class="ck-paso__titulo"><span class="ck-num" aria-hidden="true">3</span>Revisa tu pedido</h2>
+                @if (resumen(); as r) {
+                  <ul class="ck-items">
+                    @for (i of r.items; track i.varianteId) {
+                      <li>
+                        <span class="fs-miniatura" style="width: 48px"><span class="fs-icono" aria-hidden="true">checkroom</span></span>
+                        <span class="ck-item__texto">{{ i.producto }} · {{ i.talla }} · {{ i.color }} × {{ i.cantidad }}</span>
+                        <span class="ck-item__total">— {{ i.total | precio }}</span>
+                      </li>
+                    }
+                  </ul>
+                }
+              </section>
+            </div>
+
+            <aside class="fs-resumen fs-tarjeta fs-lateral" aria-live="polite">
+              <h2 class="fs-titulo-seccion">Resumen</h2>
+              @if (errorEnvio()) {
+                <p class="fs-linea__error" role="alert">
+                  No pudimos calcular el envío, inténtalo en un momento
+                </p>
+              }
+              @if (resumen(); as r) {
+                <div class="fs-resumen__fila"><span>Subtotal</span><span>{{ r.subtotal | precio }}</span></div>
+                <div class="fs-resumen__fila fs-resumen__fila--descuento">
+                  <span>Descuento</span><span>-{{ r.descuentoTotal | precio }}</span>
+                </div>
+                <div class="fs-resumen__fila">
+                  <span>Envío</span>
+                  <span>
+                    {{ r.costoEnvio | precio }}
+                    @if (r.envio.plazoDiasMax) {
+                      · {{ r.envio.plazoDiasMin }} a {{ r.envio.plazoDiasMax }} días
+                    }
+                  </span>
+                </div>
+                <hr class="fs-linea" />
+                <div class="fs-resumen__fila fs-resumen__total">
+                  <strong>Total</strong><strong>{{ r.total | precio }}</strong>
+                </div>
+                <p class="fs-suave" style="margin: 0">Apartamos tu stock por {{ r.expiracionMinutos }} minutos.</p>
+              } @else if (recalculando()) {
+                <p class="fs-suave" style="margin: 0">Calculando…</p>
+              }
+              <label class="fs-campo">
+                <span class="fs-campo__etiqueta">Notas (opcional)</span>
+                <textarea
+                  class="fs-input"
+                  maxlength="300"
+                  [value]="notas()"
+                  (input)="notas.set(valorDe($event))"
+                  aria-label="Notas del pedido"
+                ></textarea>
+                <span class="fs-campo__ayuda">Hasta 300 caracteres</span>
+              </label>
+              @if (mensaje(); as texto) {
+                <p class="fs-linea__error" role="alert">{{ texto }}</p>
+              }
+              <button
+                type="button"
+                fsBoton
+                variante="primario"
+                tamano="lg"
+                [bloque]="true"
+                [disabled]="!puedeConfirmar()"
+                (click)="confirmar()"
+              >
+                {{ confirmando() ? 'Confirmando…' : 'Confirmar pedido' }}
+              </button>
+              <p class="fs-suave" style="margin: 0; text-align: center">
+                Al confirmar aceptas los <a routerLink="/terminos">términos y condiciones</a>.
+              </p>
+            </aside>
+          </div>
+        }
       }
-    }
+    </section>
   `,
 })
 export class CheckoutPage {

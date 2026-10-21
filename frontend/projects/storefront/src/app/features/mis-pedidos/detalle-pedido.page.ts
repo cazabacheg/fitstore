@@ -13,6 +13,7 @@ import { MisPedidosService } from 'shared/api/order-service';
 import { FsBoton } from '../../ui/boton/boton';
 import { DialogoConfirmacion } from '../../ui/dialogo/dialogo-confirmacion';
 import { EstadoCargando, EstadoError } from '../../ui/estados/estados';
+import { ESTILOS_PANTALLA } from '../catalogo/estilos-pantalla';
 import { avisosDelHistorial, construirEtapas } from './etapas';
 import { EtiquetaEstado } from './etiqueta-estado';
 
@@ -54,109 +55,287 @@ export class CuentaRegresiva {
     EstadoCargando,
     EstadoError,
   ],
-  template: `
-    <a routerLink="/cuenta/pedidos" class="fs-suave">‹ Mis pedidos</a>
-    @switch (estado()) {
-      @case ('cargando') {
-        <fs-estado-cargando />
+  styles: [
+    ESTILOS_PANTALLA,
+    `
+      .detalle-pedido {
+        padding-block: 32px 80px;
+        display: grid;
+        gap: 24px;
+        align-content: start;
       }
-      @case ('no-encontrado') {
-        <section class="fs-estado" role="alert">
-          <h1>No encontramos ese pedido</h1>
-          <p class="fs-suave">Revisa el código o vuelve a tus pedidos.</p>
-          <a fsBoton variante="primario" routerLink="/cuenta/pedidos">Ver mis pedidos</a>
-        </section>
+      .fs-solo-lectores {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        overflow: hidden;
+        clip-path: inset(50%);
+        white-space: nowrap;
       }
-      @case ('error') {
-        <fs-estado-error titulo="No pudimos cargar tu pedido" (reintentar)="cargar()" />
+      .fs-pago-pendiente {
+        display: flex;
+        gap: 16px;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        padding: 14px 16px;
+        border-radius: var(--fs-radio-md);
+        background: var(--fs-color-aviso-suave);
+        color: var(--fs-color-aviso);
+        font-weight: 600;
       }
-      @default {
-        @let p = pedido()!;
-        <header style="display: flex; gap: var(--espacio-4); align-items: center; flex-wrap: wrap">
-          <h1 style="margin: 0">Pedido {{ p.codigo }}</h1>
-          <fs-etiqueta-estado [estado]="p.estado" />
-        </header>
-        <p class="fs-suave">Realizado el {{ p.creadoEn | fecha: 'fechaHora' }}</p>
-
-        @if (devolucion(); as monto) {
-          <p class="fs-banner-exito" role="status">Te devolveremos {{ monto | precio }} al mismo medio de pago.</p>
+      .fs-banner-exito {
+        margin: 0;
+        padding: 14px 16px;
+        border-radius: var(--fs-radio-md);
+        background: var(--fs-color-exito-suave);
+        color: var(--fs-color-exito);
+      }
+      .fs-aviso-historial {
+        margin: 0;
+        padding: 10px 14px;
+        border-radius: var(--fs-radio-md);
+        background: var(--fs-color-aviso-suave);
+        color: var(--fs-color-aviso);
+        font-size: 14px;
+      }
+      .fs-linea-tiempo {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+      }
+      .fs-etapa {
+        display: grid;
+        grid-template-columns: 28px minmax(0, 1fr);
+        gap: 14px;
+        position: relative;
+        padding-bottom: 22px;
+      }
+      .fs-etapa::before {
+        content: '';
+        position: absolute;
+        left: 13px;
+        top: 30px;
+        bottom: 2px;
+        width: 2px;
+        background: var(--fs-color-linea);
+      }
+      .fs-etapa--hecha::before {
+        background: var(--fs-color-texto);
+      }
+      .fs-etapa:last-child {
+        padding-bottom: 0;
+      }
+      .fs-etapa:last-child::before {
+        display: none;
+      }
+      .fs-etapa__punto {
+        width: 28px;
+        height: 28px;
+        border-radius: var(--radio-pill);
+        box-sizing: border-box;
+        border: 2px solid var(--fs-color-linea);
+        background: var(--fs-color-superficie);
+        color: var(--fs-color-texto-suave);
+        display: grid;
+        place-items: center;
+      }
+      .fs-etapa__punto .fs-icono {
+        font-size: 16px;
+      }
+      .fs-etapa--hecha .fs-etapa__punto {
+        background: var(--fs-color-texto);
+        border-color: var(--fs-color-texto);
+        color: var(--fs-color-superficie);
+      }
+      .fs-etapa--actual .fs-etapa__punto {
+        border-color: var(--fs-color-primario-texto);
+        background: var(--fs-color-primario-suave);
+        color: var(--fs-color-primario-texto);
+      }
+      .fs-etapa__texto {
+        display: grid;
+        gap: 2px;
+        padding-top: 2px;
+      }
+      .fs-etapa__descripcion {
+        font-size: 14px;
+      }
+      .pedido__items {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        display: grid;
+        gap: 12px;
+      }
+      .pedido__items li {
+        display: flex;
+        gap: 12px;
+        align-items: center;
+      }
+      .pedido__item-texto {
+        flex: 1;
+        min-width: 0;
+        font-size: 14px;
+        font-weight: 500;
+      }
+      .pedido__item-total {
+        font-size: 14px;
+        font-variant-numeric: tabular-nums;
+      }
+      .fs-resumen-montos {
+        display: grid;
+        gap: 12px;
+      }
+      .fs-resumen__fila {
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+        font-variant-numeric: tabular-nums;
+      }
+      .fs-resumen__fila--descuento {
+        color: var(--fs-color-exito);
+      }
+      .fs-resumen__total {
+        font-size: 17px;
+      }
+      @media (max-width: 720px) {
+        .detalle-pedido {
+          padding-block: 24px 48px;
         }
-
-        @if (p.puedePagar && p.expiraEn) {
-          <section class="fs-pago-pendiente" style="display: flex; gap: var(--espacio-4); align-items: center; flex-wrap: wrap">
-            <fs-cuenta-regresiva [expiraEn]="p.expiraEn" />
-            <a fsBoton variante="primario" [routerLink]="['/pago', p.codigo]">Pagar ahora</a>
+      }
+    `,
+  ],
+  template: `
+    <section class="fs-pagina detalle-pedido">
+      <nav class="fs-migas" aria-label="Migas">
+        <a routerLink="/cuenta/pedidos">‹ Mis pedidos</a>
+      </nav>
+      @switch (estado()) {
+        @case ('cargando') {
+          <fs-estado-cargando />
+        }
+        @case ('no-encontrado') {
+          <section class="fs-estado" role="alert">
+            <h1 class="fs-estado__titulo">No encontramos ese pedido</h1>
+            <p class="fs-suave">Revisa el código o vuelve a tus pedidos.</p>
+            <a fsBoton variante="primario" routerLink="/cuenta/pedidos">Ver mis pedidos</a>
           </section>
         }
-
-        <section aria-labelledby="seguimiento">
-          <h2 id="seguimiento">Seguimiento</h2>
-          <ol class="fs-linea-tiempo" style="list-style: none; padding: 0; display: grid; gap: var(--espacio-4)">
-            @for (e of etapas(); track e.clave) {
-              <li
-                class="fs-etapa"
-                [class.fs-etapa--futura]="e.situacion === 'futura'"
-                [class.fs-etapa--actual]="e.situacion === 'actual'"
-                [style.opacity]="e.situacion === 'futura' ? 0.5 : 1"
-              >
-                <strong class="fs-etapa__nombre">{{ e.nombre }}</strong>
-                @if (e.fecha) {
-                  <span class="fs-suave fs-etapa__fecha"> · {{ e.fecha | fecha: 'fechaHora' }}</span>
-                }
-                <div class="fs-suave fs-etapa__descripcion">{{ e.descripcion }}</div>
-              </li>
-            }
-          </ol>
-          @for (a of avisos(); track a.fecha + a.texto) {
-            <p class="fs-aviso-historial" role="status">{{ a.fecha | fecha: 'fechaHora' }} · {{ a.texto }}</p>
-          }
-        </section>
-
-        <section aria-labelledby="productos">
-          <h2 id="productos">Productos</h2>
-          <ul style="list-style: none; padding: 0">
-            @for (i of p.items; track i.varianteId) {
-              <li style="display: flex; gap: var(--espacio-3); align-items: center">
-                @if (i.imagenUrl) {
-                  <img [src]="i.imagenUrl" alt="" width="56" height="56" />
-                }
-                <span style="flex: 1">{{ i.producto }} · {{ i.talla }} · {{ i.color }} × {{ i.cantidad }}</span>
-                <span>{{ i.total | precio }}</span>
-              </li>
-            }
-          </ul>
-        </section>
-
-        <section aria-labelledby="entrega">
-          <h2 id="entrega">Entrega</h2>
-          @if (p.direccion; as d) {
-            <p>{{ d.direccion }}, {{ d.distrito }}, {{ d.provincia }}, {{ d.departamento }}</p>
-          } @else if (p.envio.tiendaDireccion) {
-            <p>Recojo en tienda: {{ p.envio.tiendaDireccion }}</p>
-          }
-          <p class="fs-suave">Recibe {{ p.destinatario.nombres }} {{ p.destinatario.apellidos }}</p>
-        </section>
-
-        <section aria-labelledby="montos" class="fs-resumen-montos" style="display: grid; gap: var(--espacio-2)">
-          <h2 id="montos">Montos</h2>
-          <div class="fs-resumen__fila"><span>Subtotal</span><span>{{ p.subtotal | precio }}</span></div>
-          <div class="fs-resumen__fila"><span>Descuento</span><span>-{{ p.descuentoTotal | precio }}</span></div>
-          <div class="fs-resumen__fila"><span>Envío</span><span>{{ p.costoEnvio | precio }}</span></div>
-          <div class="fs-resumen__fila"><strong>Total</strong><strong>{{ p.total | precio }}</strong></div>
-        </section>
-
-        @if (p.boletaUrl) {
-          <button type="button" fsBoton variante="contorno" (click)="descargarBoleta(p.boletaUrl)">
-            Descargar boleta
-          </button>
+        @case ('error') {
+          <fs-estado-error titulo="No pudimos cargar tu pedido" (reintentar)="cargar()" />
         }
-        @if (p.puedeCancelar) {
-          <button type="button" fsBoton variante="peligro" (click)="confirmando.set(true)">
-            Cancelar pedido
-          </button>
+        @default {
+          @let p = pedido()!;
+          <div style="display: grid; gap: 8px">
+            <header style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap">
+              <h1 class="fs-titulo-pagina">Pedido <span class="fs-codigo" style="font-size: inherit; font-weight: 700">{{ p.codigo }}</span></h1>
+              <fs-etiqueta-estado [estado]="p.estado" />
+            </header>
+            <span class="fs-suave" style="font-size: 15px">Realizado el {{ p.creadoEn | fecha: 'fechaHora' }}</span>
+          </div>
+
+          @if (devolucion(); as monto) {
+            <p class="fs-banner-exito" role="status">Te devolveremos {{ monto | precio }} al mismo medio de pago.</p>
+          }
+
+          @if (p.puedePagar && p.expiraEn) {
+            <section class="fs-pago-pendiente">
+              <fs-cuenta-regresiva [expiraEn]="p.expiraEn" />
+              <a fsBoton variante="primario" [routerLink]="['/pago', p.codigo]">Pagar ahora</a>
+            </section>
+          }
+
+          <div class="fs-dos-columnas">
+            <section class="fs-tarjeta" aria-labelledby="seguimiento" style="display: grid; gap: 20px">
+              <h2 id="seguimiento" class="fs-titulo-seccion">Seguimiento</h2>
+              <ol class="fs-linea-tiempo">
+                @for (e of etapas(); track e.clave) {
+                  <li
+                    class="fs-etapa"
+                    [class.fs-etapa--hecha]="e.situacion === 'hecha'"
+                    [class.fs-etapa--futura]="e.situacion === 'futura'"
+                    [class.fs-etapa--actual]="e.situacion === 'actual'"
+                    [style.opacity]="e.situacion === 'futura' ? 0.5 : 1"
+                  >
+                    <span class="fs-etapa__punto" aria-hidden="true">
+                      @if (e.situacion === 'hecha') {
+                        <span class="fs-icono">check</span>
+                      } @else if (e.situacion === 'actual') {
+                        <span class="fs-icono">{{ e.final ? 'close' : 'radio_button_checked' }}</span>
+                      }
+                    </span>
+                    <div class="fs-etapa__texto">
+                      <div class="fs-entre" style="align-items: baseline; flex-wrap: wrap">
+                        <strong class="fs-etapa__nombre">{{ e.nombre }}</strong>
+                        @if (e.fecha) {
+                          <span class="fs-suave fs-etapa__fecha">{{ e.fecha | fecha: 'fechaHora' }}</span>
+                        }
+                      </div>
+                      <div class="fs-suave fs-etapa__descripcion">{{ e.descripcion }}</div>
+                    </div>
+                  </li>
+                }
+              </ol>
+              @for (a of avisos(); track a.fecha + a.texto) {
+                <p class="fs-aviso-historial" role="status">{{ a.fecha | fecha: 'fechaHora' }} · {{ a.texto }}</p>
+              }
+            </section>
+
+            <div style="display: grid; gap: 20px; align-content: start">
+              <section class="fs-tarjeta" aria-labelledby="productos" style="display: grid; gap: 12px">
+                <h2 id="productos" class="fs-titulo-seccion">Productos</h2>
+                <ul class="pedido__items">
+                  @for (i of p.items; track i.varianteId) {
+                    <li>
+                      <span class="fs-miniatura" style="width: 44px">
+                        @if (i.imagenUrl) {
+                          <img [src]="i.imagenUrl" alt="" width="44" height="55" />
+                        } @else {
+                          <span class="fs-icono" style="font-size: 16px" aria-hidden="true">checkroom</span>
+                        }
+                      </span>
+                      <span class="pedido__item-texto">{{ i.producto }} · {{ i.talla }} · {{ i.color }} × {{ i.cantidad }}</span>
+                      <span class="pedido__item-total">{{ i.total | precio }}</span>
+                    </li>
+                  }
+                </ul>
+                <hr class="fs-linea" />
+                <div class="fs-resumen-montos" aria-labelledby="montos" role="group">
+                  <h3 id="montos" class="fs-solo-lectores">Montos</h3>
+                  <div class="fs-resumen__fila"><span>Subtotal</span><span>{{ p.subtotal | precio }}</span></div>
+                  <div class="fs-resumen__fila fs-resumen__fila--descuento">
+                    <span>Descuento</span><span>-{{ p.descuentoTotal | precio }}</span>
+                  </div>
+                  <div class="fs-resumen__fila"><span>Envío</span><span>{{ p.costoEnvio | precio }}</span></div>
+                  <div class="fs-resumen__fila fs-resumen__total"><strong>Total</strong><strong>{{ p.total | precio }}</strong></div>
+                </div>
+                @if (p.boletaUrl) {
+                  <button type="button" fsBoton variante="contorno" [bloque]="true" (click)="descargarBoleta(p.boletaUrl)">
+                    <span class="fs-icono" aria-hidden="true">receipt_long</span>Descargar boleta
+                  </button>
+                }
+                @if (p.puedeCancelar) {
+                  <button type="button" fsBoton variante="peligro" [bloque]="true" (click)="confirmando.set(true)">
+                    Cancelar pedido
+                  </button>
+                }
+              </section>
+
+              <section class="fs-tarjeta" aria-labelledby="entrega" style="display: grid; gap: 6px">
+                <h2 id="entrega" class="fs-titulo-seccion">Entrega</h2>
+                @if (p.direccion; as d) {
+                  <span>{{ d.direccion }}, {{ d.distrito }}, {{ d.provincia }}, {{ d.departamento }}</span>
+                } @else if (p.envio.tiendaDireccion) {
+                  <span>Recojo en tienda: {{ p.envio.tiendaDireccion }}</span>
+                }
+                <span class="fs-suave">Recibe {{ p.destinatario.nombres }} {{ p.destinatario.apellidos }}</span>
+              </section>
+            </div>
+          </div>
         }
       }
-    }
+    </section>
     <fs-dialogo-confirmacion
       titulo="¿Cancelar tu pedido?"
       [texto]="textoCancelar()"
