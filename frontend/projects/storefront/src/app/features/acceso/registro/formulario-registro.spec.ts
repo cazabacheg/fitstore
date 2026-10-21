@@ -54,7 +54,17 @@ async function iniciar(opciones: { politicas?: boolean } = {}) {
   };
   const errorDe = (etiqueta: string) =>
     campo(etiqueta).querySelector('.fs-campo__error')?.textContent?.trim() ?? '';
-  return { ...m, ctrl, navegar, escribir, marcar, llenarTodo, enviar, errorDe, store: TestBed.inject(SesionStore) };
+  return {
+    ...m,
+    ctrl,
+    navegar,
+    escribir,
+    marcar,
+    llenarTodo,
+    enviar,
+    errorDe,
+    store: TestBed.inject(SesionStore),
+  };
 }
 
 describe('FormularioRegistro (P-1-02)', () => {
@@ -91,7 +101,10 @@ describe('FormularioRegistro (P-1-02)', () => {
     expect(f.el.textContent).toContain('(v3)');
     expect(f.el.textContent).toContain('(v2)');
     const enlaces = [...f.el.querySelectorAll<HTMLAnchorElement>('a[target="_blank"]')];
-    expect(enlaces.map((a) => a.getAttribute('href'))).toEqual(['/politicas/terminos', '/politicas/privacidad']);
+    expect(enlaces.map((a) => a.getAttribute('href'))).toEqual([
+      '/politicas/terminos',
+      '/politicas/privacidad',
+    ]);
   });
 
   it('CA-1-01 si /settings/public falla muestra el error con "Reintentar" y no permite enviar', async () => {
@@ -105,7 +118,9 @@ describe('FormularioRegistro (P-1-02)', () => {
     await f.enviar();
     f.ctrl.expectNone(REGISTRO);
 
-    [...f.el.querySelectorAll<HTMLButtonElement>('button')].find((b) => b.textContent?.includes('Reintentar'))!.click();
+    [...f.el.querySelectorAll<HTMLButtonElement>('button')]
+      .find((b) => b.textContent?.includes('Reintentar'))!
+      .click();
     f.ctrl.expectOne(PUBLICA).flush(ok({ politicas: POLITICAS }));
     await f.estabilizar();
     expect(f.el.querySelector<HTMLButtonElement>('button[type="submit"]')!.disabled).toBe(false);
@@ -115,10 +130,12 @@ describe('FormularioRegistro (P-1-02)', () => {
     const f = await iniciar();
     await f.llenarTodo();
     await f.enviar();
-    f.ctrl.expectOne(REGISTRO).flush(
-      { success: false, mensaje: 'El correo ya está registrado', codigo: 'CORREO_DUPLICADO' },
-      { status: 409, statusText: 'Conflict' },
-    );
+    f.ctrl
+      .expectOne(REGISTRO)
+      .flush(
+        { success: false, mensaje: 'El correo ya está registrado', codigo: 'CORREO_DUPLICADO' },
+        { status: 409, statusText: 'Conflict' },
+      );
     await f.estabilizar();
 
     expect(f.errorDe('Correo')).toContain('El correo ya está registrado');
@@ -130,10 +147,12 @@ describe('FormularioRegistro (P-1-02)', () => {
     const f = await iniciar();
     await f.llenarTodo();
     await f.enviar();
-    f.ctrl.expectOne(REGISTRO).flush(
-      { success: false, mensaje: 'El DNI ya está registrado', codigo: 'DNI_DUPLICADO' },
-      { status: 409, statusText: 'Conflict' },
-    );
+    f.ctrl
+      .expectOne(REGISTRO)
+      .flush(
+        { success: false, mensaje: 'El DNI ya está registrado', codigo: 'DNI_DUPLICADO' },
+        { status: 409, statusText: 'Conflict' },
+      );
     await f.estabilizar();
 
     expect(f.errorDe('DNI')).toContain('El DNI ya está registrado');

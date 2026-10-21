@@ -52,7 +52,9 @@ describe('RecuperarPage (P-1-03)', () => {
     await u.campo('Correo', 'ana@correo.com');
     await u.enviar();
 
-    const peticion = TestBed.inject(HttpTestingController).expectOne('/api/v1/auth/password/olvido');
+    const peticion = TestBed.inject(HttpTestingController).expectOne(
+      '/api/v1/auth/password/olvido',
+    );
     expect(peticion.request.body).toEqual({ email: 'ana@correo.com' });
     peticion.flush(ok('Si el correo está registrado, te enviaremos un enlace'));
     await m.estabilizar();
@@ -81,8 +83,13 @@ describe('RestablecerPage (P-1-04)', () => {
     await u.campo('Repite la contraseña', 'NuevaClave2027');
     await u.enviar();
 
-    const peticion = TestBed.inject(HttpTestingController).expectOne('/api/v1/auth/password/restablecer');
-    expect(peticion.request.body).toEqual({ token: 't'.repeat(43), nuevaPassword: 'NuevaClave2027' });
+    const peticion = TestBed.inject(HttpTestingController).expectOne(
+      '/api/v1/auth/password/restablecer',
+    );
+    expect(peticion.request.body).toEqual({
+      token: 't'.repeat(43),
+      nuevaPassword: 'NuevaClave2027',
+    });
     peticion.flush(ok('Contraseña actualizada'));
     await m.estabilizar();
 

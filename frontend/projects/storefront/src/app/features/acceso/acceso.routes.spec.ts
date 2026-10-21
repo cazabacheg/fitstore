@@ -4,13 +4,13 @@ import { TestBed } from '@angular/core/testing';
 import { Router, provideRouter } from '@angular/router';
 import { RouterTestingHarness } from '@angular/router/testing';
 import { SesionStore, provideFitstoreHttp, provideSesionConfig } from 'shared';
-import { SESION_CLIENTE } from '../../testing';
+import { SESION_CLIENTE, SESION_STAFF } from '../../testing';
 import { ACCESO_ROUTES } from './acceso.routes';
 
 @Component({ template: 'perfil' })
 class PerfilFalso {}
 
-async function arrancar(conSesion: boolean) {
+async function arrancar(conSesion: boolean | 'staff') {
   TestBed.configureTestingModule({
     providers: [
       provideZonelessChangeDetection(),
@@ -23,7 +23,10 @@ async function arrancar(conSesion: boolean) {
       provideSesionConfig({ tipo: 'CLIENTE' }),
     ],
   });
-  if (conSesion) TestBed.inject(SesionStore).iniciarSesion(SESION_CLIENTE);
+  if (conSesion)
+    TestBed.inject(SesionStore).iniciarSesion(
+      conSesion === 'staff' ? SESION_STAFF : SESION_CLIENTE,
+    );
   return RouterTestingHarness.create();
 }
 
@@ -40,14 +43,24 @@ describe('Rutas de acceso de la tienda', () => {
     expect(TestBed.inject(Router).url).toBe('/cuenta/perfil');
   });
 
+  it('CA-1-04 una sesión de staff no cuenta en la tienda: /ingresar sigue mostrando el ingreso (sin redirigir en bucle)', async () => {
+    const h = await arrancar('staff');
+    await h.navigateByUrl('/ingresar');
+    expect(TestBed.inject(Router).url).toBe('/ingresar');
+  });
+
   it('CA-1-01 /registro, /recuperar y /restablecer son públicas y cargan su pantalla', async () => {
     const h = await arrancar(false);
     await h.navigateByUrl('/registro');
-    TestBed.inject(HttpTestingController).match('/api/v1/settings/public').forEach((r) => r.flush(null, { status: 503, statusText: 'x' }));
+    TestBed.inject(HttpTestingController)
+      .match('/api/v1/settings/public')
+      .forEach((r) => r.flush(null, { status: 503, statusText: 'x' }));
     expect((h.routeNativeElement as HTMLElement).textContent).toContain('Crea tu cuenta');
     await h.navigateByUrl('/recuperar');
     expect((h.routeNativeElement as HTMLElement).textContent).toContain('Recupera tu contraseña');
     await h.navigateByUrl('/restablecer');
-    expect((h.routeNativeElement as HTMLElement).textContent).toContain('Enlace inválido o expirado');
+    expect((h.routeNativeElement as HTMLElement).textContent).toContain(
+      'Enlace inválido o expirado',
+    );
   });
 });

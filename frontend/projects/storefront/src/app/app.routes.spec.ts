@@ -29,18 +29,22 @@ async function navegar(url: string, sesion?: typeof SESION_CLIENTE, dev = true) 
   return { router: TestBed.inject(Router), texto: harness.routeNativeElement?.textContent ?? '' };
 }
 
+// Las rutas de acceso y de cuenta (SPEC-1) ya no son marcadores: sus pantallas tienen sus propias pruebas en features/.
 const PUBLICAS = [
   '/',
   '/productos',
   '/categoria/leggings',
   '/producto/legging-negro',
   '/carrito',
-  '/ingresar',
-  '/registro',
-  '/recuperar',
-  '/restablecer',
   '/libro-de-reclamaciones',
   '/politicas/terminos',
+];
+
+const PROTEGIDAS_CON_MARCADOR = [
+  '/checkout',
+  '/pago/FS-000124',
+  '/cuenta/pedidos',
+  '/cuenta/pedidos/FS-000124',
 ];
 
 const PROTEGIDAS = [
@@ -61,13 +65,15 @@ describe('Rutas de la tienda', () => {
     });
   }
 
-  for (const url of PROTEGIDAS) {
+  for (const url of PROTEGIDAS_CON_MARCADOR) {
     it(`CA-0b-15 ${url} con sesión de CLIENTE muestra "Próximamente"`, async () => {
       const { router, texto } = await navegar(url, SESION_CLIENTE);
       expect(router.url).toBe(url);
       expect(texto).toContain('Próximamente');
     });
+  }
 
+  for (const url of PROTEGIDAS) {
     it(`CA-0b-16 ${url} sin sesión lleva a /ingresar recordando la ruta`, async () => {
       const { router } = await navegar(url);
       expect(router.url).toBe(`/ingresar?returnUrl=${encodeURIComponent(url)}`);

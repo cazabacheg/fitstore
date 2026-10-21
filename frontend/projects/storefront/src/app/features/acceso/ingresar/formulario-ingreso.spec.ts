@@ -80,10 +80,16 @@ describe('FormularioIngreso (P-1-01)', () => {
     await f.escribir('email', 'rosa@correo.pe');
     await f.escribir('password', 'Incorrecta1');
     await f.enviar();
-    f.ctrl.expectOne(RUTA).flush(
-      { success: false, mensaje: 'Correo o contraseña incorrectos', codigo: 'CREDENCIALES_INVALIDAS' },
-      { status: 401, statusText: 'Unauthorized' },
-    );
+    f.ctrl
+      .expectOne(RUTA)
+      .flush(
+        {
+          success: false,
+          mensaje: 'Correo o contraseña incorrectos',
+          codigo: 'CREDENCIALES_INVALIDAS',
+        },
+        { status: 401, statusText: 'Unauthorized' },
+      );
     await f.estabilizar();
 
     expect(f.alerta()).toContain('Correo o contraseña incorrectos');
@@ -97,10 +103,12 @@ describe('FormularioIngreso (P-1-01)', () => {
     await f.escribir('email', 'rosa@correo.pe');
     await f.escribir('password', 'Gamarra2026');
     await f.enviar();
-    f.ctrl.expectOne(RUTA).flush(
-      { success: false, mensaje: 'Cuenta bloqueada temporalmente', codigo: 'CUENTA_BLOQUEADA' },
-      { status: 423, statusText: 'Locked' },
-    );
+    f.ctrl
+      .expectOne(RUTA)
+      .flush(
+        { success: false, mensaje: 'Cuenta bloqueada temporalmente', codigo: 'CUENTA_BLOQUEADA' },
+        { status: 423, statusText: 'Locked' },
+      );
     await f.estabilizar();
 
     expect(f.alerta()).toContain('Cuenta bloqueada temporalmente');
