@@ -20,10 +20,11 @@ export const SESION_STAFF: authApi.Sesion = {
   cuenta: { ...SESION_CLIENTE.cuenta, tipo: 'STAFF', rol: 'ADMIN', email: 'admin@fitstore.pe' },
 };
 
-import { Routes } from '@angular/router';
+import { ActivatedRoute, Routes } from '@angular/router';
 import {
   Component,
   EnvironmentProviders,
+  inject,
   Provider,
   Type,
   provideZonelessChangeDetection,
@@ -53,8 +54,14 @@ export async function montar<T>(
 }
 
 /** Pantalla neutra para las pruebas del layout: no pide datos ni depende de la spec dueña de la carpeta. */
-@Component({ selector: 'fs-pantalla-de-prueba', template: '<p>Pantalla de prueba</p>' })
-class PantallaDePrueba {}
+@Component({
+  selector: 'fs-pantalla-de-prueba',
+  template: '<h1>{{ titulo }}</h1><p>Pantalla de prueba</p>',
+})
+class PantallaDePrueba {
+  /** Como las pantallas reales, muestra el título de su ruta. */
+  protected readonly titulo = (inject(ActivatedRoute).snapshot.data['titulo'] as string) ?? '';
+}
 
 function aPrueba(rutas: Routes): Routes {
   return rutas.map((ruta) => ({

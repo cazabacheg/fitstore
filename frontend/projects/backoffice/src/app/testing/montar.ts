@@ -1,7 +1,7 @@
 import { provideHttpClientTesting } from '@angular/common/http/testing';
-import { Component, Provider } from '@angular/core';
+import { Component, Provider, inject } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
-import { Routes, provideRouter } from '@angular/router';
+import { ActivatedRoute, Routes, provideRouter } from '@angular/router';
 import { RouterTestingHarness } from '@angular/router/testing';
 import { SesionStore, provideFitstoreHttp, provideSesionConfig, type authApi } from 'shared';
 import { crearRutas } from '../app.routes';
@@ -47,8 +47,14 @@ export async function montar(
 }
 
 /** Pantalla neutra para las pruebas del layout: no pide datos ni depende de la spec dueña de la carpeta. */
-@Component({ selector: 'fs-pantalla-de-prueba', template: '<p>Pantalla de prueba</p>' })
-class PantallaDePrueba {}
+@Component({
+  selector: 'fs-pantalla-de-prueba',
+  template: '<h1>{{ titulo }}</h1><p>Pantalla de prueba</p>',
+})
+class PantallaDePrueba {
+  /** Como las pantallas reales, muestra el título de su ruta. */
+  protected readonly titulo = (inject(ActivatedRoute).snapshot.data['titulo'] as string) ?? '';
+}
 
 function aPrueba(rutas: Routes): Routes {
   return rutas.map((ruta) => ({
