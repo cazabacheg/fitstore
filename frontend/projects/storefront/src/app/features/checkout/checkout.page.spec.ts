@@ -163,6 +163,23 @@ describe('Checkout (P-4-02)', () => {
     http().expectNone('/api/v1/pedidos');
   });
 
+  it('CA-4-16 la revisión del pedido muestra la foto de cada producto, y un ícono si no tiene', async () => {
+    const p = await iniciar([dir(1, 'Casa', '150122', true), dir(2, 'Trabajo', '070101')]);
+    expect(p.el.querySelector('.ck-items li img')).toBeNull();
+
+    p.radios('direccion')[1].click();
+    http().expectOne('/api/v1/envios/opciones?ubigeo=070101').flush(ok(OPCIONES));
+    const base = resumenDe(127.8);
+    http()
+      .expectOne('/api/v1/checkout/resumen')
+      .flush(ok({ ...base, items: [{ ...base.items[0], imagenUrl: 'https://media.test/legging-400.jpg' }] }));
+    await p.estabilizar();
+
+    const foto = p.el.querySelector<HTMLImageElement>('.ck-items li img');
+    expect(foto?.getAttribute('src')).toBe('https://media.test/legging-400.jpg');
+    expect(foto?.getAttribute('alt')).toBe('Legging Pro');
+  });
+
   it('CA-4-17 "Agregar dirección" abre el diálogo sobre el checkout; la nueva queda elegida y recalcula, y si cancelo nada cambia', async () => {
     const p = await iniciar([dir(1, 'Casa', '150122', true)]);
     abrirDialogo.mockResolvedValueOnce(undefined);
