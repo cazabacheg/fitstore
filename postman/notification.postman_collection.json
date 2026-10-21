@@ -407,7 +407,12 @@
           "script": {
             "type": "text/javascript",
             "exec": [
-              "pm.test('CA-7-20 200 con asunto, destinatario, referencia, cada intento y el último error', function () { pm.response.to.have.status(200); const e = pm.response.json().data; pm.expect(e.asunto).to.be.a('string'); pm.expect(e.destinatario).to.be.a('string'); pm.expect(e.historialIntentos.length).to.be.above(0); pm.expect(e.historialIntentos[0]).to.have.keys('numero','fecha','error'); pm.expect(e.ultimoError).to.be.a('string'); });"
+              "// El envío FALLIDO de demostración se consume con el primer reenvío (pasa a PENDIENTE y luego a ENVIADO); sin uno FALLIDO el paso se omite, como los de Mailpit",
+              "if (pm.collectionVariables.get('idFallido')) {",
+              "  pm.test('CA-7-20 200 con asunto, destinatario, referencia, cada intento y el último error', function () { pm.response.to.have.status(200); const e = pm.response.json().data; pm.expect(e.asunto).to.be.a('string'); pm.expect(e.destinatario).to.be.a('string'); pm.expect(e.historialIntentos.length).to.be.above(0); pm.expect(e.historialIntentos[0]).to.have.keys('numero','fecha','error'); pm.expect(e.ultimoError).to.be.a('string'); });",
+              "} else {",
+              "  pm.test('CA-7-20 omitido: no queda un envío FALLIDO de demostración (recarga los datos demo para repetirlo)', function () { pm.expect(pm.collectionVariables.get('idFallido') || '').to.eql(''); });",
+              "}"
             ]
           }
         }
@@ -479,7 +484,12 @@
           "script": {
             "type": "text/javascript",
             "exec": [
-              "pm.test('CA-7-21 200 y el estado vuelve a PENDIENTE', function () { pm.response.to.have.status(200); pm.expect(pm.response.json().data.estado).to.eql('PENDIENTE'); });"
+              "// El envío FALLIDO de demostración se consume con el primer reenvío (pasa a PENDIENTE y luego a ENVIADO); sin uno FALLIDO el paso se omite, como los de Mailpit",
+              "if (pm.collectionVariables.get('idFallido')) {",
+              "  pm.test('CA-7-21 200 y el estado vuelve a PENDIENTE', function () { pm.response.to.have.status(200); pm.expect(pm.response.json().data.estado).to.eql('PENDIENTE'); });",
+              "} else {",
+              "  pm.test('CA-7-21 omitido: no queda un envío FALLIDO de demostración (recarga los datos demo para repetirlo)', function () { pm.expect(pm.collectionVariables.get('idFallido') || '').to.eql(''); });",
+              "}"
             ]
           }
         }

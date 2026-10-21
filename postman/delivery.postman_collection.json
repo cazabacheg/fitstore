@@ -446,7 +446,7 @@
             },
             "body": {
               "mode": "raw",
-              "raw": "{\"modalidad\": \"AGENCIA\", \"ubigeo\": \"0801\", \"costo\": 21.5, \"plazoDiasMin\": 2, \"plazoDiasMax\": 4}",
+              "raw": "{\"modalidad\": \"AGENCIA\", \"ubigeo\": \"08\", \"costo\": 21.5, \"plazoDiasMin\": 2, \"plazoDiasMax\": 4}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -471,7 +471,7 @@
                 "type": "text/javascript",
                 "exec": [
                   "// Elimina la tarifa de una corrida anterior, si quedó",
-                  "pm.sendRequest({url: pm.variables.get('baseUrl') + '/api/v1/admin/tarifas?modalidad=AGENCIA&nivel=PROVINCIA', method: 'GET', header: {Authorization: 'Bearer ' + pm.collectionVariables.get('adminToken')}}, function (e, r) { if (e) { return; } (r.json().data || []).filter(x => x.ubigeo === '0801').forEach(x => pm.sendRequest({url: pm.variables.get('baseUrl') + '/api/v1/admin/tarifas/' + x.id, method: 'DELETE', header: {Authorization: 'Bearer ' + pm.collectionVariables.get('adminToken')}})); });"
+                  "pm.sendRequest({url: pm.variables.get('baseUrl') + '/api/v1/admin/tarifas?modalidad=AGENCIA', method: 'GET', header: {Authorization: 'Bearer ' + pm.collectionVariables.get('adminToken')}}, function (e, r) { if (e) { return; } (r.json().data || []).filter(x => ['08', '0801'].includes(x.ubigeo)).forEach(x => pm.sendRequest({url: pm.variables.get('baseUrl') + '/api/v1/admin/tarifas/' + x.id, method: 'DELETE', header: {Authorization: 'Bearer ' + pm.collectionVariables.get('adminToken')}})); });"
                 ]
               }
             },
@@ -511,7 +511,7 @@
             },
             "body": {
               "mode": "raw",
-              "raw": "{\"modalidad\": \"AGENCIA\", \"ubigeo\": \"0801\", \"costo\": 20, \"plazoDiasMin\": 2, \"plazoDiasMax\": 4}",
+              "raw": "{\"modalidad\": \"AGENCIA\", \"ubigeo\": \"08\", \"costo\": 20, \"plazoDiasMin\": 2, \"plazoDiasMax\": 4}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -638,7 +638,7 @@
                 "type": "text/javascript",
                 "exec": [
                   "pm.test('CA-6-11 responde 200', function () { pm.response.to.have.status(200); });",
-                  "pm.test('CA-6-11 aplica la tarifa de la provincia', function () { const d = pm.response.json().data; pm.expect(d.nivelTarifa).to.eql('PROVINCIA'); pm.expect(d.costo).to.eql(21.5); });"
+                  "pm.test('CA-6-11 aplica la tarifa del departamento', function () { const d = pm.response.json().data; pm.expect(d.nivelTarifa).to.eql('DEPARTAMENTO'); pm.expect(d.costo).to.eql(21.5); });"
                 ]
               }
             }
@@ -669,7 +669,7 @@
             },
             "body": {
               "mode": "raw",
-              "raw": "{\"modalidad\": \"AGENCIA\", \"ubigeo\": \"0801\", \"costo\": 21.5, \"plazoDiasMin\": 2, \"plazoDiasMax\": 4, \"activa\": false}",
+              "raw": "{\"modalidad\": \"AGENCIA\", \"ubigeo\": \"08\", \"costo\": 21.5, \"plazoDiasMin\": 2, \"plazoDiasMax\": 4, \"activa\": false}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -1264,6 +1264,1078 @@
       ]
     },
     {
+      "name": "Preparación (pedidos listos para despacho)",
+      "description": "Las entregas nacen del evento PedidoListoDespacho de order: aquí se crean con la API un pedido de delivery local y otro por agencia, se pagan con la tarjeta de prueba y se llevan a LISTO_DESPACHO. Así la colección se puede repetir sin depender de las entregas de demostración (que quedan en ENTREGADA tras la primera corrida). Un ingreso más (la clienta) al límite de 5 por minuto del gateway.",
+      "item": [
+        {
+          "name": "Preparación: ingreso de la clienta",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('CA-1-04 inicia sesión', function () { pm.response.to.have.status(200); });",
+                  "pm.test('CA-1-04 entrega el access token', function () { pm.collectionVariables.set('clienteToken', pm.response.json().data.accessToken); pm.expect(pm.collectionVariables.get('clienteToken')).to.be.a('string').and.not.empty; });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "login"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"email\": \"{{demoClienteEmail}}\", \"password\": \"{{demoPassword}}\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Preparación: dirección de la clienta",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('CA-1-17 la clienta tiene una dirección', function () { pm.response.to.have.status(200); const d = pm.response.json().data; pm.expect(d.length).to.be.above(0); pm.collectionVariables.set('direccionId', d[0].id); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{clienteToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/clientes/me/direcciones",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "clientes",
+                "me",
+                "direcciones"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Preparación: elegir una variante con stock",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// Los pedidos pendientes reservan stock; se toma la primera variante DISPONIBLE del catálogo",
+                  "pm.test('CA-2-01 el catálogo lista productos', function () { pm.response.to.have.status(200); });",
+                  "const productos = pm.response.json().data.contenido.slice(0, 8);",
+                  "function buscar(i) {",
+                  "  if (i >= productos.length) { pm.test('CA-2-01 hay una variante DISPONIBLE', function () { pm.expect.fail('ningún producto tiene variantes DISPONIBLE'); }); return; }",
+                  "  pm.sendRequest(pm.variables.replaceIn('{{baseUrl}}/api/v1/productos/') + productos[i].slug, function (err, res) {",
+                  "    const v = err ? null : (res.json().data.variantes || []).find(function (x) { return x.disponibilidad === 'DISPONIBLE'; });",
+                  "    if (!v) { return buscar(i + 1); }",
+                  "    pm.collectionVariables.set('varianteId', String(v.id));",
+                  "    pm.test('CA-2-01 hay una variante DISPONIBLE', function () { pm.expect(v.id).to.be.a('number'); });",
+                  "  });",
+                  "}",
+                  "buscar(0);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/productos?size=8",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "productos"
+              ],
+              "query": [
+                {
+                  "key": "size",
+                  "value": "8"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Preparación (Local): vaciar el carrito",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('CA-4-03 vacía el carrito', function () { pm.expect(pm.response.code).to.be.oneOf([200, 204]); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{clienteToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/carrito",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "carrito"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Preparación (Local): agregar una variante al carrito",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('CA-4-01 agrega al carrito', function () { pm.response.to.have.status(200); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{clienteToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/carrito/items",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "carrito",
+                "items"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"varianteId\": {{varianteId}}, \"cantidad\": 1}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Preparación (Local): resumen del checkout",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('CA-4-16 calcula el resumen', function () { pm.response.to.have.status(200); });",
+                  "pm.test('CA-4-25 entrega el total', function () { const d = pm.response.json().data; pm.expect(d.total).to.be.a('number'); pm.collectionVariables.set('totalEsperado', d.total); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{clienteToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/checkout/resumen",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "checkout",
+                "resumen"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"modalidad\": \"DELIVERY_LOCAL\", \"direccionId\": {{direccionId}}}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Preparación (Local): confirmar el pedido",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.collectionVariables.set('claveIdempotencia', pm.variables.replaceIn('{{$guid}}'));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('CA-4-19 crea el pedido en PENDIENTE_PAGO', function () { pm.response.to.have.status(201); });",
+                  "pm.test('CA-4-19 devuelve el código FS-…', function () { const d = pm.response.json().data; pm.expect(d.codigo).to.match(/^FS-\\d{6}$/); pm.collectionVariables.set('codigoPedidoLocal', d.codigo); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Idempotency-Key",
+                "value": "{{claveIdempotencia}}"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{clienteToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/pedidos",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "pedidos"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"modalidad\": \"DELIVERY_LOCAL\", \"direccionId\": {{direccionId}}, \"notas\": \"Postman envíos\", \"totalEsperado\": {{totalEsperado}}}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Preparación (Local): pagar con la tarjeta de prueba",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// payment conoce el pedido unos instantes después de crearlo (evento PedidoCreado)",
+                  "setTimeout(function () {}, 3000);"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('CA-5-25 pago aprobado', function () { pm.response.to.have.status(200); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Idempotency-Key",
+                "value": "{{claveIdempotencia}}"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{clienteToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/pagos/{{codigoPedidoLocal}}/cargos",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "pagos",
+                "{{codigoPedidoLocal}}",
+                "cargos"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"proveedor\": \"SIMULADO\", \"medio\": \"TARJETA\", \"token\": \"sim_1111\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Preparación (Local): buscar el pedido en el backoffice",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// order marca el pedido PAGADO al recibir PagoConfirmado",
+                  "setTimeout(function () {}, 3000);"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('CA-4-41 encuentra el pedido PAGADO', function () { pm.response.to.have.status(200); const p = pm.response.json().data.contenido[0]; pm.expect(p.estado).to.eql('PAGADO'); pm.collectionVariables.set('pedidoId', p.id); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{operadorToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/admin/pedidos?codigo={{codigoPedidoLocal}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "pedidos"
+              ],
+              "query": [
+                {
+                  "key": "codigo",
+                  "value": "{{codigoPedidoLocal}}"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Preparación (Local): pedido a EN_PREPARACION",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.sendRequest({url: pm.variables.replaceIn('{{baseUrl}}/api/v1/admin/pedidos/{{pedidoId}}'), method: 'GET', header: {Authorization: 'Bearer ' + pm.collectionVariables.get('operadorToken')}}, function (err, res) { pm.collectionVariables.set('versionPedido', res.json().data.version); });",
+                  "setTimeout(function () {}, 800);"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('CA-4-44 avanza a EN_PREPARACION', function () { pm.response.to.have.status(200); pm.expect(pm.response.json().data.estado).to.eql('EN_PREPARACION'); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{operadorToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/admin/pedidos/{{pedidoId}}/estado",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "pedidos",
+                "{{pedidoId}}",
+                "estado"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"nuevoEstado\": \"EN_PREPARACION\", \"version\": {{versionPedido}}}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Preparación (Local): pedido a LISTO_DESPACHO",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.sendRequest({url: pm.variables.replaceIn('{{baseUrl}}/api/v1/admin/pedidos/{{pedidoId}}'), method: 'GET', header: {Authorization: 'Bearer ' + pm.collectionVariables.get('operadorToken')}}, function (err, res) { pm.collectionVariables.set('versionPedido', res.json().data.version); });",
+                  "setTimeout(function () {}, 800);"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('CA-6-19 avanza a LISTO_DESPACHO', function () { pm.response.to.have.status(200); pm.expect(pm.response.json().data.estado).to.eql('LISTO_DESPACHO'); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{operadorToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/admin/pedidos/{{pedidoId}}/estado",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "pedidos",
+                "{{pedidoId}}",
+                "estado"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"nuevoEstado\": \"LISTO_DESPACHO\", \"version\": {{versionPedido}}}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Preparación (Agencia): dirección en Arequipa (con cobertura de agencia)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('CA-1-17 crea la dirección', function () { pm.response.to.have.status(201); pm.collectionVariables.set('direccionAgenciaId', pm.response.json().data.id); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{clienteToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/clientes/me/direcciones",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "clientes",
+                "me",
+                "direcciones"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"alias\": \"Arequipa Postman\", \"ubigeo\": \"040101\", \"direccion\": \"Calle Mercaderes 100\", \"referencia\": \"Postman envíos\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Preparación (Agencia): vaciar el carrito",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('CA-4-03 vacía el carrito', function () { pm.expect(pm.response.code).to.be.oneOf([200, 204]); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{clienteToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/carrito",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "carrito"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Preparación (Agencia): agregar una variante al carrito",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('CA-4-01 agrega al carrito', function () { pm.response.to.have.status(200); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{clienteToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/carrito/items",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "carrito",
+                "items"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"varianteId\": {{varianteId}}, \"cantidad\": 1}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Preparación (Agencia): resumen del checkout",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('CA-4-16 calcula el resumen', function () { pm.response.to.have.status(200); });",
+                  "pm.test('CA-4-25 entrega el total', function () { const d = pm.response.json().data; pm.expect(d.total).to.be.a('number'); pm.collectionVariables.set('totalEsperado', d.total); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{clienteToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/checkout/resumen",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "checkout",
+                "resumen"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"modalidad\": \"AGENCIA\", \"direccionId\": {{direccionAgenciaId}}, \"agenciaId\": 1}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Preparación (Agencia): confirmar el pedido",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.collectionVariables.set('claveIdempotencia', pm.variables.replaceIn('{{$guid}}'));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('CA-4-19 crea el pedido en PENDIENTE_PAGO', function () { pm.response.to.have.status(201); });",
+                  "pm.test('CA-4-19 devuelve el código FS-…', function () { const d = pm.response.json().data; pm.expect(d.codigo).to.match(/^FS-\\d{6}$/); pm.collectionVariables.set('codigoPedidoAgencia', d.codigo); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Idempotency-Key",
+                "value": "{{claveIdempotencia}}"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{clienteToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/pedidos",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "pedidos"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"modalidad\": \"AGENCIA\", \"direccionId\": {{direccionAgenciaId}}, \"agenciaId\": 1, \"notas\": \"Postman envíos\", \"totalEsperado\": {{totalEsperado}}}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Preparación (Agencia): pagar con la tarjeta de prueba",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// payment conoce el pedido unos instantes después de crearlo (evento PedidoCreado)",
+                  "setTimeout(function () {}, 3000);"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('CA-5-25 pago aprobado', function () { pm.response.to.have.status(200); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Idempotency-Key",
+                "value": "{{claveIdempotencia}}"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{clienteToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/pagos/{{codigoPedidoAgencia}}/cargos",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "pagos",
+                "{{codigoPedidoAgencia}}",
+                "cargos"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"proveedor\": \"SIMULADO\", \"medio\": \"TARJETA\", \"token\": \"sim_1111\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Preparación (Agencia): quitar la dirección de Arequipa",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('CA-1-19 elimina la dirección', function () { pm.response.to.have.status(200); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{clienteToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/clientes/me/direcciones/{{direccionAgenciaId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "clientes",
+                "me",
+                "direcciones",
+                "{{direccionAgenciaId}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Preparación (Agencia): buscar el pedido en el backoffice",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// order marca el pedido PAGADO al recibir PagoConfirmado",
+                  "setTimeout(function () {}, 3000);"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('CA-4-41 encuentra el pedido PAGADO', function () { pm.response.to.have.status(200); const p = pm.response.json().data.contenido[0]; pm.expect(p.estado).to.eql('PAGADO'); pm.collectionVariables.set('pedidoId', p.id); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{operadorToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/admin/pedidos?codigo={{codigoPedidoAgencia}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "pedidos"
+              ],
+              "query": [
+                {
+                  "key": "codigo",
+                  "value": "{{codigoPedidoAgencia}}"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Preparación (Agencia): pedido a EN_PREPARACION",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.sendRequest({url: pm.variables.replaceIn('{{baseUrl}}/api/v1/admin/pedidos/{{pedidoId}}'), method: 'GET', header: {Authorization: 'Bearer ' + pm.collectionVariables.get('operadorToken')}}, function (err, res) { pm.collectionVariables.set('versionPedido', res.json().data.version); });",
+                  "setTimeout(function () {}, 800);"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('CA-4-44 avanza a EN_PREPARACION', function () { pm.response.to.have.status(200); pm.expect(pm.response.json().data.estado).to.eql('EN_PREPARACION'); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{operadorToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/admin/pedidos/{{pedidoId}}/estado",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "pedidos",
+                "{{pedidoId}}",
+                "estado"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"nuevoEstado\": \"EN_PREPARACION\", \"version\": {{versionPedido}}}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Preparación (Agencia): pedido a LISTO_DESPACHO",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.sendRequest({url: pm.variables.replaceIn('{{baseUrl}}/api/v1/admin/pedidos/{{pedidoId}}'), method: 'GET', header: {Authorization: 'Bearer ' + pm.collectionVariables.get('operadorToken')}}, function (err, res) { pm.collectionVariables.set('versionPedido', res.json().data.version); });",
+                  "setTimeout(function () {}, 800);"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('CA-6-19 avanza a LISTO_DESPACHO', function () { pm.response.to.have.status(200); pm.expect(pm.response.json().data.estado).to.eql('LISTO_DESPACHO'); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{operadorToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/admin/pedidos/{{pedidoId}}/estado",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "pedidos",
+                "{{pedidoId}}",
+                "estado"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"nuevoEstado\": \"LISTO_DESPACHO\", \"version\": {{versionPedido}}}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
       "name": "Flujo local con un intento fallido (HU-6-06)",
       "item": [
         {
@@ -1380,12 +2452,12 @@
           ]
         },
         {
-          "name": "CA-6-31 Buscar la entrega demo FS-000104 por código",
+          "name": "CA-6-31 Buscar la entrega del pedido local por código",
           "request": {
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/api/v1/admin/entregas?codigo=FS-000104",
+              "raw": "{{baseUrl}}/api/v1/admin/entregas?codigo={{codigoPedidoLocal}}",
               "host": [
                 "{{baseUrl}}"
               ],
@@ -1398,7 +2470,7 @@
               "query": [
                 {
                   "key": "codigo",
-                  "value": "FS-000104"
+                  "value": "{{codigoPedidoLocal}}"
                 }
               ]
             },
@@ -1414,6 +2486,16 @@
             }
           },
           "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// La entrega nace del evento PedidoListoDespacho unos instantes después de dejar el pedido en LISTO_DESPACHO",
+                  "setTimeout(function () {}, 3000);"
+                ]
+              }
+            },
             {
               "listen": "test",
               "script": {
@@ -1929,12 +3011,12 @@
       "name": "Flujo por agencia (HU-6-07)",
       "item": [
         {
-          "name": "CA-6-27 Buscar la entrega demo FS-000103 (enviada por Shalom)",
+          "name": "CA-6-27 Buscar la entrega del pedido por agencia por código",
           "request": {
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/api/v1/admin/entregas?codigo=FS-000103",
+              "raw": "{{baseUrl}}/api/v1/admin/entregas?codigo={{codigoPedidoAgencia}}",
               "host": [
                 "{{baseUrl}}"
               ],
@@ -1947,7 +3029,7 @@
               "query": [
                 {
                   "key": "codigo",
-                  "value": "FS-000103"
+                  "value": "{{codigoPedidoAgencia}}"
                 }
               ]
             },
@@ -1974,6 +3056,68 @@
               }
             }
           ]
+        },
+        {
+          "name": "CA-6-26 Registrar el envío con el código de seguimiento",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// La entrega por agencia nace en PENDIENTE_ENVIO; se toma su versión actual",
+                  "pm.sendRequest({url: pm.variables.replaceIn('{{baseUrl}}/api/v1/admin/entregas/{{entregaId}}'), method: 'GET', header: {Authorization: 'Bearer ' + pm.collectionVariables.get('operadorToken')}}, function (err, res) { pm.collectionVariables.set('version', res.json().data.version); });",
+                  "setTimeout(function () {}, 800);"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('CA-6-26 responde 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('CA-6-26 queda en ENVIADO_AGENCIA', function () { pm.expect(pm.response.json().data.estado).to.eql('ENVIADO_AGENCIA'); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{operadorToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/admin/entregas/{{entregaId}}/enviada-agencia",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "entregas",
+                "{{entregaId}}",
+                "enviada-agencia"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"codigoSeguimiento\": \"SH-{{codigoPedidoAgencia}}\", \"version\": {{version}}}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
         },
         {
           "name": "CA-6-26 La entrega ya trae el código y la URL de rastreo",
@@ -2304,7 +3448,7 @@
         "type": "text/javascript",
         "exec": [
           "// adminEmail y adminPassword pueden venir del entorno de Postman; si no, se usan los de la colección",
-          "['adminEmail', 'adminPassword'].forEach(function (k) { const v = pm.environment.get(k); if (v) { pm.collectionVariables.set(k, v); } });"
+          "['adminEmail', 'adminPassword', 'demoPassword', 'demoOperadorEmail'].forEach(function (k) { const v = pm.environment.get(k); if (v) { pm.collectionVariables.set(k, v); } });"
         ]
       }
     }
@@ -2333,6 +3477,61 @@
       "key": "adminPassword",
       "value": "",
       "description": "Contraseña del ADMIN inicial (FITSTORE_ADMIN_PASSWORD)"
+    },
+    {
+      "key": "clienteToken",
+      "value": "",
+      "description": "Token de la clienta de demostración (lo llena la preparación)"
+    },
+    {
+      "key": "demoClienteEmail",
+      "value": "lucia.mendoza@fitstore.demo",
+      "description": "Clienta de demostración que hace los pedidos"
+    },
+    {
+      "key": "varianteId",
+      "value": "",
+      "description": "Variante con stock; la elige la preparación"
+    },
+    {
+      "key": "direccionId",
+      "value": "",
+      "description": "Dirección de la clienta (la llena la preparación)"
+    },
+    {
+      "key": "totalEsperado",
+      "value": "",
+      "description": "Total del resumen (lo llena la preparación)"
+    },
+    {
+      "key": "claveIdempotencia",
+      "value": "",
+      "description": "Idempotency-Key de la confirmación (la llena la preparación)"
+    },
+    {
+      "key": "codigoPedidoLocal",
+      "value": "",
+      "description": "Pedido de delivery local listo para despacho (lo crea la preparación)"
+    },
+    {
+      "key": "codigoPedidoAgencia",
+      "value": "",
+      "description": "Pedido por agencia listo para despacho (lo crea la preparación)"
+    },
+    {
+      "key": "pedidoId",
+      "value": "",
+      "description": "Id del pedido en el backoffice (lo llena la preparación)"
+    },
+    {
+      "key": "versionPedido",
+      "value": "",
+      "description": "Versión del pedido en el backoffice (la llena la preparación)"
+    },
+    {
+      "key": "direccionAgenciaId",
+      "value": "",
+      "description": "Dirección de Arequipa para el pedido por agencia (la crea la preparación)"
     }
   ]
 }

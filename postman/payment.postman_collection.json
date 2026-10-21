@@ -44,9 +44,800 @@
     {
       "key": "pagoId",
       "value": ""
+    },
+    {
+      "key": "varianteId",
+      "value": "",
+      "description": "Variante con stock; la elige la preparación"
+    },
+    {
+      "key": "demoPassword",
+      "value": "FitStoreDemo2026",
+      "description": "Contraseña común de DESARROLLO de las cuentas de demostración (no es un secreto)"
+    },
+    {
+      "key": "demoClienteEmail",
+      "value": "lucia.mendoza@fitstore.demo",
+      "description": "Clienta de demostración que paga"
+    },
+    {
+      "key": "demoOtraClienteEmail",
+      "value": "carlos.huaman@fitstore.demo",
+      "description": "Otra clienta de demostración (para los 404 de pedidos ajenos)"
+    },
+    {
+      "key": "demoOperadorEmail",
+      "value": "diana.flores@fitstore.demo",
+      "description": "OPERADOR de demostración"
+    },
+    {
+      "key": "adminEmail",
+      "value": "",
+      "description": "Correo del ADMIN inicial (FITSTORE_ADMIN_EMAIL); defínelo en el entorno"
+    },
+    {
+      "key": "adminPassword",
+      "value": "",
+      "description": "Contraseña del ADMIN inicial (FITSTORE_ADMIN_PASSWORD); defínela en el entorno"
+    },
+    {
+      "key": "totalEsperado",
+      "value": "",
+      "description": "Total del resumen del checkout (lo llena la preparación)"
+    },
+    {
+      "key": "claveIdempotencia",
+      "value": "",
+      "description": "Idempotency-Key de la confirmación (la llena la preparación)"
     }
   ],
   "item": [
+    {
+      "name": "Preparación (ingresos y pedidos)",
+      "description": "Deja la colección autónoma: ingresa con las cuentas de demostración y el ADMIN, y crea con la API de order los 3 pedidos pendientes de pago que usan los cobros. Son 4 ingresos, por debajo del límite del gateway (5 por minuto por IP): si corres otra colección antes, espera 1 minuto.",
+      "item": [
+        {
+          "name": "Preparación: ingreso de la clienta (Lucía)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('CA-1-04 inicia sesión', function () { pm.response.to.have.status(200); });",
+                  "pm.test('CA-1-04 entrega el access token', function () { pm.collectionVariables.set('tokenCliente', pm.response.json().data.accessToken); pm.expect(pm.collectionVariables.get('tokenCliente')).to.be.a('string').and.not.empty; });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "login"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"email\": \"{{demoClienteEmail}}\", \"password\": \"{{demoPassword}}\"}"
+            }
+          }
+        },
+        {
+          "name": "Preparación: ingreso de otra clienta (Carlos)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('CA-1-04 inicia sesión', function () { pm.response.to.have.status(200); });",
+                  "pm.test('CA-1-04 entrega el access token', function () { pm.collectionVariables.set('tokenOtraCliente', pm.response.json().data.accessToken); pm.expect(pm.collectionVariables.get('tokenOtraCliente')).to.be.a('string').and.not.empty; });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "login"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"email\": \"{{demoOtraClienteEmail}}\", \"password\": \"{{demoPassword}}\"}"
+            }
+          }
+        },
+        {
+          "name": "Preparación: ingreso del ADMIN",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('CA-1-22 inicia sesión', function () { pm.response.to.have.status(200); });",
+                  "pm.test('CA-1-22 entrega el access token', function () { pm.collectionVariables.set('tokenAdmin', pm.response.json().data.accessToken); pm.expect(pm.collectionVariables.get('tokenAdmin')).to.be.a('string').and.not.empty; });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/staff/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "staff",
+                "login"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"email\": \"{{adminEmail}}\", \"password\": \"{{adminPassword}}\"}"
+            }
+          }
+        },
+        {
+          "name": "Preparación: ingreso del OPERADOR",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('CA-1-31 inicia sesión', function () { pm.response.to.have.status(200); });",
+                  "pm.test('CA-1-31 entrega el access token', function () { pm.collectionVariables.set('tokenOperador', pm.response.json().data.accessToken); pm.expect(pm.collectionVariables.get('tokenOperador')).to.be.a('string').and.not.empty; });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/staff/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "staff",
+                "login"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"email\": \"{{demoOperadorEmail}}\", \"password\": \"{{demoPassword}}\"}"
+            }
+          }
+        },
+        {
+          "name": "Preparación: elegir una variante con stock",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// Los pedidos pendientes reservan stock; en vez de fijar una variante se toma la primera DISPONIBLE del catálogo",
+                  "pm.test('CA-2-01 el catálogo lista productos', function () { pm.response.to.have.status(200); });",
+                  "const productos = pm.response.json().data.contenido.slice(0, 8);",
+                  "function buscar(i) {",
+                  "  if (i >= productos.length) { pm.test('CA-2-01 hay una variante DISPONIBLE', function () { pm.expect.fail('ningún producto tiene variantes DISPONIBLE'); }); return; }",
+                  "  pm.sendRequest(pm.variables.replaceIn('{{baseUrl}}/api/v1/productos/') + productos[i].slug, function (err, res) {",
+                  "    const v = err ? null : (res.json().data.variantes || []).find(function (x) { return x.disponibilidad === 'DISPONIBLE'; });",
+                  "    if (!v) { return buscar(i + 1); }",
+                  "    pm.collectionVariables.set('varianteId', String(v.id));",
+                  "    pm.test('CA-2-01 hay una variante DISPONIBLE', function () { pm.expect(v.id).to.be.a('number'); });",
+                  "  });",
+                  "}",
+                  "buscar(0);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/productos?size=8",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "productos"
+              ],
+              "query": [
+                {
+                  "key": "size",
+                  "value": "8"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Preparación: vaciar el carrito de la clienta (Aprobado)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('CA-4-03 vacía el carrito', function () { pm.expect(pm.response.code).to.be.oneOf([200, 204]); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenCliente}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/carrito",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "carrito"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Preparación: agregar una variante al carrito (Aprobado)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('CA-4-01 agrega al carrito', function () { pm.response.to.have.status(200); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenCliente}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/carrito/items",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "carrito",
+                "items"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"varianteId\": {{varianteId}}, \"cantidad\": 1}"
+            }
+          }
+        },
+        {
+          "name": "Preparación: resumen del checkout (Aprobado)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('CA-4-16 calcula el resumen', function () { pm.response.to.have.status(200); });",
+                  "pm.test('CA-4-25 entrega el total', function () { const d = pm.response.json().data; pm.expect(d.total).to.be.a('number'); pm.collectionVariables.set('totalEsperado', d.total); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenCliente}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/checkout/resumen",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "checkout",
+                "resumen"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"modalidad\": \"RECOJO\"}"
+            }
+          }
+        },
+        {
+          "name": "Preparación: confirmar el pedido (Aprobado)",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.collectionVariables.set('claveIdempotencia', pm.variables.replaceIn('{{$guid}}'));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('CA-4-19 crea el pedido en PENDIENTE_PAGO', function () { pm.response.to.have.status(201); });",
+                  "pm.test('CA-4-19 devuelve el código FS-…', function () { const d = pm.response.json().data; pm.expect(d.codigo).to.match(/^FS-\\d{6}$/); pm.collectionVariables.set('codigoPedidoAprobado', d.codigo); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Idempotency-Key",
+                "value": "{{claveIdempotencia}}"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenCliente}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/pedidos",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "pedidos"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"modalidad\": \"RECOJO\", \"notas\": \"Postman pagos\", \"totalEsperado\": {{totalEsperado}}}"
+            }
+          }
+        },
+        {
+          "name": "Preparación: vaciar el carrito de la clienta (Rechazo)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('CA-4-03 vacía el carrito', function () { pm.expect(pm.response.code).to.be.oneOf([200, 204]); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenCliente}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/carrito",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "carrito"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Preparación: agregar una variante al carrito (Rechazo)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('CA-4-01 agrega al carrito', function () { pm.response.to.have.status(200); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenCliente}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/carrito/items",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "carrito",
+                "items"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"varianteId\": {{varianteId}}, \"cantidad\": 1}"
+            }
+          }
+        },
+        {
+          "name": "Preparación: resumen del checkout (Rechazo)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('CA-4-16 calcula el resumen', function () { pm.response.to.have.status(200); });",
+                  "pm.test('CA-4-25 entrega el total', function () { const d = pm.response.json().data; pm.expect(d.total).to.be.a('number'); pm.collectionVariables.set('totalEsperado', d.total); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenCliente}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/checkout/resumen",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "checkout",
+                "resumen"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"modalidad\": \"RECOJO\"}"
+            }
+          }
+        },
+        {
+          "name": "Preparación: confirmar el pedido (Rechazo)",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.collectionVariables.set('claveIdempotencia', pm.variables.replaceIn('{{$guid}}'));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('CA-4-19 crea el pedido en PENDIENTE_PAGO', function () { pm.response.to.have.status(201); });",
+                  "pm.test('CA-4-19 devuelve el código FS-…', function () { const d = pm.response.json().data; pm.expect(d.codigo).to.match(/^FS-\\d{6}$/); pm.collectionVariables.set('codigoPedidoRechazo', d.codigo); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Idempotency-Key",
+                "value": "{{claveIdempotencia}}"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenCliente}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/pedidos",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "pedidos"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"modalidad\": \"RECOJO\", \"notas\": \"Postman pagos\", \"totalEsperado\": {{totalEsperado}}}"
+            }
+          }
+        },
+        {
+          "name": "Preparación: vaciar el carrito de la clienta (EnCurso)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('CA-4-03 vacía el carrito', function () { pm.expect(pm.response.code).to.be.oneOf([200, 204]); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenCliente}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/carrito",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "carrito"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Preparación: agregar una variante al carrito (EnCurso)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('CA-4-01 agrega al carrito', function () { pm.response.to.have.status(200); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenCliente}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/carrito/items",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "carrito",
+                "items"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"varianteId\": {{varianteId}}, \"cantidad\": 1}"
+            }
+          }
+        },
+        {
+          "name": "Preparación: resumen del checkout (EnCurso)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('CA-4-16 calcula el resumen', function () { pm.response.to.have.status(200); });",
+                  "pm.test('CA-4-25 entrega el total', function () { const d = pm.response.json().data; pm.expect(d.total).to.be.a('number'); pm.collectionVariables.set('totalEsperado', d.total); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenCliente}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/checkout/resumen",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "checkout",
+                "resumen"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"modalidad\": \"RECOJO\"}"
+            }
+          }
+        },
+        {
+          "name": "Preparación: confirmar el pedido (EnCurso)",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.collectionVariables.set('claveIdempotencia', pm.variables.replaceIn('{{$guid}}'));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('CA-4-19 crea el pedido en PENDIENTE_PAGO', function () { pm.response.to.have.status(201); });",
+                  "pm.test('CA-4-19 devuelve el código FS-…', function () { const d = pm.response.json().data; pm.expect(d.codigo).to.match(/^FS-\\d{6}$/); pm.collectionVariables.set('codigoPedidoEnCurso', d.codigo); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Idempotency-Key",
+                "value": "{{claveIdempotencia}}"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenCliente}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/pedidos",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "pedidos"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"modalidad\": \"RECOJO\", \"notas\": \"Postman pagos\", \"totalEsperado\": {{totalEsperado}}}"
+            }
+          }
+        }
+      ]
+    },
     {
       "name": "CA-5-03 Página de pago de un pedido pendiente",
       "event": [
@@ -406,6 +1197,24 @@
       "name": "CA-5-29 Descargar mi boleta (PDF)",
       "event": [
         {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "// La boleta se genera en segundo plano tras el pago: se consulta hasta 15 veces (2 s entre intentos) antes de la petición que se verifica",
+              "const url = pm.variables.replaceIn('{{baseUrl}}/api/v1/pagos/{{codigoPedidoAprobado}}/boleta');",
+              "const token = pm.collectionVariables.get('tokenCliente');",
+              "function intentar(n) {",
+              "  pm.sendRequest({ url: url, method: 'GET', header: { Authorization: 'Bearer ' + token } }, function (err, res) {",
+              "    if (!err && res.code === 200) { return; }",
+              "    if (n < 15) { setTimeout(function () { intentar(n + 1); }, 2000); }",
+              "  });",
+              "}",
+              "intentar(1);"
+            ]
+          }
+        },
+        {
           "listen": "test",
           "script": {
             "type": "text/javascript",
@@ -544,7 +1353,8 @@
           "script": {
             "type": "text/javascript",
             "exec": [
-              "pm.test('CA-5-20 200 recibido', function () { pm.response.to.have.status(200); });"
+              "// El aviso firmado solo se acepta si la plataforma tiene el mismo MP_WEBHOOK_SECRET que la variable mpWebhookSecret (sandbox de Mercado Pago); sin secreto el paso se omite, como los de Mailpit en notification",
+              "if (pm.collectionVariables.get('mpWebhookSecret')) { pm.test('CA-5-20 200 recibido', function () { pm.response.to.have.status(200); }); } else { pm.test('CA-5-20 omitido: define mpWebhookSecret (el mismo MP_WEBHOOK_SECRET de la plataforma) para firmar el aviso', function () { pm.expect(pm.collectionVariables.get('mpWebhookSecret')).to.eql(''); }); }"
             ]
           }
         }
@@ -761,6 +1571,18 @@
             "pagos"
           ]
         }
+      }
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// adminEmail y adminPassword pueden venir del entorno de Postman; si no, se usan los de la colección",
+          "['adminEmail', 'adminPassword', 'demoPassword', 'demoOperadorEmail'].forEach(function (k) { const v = pm.environment.get(k); if (v) { pm.collectionVariables.set(k, v); } });"
+        ]
       }
     }
   ]
