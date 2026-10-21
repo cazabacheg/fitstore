@@ -3,6 +3,7 @@ import { rxResource } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { map } from 'rxjs';
 import { FechaPipe, PrecioPipe, paymentApi } from 'shared';
+import { PagosAdminService } from 'shared/api/payment-service';
 import { EstadoCargando } from '../../ui/estados/estado-cargando';
 import { EstadoError } from '../../ui/estados/estado-error';
 import { InsigniaEstado } from '../../ui/insignia/insignia-estado';
@@ -39,7 +40,7 @@ import { nombreMedio, nombreMotivo, nombreProveedor, proveedorYMedio } from './e
 })
 export class DetallePagoPage {
   private readonly id = inject(ActivatedRoute).snapshot.paramMap.get('id') ?? '';
-  private readonly api = inject(paymentApi.PagosAdminService);
+  private readonly api = inject(PagosAdminService);
 
   protected readonly descargando = signal(false);
 

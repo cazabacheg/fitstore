@@ -3,6 +3,7 @@ import { rxResource, toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router } from '@angular/router';
 import { map } from 'rxjs';
 import { FechaPipe, PrecioPipe, paymentApi, type ConsultaPagina, type Pagina } from 'shared';
+import { PagosAdminService } from 'shared/api/payment-service';
 import { EstadoError } from '../../ui/estados/estado-error';
 import { BarraFiltros, type SelectFiltro } from '../../ui/filtros/barra-filtros';
 import { InsigniaEstado } from '../../ui/insignia/insignia-estado';
@@ -59,7 +60,7 @@ const PROVEEDORES: SelectFiltro = {
 export class PagosPage {
   private readonly ruta = inject(ActivatedRoute);
   private readonly router = inject(Router);
-  private readonly api = inject(paymentApi.PagosAdminService);
+  private readonly api = inject(PagosAdminService);
 
   protected readonly selects: SelectFiltro[] = [ESTADOS, PROVEEDORES];
   protected readonly columnas: ColumnaTabla<Fila>[] = [

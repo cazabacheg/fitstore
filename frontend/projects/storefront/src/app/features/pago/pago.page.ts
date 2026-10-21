@@ -2,6 +2,7 @@ import { HttpContext } from '@angular/common/http';
 import { Component, OnDestroy, OnInit, computed, inject, signal, viewChild } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { SIN_TOAST, PrecioPipe, comoApiError, paymentApi } from 'shared';
+import { PagoService } from 'shared/api/payment-service';
 import { firstValueFrom } from 'rxjs';
 import { FsBoton } from '../../ui/boton/boton';
 import { EstadoCargando, EstadoError } from '../../ui/estados/estados';
@@ -74,7 +75,7 @@ const PAGADOS = ['PAGADA', 'REEMBOLSADA_PARCIAL', 'REEMBOLSADA'];
 export class PagoPage implements OnInit, OnDestroy {
   protected readonly codigo = inject(ActivatedRoute).snapshot.paramMap.get('codigo') ?? '';
 
-  private readonly api = inject(paymentApi.PagoService);
+  private readonly api = inject(PagoService);
   private readonly contexto = new HttpContext().set(SIN_TOAST, true);
 
   protected readonly fase = signal<Fase>('cargando');

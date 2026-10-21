@@ -8,8 +8,8 @@ import { PagosPage } from './pagos.page';
  * El shell (`app.routes.ts`) carga cada arreglo con su URL y su guarda de rol.
  */
 export const PAGOS_ROUTES: Routes = [
-  { path: '', component: PagosPage },
-  { path: ':id', component: DetallePagoPage },
+  { path: '', component: PagosPage, data: { pantalla: 'pagos' } },
+  { path: ':id', component: DetallePagoPage, data: { pantalla: 'pagos' } },
 ];
 
 /** Reembolsos (P-5-05) es extensión de alcance: se queda con su "Próximamente" (docs/implementacion/extension-alcance.md). */
