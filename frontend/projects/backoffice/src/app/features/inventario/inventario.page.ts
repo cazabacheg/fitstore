@@ -3,6 +3,7 @@ import { rxResource, toSignal } from '@angular/core/rxjs-interop';
 import { MatDialog } from '@angular/material/dialog';
 import { ActivatedRoute, Router } from '@angular/router';
 import { ToastService, catalogApi, type ConsultaPagina, type Pagina } from 'shared';
+import { InventarioService } from 'shared/api/catalog-service';
 import { map } from 'rxjs';
 import { EncabezadoPagina } from '../../layout/encabezado-pagina';
 import { EstadoError } from '../../ui/estados/estado-error';
@@ -50,7 +51,7 @@ const CHIPS: ChipFiltro[] = [
 export class InventarioPage {
   private readonly ruta = inject(ActivatedRoute);
   private readonly router = inject(Router);
-  private readonly api = inject(catalogApi.InventarioService);
+  private readonly api = inject(InventarioService);
   private readonly dialogo = inject(MatDialog);
   private readonly toasts = inject(ToastService);
 

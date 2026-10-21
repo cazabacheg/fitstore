@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, Component, inject, signal, viewChild } from '@angular/core';
 import { ToastService, catalogApi } from 'shared';
+import { MaestrosAdminService } from 'shared/api/catalog-service';
 import { EncabezadoPagina } from '../../layout/encabezado-pagina';
 import { EstadoCargando } from '../../ui/estados/estado-cargando';
 import { EditorTramos } from './editor-tramos';
@@ -62,7 +63,7 @@ import { EditorTramos } from './editor-tramos';
   `,
 })
 export class DescuentosPage {
-  private readonly api = inject(catalogApi.MaestrosAdminService);
+  private readonly api = inject(MaestrosAdminService);
   private readonly toasts = inject(ToastService);
 
   protected readonly editor = viewChild(EditorTramos);

@@ -2,6 +2,7 @@ import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@a
 import { rxResource, toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { SesionStore, ToastService, catalogApi, type ConsultaPagina, type Pagina } from 'shared';
+import { ProductosAdminService } from 'shared/api/catalog-service';
 import { map } from 'rxjs';
 import { EncabezadoPagina } from '../../layout/encabezado-pagina';
 import { DialogoService } from '../../ui/dialogo/dialogo.service';
@@ -67,7 +68,7 @@ const VARIANTE_ESTADO: Record<string, string> = {
 export class ProductosPage {
   private readonly ruta = inject(ActivatedRoute);
   private readonly router = inject(Router);
-  private readonly api = inject(catalogApi.ProductosAdminService);
+  private readonly api = inject(ProductosAdminService);
   private readonly dialogo = inject(DialogoService);
   private readonly toasts = inject(ToastService);
 

@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, inject, input, model } from '@angular/core';
 import { rxResource } from '@angular/core/rxjs-interop';
-import { catalogApi } from 'shared';
+import { TiendaService } from 'shared/api/catalog-service';
 import { EMPTY, map } from 'rxjs';
 import { FsDialogo } from '../../ui/dialogo/dialogo';
 
@@ -40,7 +40,7 @@ import { FsDialogo } from '../../ui/dialogo/dialogo';
   `,
 })
 export class GuiaTallasModal {
-  private readonly tienda = inject(catalogApi.TiendaService);
+  private readonly tienda = inject(TiendaService);
   readonly categoria = input.required<string>();
   readonly abierto = model(false);
 

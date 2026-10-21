@@ -2,6 +2,7 @@ import { HttpContext } from '@angular/common/http';
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { MatDialog } from '@angular/material/dialog';
 import { SIN_TOAST, ToastService, catalogApi } from 'shared';
+import { CategoriasAdminService, TiendaService } from 'shared/api/catalog-service';
 import { EncabezadoPagina } from '../../layout/encabezado-pagina';
 import { DialogoService } from '../../ui/dialogo/dialogo.service';
 import { EstadoCargando } from '../../ui/estados/estado-cargando';
@@ -91,8 +92,8 @@ const GUIA_VACIA: catalogApi.GuiaTallas = { columnas: ['Talla'], filas: [], nota
   `,
 })
 export class CategoriasPage {
-  private readonly api = inject(catalogApi.CategoriasAdminService);
-  private readonly tienda = inject(catalogApi.TiendaService);
+  private readonly api = inject(CategoriasAdminService);
+  private readonly tienda = inject(TiendaService);
   private readonly dialogo = inject(MatDialog);
   private readonly confirmacion = inject(DialogoService);
   private readonly toasts = inject(ToastService);

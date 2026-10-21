@@ -2,6 +2,7 @@ import { CdkDrag, CdkDropList } from '@angular/cdk/drag-drop';
 import { HttpContext } from '@angular/common/http';
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { SIN_TOAST, ToastService, catalogApi } from 'shared';
+import { MaestrosAdminService } from 'shared/api/catalog-service';
 import { forkJoin } from 'rxjs';
 import { DialogoService } from '../../ui/dialogo/dialogo.service';
 
@@ -91,7 +92,7 @@ import { DialogoService } from '../../ui/dialogo/dialogo.service';
   `,
 })
 export class ListaTallas {
-  private readonly api = inject(catalogApi.MaestrosAdminService);
+  private readonly api = inject(MaestrosAdminService);
   private readonly dialogo = inject(DialogoService);
   private readonly toasts = inject(ToastService);
 

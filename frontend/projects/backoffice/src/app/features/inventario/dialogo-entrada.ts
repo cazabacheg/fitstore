@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { MAT_DIALOG_DATA, MatDialogModule } from '@angular/material/dialog';
 import { catalogApi } from 'shared';
+import { InventarioService } from 'shared/api/catalog-service';
 
 export interface DatosDialogoEntrada {
   /** SKU ya conocidos (los de la página); los demás se buscan al escribir. */
@@ -108,7 +109,7 @@ interface Linea {
 })
 export class DialogoEntrada {
   private readonly datos = inject<DatosDialogoEntrada>(MAT_DIALOG_DATA);
-  private readonly api = inject(catalogApi.InventarioService);
+  private readonly api = inject(InventarioService);
 
   protected readonly lineas = signal<Linea[]>([{ sku: '', cantidad: '' }]);
   protected readonly motivo = signal('');

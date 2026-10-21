@@ -9,7 +9,9 @@ import {
 } from '@angular/core';
 import { rxResource, toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
-import { CarritoContador, SIN_TOAST, ToastService, catalogApi, orderApi } from 'shared';
+import { CarritoContador, SIN_TOAST, ToastService, catalogApi } from 'shared';
+import { TiendaService } from 'shared/api/catalog-service';
+import { CarritoService } from 'shared/api/order-service';
 import { map } from 'rxjs';
 import { FsGaleria } from '../../ui/galeria/galeria';
 import { FsPrecio } from '../../ui/precio/precio';
@@ -153,8 +155,8 @@ const MAXIMO_SIN_DATO = 99;
 })
 export class DetallePage {
   private readonly ruta = inject(ActivatedRoute);
-  private readonly tienda = inject(catalogApi.TiendaService);
-  private readonly carrito = inject(orderApi.CarritoService);
+  private readonly tienda = inject(TiendaService);
+  private readonly carrito = inject(CarritoService);
   private readonly contador = inject(CarritoContador);
   private readonly toasts = inject(ToastService);
   private readonly router = inject(Router);

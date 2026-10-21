@@ -8,6 +8,7 @@ import {
   viewChild,
 } from '@angular/core';
 import { ToastService, catalogApi } from 'shared';
+import { ProductosAdminService } from 'shared/api/catalog-service';
 import { EditorTramos } from './editor-tramos';
 
 /** Pestaña Descuento: política global, sin descuento o tramos propios del producto (CA-2-38). */
@@ -58,7 +59,7 @@ import { EditorTramos } from './editor-tramos';
   `,
 })
 export class DescuentoProducto {
-  private readonly api = inject(catalogApi.ProductosAdminService);
+  private readonly api = inject(ProductosAdminService);
   private readonly toasts = inject(ToastService);
 
   readonly producto = input.required<catalogApi.ProductoAdmin>();

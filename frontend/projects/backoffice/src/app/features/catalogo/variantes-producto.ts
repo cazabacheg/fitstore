@@ -8,6 +8,7 @@ import {
   signal,
 } from '@angular/core';
 import { ToastService, catalogApi } from 'shared';
+import { ProductosAdminService } from 'shared/api/catalog-service';
 import { DialogoService } from '../../ui/dialogo/dialogo.service';
 import { GeneradorMatriz } from './generador-matriz';
 
@@ -123,7 +124,7 @@ import { GeneradorMatriz } from './generador-matriz';
   `,
 })
 export class VariantesProducto {
-  private readonly api = inject(catalogApi.ProductosAdminService);
+  private readonly api = inject(ProductosAdminService);
   private readonly dialogo = inject(DialogoService);
   private readonly toasts = inject(ToastService);
 

@@ -9,6 +9,7 @@ import {
   signal,
 } from '@angular/core';
 import { ToastService, catalogApi } from 'shared';
+import { ProductosAdminService } from 'shared/api/catalog-service';
 import { concat, last } from 'rxjs';
 import { DialogoService } from '../../ui/dialogo/dialogo.service';
 import { SubidaImagenes } from '../../ui/subida-imagenes/subida-imagenes';
@@ -141,7 +142,7 @@ const MAXIMO_IMAGENES = 10;
   `,
 })
 export class ImagenesProducto {
-  private readonly api = inject(catalogApi.ProductosAdminService);
+  private readonly api = inject(ProductosAdminService);
   private readonly dialogo = inject(DialogoService);
   private readonly toasts = inject(ToastService);
 

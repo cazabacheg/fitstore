@@ -1,7 +1,7 @@
 import { rxResource, toSignal } from '@angular/core/rxjs-interop';
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
-import { catalogApi } from 'shared';
+import { TiendaService } from 'shared/api/catalog-service';
 import { combineLatest, map } from 'rxjs';
 import { FsPaginador } from '../../ui/paginador/paginador';
 import { FsTarjetaProducto } from '../../ui/tarjeta-producto/tarjeta-producto';
@@ -130,7 +130,7 @@ import { PanelFiltros } from './panel-filtros';
 export class ListadoPage {
   private readonly ruta = inject(ActivatedRoute);
   private readonly router = inject(Router);
-  private readonly tienda = inject(catalogApi.TiendaService);
+  private readonly tienda = inject(TiendaService);
 
   protected readonly ordenes = ORDENES;
   protected readonly esqueletos = [0, 1, 2, 3, 4, 5, 6, 7];

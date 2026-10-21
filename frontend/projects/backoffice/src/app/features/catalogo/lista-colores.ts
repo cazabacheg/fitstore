@@ -1,6 +1,7 @@
 import { HttpContext } from '@angular/common/http';
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { SIN_TOAST, ToastService, catalogApi } from 'shared';
+import { MaestrosAdminService } from 'shared/api/catalog-service';
 import { DialogoService } from '../../ui/dialogo/dialogo.service';
 
 const HEX = /^#[0-9a-fA-F]{6}$/;
@@ -117,7 +118,7 @@ const HEX = /^#[0-9a-fA-F]{6}$/;
   `,
 })
 export class ListaColores {
-  private readonly api = inject(catalogApi.MaestrosAdminService);
+  private readonly api = inject(MaestrosAdminService);
   private readonly dialogo = inject(DialogoService);
   private readonly toasts = inject(ToastService);
 

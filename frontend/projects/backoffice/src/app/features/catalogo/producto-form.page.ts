@@ -10,6 +10,7 @@ import {
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { SIN_TOAST, SesionStore, ToastService, catalogApi, comoApiError } from 'shared';
+import { CategoriasAdminService, MaestrosAdminService, ProductosAdminService } from 'shared/api/catalog-service';
 import { forkJoin, map, of, switchMap } from 'rxjs';
 import { EncabezadoPagina } from '../../layout/encabezado-pagina';
 import { EstadoCargando } from '../../ui/estados/estado-cargando';
@@ -244,9 +245,9 @@ interface OpcionCategoria {
 export class ProductoFormPage {
   private readonly ruta = inject(ActivatedRoute);
   private readonly router = inject(Router);
-  private readonly api = inject(catalogApi.ProductosAdminService);
-  private readonly maestros = inject(catalogApi.MaestrosAdminService);
-  private readonly categoriasApi = inject(catalogApi.CategoriasAdminService);
+  private readonly api = inject(ProductosAdminService);
+  private readonly maestros = inject(MaestrosAdminService);
+  private readonly categoriasApi = inject(CategoriasAdminService);
   private readonly toasts = inject(ToastService);
   private readonly sesion = inject(SesionStore);
 

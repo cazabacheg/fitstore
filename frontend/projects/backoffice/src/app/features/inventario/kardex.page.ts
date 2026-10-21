@@ -3,6 +3,7 @@ import { rxResource, toSignal } from '@angular/core/rxjs-interop';
 import { MatDialog } from '@angular/material/dialog';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { FechaPipe, ToastService, catalogApi, type ConsultaPagina } from 'shared';
+import { InventarioService } from 'shared/api/catalog-service';
 import { map } from 'rxjs';
 import { EncabezadoPagina } from '../../layout/encabezado-pagina';
 import { EstadoError } from '../../ui/estados/estado-error';
@@ -108,7 +109,7 @@ const TIPOS: Record<catalogApi.TipoMovimiento, string> = {
 })
 export class KardexPage {
   private readonly ruta = inject(ActivatedRoute);
-  private readonly api = inject(catalogApi.InventarioService);
+  private readonly api = inject(InventarioService);
   private readonly dialogo = inject(MatDialog);
   private readonly toasts = inject(ToastService);
   private readonly fecha = new FechaPipe();
