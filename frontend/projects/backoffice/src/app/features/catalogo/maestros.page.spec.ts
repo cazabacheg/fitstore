@@ -5,7 +5,10 @@ import { ListaTallas } from './lista-tallas';
 
 @Component({ selector: 'fs-falso', template: '' })
 class Falso {}
-const RUTAS = [{ path: 'catalogo/maestros', component: MaestrosPage }, { path: '**', component: Falso }];
+const RUTAS = [
+  { path: 'catalogo/maestros', component: MaestrosPage },
+  { path: '**', component: Falso },
+];
 const esperar = () => new Promise((r) => setTimeout(r, 400));
 
 async function abrir() {
@@ -50,7 +53,10 @@ describe('ListaTallas y ListaColores (P-2-06)', () => {
     expect(agregar.disabled).toBe(false);
     agregar.click();
     await asentar(t.fixture);
-    expect(t.ctrl.expectOne('/api/v1/admin/colores').request.body).toEqual({ nombre: 'Verde', hex: '#16a34a' });
+    expect(t.ctrl.expectOne('/api/v1/admin/colores').request.body).toEqual({
+      nombre: 'Verde',
+      hex: '#16a34a',
+    });
   });
 
   it('CA-2-33 no deja repetir un color por nombre', async () => {
@@ -66,10 +72,12 @@ describe('ListaTallas y ListaColores (P-2-06)', () => {
     document.querySelector<HTMLElement>('mat-dialog-container button.fs-btn--peligro')!.click();
     await esperar();
     await asentar(t.fixture);
-    t.ctrl.expectOne('/api/v1/admin/tallas/5').flush(
-      { success: false, mensaje: 'En uso', codigo: 'EN_USO' },
-      { status: 409, statusText: 'Conflict' },
-    );
+    t.ctrl
+      .expectOne('/api/v1/admin/tallas/5')
+      .flush(
+        { success: false, mensaje: 'En uso', codigo: 'EN_USO' },
+        { status: 409, statusText: 'Conflict' },
+      );
     await asentar(t.fixture);
     expect(t.el.querySelector('[role="alert"]')!.textContent).toContain('la usa alguna variante');
   });
@@ -88,7 +96,8 @@ describe('ListaTallas y ListaColores (P-2-06)', () => {
 
   it('CA-2-35 reordenar las tallas guarda el nuevo orden de las que cambiaron', async () => {
     const t = await abrir();
-    const lista = t.fixture.debugElement.query((d) => d.name === 'fs-lista-tallas').componentInstance as ListaTallas;
+    const lista = t.fixture.debugElement.query((d) => d.name === 'fs-lista-tallas')
+      .componentInstance as ListaTallas;
     lista.soltar({ previousIndex: 0, currentIndex: 1 }); // XS pasa después de S
     await asentar(t.fixture);
     const a = t.ctrl.expectOne('/api/v1/admin/tallas/1');

@@ -94,16 +94,14 @@ describe('CategoriasPage (P-2-05)', () => {
     document.querySelector<HTMLElement>('mat-dialog-container button.fs-btn--peligro')!.click();
     await esperarDialogo();
     await asentar(t.fixture);
-    t.ctrl
-      .expectOne('/api/v1/admin/categorias/10')
-      .flush(
-        {
-          success: false,
-          mensaje: 'La categoría tiene hijas o productos',
-          codigo: 'CATEGORIA_EN_USO',
-        },
-        { status: 409, statusText: 'Conflict' },
-      );
+    t.ctrl.expectOne('/api/v1/admin/categorias/10').flush(
+      {
+        success: false,
+        mensaje: 'La categoría tiene hijas o productos',
+        codigo: 'CATEGORIA_EN_USO',
+      },
+      { status: 409, statusText: 'Conflict' },
+    );
     await asentar(t.fixture);
     expect(t.el.querySelector('[role="alert"]')!.textContent).toContain('desactívala');
     expect(t.el.querySelector('[role="alert"]')!.textContent).toContain('Leggings');

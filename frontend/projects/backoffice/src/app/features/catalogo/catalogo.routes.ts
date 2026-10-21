@@ -30,11 +30,9 @@ export const CATEGORIAS_ROUTES: Routes = [
 ];
 
 export const MAESTROS_ROUTES: Routes = [
-  { path: '', component: Proximamente, data: { pantalla: 'maestros' } },
-  { path: '**', component: Proximamente, data: { pantalla: 'maestros' } },
+  { path: '', loadComponent: () => import('./maestros.page').then((m) => m.MaestrosPage) },
 ];
 
 export const DESCUENTOS_ROUTES: Routes = [
-  { path: '', component: Proximamente, data: { pantalla: 'descuentos' } },
-  { path: '**', component: Proximamente, data: { pantalla: 'descuentos' } },
+  { path: '', loadComponent: () => import('./descuentos.page').then((m) => m.DescuentosPage) },
 ];

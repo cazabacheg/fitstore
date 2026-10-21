@@ -4,8 +4,17 @@ import { armar, asentar, atender, boton } from './prueba-catalogo';
 
 @Component({ selector: 'fs-falso', template: '' })
 class Falso {}
-const RUTAS = [{ path: 'catalogo/descuentos', component: DescuentosPage }, { path: '**', component: Falso }];
-const POLITICA = { activo: true, tramos: [{ unidadesMinimas: 3, porcentaje: 5 }, { unidadesMinimas: 6, porcentaje: 10 }] };
+const RUTAS = [
+  { path: 'catalogo/descuentos', component: DescuentosPage },
+  { path: '**', component: Falso },
+];
+const POLITICA = {
+  activo: true,
+  tramos: [
+    { unidadesMinimas: 3, porcentaje: 5 },
+    { unidadesMinimas: 6, porcentaje: 10 },
+  ],
+};
 
 async function abrir() {
   const t = await armar(RUTAS, '/catalogo/descuentos');
@@ -29,12 +38,21 @@ describe('DescuentosPage (P-2-06)', () => {
     await asentar(t.fixture);
     const req = t.ctrl.expectOne('/api/v1/admin/descuentos');
     expect(req.request.method).toBe('PUT');
-    expect(req.request.body).toEqual({ activo: true, tramos: [{ unidadesMinimas: 3, porcentaje: 5 }, { unidadesMinimas: 6, porcentaje: 10 }, { unidadesMinimas: 9, porcentaje: 15 }] });
+    expect(req.request.body).toEqual({
+      activo: true,
+      tramos: [
+        { unidadesMinimas: 3, porcentaje: 5 },
+        { unidadesMinimas: 6, porcentaje: 10 },
+        { unidadesMinimas: 9, porcentaje: 15 },
+      ],
+    });
   });
 
   it('CA-2-36 con tramos inválidos no deja guardar', async () => {
     const t = await abrir();
-    const porcentaje = t.el.querySelector<HTMLInputElement>('input[aria-label="Porcentaje del tramo 2"]')!;
+    const porcentaje = t.el.querySelector<HTMLInputElement>(
+      'input[aria-label="Porcentaje del tramo 2"]',
+    )!;
     porcentaje.value = '70';
     porcentaje.dispatchEvent(new Event('input'));
     await asentar(t.fixture);
