@@ -1,7 +1,5 @@
 import { Routes } from '@angular/router';
-import { Proximamente } from '../../ui/estados/proximamente';
+import { CarritoPage } from './carrito.page';
 
-/** Marcador "Próximamente" (R2): la spec dueña reemplaza esta carpeta. */
-export const CARRITO_ROUTES: Routes = [
-  { path: '', component: Proximamente, data: { seccion: 'El carrito' } },
-];
+/** Carrito de la tienda (P-4-01): público, con o sin sesión. */
+export const CARRITO_ROUTES: Routes = [{ path: '', component: CarritoPage }];

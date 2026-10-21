@@ -1,8 +1,9 @@
 import { Routes } from '@angular/router';
-import { Proximamente } from '../../ui/estados/proximamente';
+import { DetallePedidoPage } from './detalle-pedido.page';
+import { MisPedidosPage } from './mis-pedidos.page';
 
-/** Marcador "Próximamente" (R2): la spec dueña reemplaza esta carpeta. */
+/** Mis pedidos (P-4-03) y el detalle de un pedido (P-4-04), dentro de "Mi cuenta". */
 export const MIS_PEDIDOS_ROUTES: Routes = [
-  { path: '', component: Proximamente, data: { seccion: 'Tus pedidos' } },
-  { path: ':codigo', component: Proximamente, data: { seccion: 'Tu pedido' } },
+  { path: '', component: MisPedidosPage },
+  { path: ':codigo', component: DetallePedidoPage },
 ];

@@ -40,15 +40,20 @@ const INACTIVO = miembro('c3', 'Inés', 'INACTIVO');
 
 const pedidoLista = () => http().expectOne((r) => r.url === LISTA && r.method === 'GET');
 
-/** El diálogo de confirmación se cierra con una animación: se espera a que la petición salga. */
+/**
+ * Los diálogos abren y cierran con animación: se espera a que la petición salga, hasta 3 s de reloj real
+ * (con la suite completa corriendo en paralelo, unos pocos ciclos no siempre alcanzan).
+ */
 async function esperar(
   estabilizar: () => Promise<void>,
   coincide: (r: { url: string; method: string }) => boolean,
 ) {
-  for (let i = 0; i < 50; i++) {
+  const limite = Date.now() + 3000;
+  while (Date.now() < limite) {
     const hallada = http().match(coincide);
     if (hallada.length) return hallada[0];
     await estabilizar();
+    await new Promise((r) => setTimeout(r, 10));
   }
   return http().expectOne(coincide);
 }
@@ -154,7 +159,7 @@ describe('Staff (P-1-08)', () => {
     p.botonPanel('Enviar invitación').click();
     await p.estabilizar();
 
-    const peticion = http().expectOne((r) => r.url === LISTA && r.method === 'POST');
+    const peticion = await esperar(p.estabilizar, (r) => r.url === LISTA && r.method === 'POST');
     expect(peticion.request.body).toEqual({
       email: 'nuevo@fitstore.pe',
       nombres: 'Nuevo',
@@ -219,7 +224,10 @@ describe('Staff (P-1-08)', () => {
     p.botonPanel('Guardar').click();
     await p.estabilizar();
 
-    const peticion = http().expectOne((r) => r.url === `${LISTA}/b2` && r.method === 'PUT');
+    const peticion = await esperar(
+      p.estabilizar,
+      (r) => r.url === `${LISTA}/b2` && r.method === 'PUT',
+    );
     expect(peticion.request.body).toEqual({
       nombres: 'Luis Alberto',
       apellidos: 'Prueba',

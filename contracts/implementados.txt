@@ -4,3 +4,7 @@
 # cambio incompatible. El lead agrega el servicio en el PR de su spec, al verificar el contrato (estrategia, V5);
 # los agentes no tocan este archivo. Las líneas vacías y las que empiezan con # se ignoran.
 # Vacío al cerrar 0a: los esqueletos aún no exponen los endpoints de sus contratos.
+auth-service
+catalog-service
+settings-service
+order-service

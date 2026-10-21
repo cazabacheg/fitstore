@@ -15,11 +15,28 @@ spring:
 eureka:
   client:
     enabled: false
+  rabbitmq:
+    publisher-confirm-type: correlated
 fitstore:
   eventos:
     servicio: order
+    # Las pruebas de la saga lo encienden con un RabbitMQ en Testcontainers
+    escuchar: false
+    enlaces:
+      - payment.pago.confirmado
+      - payment.pago.rechazado
+      - payment.boleta.emitida
+      - delivery.entrega.actualizada
   outbox:
-    habilitado: false
+    # Habilitado para poder leer outbox_evento; el publicador solo corre cada hora (las pruebas de la saga lo aceleran)
+    habilitado: true
+    intervalo-ms: 3600000
+  order:
+    carrito: { max-lineas: 50, max-unidades-linea: 100, ttl-anonimo: 7d, ttl-cliente: 30d }
+    codigo-prefijo: FS
+    settings-cache-ttl: 5m
+    expirador-cron: "-"
+    defaults: { expiracion-pedido-minutos: 30 }
 springdoc:
   api-docs:
     version: openapi_3_0
