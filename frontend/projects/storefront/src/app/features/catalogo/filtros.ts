@@ -63,4 +63,9 @@ export function aQuery(f: Filtros): Params {
 }
 
 export const hayFiltros = (f: Filtros): boolean =>
-  !!f.q || f.tallas.length > 0 || f.colores.length > 0 || f.min !== null || f.max !== null || f.disponible;
+  !!f.q ||
+  f.tallas.length > 0 ||
+  f.colores.length > 0 ||
+  f.min !== null ||
+  f.max !== null ||
+  f.disponible;

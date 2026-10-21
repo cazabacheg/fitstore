@@ -9,15 +9,51 @@ import type { Filtros } from './filtros';
   imports: [RouterLink],
   changeDetection: ChangeDetectionStrategy.OnPush,
   styles: `
-    :host { display: grid; gap: var(--espacio-5, 20px); align-content: start; }
-    fieldset { border: 0; padding: 0; margin: 0; display: grid; gap: 8px; }
-    legend { font-weight: 600; margin-bottom: 8px; }
-    label { display: flex; gap: 8px; align-items: center; }
-    ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
-    ul ul { padding-left: 16px; margin-top: 6px; }
-    .precio { display: flex; gap: 8px; }
-    .precio input { width: 100%; }
-    .muestra { width: 14px; height: 14px; border-radius: 50%; border: 1px solid var(--fs-color-linea, #ddd); }
+    :host {
+      display: grid;
+      gap: var(--espacio-5, 20px);
+      align-content: start;
+    }
+    fieldset {
+      border: 0;
+      padding: 0;
+      margin: 0;
+      display: grid;
+      gap: 8px;
+    }
+    legend {
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
+    label {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+    ul {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      display: grid;
+      gap: 6px;
+    }
+    ul ul {
+      padding-left: 16px;
+      margin-top: 6px;
+    }
+    .precio {
+      display: flex;
+      gap: 8px;
+    }
+    .precio input {
+      width: 100%;
+    }
+    .muestra {
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      border: 1px solid var(--fs-color-linea, #ddd);
+    }
   `,
   template: `
     <nav aria-label="Categorías">
@@ -30,7 +66,9 @@ import type { Filtros } from './filtros';
             @if (c.hijas.length) {
               <ul>
                 @for (h of c.hijas; track h.id) {
-                  <li><a [routerLink]="['/categoria', h.slug]">{{ h.nombre }}</a></li>
+                  <li>
+                    <a [routerLink]="['/categoria', h.slug]">{{ h.nombre }}</a>
+                  </li>
                 }
               </ul>
             }
@@ -108,7 +146,9 @@ export class PanelFiltros {
 
   protected alternarTalla(codigo: string): void {
     const f = this.filtros();
-    const tallas = f.tallas.includes(codigo) ? f.tallas.filter((t) => t !== codigo) : [...f.tallas, codigo];
+    const tallas = f.tallas.includes(codigo)
+      ? f.tallas.filter((t) => t !== codigo)
+      : [...f.tallas, codigo];
     this.cambio.emit({ ...f, tallas, pagina: 0 });
   }
 

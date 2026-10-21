@@ -1,4 +1,3 @@
-import { TestBed } from '@angular/core/testing';
 import { montar } from '../../testing';
 import { SelectorTalla } from './selector-talla';
 
@@ -9,7 +8,10 @@ const TALLAS = [
 
 describe('SelectorTalla', () => {
   it('CA-2-09 las tallas sin stock se ven tachadas y no se pueden elegir', async () => {
-    const { el, comp, estabilizar } = await montar(SelectorTalla, { tallas: TALLAS, agotadas: [1] });
+    const { el, comp, estabilizar } = await montar(SelectorTalla, {
+      tallas: TALLAS,
+      agotadas: [1],
+    });
     const [s, m] = Array.from(el.querySelectorAll('button'));
     expect(s.disabled).toBe(true);
     expect(s.classList).toContain('tachada');
@@ -20,6 +22,5 @@ describe('SelectorTalla', () => {
     await estabilizar();
     expect(comp.valor()).toBe(2);
     expect(m.getAttribute('aria-pressed')).toBe('true');
-    expect(TestBed.inject).toBeDefined();
   });
 });

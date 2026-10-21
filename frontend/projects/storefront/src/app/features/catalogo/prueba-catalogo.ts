@@ -30,7 +30,10 @@ export const TARJETAS: catalogApi.ProductoTarjeta[] = [
   },
 ];
 
-export function pagina<T>(contenido: T[], extra: Partial<{ pagina: number; totalPaginas: number }> = {}) {
+export function pagina<T>(
+  contenido: T[],
+  extra: Partial<{ pagina: number; totalPaginas: number }> = {},
+) {
   return {
     pagina: extra.pagina ?? 0,
     tamano: 24,
@@ -41,7 +44,12 @@ export function pagina<T>(contenido: T[], extra: Partial<{ pagina: number; total
 }
 
 export const ARBOL = [
-  { id: 10, nombre: 'Leggings', slug: 'leggings', hijas: [{ id: 11, nombre: 'Cortos', slug: 'cortos' }] },
+  {
+    id: 10,
+    nombre: 'Leggings',
+    slug: 'leggings',
+    hijas: [{ id: 11, nombre: 'Cortos', slug: 'cortos' }],
+  },
 ];
 export const TALLAS = [
   { id: 1, codigo: 'S', orden: 1, activo: true },
@@ -61,7 +69,8 @@ export function atender(
   const atendidas: TestRequest[] = [];
   for (const req of ctrl.match(() => true)) {
     const ruta = req.request.url.split('?')[0].replace('/api/v1', '');
-    if (error?.[ruta]) req.flush({ success: false, mensaje: 'error' }, { status: error[ruta], statusText: 'x' });
+    if (error?.[ruta])
+      req.flush({ success: false, mensaje: 'error' }, { status: error[ruta], statusText: 'x' });
     else if (ruta in respuestas) req.flush(sobre(respuestas[ruta]));
     else req.flush(sobre(null));
     atendidas.push(req);
@@ -89,15 +98,58 @@ export const DETALLE: catalogApi.ProductoDetalle = {
   ],
   variantes: [
     { id: 101, sku: 'LEG-NEG-S', tallaId: 1, colorId: 1, precio: 59.9, disponibilidad: 'AGOTADO' },
-    { id: 102, sku: 'LEG-NEG-M', tallaId: 2, colorId: 1, precio: 64.9, disponibilidad: 'ULTIMAS', ultimasUnidades: 4 },
-    { id: 103, sku: 'LEG-NEG-L', tallaId: 3, colorId: 1, precio: 59.9, disponibilidad: 'DISPONIBLE' },
-    { id: 201, sku: 'LEG-AZU-S', tallaId: 1, colorId: 2, precio: 59.9, disponibilidad: 'DISPONIBLE' },
+    {
+      id: 102,
+      sku: 'LEG-NEG-M',
+      tallaId: 2,
+      colorId: 1,
+      precio: 64.9,
+      disponibilidad: 'ULTIMAS',
+      ultimasUnidades: 4,
+    },
+    {
+      id: 103,
+      sku: 'LEG-NEG-L',
+      tallaId: 3,
+      colorId: 1,
+      precio: 59.9,
+      disponibilidad: 'DISPONIBLE',
+    },
+    {
+      id: 201,
+      sku: 'LEG-AZU-S',
+      tallaId: 1,
+      colorId: 2,
+      precio: 59.9,
+      disponibilidad: 'DISPONIBLE',
+    },
     { id: 501, sku: 'LEG-BLA-S', tallaId: 1, colorId: 5, precio: 59.9, disponibilidad: 'AGOTADO' },
   ],
   imagenes: [
-    { id: 1, colorId: 1, url: '/f/neg-1.jpg', urlMiniatura: '/f/neg-1-400.jpg', orden: 1, principal: true },
-    { id: 2, colorId: 1, url: '/f/neg-2.jpg', urlMiniatura: '/f/neg-2-400.jpg', orden: 2, principal: false },
-    { id: 3, colorId: 2, url: '/f/azu-1.jpg', urlMiniatura: '/f/azu-1-400.jpg', orden: 1, principal: true },
+    {
+      id: 1,
+      colorId: 1,
+      url: '/f/neg-1.jpg',
+      urlMiniatura: '/f/neg-1-400.jpg',
+      orden: 1,
+      principal: true,
+    },
+    {
+      id: 2,
+      colorId: 1,
+      url: '/f/neg-2.jpg',
+      urlMiniatura: '/f/neg-2-400.jpg',
+      orden: 2,
+      principal: false,
+    },
+    {
+      id: 3,
+      colorId: 2,
+      url: '/f/azu-1.jpg',
+      urlMiniatura: '/f/azu-1-400.jpg',
+      orden: 1,
+      principal: true,
+    },
   ],
   tramos: [
     { unidadesMinimas: 3, porcentaje: 5 },

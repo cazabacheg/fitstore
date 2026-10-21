@@ -4,7 +4,7 @@ import { TestBed, type ComponentFixture } from '@angular/core/testing';
 import { Router, RouterOutlet, provideRouter } from '@angular/router';
 import { CarritoContador, ToastService, provideFitstoreHttp } from 'shared';
 import { DetallePage } from './detalle.page';
-import { DETALLE, atender, sobre } from './prueba-catalogo';
+import { DETALLE, sobre } from './prueba-catalogo';
 
 @Component({ imports: [RouterOutlet], template: '<router-outlet />' })
 class Anfitrion {}
@@ -50,9 +50,13 @@ describe('DetallePage', () => {
   it('CA-2-08 preselecciona el primer color con stock y la galería muestra solo sus fotos', async () => {
     const { el } = await abrir();
     const colores = Array.from(el.querySelectorAll<HTMLButtonElement>('fs-selector-color button'));
-    expect(colores.find((c) => c.getAttribute('aria-pressed') === 'true')?.getAttribute('title')).toBe('Negro');
+    expect(
+      colores.find((c) => c.getAttribute('aria-pressed') === 'true')?.getAttribute('title'),
+    ).toBe('Negro');
     expect(imagenPrincipal(el)).toBe('/f/neg-1.jpg');
-    const miniaturas = Array.from(el.querySelectorAll('.fs-galeria__miniatura img')).map((i) => i.getAttribute('src'));
+    const miniaturas = Array.from(el.querySelectorAll('.fs-galeria__miniatura img')).map((i) =>
+      i.getAttribute('src'),
+    );
     expect(miniaturas).toEqual(['/f/neg-1.jpg', '/f/neg-2.jpg']);
   });
 
@@ -91,7 +95,11 @@ describe('DetallePage', () => {
     const agotado = {
       ...DETALLE,
       colores: DETALLE.colores.map((c) => ({ ...c, conStock: false })),
-      variantes: DETALLE.variantes.map((v) => ({ ...v, disponibilidad: 'AGOTADO', ultimasUnidades: null })),
+      variantes: DETALLE.variantes.map((v) => ({
+        ...v,
+        disponibilidad: 'AGOTADO',
+        ultimasUnidades: null,
+      })),
     };
     const { el } = await abrir(agotado);
     expect(el.textContent).toContain('Agotado');
@@ -110,7 +118,11 @@ describe('DetallePage', () => {
 
   it('CA-2-10 sin guía de tallas el enlace no aparece', async () => {
     const { el } = await abrir({ ...DETALLE, tieneGuiaTallas: false });
-    expect(Array.from(el.querySelectorAll('button')).some((b) => b.textContent?.includes('Guía de tallas'))).toBe(false);
+    expect(
+      Array.from(el.querySelectorAll('button')).some((b) =>
+        b.textContent?.includes('Guía de tallas'),
+      ),
+    ).toBe(false);
   });
 
   it('CA-2-11 muestra los tramos de descuento y que se combinan tallas y colores', async () => {
@@ -133,10 +145,25 @@ describe('DetallePage', () => {
     const req = ctrl.expectOne('/api/v1/carrito/items');
     expect(req.request.method).toBe('POST');
     expect(req.request.body).toEqual({ varianteId: 102, cantidad: 2 });
-    req.flush(sobre({ lineas: [], avisosTramo: [], subtotal: 0, descuentoTotal: 0, total: 0, cantidadTotal: 5, preciosPorConfirmar: false, puedeIrAlCheckout: true }));
+    req.flush(
+      sobre({
+        lineas: [],
+        avisosTramo: [],
+        subtotal: 0,
+        descuentoTotal: 0,
+        total: 0,
+        cantidadTotal: 5,
+        preciosPorConfirmar: false,
+        puedeIrAlCheckout: true,
+      }),
+    );
     await asentar(fixture);
     expect(TestBed.inject(CarritoContador).cantidad()).toBe(5);
-    expect(TestBed.inject(ToastService).toasts().some((t) => t.tipo === 'exito')).toBe(true);
+    expect(
+      TestBed.inject(ToastService)
+        .toasts()
+        .some((t) => t.tipo === 'exito'),
+    ).toBe(true);
   });
 
   it('CA-2-12 la cantidad no puede superar el disponible de la variante', async () => {

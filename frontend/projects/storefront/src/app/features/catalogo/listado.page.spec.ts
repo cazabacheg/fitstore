@@ -46,7 +46,9 @@ async function cargar(url: string, productos: unknown = pagina(TARJETAS)) {
 
 describe('ListadoPage', () => {
   it('CA-2-03 los filtros de la URL viajan a la API', async () => {
-    const t = await abrir('/productos?q=polo&talla=M&color=1&min=40&max=60&disponible=true&orden=precio,asc&pagina=2');
+    const t = await abrir(
+      '/productos?q=polo&talla=M&color=1&min=40&max=60&disponible=true&orden=precio,asc&pagina=2',
+    );
     const reqs = t.ctrl.match((r) => r.url === '/api/v1/productos');
     expect(reqs.length).toBe(1);
     const p = reqs[0].request.params;
@@ -137,7 +139,9 @@ describe('ListadoPage', () => {
     atender(t.ctrl, MAESTROS, { '/productos': 500 });
     await asentar(t.fixture);
     expect(t.el.textContent).toContain('No pudimos cargar');
-    Array.from(t.el.querySelectorAll('button')).find((b) => b.textContent?.includes('Reintentar'))!.click();
+    Array.from(t.el.querySelectorAll('button'))
+      .find((b) => b.textContent?.includes('Reintentar'))!
+      .click();
     await asentar(t.fixture);
     expect(t.ctrl.match((r) => r.url === '/api/v1/productos').length).toBe(1);
   });

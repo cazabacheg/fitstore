@@ -7,20 +7,60 @@ import { FsPaginador } from '../../ui/paginador/paginador';
 import { FsTarjetaProducto } from '../../ui/tarjeta-producto/tarjeta-producto';
 import { EstadoCargando, EstadoError, EstadoVacio } from '../../ui/estados/estados';
 import { ChipsFiltrosActivos } from './chips-filtros-activos';
-import { ORDENES, TAMANO_PAGINA, aQuery, hayFiltros, leerFiltros, type Filtros, type Orden } from './filtros';
+import {
+  ORDENES,
+  TAMANO_PAGINA,
+  aQuery,
+  hayFiltros,
+  leerFiltros,
+  type Filtros,
+  type Orden,
+} from './filtros';
 import { PanelFiltros } from './panel-filtros';
 
 /** P-2-01: listado de productos con filtros en la URL (C3), chips, orden y paginador. */
 @Component({
   selector: 'fs-listado-page',
-  imports: [PanelFiltros, ChipsFiltrosActivos, FsTarjetaProducto, FsPaginador, EstadoCargando, EstadoVacio, EstadoError],
+  imports: [
+    PanelFiltros,
+    ChipsFiltrosActivos,
+    FsTarjetaProducto,
+    FsPaginador,
+    EstadoCargando,
+    EstadoVacio,
+    EstadoError,
+  ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   styles: `
-    .listado { display: grid; grid-template-columns: 240px minmax(0, 1fr); gap: 32px; padding-block: 32px; }
-    .barra { display: flex; justify-content: space-between; align-items: center; gap: 16px; flex-wrap: wrap; margin-bottom: 16px; }
-    .rejilla { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 24px; }
-    fs-paginador { display: flex; justify-content: center; margin-top: 32px; }
-    @media (max-width: 800px) { .listado { grid-template-columns: minmax(0, 1fr); } }
+    .listado {
+      display: grid;
+      grid-template-columns: 240px minmax(0, 1fr);
+      gap: 32px;
+      padding-block: 32px;
+    }
+    .barra {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 16px;
+      flex-wrap: wrap;
+      margin-bottom: 16px;
+    }
+    .rejilla {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 24px;
+    }
+    fs-paginador {
+      display: flex;
+      justify-content: center;
+      margin-top: 32px;
+    }
+    @media (max-width: 800px) {
+      .listado {
+        grid-template-columns: minmax(0, 1fr);
+      }
+    }
   `,
   template: `
     <section class="fs-pagina listado">
@@ -34,18 +74,31 @@ import { PanelFiltros } from './panel-filtros';
       <div>
         <h1>{{ titulo() }}</h1>
         <div class="barra">
-          <fs-chips-filtros-activos [filtros]="filtros()" [colores]="colores()" (cambio)="aplicar($event)" />
+          <fs-chips-filtros-activos
+            [filtros]="filtros()"
+            [colores]="colores()"
+            (cambio)="aplicar($event)"
+          />
           <label>
             Ordenar por
-            <select data-orden [value]="filtros().orden" (change)="ordenar($any($event.target).value)">
+            <select
+              data-orden
+              [value]="filtros().orden"
+              (change)="ordenar($any($event.target).value)"
+            >
               @for (o of ordenes; track o.valor) {
-                <option [value]="o.valor" [selected]="o.valor === filtros().orden">{{ o.etiqueta }}</option>
+                <option [value]="o.valor" [selected]="o.valor === filtros().orden">
+                  {{ o.etiqueta }}
+                </option>
               }
             </select>
           </label>
         </div>
         @if (resultado.error()) {
-          <fs-estado-error titulo="No pudimos cargar los productos" (reintentar)="intento.update((n) => n + 1)" />
+          <fs-estado-error
+            titulo="No pudimos cargar los productos"
+            (reintentar)="intento.update((n) => n + 1)"
+          />
         } @else if (resultado.isLoading() || !pagina()) {
           <div class="rejilla" role="status" aria-busy="true">
             @for (i of esqueletos; track i) {
@@ -85,7 +138,9 @@ export class ListadoPage {
   protected readonly intento = signal(0);
 
   protected readonly filtros = toSignal(
-    combineLatest([this.ruta.paramMap, this.ruta.queryParamMap]).pipe(map(([r, q]) => leerFiltros(r, q))),
+    combineLatest([this.ruta.paramMap, this.ruta.queryParamMap]).pipe(
+      map(([r, q]) => leerFiltros(r, q)),
+    ),
     { initialValue: leerFiltros(this.ruta.snapshot.paramMap, this.ruta.snapshot.queryParamMap) },
   );
 
@@ -107,7 +162,9 @@ export class ListadoPage {
         )
         .pipe(map((r) => r.data ?? null)),
   });
-  protected readonly pagina = computed(() => (this.resultado.hasValue() ? this.resultado.value() : null));
+  protected readonly pagina = computed(() =>
+    this.resultado.hasValue() ? this.resultado.value() : null,
+  );
 
   private readonly maestros = rxResource({
     stream: () =>
