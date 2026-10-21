@@ -375,8 +375,9 @@ export class ContenidoTab {
   /** Todo menos las imágenes: subir o reordenar una imagen no borra lo que se está escribiendo. */
   private readonly base = computed(
     () => {
-      const { imagenesLanding: _imagenes, ...resto } = this.contenido();
-      return resto;
+      return Object.fromEntries(
+        Object.entries(this.contenido()).filter(([clave]) => clave !== 'imagenesLanding'),
+      ) as Omit<settingsApi.Contenido, 'imagenesLanding'>;
     },
     { equal: (a, b) => JSON.stringify(a) === JSON.stringify(b) },
   );
