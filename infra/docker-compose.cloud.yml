@@ -7,8 +7,8 @@
 #     se publican SOLO en 127.0.0.1 de la VM y se ven por túnel SSH (CA-8-15, CA-8-27); desde internet solo responde Caddy.
 #   - Las imágenes se construyen en la VM y llevan la etiqueta del commit (FITSTORE_TAG, la escribe desplegar.sh).
 #   - Auth firma con las claves PEM que desplegar.sh genera una vez fuera del repositorio (JWT_DIR).
-# Memoria: la suma de mem_limit del base (5,6 GiB), más 128 MiB del gateway, Mailpit y Caddy (128 MiB), queda en 5,85 GiB
-# (6,28 GB), bajo los 6,5 GB (CA-8-16).
+# Memoria: la suma de mem_limit del base (5,7 GiB, con payment en 640 MiB), más 128 MiB del gateway, Mailpit y Caddy (128 MiB), queda en 5,98 GiB
+# (6,42 GB), bajo los 6,5 GB (CA-8-16).
 services:
   mailpit:
     image: axllent/mailpit:v1.31.1

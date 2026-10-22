@@ -204,7 +204,7 @@ services:
       context: ..
       dockerfile: backend/payment-service/Dockerfile
     image: fitstore/payment-service:dev
-    mem_limit: 512m
+    mem_limit: 640m
     depends_on:
       <<: *espera-servicio
       garage-init:
