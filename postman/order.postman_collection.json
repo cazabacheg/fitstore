@@ -7,7 +7,8 @@
   "variable": [
     {
       "key": "varianteId",
-      "value": "10002"
+      "value": "",
+      "description": "Variante con stock; la elige el primer paso de la colección"
     },
     {
       "key": "emailCliente",
@@ -35,6 +36,53 @@
     }
   ],
   "item": [
+    {
+      "name": "Preparación: elegir una variante con stock",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "// Los pedidos pendientes reservan stock; en vez de fijar una variante se toma la primera DISPONIBLE del catálogo",
+              "pm.test('CA-2-01 el catálogo lista productos', function () { pm.response.to.have.status(200); });",
+              "const productos = pm.response.json().data.contenido.slice(0, 8);",
+              "function buscar(i) {",
+              "  if (i >= productos.length) { pm.test('CA-2-01 hay una variante DISPONIBLE', function () { pm.expect.fail('ningún producto tiene variantes DISPONIBLE'); }); return; }",
+              "  pm.sendRequest(pm.variables.replaceIn('{{baseUrl}}/api/v1/productos/') + productos[i].slug, function (err, res) {",
+              "    const v = err ? null : (res.json().data.variantes || []).find(function (x) { return x.disponibilidad === 'DISPONIBLE'; });",
+              "    if (!v) { return buscar(i + 1); }",
+              "    pm.collectionVariables.set('varianteId', String(v.id));",
+              "    pm.test('CA-2-01 hay una variante DISPONIBLE', function () { pm.expect(v.id).to.be.a('number'); });",
+              "  });",
+              "}",
+              "buscar(0);"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/productos?size=8",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "productos"
+          ],
+          "query": [
+            {
+              "key": "size",
+              "value": "8"
+            }
+          ]
+        }
+      }
+    },
     {
       "name": "CA-4-01 Carrito anónimo: agregar una variante",
       "event": [
@@ -378,6 +426,63 @@
       }
     },
     {
+      "name": "CA-4-21 Un total distinto al visto responde 409 PRECIO_CAMBIADO",
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "// Va antes de confirmar: la confirmación vacía el carrito y respondería CARRITO_VACIO",
+              "pm.collectionVariables.set('claveIdempotenciaPrecio', pm.variables.replaceIn('{{$guid}}'));"
+            ]
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('CA-4-21 no crea nada', function () { pm.response.to.have.status(409); });",
+              "pm.test('CA-4-21 el código es PRECIO_CAMBIADO', function () { pm.expect(pm.response.json().codigo).to.eql('PRECIO_CAMBIADO'); });"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Idempotency-Key",
+            "value": "{{claveIdempotenciaPrecio}}"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{tokenCliente}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/pedidos",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "pedidos"
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\"modalidad\": \"RECOJO\", \"totalEsperado\": 0.5}"
+        }
+      }
+    },
+    {
       "name": "CA-4-19 Confirmar el pedido (Idempotency-Key)",
       "event": [
         {
@@ -477,53 +582,6 @@
         "body": {
           "mode": "raw",
           "raw": "{\"modalidad\": \"RECOJO\", \"notas\": \"Postman\", \"totalEsperado\": {{totalEsperado}}}"
-        }
-      }
-    },
-    {
-      "name": "CA-4-21 Un total distinto al visto responde 409 PRECIO_CAMBIADO",
-      "event": [
-        {
-          "listen": "test",
-          "script": {
-            "type": "text/javascript",
-            "exec": [
-              "pm.test('CA-4-21 no crea nada', function () { pm.response.to.have.status(409); });",
-              "pm.test('CA-4-21 el código es PRECIO_CAMBIADO', function () { pm.expect(pm.response.json().codigo).to.eql('PRECIO_CAMBIADO'); });"
-            ]
-          }
-        }
-      ],
-      "request": {
-        "method": "POST",
-        "header": [
-          {
-            "key": "Idempotency-Key",
-            "value": "{{claveIdempotencia}}x"
-          },
-          {
-            "key": "Authorization",
-            "value": "Bearer {{tokenCliente}}"
-          },
-          {
-            "key": "Content-Type",
-            "value": "application/json"
-          }
-        ],
-        "url": {
-          "raw": "{{baseUrl}}/api/v1/pedidos",
-          "host": [
-            "{{baseUrl}}"
-          ],
-          "path": [
-            "api",
-            "v1",
-            "pedidos"
-          ]
-        },
-        "body": {
-          "mode": "raw",
-          "raw": "{\"modalidad\": \"RECOJO\", \"totalEsperado\": 0.5}"
         }
       }
     },

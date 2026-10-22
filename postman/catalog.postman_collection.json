@@ -533,7 +533,7 @@
                 "type": "text/javascript",
                 "exec": [
                   "pm.test('CA-2-22 crea la matriz', function () { pm.response.to.have.status(201); });",
-                  "pm.test('CA-2-22 crea 4 variantes con SKU', function () { const v = pm.response.json().data.variantes; pm.expect(v.length).to.eql(4); pm.expect(v[0].sku).to.include('{{letras}}'); });",
+                  "pm.test('CA-2-22 crea 4 variantes con SKU', function () { const v = pm.response.json().data.variantes; pm.expect(v.length).to.eql(4); pm.expect(v[0].sku).to.include(pm.collectionVariables.get('letras')); });",
                   "pm.collectionVariables.set('varianteId', pm.response.json().data.variantes[0].id); pm.collectionVariables.set('varianteId2', pm.response.json().data.variantes[1].id);"
                 ]
               }
@@ -1026,7 +1026,7 @@
                 "type": "text/javascript",
                 "exec": [
                   "pm.test('CA-2-18 el menú muestra las categorías', function () { pm.response.to.have.status(200); });",
-                  "pm.test('CA-2-18 incluye la categoría recién creada', function () { pm.expect(JSON.stringify(pm.response.json().data)).to.include('{{catRaizSlug}}'); });"
+                  "pm.test('CA-2-18 incluye la categoría recién creada', function () { pm.expect(JSON.stringify(pm.response.json().data)).to.include(pm.collectionVariables.get('catRaizSlug')); });"
                 ]
               }
             }
@@ -1062,7 +1062,7 @@
                 "type": "text/javascript",
                 "exec": [
                   "pm.test('CA-2-01 lista los productos de la categoría y sus hijas', function () { pm.response.to.have.status(200); });",
-                  "pm.test('CA-2-01 aparece el producto publicado una sola vez', function () { const c = pm.response.json().data.contenido; pm.expect(c.filter(p => p.slug === '{{productoSlug}}').length).to.eql(1); });"
+                  "pm.test('CA-2-01 aparece el producto publicado una sola vez', function () { const c = pm.response.json().data.contenido; pm.expect(c.filter(p => p.slug === pm.collectionVariables.get('productoSlug')).length).to.eql(1); });"
                 ]
               }
             }

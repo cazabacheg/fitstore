@@ -1451,6 +1451,16 @@
           },
           "event": [
             {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// El gateway limita los ingresos a 5 por minuto por IP: se espera a que se libere la ventana",
+                  "setTimeout(function () {}, 61000);"
+                ]
+              }
+            },
+            {
               "listen": "test",
               "script": {
                 "type": "text/javascript",

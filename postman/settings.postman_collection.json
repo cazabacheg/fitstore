@@ -302,7 +302,7 @@
                 "exec": [
                   "pm.test('CA-3-32 responde 200', function () { pm.response.to.have.status(200); });",
                   "pm.test('CA-3-32 viene con Cache-Control de 24 h', function () { pm.expect(pm.response.headers.get('Cache-Control')).to.include('max-age=86400'); });",
-                  "pm.test('CA-3-32 Lima tiene 10 provincias ordenadas por nombre', function () { const n = pm.response.json().data.map(function (p) { return p.nombre; }); pm.expect(n).to.have.lengthOf(10); pm.expect(n).to.eql(n.slice().sort(function (a, b) { return a.localeCompare(b, 'es'); })); });"
+                  "pm.test('CA-3-32 Lima tiene 10 provincias ordenadas por nombre', function () { const n = pm.response.json().data.map(function (p) { return p.nombre; }); pm.expect(n).to.have.lengthOf(10); const clave = function (s) { return s.normalize('NFD').replace(/[\\u0300-\\u036f]/g, '').toLowerCase(); }; const esperado = n.slice().sort(function (a, b) { const x = clave(a), y = clave(b); return x < y ? -1 : (x > y ? 1 : 0); }); pm.expect(n).to.eql(esperado); });"
                 ]
               }
             }
