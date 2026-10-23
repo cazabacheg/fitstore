@@ -31,7 +31,7 @@ class BoletaPdfTest {
     @Test
     @DisplayName("CA-5-41 el cuadro de totales va a la derecha, ocupa menos de la mitad del ancho y su letra es menor que la de la tabla")
     void cuadroDeTotalesALaDerecha() throws Exception {
-        byte[] pdf = generar();
+        byte[] pdf = generar("5.00");
         String salida = System.getProperty("boleta.salida");
         if (salida != null) {
             Files.write(Path.of(salida), pdf);
@@ -54,6 +54,42 @@ class BoletaPdfTest {
         assertThat(subtotal.letra()).isLessThan(importeTabla.letra());
         assertThat(total.letra()).isLessThan(importeTabla.letra());
         assertThat(importeTotal.letra()).isLessThan(importeTabla.letra());
+    }
+
+    @Test
+    @DisplayName("CA-5-44 cada valor de la tabla de ítems queda bajo su cabecera: números a la derecha y la cantidad centrada")
+    void tablaAlineadaConSusCabeceras() throws Exception {
+        List<Linea> lineas = lineasDe(generar("5.00"));
+
+        Linea cantidadCab = buscar(lineas, "Cant.");
+        Linea precioCab = buscar(lineas, "P. unit.");
+        Linea descuentoCab = buscar(lineas, "Dscto.");
+        Linea importeCab = buscar(lineas, "Importe");
+        Linea cantidad = primero(lineas, "2");
+        Linea precio = primero(lineas, "59.90");
+        Linea descuento = primero(lineas, "5.00");
+        Linea importe = primero(lineas, "119.80");
+
+        assertThat(precio.derecha()).isCloseTo(precioCab.derecha(), within(3f));
+        assertThat(descuento.derecha()).isCloseTo(descuentoCab.derecha(), within(3f));
+        assertThat(importe.derecha()).isCloseTo(importeCab.derecha(), within(3f));
+        assertThat(centro(cantidad)).isCloseTo(centro(cantidadCab), within(3f));
+    }
+
+    @Test
+    @DisplayName("CA-5-45 la fila de descuentos solo aparece cuando hay descuento")
+    void descuentosSoloSiHay() throws Exception {
+        assertThat(lineasDe(generar("0.00")).stream().anyMatch(l -> l.texto().contains("Descuentos"))).isFalse();
+        assertThat(lineasDe(generar("12.00")).stream().anyMatch(l -> l.texto().contains("Descuentos"))).isTrue();
+    }
+
+    private static Linea primero(List<Linea> lineas, String texto) {
+        return lineas.stream().filter(l -> l.texto().equals(texto)).findFirst()
+                .orElseThrow(() -> new AssertionError("No hay texto \"" + texto + "\" en " + lineas));
+    }
+
+    private static float centro(Linea l) {
+        return (l.izquierda() + l.derecha()) / 2;
     }
 
     private static Linea buscar(List<Linea> lineas, String parte) {
@@ -87,7 +123,7 @@ class BoletaPdfTest {
         return lineas;
     }
 
-    private static byte[] generar() {
+    private static byte[] generar(String descuentos) {
         ClassLoaderTemplateResolver resolvedor = new ClassLoaderTemplateResolver();
         resolvedor.setPrefix("templates/");
         resolvedor.setSuffix(".html");
@@ -103,9 +139,9 @@ class BoletaPdfTest {
         v.put("cliente", Map.of("nombre", "Ana Quispe Rojas", "dni", "12345678"));
         v.put("codigoPedido", "FS-000124");
         v.put("medioPago", "Visa ****1111");
-        v.put("lineas", List.of(new LineaBoleta("Polo Dry-Fit", "Talla M · Negro", 2, "59.90", "0.00", "119.80")));
+        v.put("lineas", List.of(new LineaBoleta("Polo Dry-Fit", "Talla M · Negro", 2, "59.90", "5.00", "119.80")));
         v.put("subtotal", "119.80");
-        v.put("descuentos", "0.00");
+        v.put("descuentos", descuentos);
         v.put("envio", "10.00");
         v.put("total", "129.80");
         v.put("igv", "19.80");
