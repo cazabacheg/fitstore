@@ -103,14 +103,14 @@ import { fechaHora } from './formato';
       margin: 0;
     }
     .datos dt {
-      color: var(--color-texto-suave);
+      color: var(--fs-color-texto-suave);
     }
     .datos dd {
       margin: 0;
     }
     .direccion {
-      border: 1px solid var(--color-linea);
-      border-radius: var(--radius-md);
+      border: 1px solid var(--fs-color-linea);
+      border-radius: var(--radio-md);
       padding: var(--espacio-3) var(--espacio-4);
     }
   `,

@@ -47,6 +47,19 @@ const MAXIMO_IMAGENES = 10;
       border-radius: var(--radio-sm, 6px);
       cursor: grab;
     }
+    .sin-miniatura {
+      display: grid;
+      place-items: center;
+      align-content: center;
+      gap: var(--espacio-2);
+      aspect-ratio: 4 / 5;
+      padding: var(--espacio-3);
+      text-align: center;
+      font-size: 13px;
+      color: var(--fs-color-texto-suave);
+      background: var(--fs-color-superficie-alterna);
+      border-radius: var(--radio-sm);
+    }
     label {
       display: flex;
       gap: 6px;
@@ -106,10 +119,18 @@ const MAXIMO_IMAGENES = 10;
     >
       @for (img of ordenadas(); track img.id) {
         <figure cdkDrag [cdkDragDisabled]="soloLectura()">
-          <img
-            [src]="img.urlMiniatura"
-            [alt]="'Foto ' + img.orden + ' de ' + nombreColor(img.colorId)"
-          />
+          @if (sinMiniatura().has(img.id)) {
+            <span class="sin-miniatura">
+              <span class="fs-icono" aria-hidden="true">broken_image</span>
+              No se pudo cargar la miniatura
+            </span>
+          } @else {
+            <img
+              [src]="img.urlMiniatura"
+              [alt]="'Foto ' + img.orden + ' de ' + nombreColor(img.colorId)"
+              (error)="miniaturaFallida(img.id)"
+            />
+          }
           <label>
             <input
               type="radio"
@@ -156,6 +177,8 @@ export class ImagenesProducto {
   protected readonly colorNuevo = signal<number | null>(null);
   protected readonly clave = signal(0);
   protected readonly subiendo = signal(false);
+  /** Miniaturas que el navegador no pudo cargar: se avisa en su lugar en vez de mostrar una imagen rota. */
+  protected readonly sinMiniatura = signal<ReadonlySet<number>>(new Set());
 
   protected readonly imagenes = computed(() => this.producto().imagenes);
   protected readonly ordenadas = computed(() =>
@@ -172,6 +195,10 @@ export class ImagenesProducto {
   protected readonly colorElegido = computed(() =>
     this.colores().length === 1 ? this.colores()[0].id : this.colorNuevo(),
   );
+
+  protected miniaturaFallida(id: number): void {
+    this.sinMiniatura.update((conjunto) => new Set(conjunto).add(id));
+  }
 
   protected nombreColor(id: number): string {
     return this.colores().find((c) => c.id === id)?.nombre ?? '';

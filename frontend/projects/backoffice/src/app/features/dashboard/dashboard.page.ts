@@ -174,6 +174,16 @@ const hoyIso = () => {
       grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
       gap: var(--espacio-5);
     }
+    .db-tarjeta h2 {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      gap: var(--espacio-3);
+    }
+    .db-tarjeta h2 a {
+      font-size: 13px;
+      font-weight: 500;
+    }
     .db-tarjeta {
       display: grid;
       gap: var(--espacio-4);
@@ -199,7 +209,7 @@ const hoyIso = () => {
       display: grid;
       gap: 2px;
       padding: var(--espacio-3);
-      border-radius: var(--fs-radio-md);
+      border-radius: var(--radio-md);
       background: var(--fs-color-superficie-alterna);
       text-decoration: none;
       color: inherit;

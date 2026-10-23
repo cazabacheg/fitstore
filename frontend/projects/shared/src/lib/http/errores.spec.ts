@@ -1,14 +1,15 @@
-import { HttpClient, HttpErrorResponse } from '@angular/common/http';
+import { HttpClient, HttpContext, HttpErrorResponse } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 import { EstadoServicio } from './estado-servicio';
 import { camposConError } from './api-error';
 import { provideFitstoreHttp } from './proveedores';
+import { SIN_TOAST } from './interceptores';
 import { ToastService } from './toast.service';
 
-function configurar() {
+function configurar(opciones: { avisarErroresDeCampos?: boolean } = {}) {
   TestBed.configureTestingModule({
-    providers: [provideFitstoreHttp({ carrito: false }), provideHttpClientTesting()],
+    providers: [provideFitstoreHttp({ carrito: false, ...opciones }), provideHttpClientTesting()],
   });
   return {
     http: TestBed.inject(HttpClient),
@@ -57,6 +58,59 @@ describe('Interceptor de errores', () => {
     expect(toasts.toasts()).toHaveLength(0);
     expect(camposConError(error)).toEqual([
       { campo: 'dni', mensaje: 'El DNI debe tener 8 dígitos' },
+    ]);
+  });
+
+  const rechazoDeCampos = {
+    success: false,
+    mensaje: 'Revisa los datos ingresados',
+    codigo: 'VALIDACION',
+    errores: [{ campo: 'codigo', mensaje: 'El código usa de 2 a 20 letras mayúsculas o números' }],
+  };
+
+  it('CA-0b-34 con avisarErroresDeCampos, un 400 con campos de un formulario que no los muestra sale en un toast con el detalle de cada campo', () => {
+    const { http, ctrl, toasts } = configurar({ avisarErroresDeCampos: true });
+    let error: HttpErrorResponse | undefined;
+
+    http.post('/api/v1/admin/productos', {}).subscribe({ error: (e) => (error = e) });
+    ctrl
+      .expectOne('/api/v1/admin/productos')
+      .flush(rechazoDeCampos, { status: 400, statusText: 'Bad Request' });
+
+    expect(toasts.toasts().map((t) => [t.tipo, t.mensaje])).toEqual([
+      ['error', 'El código usa de 2 a 20 letras mayúsculas o números'],
+    ]);
+    expect(camposConError(error)).toHaveLength(1);
+  });
+
+  it('CA-0b-34 con avisarErroresDeCampos, un formulario que ya muestra sus campos (SIN_TOAST) no repite el aviso', () => {
+    const { http, ctrl, toasts } = configurar({ avisarErroresDeCampos: true });
+
+    http
+      .post('/api/v1/admin/productos', {}, { context: new HttpContext().set(SIN_TOAST, true) })
+      .subscribe({ error: () => undefined });
+    ctrl
+      .expectOne('/api/v1/admin/productos')
+      .flush(rechazoDeCampos, { status: 400, statusText: 'Bad Request' });
+
+    expect(toasts.toasts()).toHaveLength(0);
+  });
+
+  it('CA-0b-34 con varios campos inválidos el toast los junta', () => {
+    const con = configurar({ avisarErroresDeCampos: true });
+    con.http.post('/api/v1/x', {}).subscribe({ error: () => undefined });
+    con.ctrl.expectOne('/api/v1/x').flush(
+      {
+        ...rechazoDeCampos,
+        errores: [
+          { campo: 'codigo', mensaje: 'El código es obligatorio' },
+          { campo: 'nombre', mensaje: 'El nombre debe tener de 3 a 120 caracteres' },
+        ],
+      },
+      { status: 400, statusText: 'Bad Request' },
+    );
+    expect(con.toasts.toasts().map((t) => t.mensaje)).toEqual([
+      'El código es obligatorio. El nombre debe tener de 3 a 120 caracteres',
     ]);
   });
 

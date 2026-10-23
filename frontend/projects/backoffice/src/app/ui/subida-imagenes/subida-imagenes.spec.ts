@@ -119,4 +119,19 @@ describe('SubidaImagenes (ui)', () => {
     expect(miniaturas(el).length).toBe(1);
     expect(input.getAttribute('accept')).toBe('image/jpeg,image/png,image/webp');
   });
+
+  it('CA-2-83 si el navegador no puede dibujar la vista previa (p. ej. un .webp que no decodifica) se ve un aviso con el nombre, no una imagen rota, y el archivo se puede quitar', () => {
+    const { f, el, soltar } = montar();
+    soltar(archivo('lateral.webp', 'image/webp'));
+    const imagen = el.querySelector('.fs-subida__item img') as HTMLImageElement;
+    imagen.dispatchEvent(new Event('error'));
+    f.detectChanges();
+    expect(el.querySelector('.fs-subida__item img')).toBeNull();
+    const item = el.querySelector('.fs-subida__item') as HTMLElement;
+    expect(item.textContent).toContain('Sin vista previa');
+    expect(item.textContent).toContain('lateral.webp');
+    (item.querySelector('button') as HTMLButtonElement).click();
+    f.detectChanges();
+    expect(miniaturas(el).length).toBe(0);
+  });
 });

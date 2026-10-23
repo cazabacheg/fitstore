@@ -84,9 +84,9 @@ const fecha = new FechaPipe();
       display: grid;
       gap: var(--espacio-3);
       padding: var(--espacio-4);
-      border: 1px solid var(--color-borde);
+      border: 1px solid var(--fs-color-linea);
       border-radius: var(--radio-md);
-      background: var(--color-superficie);
+      background: var(--fs-color-superficie);
     }
     .panel-envio__cabecera {
       display: flex;
@@ -107,7 +107,7 @@ const fecha = new FechaPipe();
       overflow-wrap: anywhere;
     }
     .panel-envio__error {
-      color: var(--color-error, #b3261e);
+      color: var(--fs-color-error, #b3261e);
       margin: 0;
     }
     .panel-envio__intentos {

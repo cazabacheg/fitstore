@@ -11,10 +11,10 @@ import { errorCorreo, rutaDeRetorno } from '../validaciones';
   selector: 'fs-ingresar-staff-page',
   imports: [CampoFormulario, RouterLink],
   template: `
-    <main class="acceso">
-      <section class="acceso__tarjeta">
-        <p class="acceso__marca">FitStore</p>
-        <h1 style="margin: 0 0 var(--espacio-5)">Ingresa al backoffice</h1>
+    <main class="fs-acceso">
+      <section class="fs-acceso__tarjeta">
+        <p class="fs-acceso__marca">FitStore</p>
+        <h1 class="fs-acceso__titulo">Ingresa al backoffice</h1>
         <form novalidate (submit)="enviar($event)" style="display: grid; gap: var(--espacio-4)">
           @if (errorGeneral()) {
             <div class="fs-aviso fs-aviso--error" role="alert">
@@ -46,28 +46,6 @@ import { errorCorreo, rutaDeRetorno } from '../validaciones';
         </p>
       </section>
     </main>
-  `,
-  styles: `
-    .acceso {
-      min-height: 100vh;
-      display: grid;
-      place-items: center;
-      padding: var(--espacio-4);
-      background: var(--color-fondo);
-    }
-    .acceso__tarjeta {
-      width: 100%;
-      max-width: 420px;
-      padding: var(--espacio-6);
-      border: 1px solid var(--color-linea);
-      border-radius: var(--radius-lg);
-      background: var(--color-superficie);
-    }
-    .acceso__marca {
-      margin: 0 0 var(--espacio-2);
-      font-weight: 700;
-      color: var(--color-primario-texto);
-    }
   `,
 })
 export class IngresarStaffPage {

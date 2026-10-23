@@ -23,6 +23,7 @@ type Nodo = catalogApi.CategoriaAdmin | catalogApi.CategoriaAdminHija;
     }
     .nodo {
       display: flex;
+      flex-wrap: wrap;
       align-items: center;
       gap: 8px;
       padding: 6px 10px;
@@ -50,6 +51,7 @@ type Nodo = catalogApi.CategoriaAdmin | catalogApi.CategoriaAdminHija;
       cursor: pointer;
     }
     .cuenta {
+      white-space: nowrap;
       color: var(--fs-color-texto-suave);
       font-size: 13px;
     }

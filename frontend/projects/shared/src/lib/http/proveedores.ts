@@ -10,7 +10,7 @@ import { BASE_PATH as BASE_SETTINGS } from '../api/settings-service/variables';
 import {
   autenticacionInterceptor,
   carritoIdInterceptor,
-  erroresInterceptor,
+  crearErroresInterceptor,
   refrescoInterceptor,
   requestIdInterceptor,
 } from './interceptores';
@@ -18,6 +18,8 @@ import {
 export interface OpcionesHttp {
   /** `true` solo en la tienda: agrega `X-Carrito-Id` en `/carrito/**`. */
   carrito: boolean;
+  /** `true` en el backoffice: un 400 con errores por campo sale también en un toast si el formulario no lo pidió con `SIN_TOAST` (CA-0b-34). */
+  avisarErroresDeCampos?: boolean;
 }
 
 /**
@@ -30,7 +32,7 @@ export function provideFitstoreHttp(opciones: OpcionesHttp): EnvironmentProvider
     autenticacionInterceptor,
     ...(opciones.carrito ? [carritoIdInterceptor] : []),
     refrescoInterceptor,
-    erroresInterceptor,
+    crearErroresInterceptor(opciones.avisarErroresDeCampos ?? false),
   ];
   return makeEnvironmentProviders([
     provideHttpClient(withInterceptors(interceptores)),
