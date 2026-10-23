@@ -168,7 +168,9 @@ describe('Staff (P-1-08)', () => {
     });
     peticion.flush(ok(miembro('d4', 'Nuevo', 'INVITACION_PENDIENTE', 'ADMIN')));
     await p.estabilizar();
-    pedidoLista().flush(ok(pagina([ADMIN, PENDIENTE])));
+    (await esperar(p.estabilizar, (r) => r.url === LISTA && r.method === 'GET')).flush(
+      ok(pagina([ADMIN, PENDIENTE])),
+    );
     await p.estabilizar();
 
     expect(
@@ -236,7 +238,9 @@ describe('Staff (P-1-08)', () => {
     });
     peticion.flush(ok({ ...PENDIENTE, nombres: 'Luis Alberto', rol: 'ADMIN' }));
     await p.estabilizar();
-    pedidoLista().flush(ok(pagina([ADMIN])));
+    (await esperar(p.estabilizar, (r) => r.url === LISTA && r.method === 'GET')).flush(
+      ok(pagina([ADMIN])),
+    );
     await p.estabilizar();
   }, 20_000);
 
