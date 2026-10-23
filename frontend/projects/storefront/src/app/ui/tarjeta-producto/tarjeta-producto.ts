@@ -1,6 +1,7 @@
 import { Component, input } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import type { catalogApi } from 'shared';
+import { capitalizar } from '../capitalizar';
 import { FsBadge } from '../badge/badge';
 import { FsPrecio } from '../precio/precio';
 
@@ -43,10 +44,10 @@ import { FsPrecio } from '../precio/precio';
             @for (c of p.colores; track c.id) {
               <span
                 class="fs-muestra"
-                [title]="c.nombre"
+                [title]="nombreColor(c.nombre)"
                 [style.background]="c.hex"
                 role="img"
-                [attr.aria-label]="c.nombre"
+                [attr.aria-label]="nombreColor(c.nombre)"
               ></span>
             }
           </span>
@@ -63,4 +64,5 @@ import { FsPrecio } from '../precio/precio';
 })
 export class FsTarjetaProducto {
   readonly producto = input<catalogApi.ProductoTarjeta>();
+  protected readonly nombreColor = capitalizar;
 }

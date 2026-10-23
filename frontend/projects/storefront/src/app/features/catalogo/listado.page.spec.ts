@@ -145,4 +145,90 @@ describe('ListadoPage', () => {
     await asentar(t.fixture);
     expect(t.ctrl.match((r) => r.url === '/api/v1/productos').length).toBe(1);
   });
+
+  it('CA-2-62 la categoría activa y su padre se distinguen en el panel de filtros', async () => {
+    const t = await cargar('/categoria/cortos');
+    const cortos = t.el.querySelector<HTMLAnchorElement>('fs-panel-filtros a[href^="/categoria/cortos"]')!;
+    const leggings = t.el.querySelector<HTMLAnchorElement>('fs-panel-filtros a[href^="/categoria/leggings"]')!;
+    const todos = t.el.querySelector<HTMLAnchorElement>('fs-panel-filtros a[href^="/productos"]')!;
+    expect(cortos.classList).toContain('activa');
+    expect(cortos.getAttribute('aria-current')).toBe('page');
+    expect(leggings.classList).toContain('activa-padre');
+    expect(leggings.hasAttribute('aria-current')).toBe(false);
+    expect(todos.classList).not.toContain('activa');
+    expect(todos.classList).not.toContain('activa-padre');
+  });
+
+  it('CA-2-62 en una categoría padre solo ella queda activa, sin marcar a sus hijas', async () => {
+    const t = await cargar('/categoria/leggings');
+    const leggings = t.el.querySelector<HTMLAnchorElement>('fs-panel-filtros a[href^="/categoria/leggings"]')!;
+    const cortos = t.el.querySelector<HTMLAnchorElement>('fs-panel-filtros a[href^="/categoria/cortos"]')!;
+    expect(leggings.classList).toContain('activa');
+    expect(leggings.classList).not.toContain('activa-padre');
+    expect(cortos.classList).not.toContain('activa');
+  });
+
+  it('CA-2-62 sin categoría queda activo "Todos los productos"', async () => {
+    const t = await cargar('/productos');
+    const todos = t.el.querySelector<HTMLAnchorElement>('fs-panel-filtros a[href^="/productos"]')!;
+    expect(todos.classList).toContain('activa');
+  });
+
+  it('CA-2-63 cambiar de categoría conserva talla, color y demás filtros, y vuelve a la primera página', async () => {
+    const t = await cargar('/productos?talla=M&color=1&disponible=true&pagina=3');
+    const enlace = t.el.querySelector<HTMLAnchorElement>('fs-panel-filtros a[href^="/categoria/cortos"]')!;
+    const href = enlace.getAttribute('href')!;
+    expect(href).toContain('talla=M');
+    expect(href).toContain('color=1');
+    expect(href).toContain('disponible=true');
+    expect(href).not.toContain('pagina');
+    enlace.click();
+    await asentar(t.fixture);
+    const url = TestBed.inject(Router).url;
+    expect(url).toContain('/categoria/cortos');
+    expect(url).toContain('talla=M');
+    expect(url).toContain('color=1');
+  });
+
+  it('CA-2-63 los filtros de talla y color solo se quitan a mano', async () => {
+    const t = await cargar('/categoria/cortos?talla=M');
+    t.el.querySelector<HTMLAnchorElement>('fs-panel-filtros a[href^="/categoria/leggings"]')!.click();
+    await asentar(t.fixture);
+    expect(TestBed.inject(Router).url).toContain('talla=M');
+    atender(t.ctrl, { ...MAESTROS, '/productos': pagina(TARJETAS) });
+    await asentar(t.fixture);
+    t.el.querySelector<HTMLButtonElement>('.chip-filtro button')!.click();
+    await asentar(t.fixture);
+    expect(TestBed.inject(Router).url).not.toContain('talla=M');
+  });
+
+  it('CA-2-64 "Solo disponibles" es un interruptor arriba, antes de Categorías', async () => {
+    const t = await cargar('/productos');
+    const interruptor = t.el.querySelector<HTMLInputElement>('fs-panel-filtros input[data-filtro="disponible"]')!;
+    expect(interruptor.getAttribute('role')).toBe('switch');
+    const categorias = t.el.querySelector('fs-panel-filtros nav[aria-label="Categorías"]')!;
+    expect(
+      interruptor.compareDocumentPosition(categorias) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+    expect(t.el.textContent).toContain('Solo disponibles');
+    interruptor.click();
+    await asentar(t.fixture);
+    expect(TestBed.inject(Router).url).toContain('disponible=true');
+  });
+
+  it('CA-2-65 los nombres de color empiezan con mayúscula en los filtros y en los chips', async () => {
+    const t = await abrir('/productos?color=1');
+    const colores = [
+      { id: 1, nombre: 'negro', hex: '#000000', activo: true },
+      { id: 2, nombre: 'azul marino', hex: '#1d4ed8', activo: true },
+    ];
+    atender(t.ctrl, { ...MAESTROS, '/colores': colores, '/productos': pagina(TARJETAS) });
+    await asentar(t.fixture);
+    const etiquetas = Array.from(t.el.querySelectorAll('fs-panel-filtros label')).map((l) =>
+      l.textContent?.trim(),
+    );
+    expect(etiquetas).toContain('Negro');
+    expect(etiquetas).toContain('Azul marino');
+    expect(t.el.querySelector('.chip-filtro')!.textContent).toContain('Negro');
+  });
 });

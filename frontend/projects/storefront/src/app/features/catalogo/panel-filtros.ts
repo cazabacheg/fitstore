@@ -1,7 +1,8 @@
-import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import type { catalogApi } from 'shared';
-import type { Filtros } from './filtros';
+import { capitalizar } from '../../ui/capitalizar';
+import { aQuery, type Filtros } from './filtros';
 
 /** Panel de filtros del listado: categorías, talla, color, precio y "solo disponibles". Emite el filtro nuevo completo. */
 @Component({
@@ -23,12 +24,76 @@ import type { Filtros } from './filtros';
     }
     legend {
       font-weight: 600;
-      margin-bottom: 8px;
+      margin-bottom: 12px;
     }
     label {
       display: flex;
       gap: 8px;
       align-items: center;
+    }
+    .titulo {
+      display: block;
+      font-weight: 600;
+      margin-bottom: 12px;
+    }
+    nav a {
+      color: inherit;
+      text-decoration: none;
+      display: inline-block;
+      padding-block: 2px;
+    }
+    nav a:hover {
+      text-decoration: underline;
+    }
+    nav a.activa,
+    nav a.activa-padre {
+      font-weight: 700;
+      color: var(--fs-color-primario-texto);
+    }
+    nav a.activa {
+      text-decoration: underline;
+      text-underline-offset: 4px;
+    }
+    .interruptor {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .interruptor input {
+      appearance: none;
+      flex: none;
+      position: relative;
+      width: 40px;
+      height: 22px;
+      margin: 0;
+      border-radius: 999px;
+      background: var(--fs-color-borde-control, #8a8478);
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+    .interruptor input::after {
+      content: '';
+      position: absolute;
+      top: 2px;
+      left: 2px;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: var(--fs-color-superficie, #fff);
+      transition: transform 0.15s;
+    }
+    .interruptor input:checked {
+      background: var(--fs-color-primario-texto, #000);
+    }
+    .interruptor input:checked::after {
+      transform: translateX(18px);
+    }
+    .interruptor input:focus-visible {
+      outline: 2px solid var(--fs-color-foco, #000);
+      outline-offset: 2px;
     }
     ul {
       list-style: none;
@@ -56,18 +121,49 @@ import type { Filtros } from './filtros';
     }
   `,
   template: `
+    <label class="interruptor">
+      Solo disponibles
+      <input
+        type="checkbox"
+        role="switch"
+        data-filtro="disponible"
+        [checked]="filtros().disponible"
+        (change)="cambio.emit({ ...filtros(), disponible: !filtros().disponible, pagina: 0 })"
+      />
+    </label>
     <nav aria-label="Categorías">
-      <strong>Categorías</strong>
+      <strong class="titulo">Categorías</strong>
       <ul>
-        <li><a [routerLink]="['/productos']">Todos los productos</a></li>
+        <li>
+          <a
+            [routerLink]="['/productos']"
+            [queryParams]="parametros()"
+            [class.activa]="!filtros().categoria"
+            [attr.aria-current]="!filtros().categoria ? 'page' : null"
+            >Todos los productos</a
+          >
+        </li>
         @for (c of arbol(); track c.id) {
           <li>
-            <a [routerLink]="['/categoria', c.slug]">{{ c.nombre }}</a>
+            <a
+              [routerLink]="['/categoria', c.slug]"
+              [queryParams]="parametros()"
+              [class.activa]="filtros().categoria === c.slug"
+              [class.activa-padre]="esPadreActiva(c)"
+              [attr.aria-current]="filtros().categoria === c.slug ? 'page' : null"
+              >{{ c.nombre }}</a
+            >
             @if (c.hijas.length) {
               <ul>
                 @for (h of c.hijas; track h.id) {
                   <li>
-                    <a [routerLink]="['/categoria', h.slug]">{{ h.nombre }}</a>
+                    <a
+                      [routerLink]="['/categoria', h.slug]"
+                      [queryParams]="parametros()"
+                      [class.activa]="filtros().categoria === h.slug"
+                      [attr.aria-current]="filtros().categoria === h.slug ? 'page' : null"
+                      >{{ h.nombre }}</a
+                    >
                   </li>
                 }
               </ul>
@@ -101,7 +197,7 @@ import type { Filtros } from './filtros';
             (change)="alternarColor(c.id)"
           />
           <span class="muestra" [style.background]="c.hex"></span>
-          {{ c.nombre }}
+          {{ nombreColor(c.nombre) }}
         </label>
       }
     </fieldset>
@@ -126,15 +222,6 @@ import type { Filtros } from './filtros';
         />
       </div>
     </fieldset>
-    <label>
-      <input
-        type="checkbox"
-        data-filtro="disponible"
-        [checked]="filtros().disponible"
-        (change)="cambio.emit({ ...filtros(), disponible: !filtros().disponible, pagina: 0 })"
-      />
-      Solo disponibles
-    </label>
   `,
 })
 export class PanelFiltros {
@@ -143,6 +230,16 @@ export class PanelFiltros {
   readonly tallas = input<catalogApi.Talla[]>([]);
   readonly colores = input<catalogApi.Color[]>([]);
   readonly cambio = output<Filtros>();
+
+  /** Filtros que viajan al cambiar de categoría: todos, menos la página (la categoría nueva empieza en la primera). */
+  protected readonly parametros = computed(() => aQuery({ ...this.filtros(), pagina: 0 }));
+  protected readonly nombreColor = capitalizar;
+
+  /** La categoría padre de la activa también se resalta. */
+  protected esPadreActiva(c: catalogApi.CategoriaNodo): boolean {
+    const actual = this.filtros().categoria;
+    return !!actual && c.hijas.some((h) => h.slug === actual);
+  }
 
   protected alternarTalla(codigo: string): void {
     const f = this.filtros();

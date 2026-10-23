@@ -4,7 +4,7 @@ import { TestBed, type ComponentFixture } from '@angular/core/testing';
 import { Router, RouterOutlet, provideRouter } from '@angular/router';
 import { CarritoContador, ToastService, provideFitstoreHttp } from 'shared';
 import { DetallePage } from './detalle.page';
-import { DETALLE, sobre } from './prueba-catalogo';
+import { ARBOL, DETALLE, sobre } from './prueba-catalogo';
 
 @Component({ imports: [RouterOutlet], template: '<router-outlet />' })
 class Anfitrion {}
@@ -15,7 +15,7 @@ async function asentar(fixture: ComponentFixture<unknown>) {
   fixture.detectChanges();
 }
 
-async function abrir(producto: unknown = DETALLE, estado = 200) {
+async function abrir(producto: unknown = DETALLE, estado = 200, arbol: unknown = ARBOL) {
   TestBed.configureTestingModule({
     providers: [
       provideZonelessChangeDetection(),
@@ -30,7 +30,11 @@ async function abrir(producto: unknown = DETALLE, estado = 200) {
   await asentar(fixture);
   const el = fixture.nativeElement as HTMLElement;
   for (const req of ctrl.match(() => true)) {
-    if (estado === 200) req.flush(sobre(producto));
+    if (req.request.url.endsWith('/categorias')) {
+      if (arbol === null)
+        req.flush({ success: false, mensaje: 'x' }, { status: 500, statusText: 'x' });
+      else req.flush(sobre(arbol));
+    } else if (estado === 200) req.flush(sobre(producto));
     else req.flush({ success: false, mensaje: 'No existe' }, { status: estado, statusText: 'x' });
   }
   await asentar(fixture);
@@ -45,6 +49,25 @@ const talla = (el: HTMLElement, codigo: string) =>
   )!;
 const imagenPrincipal = (el: HTMLElement) =>
   el.querySelector<HTMLImageElement>('.fs-galeria__principal img')?.getAttribute('src');
+
+/** Negro: S agotada, M últimas 4, L disponible. Azul: S disponible, M últimas 2, L agotada. */
+const CON_AZUL = {
+  ...DETALLE,
+  variantes: [
+    ...DETALLE.variantes.filter((v) => v.colorId !== 2),
+    { id: 201, sku: 'A-S', tallaId: 1, colorId: 2, precio: 59.9, disponibilidad: 'DISPONIBLE' },
+    {
+      id: 202,
+      sku: 'A-M',
+      tallaId: 2,
+      colorId: 2,
+      precio: 59.9,
+      disponibilidad: 'ULTIMAS',
+      ultimasUnidades: 2,
+    },
+    { id: 203, sku: 'A-L', tallaId: 3, colorId: 2, precio: 59.9, disponibilidad: 'AGOTADO' },
+  ],
+};
 
 describe('DetallePage', () => {
   it('CA-2-08 preselecciona el primer color con stock y la galería muestra solo sus fotos', async () => {
@@ -188,5 +211,218 @@ describe('DetallePage', () => {
     const { el, ctrl } = await abrir(null, 404);
     expect(el.textContent).toContain('No encontramos este producto');
     ctrl.verify();
+  });
+
+  it('CA-2-66 al cambiar de color la talla se conserva si ahí está disponible y el aviso se actualiza', async () => {
+    const { el, fixture } = await abrir(CON_AZUL);
+    talla(el, 'M').click();
+    await asentar(fixture);
+    expect(el.textContent).toContain('¡Últimas 4 unidades!');
+    el.querySelector<HTMLButtonElement>('fs-selector-color button[title="Azul"]')!.click();
+    await asentar(fixture);
+    expect(talla(el, 'M').getAttribute('aria-pressed')).toBe('true');
+    expect(el.textContent).toContain('¡Últimas 2 unidades!');
+    expect(boton(el, 'Agregar al carrito').disabled).toBe(false);
+  });
+
+  it('CA-2-66 al cambiar de color la talla se deselecciona solo si en el nuevo color está agotada', async () => {
+    const { el, fixture } = await abrir(CON_AZUL);
+    talla(el, 'L').click();
+    await asentar(fixture);
+    el.querySelector<HTMLButtonElement>('fs-selector-color button[title="Azul"]')!.click();
+    await asentar(fixture);
+    expect(
+      Array.from(el.querySelectorAll('fs-selector-talla button')).some(
+        (b) => b.getAttribute('aria-pressed') === 'true',
+      ),
+    ).toBe(false);
+    expect(el.textContent).toContain('Elige una talla');
+    expect(boton(el, 'Agregar al carrito').disabled).toBe(true);
+  });
+
+  const tramo = (el: HTMLElement, texto: string) =>
+    Array.from(el.querySelectorAll<HTMLButtonElement>('fs-tramos-descuento .tramo')).find((b) =>
+      b.textContent?.includes(texto),
+    )!;
+  const cantidadActual = (el: HTMLElement) =>
+    el.querySelector<HTMLInputElement>('fs-selector-cantidad input')!.value;
+
+  it('CA-2-68 hacer clic en un tramo carga esa cantidad', async () => {
+    const { el, fixture } = await abrir();
+    talla(el, 'L').click();
+    await asentar(fixture);
+    tramo(el, '12 un.').click();
+    await asentar(fixture);
+    expect(cantidadActual(el)).toBe('12');
+    expect(tramo(el, '12 un.').classList).toContain('alcanzado');
+  });
+
+  it('CA-2-69 con la talla elegida, los tramos que su stock no alcanza se ven grises', async () => {
+    const { el, fixture } = await abrir();
+    talla(el, 'M').click(); // 4 unidades
+    await asentar(fixture);
+    expect(tramo(el, '3 un.').disabled).toBe(false);
+    expect(tramo(el, '6 un.').disabled).toBe(true);
+    expect(tramo(el, '12 un.').classList).toContain('sin-stock');
+    tramo(el, '12 un.').click();
+    await asentar(fixture);
+    expect(cantidadActual(el)).toBe('1');
+  });
+
+  it('CA-2-69 sin talla elegida, los tramos usan el mayor stock conocido del color', async () => {
+    const pocas = {
+      ...DETALLE,
+      variantes: DETALLE.variantes.map((v) =>
+        v.id === 103 ? { ...v, disponibilidad: 'ULTIMAS', ultimasUnidades: 5 } : v,
+      ),
+    };
+    const { el } = await abrir(pocas);
+    expect(tramo(el, '3 un.').disabled).toBe(false);
+    expect(tramo(el, '6 un.').disabled).toBe(true);
+  });
+
+  it('CA-2-69 sin talla elegida y con un color de stock amplio, ningún tramo se ve gris', async () => {
+    const { el } = await abrir();
+    expect(tramo(el, '12 un.').disabled).toBe(false);
+  });
+
+  it('CA-2-70 el aviso "últimas unidades" mantiene su umbral y los tramos grises dicen cuáles no se alcanzan', async () => {
+    const { el, fixture } = await abrir();
+    talla(el, 'L').click();
+    await asentar(fixture);
+    expect(el.textContent).toContain('Disponible');
+    expect(el.textContent).not.toContain('Últimas');
+    talla(el, 'M').click();
+    await asentar(fixture);
+    expect(el.textContent).toContain('¡Últimas 4 unidades!');
+    expect(tramo(el, '3 un.').disabled).toBe(false);
+    expect(tramo(el, '6 un.').disabled).toBe(true);
+  });
+
+  const conComprables = (n: number) => ({
+    ...DETALLE,
+    variantes: DETALLE.variantes.map((v) => (v.id === 103 ? { ...v, unidadesComprables: n } : v)),
+  });
+
+  it('CA-2-73 con "Disponible", unidadesComprables pone grises los tramos que no alcanza y limita la cantidad', async () => {
+    const { el, fixture } = await abrir(conComprables(8));
+    talla(el, 'L').click();
+    await asentar(fixture);
+    expect(el.textContent).toContain('Disponible');
+    expect(tramo(el, '6 un.').disabled).toBe(false);
+    expect(tramo(el, '12 un.').disabled).toBe(true);
+    const mas = el.querySelector<HTMLButtonElement>('button[aria-label="Más unidades"]')!;
+    for (let i = 0; i < 12; i++) {
+      mas.click();
+      await asentar(fixture);
+    }
+    expect(cantidadActual(el)).toBe('8');
+  });
+
+  it('CA-2-73 si unidadesComprables llega al tramo más alto, ningún tramo se ve gris y la cantidad no se limita a él', async () => {
+    const { el, fixture } = await abrir(conComprables(12));
+    talla(el, 'L').click();
+    await asentar(fixture);
+    expect(tramo(el, '12 un.').disabled).toBe(false);
+    const mas = el.querySelector<HTMLButtonElement>('button[aria-label="Más unidades"]')!;
+    for (let i = 0; i < 14; i++) {
+      mas.click();
+      await asentar(fixture);
+    }
+    expect(Number(cantidadActual(el))).toBeGreaterThan(12);
+  });
+
+  it('CA-2-73 sin talla elegida usa el mayor unidadesComprables del color', async () => {
+    const { el } = await abrir(conComprables(8));
+    expect(tramo(el, '6 un.').disabled).toBe(false);
+    expect(tramo(el, '12 un.').disabled).toBe(true);
+  });
+
+  const migas = (el: HTMLElement) =>
+    Array.from(el.querySelectorAll('nav.migas > *:not([aria-hidden])')).map((n) => ({
+      texto: n.textContent?.trim(),
+      href: n.getAttribute('href'),
+    }));
+
+  it('CA-2-71 las migas muestran Productos / categoría padre / categoría / nombre con enlaces', async () => {
+    const { el } = await abrir();
+    expect(migas(el)).toEqual([
+      { texto: 'Productos', href: '/productos' },
+      { texto: 'Leggings', href: '/categoria/leggings' },
+      { texto: 'Cortos', href: '/categoria/cortos' },
+      { texto: 'Legging Pro', href: null },
+    ]);
+  });
+
+  it('CA-2-71 en una categoría raíz las migas llevan solo esa categoría', async () => {
+    const { el } = await abrir({
+      ...DETALLE,
+      categorias: [{ id: 10, nombre: 'Leggings', slug: 'leggings' }],
+    });
+    expect(migas(el).map((m) => m.texto)).toEqual(['Productos', 'Leggings', 'Legging Pro']);
+  });
+
+  it('CA-2-71 si el producto está en la padre y en una hija se usa la hija', async () => {
+    const { el } = await abrir({
+      ...DETALLE,
+      categorias: [
+        { id: 10, nombre: 'Leggings', slug: 'leggings' },
+        { id: 11, nombre: 'Cortos', slug: 'cortos' },
+      ],
+    });
+    expect(migas(el).map((m) => m.texto)).toEqual([
+      'Productos',
+      'Leggings',
+      'Cortos',
+      'Legging Pro',
+    ]);
+  });
+
+  it('CA-2-71 si el árbol de categorías falla, las migas siguen con la categoría del producto', async () => {
+    const { el } = await abrir(DETALLE, 200, null);
+    expect(migas(el).map((m) => m.texto)).toEqual(['Productos', 'Cortos', 'Legging Pro']);
+  });
+
+  async function abrirGuia() {
+    const t = await abrir();
+    boton(t.el, 'Guía de tallas').click();
+    await asentar(t.fixture);
+    t.ctrl
+      .expectOne('/api/v1/categorias/cortos/guia-tallas')
+      .flush(sobre({ columnas: ['Talla', 'Cintura'], filas: [['S', '60 cm']], nota: null }));
+    await asentar(t.fixture);
+    return t;
+  }
+
+  it('CA-2-72 la tabla de la guía tiene bordes y los valores van centrados bajo sus columnas', async () => {
+    const { el } = await abrirGuia();
+    const celda = el.querySelector('table td')!;
+    const cabecera = el.querySelector('table th')!;
+    expect(getComputedStyle(celda).textAlign).toBe('center');
+    expect(getComputedStyle(cabecera).textAlign).toBe('center');
+    expect(getComputedStyle(celda).borderTopWidth).toBe('1px');
+    expect(getComputedStyle(cabecera).borderTopWidth).toBe('1px');
+  });
+
+  it('CA-2-72 la guía se cierra con clic en el fondo y no con clic dentro', async () => {
+    const { el, fixture } = await abrirGuia();
+    el.querySelector<HTMLElement>('.fs-dialogo')!.click();
+    await asentar(fixture);
+    expect(el.querySelector('[role="dialog"]')).not.toBeNull();
+    el.querySelector<HTMLElement>('.fs-dialogo-fondo')!.click();
+    await asentar(fixture);
+    expect(el.querySelector('[role="dialog"]')).toBeNull();
+  });
+
+  it('CA-2-72 la guía se cierra con Escape y con el botón Cerrar', async () => {
+    const t = await abrirGuia();
+    document.body.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+    await asentar(t.fixture);
+    expect(t.el.querySelector('[role="dialog"]')).toBeNull();
+    boton(t.el, 'Guía de tallas').click();
+    await asentar(t.fixture);
+    boton(t.el.querySelector<HTMLElement>('[role="dialog"]')!, 'Cerrar').click();
+    await asentar(t.fixture);
+    expect(t.el.querySelector('[role="dialog"]')).toBeNull();
   });
 });

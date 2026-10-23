@@ -10,7 +10,12 @@ import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 
+/**
+ * {@code unidadesComprables}: stock disponible acotado a las unidades del tramo de descuento más alto del producto
+ * (CA-2-73); así la tienda sabe qué tramos alcanza la variante sin conocer el inventario real. Ausente si el producto
+ * no tiene tramos.
+ */
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public record VariantePublicaDto(Long id, String sku, Long tallaId, Long colorId, BigDecimal precio,
-        Disponibilidad disponibilidad, Integer ultimasUnidades) {
+        Disponibilidad disponibilidad, Integer ultimasUnidades, Integer unidadesComprables) {
 }
