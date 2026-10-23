@@ -132,6 +132,17 @@ CA-4-17  Cuando pulso "Agregar dirección" en el checkout
 
 CA-4-18  Dado que delivery, auth o settings no responden
          Entonces el resumen muestra "No pudimos calcular el envío, inténtalo en un momento" y no se puede confirmar
+
+CA-4-67  Dado que elegí envío por agencia
+         Cuando todavía no he seleccionado una agencia
+         Entonces debajo del selector de agencia veo el aviso "Selecciona una agencia para continuar" y no se puede confirmar
+         Y al elegirla el aviso desaparece, y tanto el resumen ("Agencia Shalom" junto al envío) como "Revisa tu pedido"
+              ("Envío por agencia: Shalom") muestran la agencia seleccionada
+
+CA-4-68  Cuando reviso mi pedido
+         Entonces cada producto muestra su precio base unitario, la cantidad y, si tiene, el descuento aplicado a esa línea
+              (porcentaje y monto) como detalle, junto con el total de la línea
+         Y el resumen sigue mostrando el descuento consolidado de todo el pedido
 ```
 
 ### HU-4-04 — Confirmar mi pedido
@@ -142,6 +153,16 @@ Como cliente, quiero confirmar mi pedido con el monto que vi, para pasar a pagar
 CA-4-19  Cuando confirmo (POST /pedidos con Idempotency-Key y totalEsperado)
          Entonces se crea el pedido FS-000124 en PENDIENTE_PAGO con expiraEn = ahora + la expiración de la tienda,
               se reserva el stock, se publica PedidoCreado, se vacía el carrito y voy a /pago/FS-000124
+
+CA-4-70  Dado que todavía no hay un resumen del servidor (agencia sin elegir, calculando o error al calcular el envío)
+         Entonces "Revisa tu pedido" y el Resumen siguen mostrando las líneas del carrito con su detalle, el subtotal
+              y el descuento; el envío dice "Elige una agencia" (o "No disponible" si el cálculo falló, junto con el
+              aviso "No pudimos calcular el envío") y el total se rotula "Total sin envío"
+         Y no se puede confirmar hasta tener el resumen completo; con recojo o con la agencia elegida se ve el resumen normal
+
+CA-4-69  Cuando el pedido se confirma y paso a /pago/FS-000124
+         Entonces el contador del carrito de la cabecera queda en 0 sin que yo entre al carrito
+              (order-service ya vació el carrito en CA-4-19) y, si la confirmación falla, el contador no cambia
 
 CA-4-20  Dado que pulso "Confirmar" dos veces o se corta la red y reintento con la misma clave
          Entonces existe un solo pedido y ambas respuestas traen el mismo código
@@ -359,11 +380,11 @@ CA-4-59  Un OPERADOR no ve el botón y la API le responde 403
 - **Ruta / proyecto:** `/checkout` · storefront · CLIENTE.
 - **Boceto:** ![P-4-02](img/P-4-02-checkout.png)
 - **Diseño de alta fidelidad:** ✅ [canvas "FitStore Tienda"](https://claude.ai/artifact/1iacKddHAquNYuQcFPBZLg), `Checkout` (FitStore escritorio) y `CheckoutKallpaMovil` (Kallpa móvil). Copia en [`docs/diseno/`](../diseno/).
-- **Componentes:** `CheckoutPage` en **una sola página** (O1) con las secciones 1 Dirección (`SelectorDireccion`), 2 Entrega (`SelectorModalidad` con costo y plazo de cada opción, `SelectorAgencia`, datos de la tienda física para recojo), 3 Revisa tu pedido (ítems compactos), y la columna `ResumenPedido` con notas opcionales (hasta 300 caracteres), aceptación implícita de términos y el botón "Confirmar pedido" (deshabilitado mientras envía).
+- **Componentes:** `CheckoutPage` en **una sola página** (O1) con las secciones 1 Dirección (`SelectorDireccion`), 2 Entrega (`SelectorModalidad` con costo y plazo de cada opción, `SelectorAgencia`, datos de la tienda física para recojo), 3 Revisa tu pedido (ítems compactos con precio base unitario, cantidad y descuento de la línea, y la agencia elegida si el envío es por agencia), y la columna `ResumenPedido` con notas opcionales (hasta 300 caracteres), aceptación implícita de términos y el botón "Confirmar pedido" (deshabilitado mientras envía).
 - **Estados:** sin direcciones, recalculando resumen, envío no disponible, precios cambiados (409), sin stock (409), servicio no disponible (503), demasiados intentos (429).
-- **Validaciones:** dirección obligatoria salvo recojo; agencia obligatoria en agencia.
+- **Validaciones:** dirección obligatoria salvo recojo; agencia obligatoria en agencia (aviso debajo del selector, CA-4-67).
 - **Diálogo de nueva dirección:** `DialogoDireccion` de la SPEC-1 (A6), abierto sobre el checkout.
-- **Endpoints:** `GET/POST /clientes/me/direcciones` (auth, el POST lo hace el diálogo), `GET /envios/opciones?ubigeo=`, `GET /agencias` (delivery), `GET /settings/public`, `POST /checkout/resumen`, `POST /pedidos`.
+- **Endpoints:** `GET /carrito` (líneas y montos mientras no hay resumen, CA-4-70), `GET/POST /clientes/me/direcciones` (auth, el POST lo hace el diálogo), `GET /envios/opciones?ubigeo=`, `GET /agencias` (delivery), `GET /settings/public`, `POST /checkout/resumen`, `POST /pedidos`.
 
 ### P-4-03 — Mis pedidos
 
@@ -448,6 +469,7 @@ Todo según el micro de order. Decisiones de implementación de esta spec:
 | 01–08 | API + componente | `CarritoServiceTest` (límites, stock, cotización caída), `CarritoRepositoryTest` (Redis), `carrito.page.spec.ts` |
 | 09–12 | Unitaria + API + componente | `FusionCarritoTest`, TTL en Redis Testcontainers, `carrito-sesion.spec.ts` (una sola fusión, retorno a checkout) |
 | 13–18 | API + componente | `CheckoutServiceTest` con clientes Feign en WireMock (opciones, Lima/Callao, dependencia caída), `checkout.page.spec.ts` |
+| 67–70 | Componente | `checkout.page.spec.ts` (aviso y nombre de la agencia, detalle de precio, cantidad y descuento por línea, contador del carrito en 0 tras confirmar, líneas y montos del carrito mientras no hay resumen) |
 | 19–25 | Unitaria + datos + API | `CheckoutServiceTest` (camino feliz, idempotencia, precio cambiado, sin stock, 503 sin pedido), `PedidoRepositoryTest` (cascada, clave única, secuencia), `MontosPedidoTest` |
 | 26 | Carga | `k6/checkout.js` |
 | 27–32 | Integración | `SagaPedidoIT` (RabbitMQ Testcontainers: pago confirmado, rechazado, expiración, carrera, boleta, duplicado) |
@@ -474,7 +496,7 @@ Todo según el micro de order. Decisiones de implementación de esta spec:
 
 ## 9. Definición de terminado
 
-- [ ] CA-4-01 a CA-4-60 cumplidos en CI (el 26 en `stage`), salvo los de extensión de alcance.
+- [ ] CA-4-01 a CA-4-70 cumplidos en CI (el 26 en `stage`), salvo los de extensión de alcance.
 - [ ] Postman `order` en verde y k6 con p95 < 2 s.
 - [ ] El OpenAPI de order coincide con lo implementado; los eventos coinciden con el AsyncAPI.
 - [ ] Demostración: carrito anónimo → login → checkout → pedido en PENDIENTE_PAGO → (pago simulado) → el operador lo prepara y despacha → el cliente ve la línea de tiempo → el admin registra un reembolso postventa parcial.
