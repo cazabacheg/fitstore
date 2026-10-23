@@ -1,17 +1,14 @@
 # SPEC-2 — Catálogo e inventario
 
-> Versión: **v12 (aprobado)**, 2026-10-22 · Estados: ✅ decidido · 🟡 propuesto · ❓ abierto
+> Versión: **v13 (aprobado)**, 2026-10-22 · Estados: ✅ decidido · 🟡 propuesto · ❓ abierto
 > **Dueña de:** `backend/catalog-service` (módulos catálogo e inventario) · tienda: `features/catalogo` · backoffice: `features/catalogo`, `features/inventario`.
 > **Depende de:** 0a, 0b, 1 (sesión de staff) · **Habilita:** 3 (destacados de la landing), 4 (cotización y reserva), 8.
 > **Contratos:** `contracts/openapi/catalog-service.yaml` (incluye `/internal/v1/inventario/reservas`); usa el contrato de order (`POST /carrito/items`); eventos `StockBajo`, `StockNoConfirmado` (publica) y `PedidoPagado`, `PedidoCancelado`, `PedidoExpirado` (consume).
 
 **Historial:**
-<<<<<<< HEAD
-- v11 (2026-10-22): correcciones de la exploración del backoffice (decisión del autor): al marcar una subcategoría se marca su padre y al desmarcar el padre se desmarcan sus hijas (CA-2-80), el formulario de producto valida en el cliente igual que el backend (CA-2-81), muestra los errores del servidor bajo cada campo (CA-2-82) y avisa cuando una miniatura no carga (CA-2-83).
-=======
+- v13 (2026-10-22): correcciones de la exploración del backoffice (decisión del autor): al marcar una subcategoría se marca su padre y al desmarcar el padre se desmarcan sus hijas (CA-2-80), el formulario de producto valida en el cliente igual que el backend (CA-2-81), muestra los errores del servidor bajo cada campo (CA-2-82) y avisa cuando una miniatura no carga (CA-2-83).
 - v12 (2026-10-22): `VariantePublica` suma el campo opcional `unidadesComprables` (cambio aditivo del contrato) para que la barra de tramos se ponga gris también con "Disponible" (CA-2-73; ajusta CA-2-69).
 - v11 (2026-10-22): ajustes de la tienda tras la revisión manual del autor (rama `fix/obs-tienda-catalogo`): filtros del listado (categoría activa y padre resaltadas, filtros que se conservan al cambiar de categoría, interruptor "Solo disponibles" arriba, colores con mayúscula inicial: CA-2-62 a CA-2-65), la talla se conserva al cambiar de color si sigue disponible (CA-2-66), barra de tramos de descuento clicable y con relleno (CA-2-67 a CA-2-70, ajusta CA-2-11), migas con categoría padre (CA-2-71) y guía de tallas con bordes, centrada y que se cierra (CA-2-72, ajusta CA-2-10). Ajusta CA-2-09 y CA-2-12.
->>>>>>> origin/dev
 - v10 (2026-10-20): **recorte de alcance** (decisión del autor): la pantalla P-2-09 (carga masiva); su backend se conserva pasan a [extensión de alcance](../implementacion/extension-alcance.md). Siguen especificadas aquí, marcadas, pero no cuentan para el terminado de esta spec.
 - v9 (2026-10-20): al preparar la ola 2a (decisiones del autor): el WebP se lee con TwelveMonkeys (stack v10) y la salida es JPG; el script de fotos de demostración usa Python + Pillow; sus JPG se versionan en los recursos de catalog, que las sube a Garage al arrancar con `dev` o `demo`; IDs fijos de la demo en `docs/demo/ids-demo.md`. La spec se construye en dos pasos (backend y luego frontend).
 - v8 (2026-10-19): etapa de diseño cerrada: diseños de alta fidelidad enlazados (P-2-01, P-2-02, P-2-04).
@@ -562,11 +559,7 @@ Todo según el micro de catalog. Decisiones de implementación de esta spec:
 
 ## 9. Definición de terminado
 
-<<<<<<< HEAD
-- [ ] CA-2-01 a CA-2-61 y CA-2-80 a CA-2-83 cumplidos en CI (k6 en Lyanna), salvo los de extensión de alcance.
-=======
-- [ ] CA-2-01 a CA-2-73 cumplidos en CI (k6 en Lyanna), salvo los de extensión de alcance.
->>>>>>> origin/dev
+- [ ] CA-2-01 a CA-2-73 y CA-2-80 a CA-2-83 cumplidos en CI (k6 en Lyanna), salvo los de extensión de alcance.
 - [ ] Postman `catalog` en verde.
 - [ ] El OpenAPI de catalog coincide con lo implementado.
 - [ ] Demostración: cargar un producto completo desde el backoffice (matriz, fotos, publicar) y verlo en la tienda con filtros, detalle y descuento.
