@@ -20,10 +20,12 @@
     table.items th { border-top: 1pt solid #111111; border-bottom: 1pt solid #111111; padding: 4pt 3pt; text-align: left; font-size: 9pt; }
     table.items td { border-bottom: 0.5pt solid #bbbbbb; padding: 4pt 3pt; vertical-align: top; }
     .der { text-align: right; }
-    .totales { width: 55%; margin-left: 45%; border-collapse: collapse; }
+    .envoltura-totales { width: 100%; border-collapse: collapse; }
+    .envoltura-totales td { padding: 0; vertical-align: top; }
+    .totales { width: 100%; border-collapse: collapse; font-size: 8.5pt; }
     .totales td { padding: 2pt 3pt; }
-    .totales .total td { border-top: 1pt solid #111111; font-weight: bold; font-size: 12pt; padding-top: 4pt; }
-    .igv { color: #444444; font-size: 9pt; }
+    .totales .total td { border-top: 1pt solid #111111; font-weight: bold; font-size: 9.5pt; padding-top: 4pt; }
+    .igv { color: #444444; font-size: 8pt; }
     .leyenda { margin-top: 22pt; border: 1pt dashed #111111; padding: 7pt; text-align: center; font-weight: bold; }
   </style>
 </head>
@@ -77,6 +79,7 @@
     </tbody>
   </table>
 
+  <table class="envoltura-totales"><tr><td style="width: 62%"></td><td>
   <table class="totales">
     <tr><td>Subtotal</td><td class="der" th:text="'S/ ' + ${subtotal}">S/ 0.00</td></tr>
     <tr><td>Descuentos</td><td class="der" th:text="'- S/ ' + ${descuentos}">S/ 0.00</td></tr>
@@ -84,6 +87,7 @@
     <tr class="total"><td>TOTAL</td><td class="der" th:text="'S/ ' + ${total}">S/ 0.00</td></tr>
     <tr><td class="igv">Incluye IGV (18 %)</td><td class="der igv" th:text="'S/ ' + ${igv}">S/ 0.00</td></tr>
   </table>
+  </td></tr></table>
 
   <div class="leyenda" th:text="${leyenda}">Documento simulado sin validez tributaria</div>
 </body>

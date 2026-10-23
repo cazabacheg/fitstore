@@ -24,7 +24,6 @@ import org.thymeleaf.templateresolver.ClassLoaderTemplateResolver;
 class BoletaPdfTest {
 
     private static final float ANCHO_PAGINA = 595.3f;
-    private static final float MARGEN = 16 * 72f / 25.4f;
 
     /** Un fragmento de texto del PDF con su posición horizontal y el tamaño de su letra. */
     record Linea(String texto, float izquierda, float derecha, float letra) {}
@@ -43,10 +42,10 @@ class BoletaPdfTest {
         Linea envio = buscar(lineas, "Envío");
         Linea total = buscar(lineas, "TOTAL");
         Linea importeTotal = buscar(lineas, "129.80");
-        Linea importeTabla = buscar(lineas, "119.80");
-        float margenDerecho = ANCHO_PAGINA - MARGEN;
+        Linea importeTabla = lineas.stream().filter(l -> l.texto().equals("119.80")).findFirst().orElseThrow();
+        float margenDerecho = importeTabla.derecha();
 
-        // a la derecha: el importe del total termina en el margen derecho de la página
+        // a la derecha: el importe del total termina donde termina la columna de importes de la tabla
         assertThat(importeTotal.derecha()).isCloseTo(margenDerecho, within(4f));
         // angosto: las etiquetas del cuadro empiezan pasada la mitad de la página
         assertThat(subtotal.izquierda()).isGreaterThan(ANCHO_PAGINA * 0.5f);
