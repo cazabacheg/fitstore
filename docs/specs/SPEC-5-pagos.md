@@ -214,6 +214,13 @@ CA-5-28  Dado que la generación falla (Garage caído)
 CA-5-29  Cuando descargo mi boleta (GET /pagos/{codigo}/boleta)
          Entonces recibo el PDF; la de otro cliente responde 404; no existe ninguna URL pública del archivo
 
+CA-5-44  Dado una boleta generada
+         Entonces cada valor de la tabla de ítems queda bajo su cabecera: P. unit., Dscto. e Importe alineados a la derecha
+              con su cabecera, y Cant. centrada con su valor
+
+CA-5-45  Dado una boleta cuyo descuento total es 0
+         Entonces la fila "Descuentos" del cuadro de resumen no aparece; con descuento sí
+
 CA-5-41  Dado una boleta generada
          Entonces el cuadro de resumen (subtotal, descuentos, envío, total e IGV) va alineado a la derecha, alineado con
               la columna de importes de la tabla, ocupa menos de la mitad del ancho de la página y su letra es más
@@ -332,7 +339,8 @@ CA-5-38  Cuando lo marco como resuelto manualmente (p. ej. devolví por transfer
 - **No es una ruta:** es la plantilla Thymeleaf `boleta.html` que se convierte a PDF (A4).
 - **Boceto:** ![P-5-06](img/P-5-06-boleta.png)
 - **Diseño de alta fidelidad:** 🕓 deriva del sistema de diseño (logo y color primario de la tienda; legible en blanco y negro).
-- **Cuadro de resumen:** a la derecha, más angosto que la tabla y con letra menor que los valores de los ítems (CA-5-41).
+- **Cuadro de resumen:** a la derecha, más angosto que la tabla y con letra menor que los valores de los ítems (CA-5-41); la fila "Descuentos" solo sale si hay descuento (CA-5-45).
+- **Tabla de ítems:** columnas de ancho fijo; números a la derecha bajo su cabecera y cantidad centrada (CA-5-44).
 
 ## 5. Backend
 
@@ -365,7 +373,7 @@ Todo según el micro de payment. Decisiones de implementación de esta spec:
 | 16–19 | Integración | `DobleCobroIT` (2 hilos), `IdempotenciaCobroTest`, timeout con WireMock (202 sin reintento); 429 en la colección Postman |
 | 20–23 | API + integración | `WebhookControllerTest` (firma válida e inválida, duplicado), `VerificadorPagosTest`, circuito abierto |
 | 24–25 | Unitaria + API | `SimuladoProviderTest`, configuración habilitada y deshabilitada |
-| 41 | Unitaria | `BoletaPdfTest` (posición y tamaño de letra del cuadro de totales con PDFBox) |
+| 41, 44–45 | Unitaria | `BoletaPdfTest` (posición y tamaño de letra del cuadro de totales, alineación de la tabla de ítems y fila de descuentos con PDFBox) |
 | 42–43 | Componente | `pago.page.spec.ts` (modal de procesamiento, resultado en el mismo modal, accesibilidad y foco) |
 | 26–29 | Datos + integración | `BoletaServiceTest` (contenido del PDF con PDFBox), `CorrelativoBoletaIT` (20 concurrentes), Garage caído (Testcontainers), descarga ajena 404 |
 | 30–32, 39–40 | Integración | `ReembolsoServiceTest` (esperas 1-5-15-60 con reloj simulado, total único por intención, parciales con suma ≤ monto y concurrencia, `ReembolsoSolicitado` duplicado), WireMock de reembolso parcial en Culqi y Mercado Pago |
@@ -389,7 +397,7 @@ Todo según el micro de payment. Decisiones de implementación de esta spec:
 ## 9. Definición de terminado
 
 - [ ] Prueba de concepto documentada y spec ajustada a su resultado.
-- [ ] CA-5-01 a CA-5-43 cumplidos en CI, salvo los de extensión de alcance.
+- [ ] CA-5-01 a CA-5-45 cumplidos en CI, salvo los de extensión de alcance.
 - [ ] Postman `payment` en verde.
 - [ ] El OpenAPI de payment coincide con lo implementado; los eventos coinciden con el AsyncAPI.
 - [ ] Demostración en sandbox: pago con tarjeta de Culqi, con Yape (o con el simulado si el sandbox no lo permite, documentado), con Mercado Pago, un rechazo con reintento, un reembolso tras cancelar y un reembolso postventa parcial.

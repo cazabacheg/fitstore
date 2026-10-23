@@ -16,10 +16,11 @@
     .datos { width: 100%; margin-bottom: 10pt; }
     .datos td { padding: 2pt 0; vertical-align: top; }
     .etiqueta { color: #444444; width: 85pt; }
-    table.items { width: 100%; border-collapse: collapse; margin-bottom: 8pt; }
+    table.items { width: 100%; border-collapse: collapse; margin-bottom: 8pt; table-layout: fixed; }
     table.items th { border-top: 1pt solid #111111; border-bottom: 1pt solid #111111; padding: 4pt 3pt; text-align: left; font-size: 9pt; }
     table.items td { border-bottom: 0.5pt solid #bbbbbb; padding: 4pt 3pt; vertical-align: top; }
-    .der { text-align: right; }
+    table.items th.der, table.items td.der, .der { text-align: right; }
+    table.items th.cen, table.items td.cen { text-align: center; }
     .envoltura-totales { width: 100%; border-collapse: collapse; }
     .envoltura-totales td { padding: 0; vertical-align: top; }
     .totales { width: 100%; border-collapse: collapse; font-size: 8.5pt; }
@@ -58,11 +59,11 @@
   <table class="items">
     <thead>
       <tr>
-        <th>Descripción</th>
-        <th class="der">Cant.</th>
-        <th class="der">P. unit. (S/)</th>
-        <th class="der">Dscto. (S/)</th>
-        <th class="der">Importe (S/)</th>
+        <th style="width: 38%">Descripción</th>
+        <th class="cen" style="width: 10%">Cant.</th>
+        <th class="der" style="width: 18%">P. unit. (S/)</th>
+        <th class="der" style="width: 16%">Dscto. (S/)</th>
+        <th class="der" style="width: 18%">Importe (S/)</th>
       </tr>
     </thead>
     <tbody>
@@ -71,7 +72,7 @@
           <div th:text="${linea.producto}">Producto</div>
           <div class="igv" th:text="${linea.detalle}">Talla / color</div>
         </td>
-        <td class="der" th:text="${linea.cantidad}">1</td>
+        <td class="cen" th:text="${linea.cantidad}">1</td>
         <td class="der" th:text="${linea.precio}">0.00</td>
         <td class="der" th:text="${linea.descuento}">0.00</td>
         <td class="der" th:text="${linea.total}">0.00</td>
@@ -82,7 +83,7 @@
   <table class="envoltura-totales"><tr><td style="width: 62%"></td><td>
   <table class="totales">
     <tr><td>Subtotal</td><td class="der" th:text="'S/ ' + ${subtotal}">S/ 0.00</td></tr>
-    <tr><td>Descuentos</td><td class="der" th:text="'- S/ ' + ${descuentos}">S/ 0.00</td></tr>
+    <tr th:if="${descuentos != '0.00'}"><td>Descuentos</td><td class="der" th:text="'- S/ ' + ${descuentos}">S/ 0.00</td></tr>
     <tr><td>Envío</td><td class="der" th:text="'S/ ' + ${envio}">S/ 0.00</td></tr>
     <tr class="total"><td>TOTAL</td><td class="der" th:text="'S/ ' + ${total}">S/ 0.00</td></tr>
     <tr><td class="igv">Incluye IGV (18 %)</td><td class="der igv" th:text="'S/ ' + ${igv}">S/ 0.00</td></tr>
