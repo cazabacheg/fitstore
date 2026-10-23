@@ -1,11 +1,12 @@
 # SPEC-4 — Pedidos
 
-> Versión: **v12 (aprobado)** — 2026-10-22 · Estados: ✅ decidido · 🟡 propuesto · ❓ abierto
+> Versión: **v13 (aprobado)**, 2026-10-23 · Estados: ✅ decidido · 🟡 propuesto · ❓ abierto
 > **Dueña de:** `backend/order-service` (carrito, checkout, pedidos, saga) · tienda: `features/carrito`, `features/checkout`, `features/mis-pedidos` · backoffice: `features/pedidos`.
 > **Depende de:** 0a, 0b, 1 (sesión y direcciones) · usa los contratos de catalog (cotizar, reservar), auth (cliente y dirección), delivery (opciones y cotización de envío) y settings (parámetros y ubigeo) · **Habilita:** 5 (pago del pedido), 6 (entrega desde `PedidoListoDespacho`), 7 (correos del pedido), 8 (dashboard y E2E).
 > **Contratos:** `contracts/openapi/order-service.yaml`; eventos que publica `PedidoCreado`, `PedidoPagado`, `PedidoCancelado`, `PedidoExpirado`, `PagoNoAplicable`, `PedidoListoDespacho`, `PedidoListoRecojo`, `PedidoRecogido`, `ReembolsoSolicitado`; consume `PagoConfirmado`, `PagoRechazado`, `BoletaEmitida`, `PagoReembolsado`, `EntregaActualizada`.
 
 **Historial:**
+- v13 (2026-10-23): cada línea del carrito trae el campo opcional `unidadesComprables` de la cotización de catalog (cambio aditivo del contrato; CA-2-90 de la SPEC-2) y la tienda lo usa desde que carga el carrito para deshabilitar "+" y no sugerir tramos inalcanzables (CA-4-80 a CA-4-84; completa CA-4-63).
 - v12 (2026-10-22): por las observaciones de la exploración manual de la tienda, **HU-4-02 vuelve al alcance** (decisión del autor: la fusión del carrito al iniciar sesión no estaba implementada y rompía el checkout) y se agregan CA-4-61 a CA-4-66 (contador al arrancar, checkout con carrito vacío, stock en el carrito, descuento en cero, ícono de tacho y actualización optimista). Las pruebas de CA-4-10 y CA-4-12 ahora existen. En el checkout, CA-4-67 a CA-4-70: agencia elegida y su aviso, detalle de precio y descuento por línea, contador del carrito tras confirmar y líneas visibles mientras no hay resumen.
 - v11 (2026-10-20): **recorte de alcance** (decisión del autor): HU-4-02 (carrito al iniciar sesión), HU-4-11 (datos de ventas) y HU-4-12 (reembolso postventa) pasan a [extensión de alcance](../implementacion/extension-alcance.md). Siguen especificadas aquí, marcadas, pero no cuentan para el terminado de esta spec.
 - v10 (2026-10-19): etapa de diseño cerrada: diseños de alta fidelidad enlazados (P-4-01, P-4-02, P-4-03, P-4-04, P-4-05, P-4-06).
@@ -103,6 +104,26 @@ CA-4-66  Cuando cambio la cantidad de una línea
          Y si lo rechaza, vuelve a lo último confirmado y muestra el motivo (CA-4-04)
          Y al servidor solo se envía la cantidad (PUT /carrito/items/{varianteId} {cantidad}); el descuento, el subtotal
               y el total los calcula siempre el servidor con sus precios y tramos, e ignora cualquier monto que reciba
+
+CA-4-80  Dado que catalog cotiza la línea con unidadesComprables (el stock acotado al tramo de descuento más alto)
+         Entonces cada línea del carrito (GET /carrito y las demás respuestas) trae unidadesComprables con el mismo valor
+         Y si catalog no lo informa (producto sin tramos) la línea no lo trae
+         Y con catalog caído, la última cotización conserva el campo
+
+CA-4-81  Dado una línea cuyo unidadesComprables es menor que el tramo de descuento más alto que se conoce del producto
+         Entonces el botón "+" se deshabilita al llegar a ese número desde que carga el carrito, sin esperar un 409
+         (es el stock exacto, CA-2-73)
+
+CA-4-82  Dado una línea cuyo unidadesComprables es igual al tramo más alto (o mayor que los tramos que se conocen)
+         Entonces no se limita el "+" ni se oculta el aviso de tramo: el stock real puede ser mayor
+         Y si el dato deja de limitar en una carga posterior, se olvida el tope anterior
+
+CA-4-83  Dado que unidadesComprables no alcanza para llegar al siguiente tramo del producto
+         Entonces no se sugiere "Agrega N más y ahorra X %"
+
+CA-4-84  Dado cualquier línea, cuando el servidor rechaza con 409 STOCK_INSUFICIENTE y detalles.disponible
+         Entonces la tienda sigue aprendiendo ese stock y deshabilita "+" aunque unidadesComprables no limitara
+         (respaldo de CA-4-63)
 ```
 
 ### HU-4-02 — Conservar mi carrito al iniciar sesión
@@ -495,6 +516,8 @@ Todo según el micro de order. Decisiones de implementación de esta spec:
 |---|---|---|
 | 01–08 | API + componente | `CarritoServiceTest` (límites, stock, cotización caída), `CarritoRepositoryTest` (Redis), `carrito.page.spec.ts` |
 | 61, 63–66 | API + servicio + componente | `FusionCarritoTest` (el servidor ignora montos del navegador), `carrito.service.spec.ts` (contador al arrancar, stock, vista previa y rechazo), `carrito.page.spec.ts` (+ deshabilitado, fila de descuento, tacho, cambio al instante), `app.spec.ts` |
+| 80 | API | `CarritoServiceTest` (unidadesComprables de la cotización, ausente sin tramos, conservado con catalog caído) |
+| 81 a 84 | Servicio + componente | `carrito.service.spec.ts` (stock exacto desde la carga, sin límite si es igual al tramo más alto), `carrito.page.spec.ts` ("+" deshabilitado, tramo inalcanzable no sugerido, respaldo por 409) |
 | 62 | Componente | `checkout.page.spec.ts` (CARRITO_VACIO no es error de envío) |
 | 09–12 | Unitaria + API + componente | `FusionCarritoTest`, TTL en Redis Testcontainers, `carrito.service.spec.ts` y `formulario-ingreso.spec.ts` (una sola fusión antes de volver al checkout), `peticiones.spec.ts` de shared (carritoId) |
 | 13–18 | API + componente | `CheckoutServiceTest` con clientes Feign en WireMock (opciones, Lima/Callao, dependencia caída), `checkout.page.spec.ts` |
@@ -525,7 +548,7 @@ Todo según el micro de order. Decisiones de implementación de esta spec:
 
 ## 9. Definición de terminado
 
-- [ ] CA-4-01 a CA-4-70 cumplidos en CI (el 26 en `stage`), salvo los de extensión de alcance (HU-4-11 y HU-4-12).
+- [ ] CA-4-01 a CA-4-70 y CA-4-80 a CA-4-84 cumplidos en CI (el 26 en `stage`), salvo los de extensión de alcance (HU-4-11 y HU-4-12).
 - [ ] Postman `order` en verde y k6 con p95 < 2 s.
 - [ ] El OpenAPI de order coincide con lo implementado; los eventos coinciden con el AsyncAPI.
 - [ ] Demostración: carrito anónimo → login → checkout → pedido en PENDIENTE_PAGO → (pago simulado) → el operador lo prepara y despacha → el cliente ve la línea de tiempo → el admin registra un reembolso postventa parcial.
