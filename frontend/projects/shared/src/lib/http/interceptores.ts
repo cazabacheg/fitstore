@@ -130,7 +130,24 @@ export const refrescoInterceptor: HttpInterceptorFn = (req, next) => {
 };
 
 /** 5. Errores: toast con el mensaje, errores de campo para el formulario y banner con el 503 (CA-0b-13). */
-export const erroresInterceptor: HttpInterceptorFn = (req, next) => {
+export const erroresInterceptor: HttpInterceptorFn = (req, next) =>
+  manejarErrores(req, next, false);
+
+/**
+ * Con `avisarErroresDeCampos` (backoffice), un 400 con errores por campo también sale en un toast cuando la petición
+ * no usa `SIN_TOAST`: así un formulario que no pinta sus campos nunca falla en silencio (CA-0b-34). Los formularios que
+ * sí los muestran bajo cada campo pasan `SIN_TOAST` y no repiten el aviso. La tienda no lo activa.
+ */
+export const crearErroresInterceptor =
+  (avisarErroresDeCampos: boolean): HttpInterceptorFn =>
+  (req, next) =>
+    manejarErrores(req, next, avisarErroresDeCampos);
+
+function manejarErrores(
+  req: Parameters<HttpInterceptorFn>[0],
+  next: Parameters<HttpInterceptorFn>[1],
+  avisarErroresDeCampos: boolean,
+): ReturnType<HttpInterceptorFn> {
   const toasts = inject(ToastService);
   const estado = inject(EstadoServicio);
   if (!esPeticionApi(req.url)) return next(req);
@@ -149,9 +166,14 @@ export const erroresInterceptor: HttpInterceptorFn = (req, next) => {
         if (error.status === 401) return; // lo resuelve el refresco o el formulario de login
         const cuerpo = comoApiError(error);
         if (!cuerpo) return;
-        if (error.status === 400 && cuerpo.errores?.length) return; // los muestra el formulario
-        if (!req.context.get(SIN_TOAST)) toasts.mostrar('error', cuerpo.mensaje);
+        if (req.context.get(SIN_TOAST)) return;
+        if (error.status === 400 && cuerpo.errores?.length) {
+          // Por defecto los muestra el formulario; el backoffice avisa además si nadie los pintó
+          if (avisarErroresDeCampos) toasts.mostrar('error', cuerpo.errores.map((e) => e.mensaje).join('. '));
+          return;
+        }
+        toasts.mostrar('error', cuerpo.mensaje);
       },
     }),
   );
-};
+}

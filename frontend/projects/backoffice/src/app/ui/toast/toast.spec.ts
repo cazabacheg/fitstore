@@ -24,12 +24,12 @@ describe('Toast (ui)', () => {
     expect(aviso.classList.contains('fs-aviso--error')).toBe(true);
   });
 
-  it('CA-0b-25 los avisos de éxito e información usan role="status" y desaparecen a los 5 s', () => {
+  it('CA-0b-33 los avisos de éxito e información usan role="status" y desaparecen a los 8 s', () => {
     const { f, el, servicio } = montar();
     servicio.mostrar('exito', 'Guardado');
     f.detectChanges();
     expect(avisos(el)[0].getAttribute('role')).toBe('status');
-    vi.advanceTimersByTime(4900);
+    vi.advanceTimersByTime(7900);
     f.detectChanges();
     expect(avisos(el).length).toBe(1);
     vi.advanceTimersByTime(200);
@@ -38,7 +38,7 @@ describe('Toast (ui)', () => {
     expect(servicio.toasts()).toEqual([]);
   });
 
-  it('CA-0b-25 los avisos de error se quedan hasta cerrarlos', () => {
+  it('CA-0b-33 los avisos de error se quedan hasta cerrarlos', () => {
     const { f, el, servicio } = montar();
     servicio.mostrar('error', 'Sin conexión');
     f.detectChanges();
@@ -50,16 +50,53 @@ describe('Toast (ui)', () => {
     expect(avisos(el).length).toBe(0);
   });
 
-  it('CA-0b-25 no muestra más de dos avisos a la vez (los más recientes)', () => {
+  it('CA-0b-33 no muestra más de tres avisos a la vez (los más recientes)', () => {
     const { f, el, servicio } = montar();
     servicio.mostrar('info', 'Uno');
     servicio.mostrar('info', 'Dos');
     servicio.mostrar('info', 'Tres');
+    servicio.mostrar('info', 'Cuatro');
     f.detectChanges();
     expect(avisos(el).map((a) => a.textContent)).toEqual([
       expect.stringContaining('Dos'),
       expect.stringContaining('Tres'),
+      expect.stringContaining('Cuatro'),
     ]);
+  });
+});
+
+describe('Toast (ui): estilo y posición', () => {
+  let CSS = '';
+  beforeAll(async () => {
+    const modulo = 'node:fs'; // variable: el proyecto no trae @types/node
+    const fs = (await import(/* @vite-ignore */ modulo)) as {
+      readFileSync(ruta: string, codificacion: string): string;
+    };
+    const proceso = (globalThis as unknown as { process: { cwd(): string } }).process;
+    CSS = fs
+      .readFileSync(`${proceso.cwd()}/projects/backoffice/src/app/ui/toast/toast.css`, 'utf8')
+      .replace(/\/\*[\s\S]*?\*\//g, '');
+  });
+  const regla = (selector: RegExp) =>
+    [...CSS.matchAll(/([^{}]+)\{([^}]*)\}/g)]
+      .filter((r) => selector.test(r[1]))
+      .map((r) => r[2])
+      .join(';');
+
+  it('CA-0b-33 los avisos van en la esquina superior derecha, sobre el resto de la pantalla', () => {
+    const contenedor = regla(/^\s*\.fs-toasts\s*$/);
+    expect(contenedor).toMatch(/position:\s*fixed/);
+    expect(contenedor).toMatch(/top:\s*var\(--espacio-\d\)/);
+    expect(contenedor).toMatch(/right:\s*var\(--espacio-\d\)/);
+    expect(contenedor).not.toMatch(/bottom:/);
+    expect(contenedor).toMatch(/z-index:\s*\d{4,}/);
+  });
+
+  it('CA-0b-33 el aviso es grande (texto de 16 px, ancho mínimo) y el éxito y el error se distinguen por color de fondo', () => {
+    expect(regla(/\.fs-aviso__texto/)).toMatch(/font-size:\s*16px/);
+    expect(regla(/^\s*\.fs-aviso\s*$/)).toMatch(/min-width:\s*\d{3}px/);
+    expect(regla(/\.fs-aviso--exito/)).toMatch(/background:\s*var\(--fs-color-exito-suave\)/);
+    expect(regla(/\.fs-aviso--error/)).toMatch(/background:\s*var\(--fs-color-error-suave\)/);
   });
 });
 

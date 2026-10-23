@@ -41,14 +41,14 @@ const INACTIVO = miembro('c3', 'Inés', 'INACTIVO');
 const pedidoLista = () => http().expectOne((r) => r.url === LISTA && r.method === 'GET');
 
 /**
- * Los diálogos abren y cierran con animación: se espera a que la petición salga, hasta 3 s de reloj real
- * (con la suite completa corriendo en paralelo, unos pocos ciclos no siempre alcanzan).
+ * Los diálogos abren y cierran con animación: se espera a que la petición salga, hasta 10 s de reloj real
+ * (en CI la suite completa corre en paralelo con cobertura en 2 núcleos, y 3 s no siempre alcanzaron).
  */
 async function esperar(
   estabilizar: () => Promise<void>,
   coincide: (r: { url: string; method: string }) => boolean,
 ) {
-  const limite = Date.now() + 3000;
+  const limite = Date.now() + 10_000;
   while (Date.now() < limite) {
     const hallada = http().match(coincide);
     if (hallada.length) return hallada[0];
@@ -168,7 +168,9 @@ describe('Staff (P-1-08)', () => {
     });
     peticion.flush(ok(miembro('d4', 'Nuevo', 'INVITACION_PENDIENTE', 'ADMIN')));
     await p.estabilizar();
-    pedidoLista().flush(ok(pagina([ADMIN, PENDIENTE])));
+    (await esperar(p.estabilizar, (r) => r.url === LISTA && r.method === 'GET')).flush(
+      ok(pagina([ADMIN, PENDIENTE])),
+    );
     await p.estabilizar();
 
     expect(
@@ -177,7 +179,7 @@ describe('Staff (P-1-08)', () => {
         .map((t) => t.mensaje),
     ).toContain('Invitación enviada');
     expect(p.panel().querySelector('[role="dialog"]')).toBeNull();
-  });
+  }, 20_000);
 
   it('CA-1-25 el diálogo valida los datos y muestra el correo repetido junto a su campo', async () => {
     const p = await abrir();
@@ -236,9 +238,11 @@ describe('Staff (P-1-08)', () => {
     });
     peticion.flush(ok({ ...PENDIENTE, nombres: 'Luis Alberto', rol: 'ADMIN' }));
     await p.estabilizar();
-    pedidoLista().flush(ok(pagina([ADMIN])));
+    (await esperar(p.estabilizar, (r) => r.url === LISTA && r.method === 'GET')).flush(
+      ok(pagina([ADMIN])),
+    );
     await p.estabilizar();
-  });
+  }, 20_000);
 
   it('CA-1-28 si la API responde 409 (último ADMIN) se muestra el motivo y nada cambia', async () => {
     const p = await abrir();

@@ -1,11 +1,12 @@
 # SPEC-2 — Catálogo e inventario
 
-> Versión: **v12 (aprobado)**, 2026-10-22 · Estados: ✅ decidido · 🟡 propuesto · ❓ abierto
+> Versión: **v13 (aprobado)**, 2026-10-22 · Estados: ✅ decidido · 🟡 propuesto · ❓ abierto
 > **Dueña de:** `backend/catalog-service` (módulos catálogo e inventario) · tienda: `features/catalogo` · backoffice: `features/catalogo`, `features/inventario`.
 > **Depende de:** 0a, 0b, 1 (sesión de staff) · **Habilita:** 3 (destacados de la landing), 4 (cotización y reserva), 8.
 > **Contratos:** `contracts/openapi/catalog-service.yaml` (incluye `/internal/v1/inventario/reservas`); usa el contrato de order (`POST /carrito/items`); eventos `StockBajo`, `StockNoConfirmado` (publica) y `PedidoPagado`, `PedidoCancelado`, `PedidoExpirado` (consume).
 
 **Historial:**
+- v13 (2026-10-22): correcciones de la exploración del backoffice (decisión del autor): al marcar una subcategoría se marca su padre y al desmarcar el padre se desmarcan sus hijas (CA-2-80), el formulario de producto valida en el cliente igual que el backend (CA-2-81), muestra los errores del servidor bajo cada campo (CA-2-82) y avisa cuando una miniatura no carga (CA-2-83).
 - v12 (2026-10-22): `VariantePublica` suma el campo opcional `unidadesComprables` (cambio aditivo del contrato) para que la barra de tramos se ponga gris también con "Disponible" (CA-2-73; ajusta CA-2-69).
 - v11 (2026-10-22): ajustes de la tienda tras la revisión manual del autor (rama `fix/obs-tienda-catalogo`): filtros del listado (categoría activa y padre resaltadas, filtros que se conservan al cambiar de categoría, interruptor "Solo disponibles" arriba, colores con mayúscula inicial: CA-2-62 a CA-2-65), la talla se conserva al cambiar de color si sigue disponible (CA-2-66), barra de tramos de descuento clicable y con relleno (CA-2-67 a CA-2-70, ajusta CA-2-11), migas con categoría padre (CA-2-71) y guía de tallas con bordes, centrada y que se cierra (CA-2-72, ajusta CA-2-10). Ajusta CA-2-09 y CA-2-12.
 - v10 (2026-10-20): **recorte de alcance** (decisión del autor): la pantalla P-2-09 (carga masiva); su backend se conserva pasan a [extensión de alcance](../implementacion/extension-alcance.md). Siguen especificadas aquí, marcadas, pero no cuentan para el terminado de esta spec.
@@ -218,6 +219,19 @@ Como administrador, quiero crear productos con todas sus combinaciones de talla 
 CA-2-21  Cuando creo un producto
          Entonces queda en BORRADOR con slug generado (editable) y código único
 
+CA-2-80  Cuando marco una subcategoría en el formulario de producto
+         Entonces se marca también su categoría padre (el producto pertenece a ambas por herencia)
+         Y si desmarco el padre se desmarcan sus subcategorías; si desmarco solo una subcategoría el padre se queda marcado
+         Y marcar solo el padre no marca sus subcategorías
+
+CA-2-81  Cuando guardo un producto con código fuera de `^[A-Z0-9]{2,20}$`, nombre de menos de 3 o más de 120 caracteres,
+              precio vacío, negativo o con más de 2 decimales, o descripción de más de 5000 caracteres
+         Entonces no se envía nada y cada error aparece bajo su campo, con el mismo texto que el backend
+
+CA-2-82  Cuando el servidor rechaza el guardado con errores por campo (400)
+         Entonces cada error aparece bajo su campo (el error desaparece al corregirlo) y lo escrito no se pierde
+         Y un error de un campo que el formulario no tiene, o sin campos, se muestra en un aviso visible
+
 CA-2-22  Cuando genero la matriz con 5 tallas y 3 colores
          Entonces se crean las 15 variantes con SKU {código}-{COL}-{TALLA}, omitiendo las que ya existían,
               y cada una nace con stock físico 0
@@ -252,6 +266,9 @@ CA-2-29  Cuando subo un JPG, PNG o WebP de hasta 5 MB
 
 CA-2-30  Cuando subo un archivo de otro tipo (aunque tenga extensión .jpg) o de más de 5 MB
          Entonces recibo 400 con el motivo
+
+CA-2-83  Cuando el navegador no puede dibujar una vista previa o una miniatura guardada
+         Entonces se muestra un aviso ("Sin vista previa" o "No se pudo cargar la miniatura") en lugar de una imagen rota, y el archivo se puede quitar
 
 CA-2-31  Dado 10 imágenes
          Entonces no se puede subir otra
@@ -515,6 +532,7 @@ Todo según el micro de catalog. Decisiones de implementación de esta spec:
 | 13–16 | Unitaria + API | `CalculadoraDescuentosTest` (casos de catalog 9), `CotizacionControllerTest` |
 | 17–20 | Datos + API | `CategoriaRepositoryTest`, `CategoriaServiceTest` (2 niveles, borrado) |
 | 21–28 | API | `ProductoServiceTest` (matriz, `precioDesde`, invariante 4), permisos OPERADOR |
+| 80–83 | Componente | `producto-form.page.spec.ts` (categorías, validación, errores del servidor, miniatura que no carga), `subida-imagenes.spec.ts` |
 | 29–32 | Integración | `ImagenServiceTest` con Garage en Testcontainers (tipo real, tamaños, principal) |
 | 33–35 | API | `MaestrosControllerTest` |
 | 36–38 | Unitaria + API | `DescuentoServiceTest` (validaciones, interruptor, modos) |
@@ -541,7 +559,7 @@ Todo según el micro de catalog. Decisiones de implementación de esta spec:
 
 ## 9. Definición de terminado
 
-- [ ] CA-2-01 a CA-2-73 cumplidos en CI (k6 en Lyanna), salvo los de extensión de alcance.
+- [ ] CA-2-01 a CA-2-73 y CA-2-80 a CA-2-83 cumplidos en CI (k6 en Lyanna), salvo los de extensión de alcance.
 - [ ] Postman `catalog` en verde.
 - [ ] El OpenAPI de catalog coincide con lo implementado.
 - [ ] Demostración: cargar un producto completo desde el backoffice (matriz, fotos, publicar) y verlo en la tienda con filtros, detalle y descuento.

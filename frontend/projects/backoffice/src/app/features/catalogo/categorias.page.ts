@@ -22,11 +22,12 @@ const GUIA_VACIA: catalogApi.GuiaTallas = { columnas: ['Talla'], filas: [], nota
   styles: `
     :host {
       display: grid;
-      gap: var(--espacio-5);
+      gap: var(--espacio-4);
     }
     .cuerpo {
       display: grid;
-      grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr);
+      grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
+      align-items: start;
       gap: var(--espacio-6);
     }
     .aviso {
@@ -34,7 +35,7 @@ const GUIA_VACIA: catalogApi.GuiaTallas = { columnas: ['Talla'], filas: [], nota
       border: 1px solid var(--fs-color-error);
       border-radius: var(--radio-md);
     }
-    @media (max-width: 900px) {
+    @media (max-width: 1280px) {
       .cuerpo {
         grid-template-columns: minmax(0, 1fr);
       }

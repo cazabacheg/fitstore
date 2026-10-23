@@ -125,6 +125,33 @@ describe('FsTabla: paginación y orden', () => {
     expect(comp.consultas.at(-1)).toEqual({ page: 0, size: 20, sort: ['codigo,desc'] });
   });
 
+  it('CA-0b-32 el orden elegido sobrevive a la recarga de la tabla: sigue marcado y el siguiente clic pasa a descendente', async () => {
+    const { f, el, comp } = await montar();
+    const cabecera = () => el.querySelector('th .mat-sort-header-container') as HTMLElement;
+    cabecera().click();
+    await estable(f);
+    expect(comp.consultas.at(-1)?.sort).toEqual(['codigo,asc']);
+    // La pantalla recarga: la tabla se reemplaza por el esqueleto y vuelve con los datos nuevos
+    comp.cargando.set(true);
+    await estable(f);
+    comp.cargando.set(false);
+    await estable(f);
+    expect(el.querySelector('th')?.getAttribute('aria-sort')).toBe('ascending');
+    cabecera().click();
+    await estable(f);
+    expect(comp.consultas.at(-1)?.sort).toEqual(['codigo,desc']);
+  });
+
+  it('CA-0b-32 un tercer clic quita el orden y la tabla vuelve al orden por defecto del servidor', async () => {
+    const { f, el, comp } = await montar();
+    const cabecera = () => el.querySelector('th .mat-sort-header-container') as HTMLElement;
+    for (let i = 0; i < 3; i++) {
+      cabecera().click();
+      await estable(f);
+    }
+    expect(comp.consultas.at(-1)?.sort).toEqual([]);
+  });
+
   it('CA-0b-28 solo las columnas ordenables tienen cabecera de orden', async () => {
     const { el } = await montar();
     const ordenables = [...el.querySelectorAll('th')].filter(

@@ -44,6 +44,8 @@ export class SubidaImagenes {
 
   protected readonly archivos = signal<ArchivoSubido[]>([]);
   protected readonly rechazos = signal<string[]>([]);
+  /** Vistas previas que el navegador no pudo dibujar: se muestra el nombre del archivo en lugar de una imagen rota. */
+  protected readonly sinVistaPrevia = signal<ReadonlySet<string>>(new Set());
   protected readonly arrastrando = signal(false);
   protected readonly aceptados = computed(() =>
     this.tipos()
@@ -63,6 +65,10 @@ export class SubidaImagenes {
     inject(DestroyRef).onDestroy(() =>
       this.archivos().forEach((a) => URL.revokeObjectURL?.(a.vistaPrevia)),
     );
+  }
+
+  protected sinVista(vistaPrevia: string): void {
+    this.sinVistaPrevia.update((conjunto) => new Set(conjunto).add(vistaPrevia));
   }
 
   protected sobre(evento: DragEvent): void {

@@ -89,6 +89,8 @@ export class FsTabla<T extends object> {
   protected readonly plantillas = computed(
     () => new Map(this.celdas().map((c) => [c.fsCelda(), c.plantilla])),
   );
+  /** Orden elegido: vive en la tabla (no en el `matSort`) para sobrevivir a la recarga que la reemplaza por el esqueleto. */
+  protected readonly ordenActual = signal<Sort>({ active: '', direction: '' });
   private readonly orden = signal<string[]>([]);
 
   protected readonly conDetalle = computed(
@@ -112,6 +114,7 @@ export class FsTabla<T extends object> {
   }
 
   protected alOrdenar(orden: Sort): void {
+    this.ordenActual.set(orden);
     this.orden.set(orden.direction ? [`${orden.active},${orden.direction}`] : []);
     this.consulta.emit({ page: 0, size: this.datos()?.tamano ?? 20, sort: this.orden() });
   }

@@ -27,7 +27,19 @@
 >
   @for (item of archivos(); track item.vistaPrevia; let i = $index) {
     <div cdkDrag class="fs-subida__item">
-      <img [src]="item.vistaPrevia" [alt]="item.archivo.name" />
+      @if (sinVistaPrevia().has(item.vistaPrevia)) {
+        <span class="fs-subida__sin-vista">
+          <span class="fs-icono" aria-hidden="true">broken_image</span>
+          Sin vista previa
+          <small>{{ item.archivo.name }}</small>
+        </span>
+      } @else {
+        <img
+          [src]="item.vistaPrevia"
+          [alt]="item.archivo.name"
+          (error)="sinVista(item.vistaPrevia)"
+        />
+      }
       <button type="button" [attr.aria-label]="'Quitar ' + item.archivo.name" (click)="quitar(i)">
         <span class="fs-icono" aria-hidden="true">close</span>
       </button>

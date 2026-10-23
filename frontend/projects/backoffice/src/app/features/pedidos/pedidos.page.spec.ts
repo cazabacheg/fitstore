@@ -93,6 +93,55 @@ describe('Pedidos del backoffice (P-4-05)', () => {
     expect(harness.routeNativeElement?.textContent).toContain('Pedidos de Lucía Mendoza');
   });
 
+  it('CA-4-71 las columnas Pedido, Fecha, Estado y Total se ordenan; Cliente y Modalidad no, porque el servidor no las acepta', async () => {
+    const { harness, componente } = await abrir('/pedidos');
+    consulta().flush(pagina([fila('FS-000121'), fila('FS-000119')]));
+    await componente;
+    harness.detectChanges();
+    await harness.fixture.whenStable();
+    harness.detectChanges();
+
+    const ordenables = [...(harness.routeNativeElement?.querySelectorAll<HTMLElement>('th') ?? [])]
+      .filter((th) => th.querySelector('.mat-sort-header-container') && !th.classList.contains('mat-sort-header-disabled'))
+      .map((th) => th.textContent?.trim());
+    expect(ordenables).toEqual(['Pedido', 'Fecha', 'Estado', 'Total']);
+  });
+
+  it('CA-4-71 al ordenar pide al servidor el campo del contrato, descendente al segundo clic, con el código como desempate y desde la página 0', async () => {
+    const { harness, componente } = await abrir('/pedidos');
+    consulta().flush(pagina([fila('FS-000121'), fila('FS-000119')]));
+    await componente;
+    harness.detectChanges();
+    await harness.fixture.whenStable();
+    harness.detectChanges();
+
+    const el = harness.routeNativeElement as HTMLElement;
+    const cabecera = (titulo: string) =>
+      [...el.querySelectorAll<HTMLElement>('th')]
+        .find((th) => th.textContent?.trim() === titulo)
+        ?.querySelector<HTMLElement>('.mat-sort-header-container');
+    const recargar = async (respuesta: ReturnType<typeof pagina>) => {
+      const peticion = consulta();
+      peticion.flush(respuesta);
+      harness.detectChanges();
+      await harness.fixture.whenStable();
+      harness.detectChanges();
+      return peticion.request.params.getAll('sort');
+    };
+
+    cabecera('Total')?.click();
+    harness.detectChanges();
+    expect(await recargar(pagina([fila('FS-000119')]))).toEqual(['total,asc', 'codigo,asc']);
+
+    cabecera('Total')?.click();
+    harness.detectChanges();
+    expect(await recargar(pagina([fila('FS-000121')]))).toEqual(['total,desc', 'codigo,asc']);
+
+    cabecera('Pedido')?.click();
+    harness.detectChanges();
+    expect(await recargar(pagina([fila('FS-000121')]))).toEqual(['codigo,asc']);
+  });
+
   it('CA-4-40 si la API falla ofrece reintentar', async () => {
     const { harness, componente } = await abrir('/pedidos');
     consulta().flush(ok(null), { status: 500, statusText: 'Error' });
