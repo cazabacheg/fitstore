@@ -119,7 +119,7 @@ class CarritoRepositoryTest {
     }
 
     @Test
-    @DisplayName("CA-0a-06 el carrito del cliente dura 30 días y el anónimo 7")
+    @DisplayName("CA-0a-06 y CA-4-11 el carrito del cliente dura 30 días y el anónimo 7")
     void ttlPorTipo() {
         repositorio.establecerLinea(cliente, 10L, 1);
         repositorio.establecerLinea(anonimo, 10L, 1);
