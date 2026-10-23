@@ -44,6 +44,10 @@ export interface LineaCotizada {
      * Solo cuando el estado es STOCK_INSUFICIENTE (\"Solo quedan 3 unidades\").
      */
     disponible?: number | null;
+    /**
+     * Stock disponible acotado a las unidades del tramo de descuento más alto del producto (con tramos de 3, 6 y 12 y 40 en stock se publica 12; con 8, 8; agotada, 0). Sirve para saber qué tramos alcanza la variante sin exponer el inventario real. Si es menor que el tramo más alto, es el stock exacto; si es igual, el stock real puede ser mayor. Ausente si el producto no tiene tramos o la línea es NO_DISPONIBLE.
+     */
+    unidadesComprables?: number | null;
 }
 export namespace LineaCotizada {
     export type EstadoEnum = 'OK' | 'STOCK_INSUFICIENTE' | 'NO_DISPONIBLE';
