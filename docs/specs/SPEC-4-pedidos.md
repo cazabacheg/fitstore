@@ -6,6 +6,7 @@
 > **Contratos:** `contracts/openapi/order-service.yaml`; eventos que publica `PedidoCreado`, `PedidoPagado`, `PedidoCancelado`, `PedidoExpirado`, `PagoNoAplicable`, `PedidoListoDespacho`, `PedidoListoRecojo`, `PedidoRecogido`, `ReembolsoSolicitado`; consume `PagoConfirmado`, `PagoRechazado`, `BoletaEmitida`, `PagoReembolsado`, `EntregaActualizada`.
 
 **Historial:**
+- v-ordenar (2026-10-22): el orden de la tabla de pedidos del backoffice se pide al servidor (Pedido, Fecha, Estado y Total) con el código como desempate (CA-4-71).
 - v11 (2026-10-20): **recorte de alcance** (decisión del autor): HU-4-02 (carrito al iniciar sesión), HU-4-11 (datos de ventas) y HU-4-12 (reembolso postventa) pasan a [extensión de alcance](../implementacion/extension-alcance.md). Siguen especificadas aquí, marcadas, pero no cuentan para el terminado de esta spec.
 - v10 (2026-10-19): etapa de diseño cerrada: diseños de alta fidelidad enlazados (P-4-01, P-4-02, P-4-03, P-4-04, P-4-05, P-4-06).
 - v9 (2026-10-19): ajustes de la etapa de contratos: el bloque de pago de P-4-06 sale del propio pedido (order guarda proveedor y medio desde `PagoConfirmado`).
@@ -247,6 +248,13 @@ CA-4-42  Cuando llego desde la ficha de un cliente (/pedidos?clienteId=…)
          Entonces veo solo sus pedidos, con su nombre en el filtro
 ```
 
+```gherkin
+CA-4-71  Cuando ordeno la tabla de pedidos por Pedido, Fecha, Estado o Total
+         Entonces se pide al servidor `sort=<campo>,asc|desc` (campos del contrato: codigo, creadoEn, estado, total) desde la página 0
+              con `codigo,asc` como desempate, para que la paginación no repita ni omita filas
+         Y Cliente y Modalidad no se ordenan porque el servidor no los acepta
+```
+
 ### HU-4-09 — Preparar y despachar pedidos
 
 Como operador, quiero avanzar el pedido por sus estados, para que delivery lo lleve o el cliente lo recoja. · Cubre: CU-24, RF-ORD-03, 04, 06 · Pantallas: [P-4-06](#p-4-06--detalle-de-pedido-backoffice)
@@ -453,6 +461,7 @@ Todo según el micro de order. Decisiones de implementación de esta spec:
 | 27–32 | Integración | `SagaPedidoIT` (RabbitMQ Testcontainers: pago confirmado, rechazado, expiración, carrera, boleta, duplicado) |
 | 33–37 | API + componente | `PedidoControllerTest` (paginado, 404 ajeno), `detalle-pedido.page.spec.ts` (línea de tiempo, cuenta regresiva) |
 | 38–39, 49–50 | Unitaria + API | `MaquinaEstadosPedidoTest` (tabla parametrizada de todas las transiciones y actores, incluida DEVUELTO), `CancelacionTest` |
+| 71 | Componente | `pedidos.page.spec.ts` (columnas ordenables y `sort` enviado), `fs-tabla.spec.ts` (CA-0b-32) |
 | 40–42 | Datos + API | `PedidoSpecificationsTest` (cada filtro y combinados), contadores por estado |
 | 43–48, 60 | API + integración | `AdminPedidoControllerTest` (permisos, transiciones, 409 por versión), `SagaPedidoIT` (`EntregaActualizada`) |
 | 51–53 | Datos + API | `ResumenVentasQueriesTest` (fecha de pago, sin cancelados, neto de reembolsos), 403 a OPERADOR |
@@ -474,7 +483,7 @@ Todo según el micro de order. Decisiones de implementación de esta spec:
 
 ## 9. Definición de terminado
 
-- [ ] CA-4-01 a CA-4-60 cumplidos en CI (el 26 en `stage`), salvo los de extensión de alcance.
+- [ ] CA-4-01 a CA-4-60 y CA-4-71 cumplidos en CI (el 26 en `stage`), salvo los de extensión de alcance.
 - [ ] Postman `order` en verde y k6 con p95 < 2 s.
 - [ ] El OpenAPI de order coincide con lo implementado; los eventos coinciden con el AsyncAPI.
 - [ ] Demostración: carrito anónimo → login → checkout → pedido en PENDIENTE_PAGO → (pago simulado) → el operador lo prepara y despacha → el cliente ve la línea de tiempo → el admin registra un reembolso postventa parcial.

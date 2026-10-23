@@ -343,7 +343,7 @@ export class ProductoFormPage {
 
   protected limpiarError(campo: string): void {
     if (!this.errores()[campo]) return;
-    this.errores.update(({ [campo]: _quitado, ...resto }) => resto);
+    this.errores.update((actuales) => Object.fromEntries(Object.entries(actuales).filter(([c]) => c !== campo)));
   }
 
   /** Las mismas reglas que `ProductoRequest` del contrato (código, nombre, precio y descripción). */

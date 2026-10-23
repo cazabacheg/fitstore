@@ -120,7 +120,7 @@ describe('SubidaImagenes (ui)', () => {
     expect(input.getAttribute('accept')).toBe('image/jpeg,image/png,image/webp');
   });
 
-  it('CA-2-73 si el navegador no puede dibujar la vista previa (p. ej. un .webp que no decodifica) se ve un aviso con el nombre, no una imagen rota, y el archivo se puede quitar', () => {
+  it('CA-2-83 si el navegador no puede dibujar la vista previa (p. ej. un .webp que no decodifica) se ve un aviso con el nombre, no una imagen rota, y el archivo se puede quitar', () => {
     const { f, el, soltar } = montar();
     soltar(archivo('lateral.webp', 'image/webp'));
     const imagen = el.querySelector('.fs-subida__item img') as HTMLImageElement;

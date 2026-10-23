@@ -165,7 +165,7 @@ describe('ProductoFormPage (P-2-04)', () => {
     expect((req.request.body as FormData).get('colorId')).toBe('2');
   });
 
-  it('CA-2-73 si la miniatura guardada no carga, la pestaña Imágenes muestra un aviso en su lugar y no una imagen rota', async () => {
+  it('CA-2-83 si la miniatura guardada no carga, la pestaña Imágenes muestra un aviso en su lugar y no una imagen rota', async () => {
     const imagenes = [
       { id: 1, colorId: 1, url: '/f/0.jpg', urlMiniatura: '/f/0-400.jpg', orden: 1, principal: true, ancho: 1200, alto: 1500 },
     ];
@@ -256,7 +256,7 @@ describe('ProductoFormPage: categorías, validación y errores del servidor', ()
   const error = (t: Awaited<ReturnType<typeof abrir>>, campo: string) =>
     t.el.querySelector(`[data-error="${campo}"]`)?.textContent?.trim();
 
-  it('CA-2-70 al marcar una subcategoría se marca también su categoría padre', async () => {
+  it('CA-2-80 al marcar una subcategoría se marca también su categoría padre', async () => {
     const t = await nuevo();
     await alternar(t, 11);
     expect(marca(t, 11).checked).toBe(true);
@@ -267,7 +267,7 @@ describe('ProductoFormPage: categorías, validación y errores del servidor', ()
     expect(t.ctrl.expectOne('/api/v1/admin/productos').request.body.categoriaIds).toEqual([11, 10]);
   });
 
-  it('CA-2-70 al desmarcar la categoría padre se desmarcan también sus subcategorías', async () => {
+  it('CA-2-80 al desmarcar la categoría padre se desmarcan también sus subcategorías', async () => {
     const t = await nuevo();
     await alternar(t, 11);
     await alternar(t, 10);
@@ -275,7 +275,7 @@ describe('ProductoFormPage: categorías, validación y errores del servidor', ()
     expect(marca(t, 11).checked).toBe(false);
   });
 
-  it('CA-2-70 marcar solo el padre no marca sus subcategorías, y desmarcar una subcategoría deja al padre marcado', async () => {
+  it('CA-2-80 marcar solo el padre no marca sus subcategorías, y desmarcar una subcategoría deja al padre marcado', async () => {
     const t = await nuevo();
     await alternar(t, 10);
     expect(marca(t, 11).checked).toBe(false);
@@ -285,7 +285,7 @@ describe('ProductoFormPage: categorías, validación y errores del servidor', ()
     expect(marca(t, 10).checked).toBe(true);
   });
 
-  it('CA-2-71 un código con minúsculas o símbolos no se envía y el error aparece bajo el campo', async () => {
+  it('CA-2-81 un código con minúsculas o símbolos no se envía y el error aparece bajo el campo', async () => {
     const t = await nuevo();
     await llenarValido(t);
     await poner(t, 'input[name="codigo"]', 'leg-1');
@@ -296,7 +296,7 @@ describe('ProductoFormPage: categorías, validación y errores del servidor', ()
     expect(t.el.querySelector('input[name="codigo"]')!.getAttribute('aria-invalid')).toBe('true');
   });
 
-  it('CA-2-71 nombre corto y precio vacío también se validan antes de enviar, cada uno bajo su campo', async () => {
+  it('CA-2-81 nombre corto y precio vacío también se validan antes de enviar, cada uno bajo su campo', async () => {
     const t = await nuevo();
     await poner(t, 'input[name="codigo"]', 'LEG02');
     await poner(t, 'input[name="nombre"]', 'ab');
@@ -308,7 +308,7 @@ describe('ProductoFormPage: categorías, validación y errores del servidor', ()
     expect(error(t, 'codigo')).toBeUndefined();
   });
 
-  it('CA-2-72 si el servidor rechaza el código, el error de ese campo aparece bajo él y no se pierde lo escrito', async () => {
+  it('CA-2-82 si el servidor rechaza el código, el error de ese campo aparece bajo él y no se pierde lo escrito', async () => {
     const t = await nuevo();
     await llenarValido(t);
     boton(t.el, 'Guardar')!.click();
@@ -330,7 +330,7 @@ describe('ProductoFormPage: categorías, validación y errores del servidor', ()
     expect(error(t, 'codigo')).toBeUndefined();
   });
 
-  it('CA-2-72 un error de campo que el formulario no tiene (p. ej. categoriaIds) se muestra en un aviso visible', async () => {
+  it('CA-2-82 un error de campo que el formulario no tiene (p. ej. categoriaIds) se muestra en un aviso visible', async () => {
     const t = await nuevo();
     await llenarValido(t);
     boton(t.el, 'Guardar')!.click();

@@ -818,6 +818,16 @@ section.fs-acciones {
   color: var(--fs-color-primario-texto);
   font-size: 13px;
 }
+:where(.fs-bo__contenido) section > .fs-btn,
+:where(.fs-bo__contenido) section > a.fs-btn {
+  justify-self: start;
+}
+.fs-migas {
+  min-width: 0;
+  flex-wrap: nowrap;
+  white-space: nowrap;
+  overflow: hidden;
+}
 .fs-tarjeta {
   box-sizing: border-box;
   padding: var(--espacio-5);

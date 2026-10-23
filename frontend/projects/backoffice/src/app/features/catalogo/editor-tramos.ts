@@ -15,6 +15,13 @@ import type { catalogApi } from 'shared';
       gap: var(--espacio-3);
       align-items: center;
     }
+    .tramo label {
+      display: flex;
+      align-items: center;
+      gap: var(--espacio-2);
+      font-weight: 400;
+      font-size: 15px;
+    }
     .tramo input {
       width: 96px;
     }

@@ -93,7 +93,7 @@ describe('Pedidos del backoffice (P-4-05)', () => {
     expect(harness.routeNativeElement?.textContent).toContain('Pedidos de Lucía Mendoza');
   });
 
-  it('CA-4-70 las columnas Pedido, Fecha, Estado y Total se ordenan; Cliente y Modalidad no, porque el servidor no las acepta', async () => {
+  it('CA-4-71 las columnas Pedido, Fecha, Estado y Total se ordenan; Cliente y Modalidad no, porque el servidor no las acepta', async () => {
     const { harness, componente } = await abrir('/pedidos');
     consulta().flush(pagina([fila('FS-000121'), fila('FS-000119')]));
     await componente;
@@ -107,7 +107,7 @@ describe('Pedidos del backoffice (P-4-05)', () => {
     expect(ordenables).toEqual(['Pedido', 'Fecha', 'Estado', 'Total']);
   });
 
-  it('CA-4-70 al ordenar pide al servidor el campo del contrato, descendente al segundo clic, con el código como desempate y desde la página 0', async () => {
+  it('CA-4-71 al ordenar pide al servidor el campo del contrato, descendente al segundo clic, con el código como desempate y desde la página 0', async () => {
     const { harness, componente } = await abrir('/pedidos');
     consulta().flush(pagina([fila('FS-000121'), fila('FS-000119')]));
     await componente;
