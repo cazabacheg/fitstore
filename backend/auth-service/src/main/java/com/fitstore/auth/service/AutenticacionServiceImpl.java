@@ -55,8 +55,8 @@ public class AutenticacionServiceImpl implements AutenticacionService {
     }
 
     @Override
-    public SesionEmitida refrescar(String refreshToken) {
-        return tokens.refrescar(refreshToken);
+    public SesionEmitida refrescar(String refreshToken, String agenteUsuario) {
+        return tokens.refrescar(refreshToken, agenteUsuario);
     }
 
     @Override

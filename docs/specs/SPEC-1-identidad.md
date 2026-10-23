@@ -1,11 +1,12 @@
 # SPEC-1 — Identidad
 
-> Versión: **v6 (aprobado)** — 2026-10-20 · Estados: ✅ decidido · 🟡 propuesto · ❓ abierto
+> Versión: **v7 (aprobado)** — 2026-10-22 · Estados: ✅ decidido · 🟡 propuesto · ❓ abierto
 > **Dueña de:** `backend/auth-service` (lógica, controladores, emisión de JWT) · tienda: `features/acceso`, `features/cuenta` · backoffice: `features/acceso`, `features/perfil`, `features/usuarios`.
 > **Depende de:** 0a, 0b · **Habilita:** todas las pantallas protegidas; spec 4 (datos del destinatario en el checkout).
 > **Contratos:** `contracts/openapi/auth-service.yaml`; eventos `ClienteRegistrado`, `PasswordResetSolicitado`, `PasswordCambiado`.
 
 **Historial:**
+- v7 (2026-10-22): tras la exploración manual del autor: margen de reuso de 10 segundos para el refresh recién rotado desde el mismo navegador (CA-1-40), porque dos recargas seguidas cerraban la sesión. CA-1-09 se ajusta a ese margen.
 - v6 (2026-10-20): al preparar la ola 2a: la ruta de vuelta tras el login es `?returnUrl=` (la que pone el guard de la SPEC-0b; antes decía `?volver=`). Para retirar el JWKS de prueba (A5) la sección 8 agrega `infra/docker-compose.dev.yml` y `infra/config-repo/application.yml` (decisión del autor). Los UUID fijos de las cuentas demo están en `docs/demo/ids-demo.md`.
 - v5 (2026-10-19): por la SPEC-8 (I7), los datos de demostración también se cargan en la nube (perfil `demo`) con contraseña secreta (A7, CA-1-39); 4 clientes demo con UUID fijos (antes 2; la spec 4 necesitaba 4).
 - v4 (2026-10-18): P-1-08 y P-1-09 indican qué abre el enlace de cada fila y sus acciones, según la convención de tablas de la SPEC-0b (R11). Bocetos actualizados.
@@ -96,7 +97,7 @@ CA-1-08  Dado una sesión iniciada
          Entonces sigo con la sesión (refresh con la cookie) sin volver a ingresar
 
 CA-1-09  Dado un refresh token ya usado (rotado)
-         Cuando alguien intenta usarlo de nuevo
+         Cuando alguien intenta usarlo de nuevo pasado el margen de reuso, desde otro navegador o después de cerrar sesión
          Entonces recibe 401 y queda registrado como posible robo
 
 CA-1-10  Cuando cierro sesión
@@ -256,6 +257,11 @@ CA-1-38  Cuando arranca auth sin ningún ADMIN y con FITSTORE_ADMIN_EMAIL y FITS
 CA-1-39  Cuando arranca auth con el perfil demo (nube)
          Entonces reemplaza la contraseña de las cuentas de demostración por la de DEMO_PASSWORD;
               si DEMO_PASSWORD no está definida, desactiva esas cuentas (la contraseña de desarrollo nunca sirve en la nube)
+
+CA-1-40  Dado un refresh token que el mismo navegador rotó hace menos de 10 segundos (dos recargas seguidas)
+         Cuando ese navegador lo vuelve a usar
+         Entonces recibe un par nuevo y sigue con su sesión; el navegador se reconoce por su User-Agent
+              y una petición sin User-Agent no tiene margen
 ```
 
 ## 4. Pantallas
@@ -368,7 +374,7 @@ Todo según el micro de auth. Decisiones de implementación de esta spec:
 |---|---|---|
 | 01–03 | API (MockMvc) + componente | `RegistroControllerTest`, `formulario-registro.spec.ts` |
 | 04–07, 22–24 | API + unitaria | `AutenticacionServiceTest` (incluye bloqueo con Redis en Testcontainers), `AuthControllerTest` |
-| 08–11 | Unitaria + integración | `TokenServiceTest` (rotación, reutilización, invalidación por fecha) |
+| 08–11, 40 | Unitaria + integración | `TokenServiceTest` (rotación, reutilización, margen de reuso, invalidación por fecha), `AuthControllerTest` |
 | 12–14 | Unitaria + API | `PasswordServiceTest`, verificación del evento en el outbox |
 | 15–16, 35 | API | `ClienteControllerTest`, `StaffControllerTest` |
 | 17–21 | API + datos | `DireccionServiceTest`, propiedad (404 ajeno) |
@@ -395,7 +401,7 @@ Todo según el micro de auth. Decisiones de implementación de esta spec:
 
 ## 9. Definición de terminado
 
-- [ ] CA-1-01 a CA-1-39 cumplidos en CI.
+- [ ] CA-1-01 a CA-1-40 cumplidos en CI.
 - [ ] Postman `auth` en verde contra la plataforma levantada.
 - [ ] El OpenAPI de auth coincide con lo implementado.
 - [ ] Demostración de la AP1: registro → login → perfil → direcciones → logout, y login de staff, en las pantallas reales.
