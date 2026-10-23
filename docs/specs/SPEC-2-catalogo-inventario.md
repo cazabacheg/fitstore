@@ -1,11 +1,12 @@
 # SPEC-2 — Catálogo e inventario
 
-> Versión: **v10 (aprobado)** — 2026-10-20 · Estados: ✅ decidido · 🟡 propuesto · ❓ abierto
+> Versión: **v11 (aprobado)**, 2026-10-22 · Estados: ✅ decidido · 🟡 propuesto · ❓ abierto
 > **Dueña de:** `backend/catalog-service` (módulos catálogo e inventario) · tienda: `features/catalogo` · backoffice: `features/catalogo`, `features/inventario`.
 > **Depende de:** 0a, 0b, 1 (sesión de staff) · **Habilita:** 3 (destacados de la landing), 4 (cotización y reserva), 8.
 > **Contratos:** `contracts/openapi/catalog-service.yaml` (incluye `/internal/v1/inventario/reservas`); usa el contrato de order (`POST /carrito/items`); eventos `StockBajo`, `StockNoConfirmado` (publica) y `PedidoPagado`, `PedidoCancelado`, `PedidoExpirado` (consume).
 
 **Historial:**
+- v11 (2026-10-22): ajustes de la tienda tras la revisión manual del autor (rama `fix/obs-tienda-catalogo`): filtros del listado (categoría activa y padre resaltadas, filtros que se conservan al cambiar de categoría, interruptor "Solo disponibles" arriba, colores con mayúscula inicial: CA-2-62 a CA-2-65), la talla se conserva al cambiar de color si sigue disponible (CA-2-66), barra de tramos de descuento clicable y con relleno (CA-2-67 a CA-2-70, ajusta CA-2-11), migas con categoría padre (CA-2-71) y guía de tallas con bordes, centrada y que se cierra (CA-2-72, ajusta CA-2-10). Ajusta CA-2-09 y CA-2-12.
 - v10 (2026-10-20): **recorte de alcance** (decisión del autor): la pantalla P-2-09 (carga masiva); su backend se conserva pasan a [extensión de alcance](../implementacion/extension-alcance.md). Siguen especificadas aquí, marcadas, pero no cuentan para el terminado de esta spec.
 - v9 (2026-10-20): al preparar la ola 2a (decisiones del autor): el WebP se lee con TwelveMonkeys (stack v10) y la salida es JPG; el script de fotos de demostración usa Python + Pillow; sus JPG se versionan en los recursos de catalog, que las sube a Garage al arrancar con `dev` o `demo`; IDs fijos de la demo en `docs/demo/ids-demo.md`. La spec se construye en dos pasos (backend y luego frontend).
 - v8 (2026-10-19): etapa de diseño cerrada: diseños de alta fidelidad enlazados (P-2-01, P-2-02, P-2-04).
@@ -76,6 +77,21 @@ CA-2-06  Dado filtros sin resultados
 
 CA-2-07  Dado un producto en BORRADOR o INACTIVO
          Entonces no aparece en listados ni en búsquedas, y su URL responde 404
+
+CA-2-62  Cuando estoy en una categoría
+         Entonces en el panel de filtros esa categoría queda resaltada (negrita, subrayada y aria-current="page") y,
+              si es hija, su categoría padre también (negrita); sin categoría queda resaltado "Todos los productos"
+
+CA-2-63  Cuando cambio de categoría desde el panel
+         Entonces se conservan los filtros de talla, color, precio, búsqueda, orden y "solo disponibles" (solo se reinicia
+              la página); el usuario los quita a mano con sus casillas o con los chips
+
+CA-2-64  Cuando abro el panel de filtros
+         Entonces "Solo disponibles" es un interruptor (role="switch") que va arriba, antes de "Categorías"
+
+CA-2-65  Dado colores guardados en minúscula (p. ej. "negro")
+         Entonces sus nombres se presentan con mayúscula inicial ("Negro") en el panel, los chips, las muestras de las
+              tarjetas y el detalle; el dato guardado no cambia
 ```
 
 ### HU-2-02 — Ver un producto y agregarlo al carrito
@@ -94,17 +110,55 @@ CA-2-09  Cuando elijo color y talla
          Y los colores que no tienen stock en NINGUNA talla (o cuyas variantes están inactivas) se ven opacos y tachados
               y no se pueden elegir; si ningún color tiene stock, el producto se muestra "Agotado"
          Y el precio mostrado es el de esa variante (o el base)
+         Y el aviso "¡Últimas N unidades!" conserva su umbral bajo (el del servidor, 5 por defecto); saber si la cantidad
+              alcanza un tramo de descuento lo dice la barra de tramos (CA-2-69), no este aviso
 
 CA-2-10  Cuando abro "Guía de tallas"
          Entonces veo la tabla de la categoría del producto o, si no tiene, la de su categoría padre
          Y si ninguna tiene guía, el enlace no aparece
+         Y se cierra con el botón "Cerrar", con clic en el fondo y con Escape (ver CA-2-72)
 
 CA-2-11  Dado un producto con descuento por volumen
-         Entonces veo sus tramos ("3 un. −5 % · 6 un. −10 % · 12 un. −15 %"), con la aclaración de que se combinan tallas y colores
+         Entonces veo sus tramos ("3 un. −5 % · 6 un. −10 % · 12 un. −15 %") como una barra de botones, con la aclaración
+              de que se combinan tallas y colores (el comportamiento de la barra está en CA-2-67 a CA-2-69)
 
 CA-2-12  Cuando agrego al carrito una cantidad válida
          Entonces se llama a POST /carrito/items (contrato de order), veo la confirmación y el contador de la cabecera se actualiza
          Y la cantidad no puede superar el disponible de la variante
+         Y al cambiar de talla o de color la cantidad elegida se conserva, recortada al stock conocido de la nueva variante
+
+CA-2-66  Cuando cambio de color con una talla elegida
+         Entonces la talla se mantiene si en el nuevo color está disponible, y el aviso de stock y el precio pasan a ser
+              los de esa variante
+         Y solo si en el nuevo color esa talla está agotada (o no existe) se deselecciona y vuelvo a ver "Elige una talla"
+
+CA-2-67  Dado un producto con tramos de descuento
+         Entonces la barra de tramos se va llenando de color a medida que la cantidad elegida avanza hacia cada tramo
+              (de 1 unidad al primer tramo, del primero al segundo, y así) y el último tramo alcanzado queda marcado
+
+CA-2-68  Cuando hago clic en un tramo (p. ej. "12 un. −15 %")
+         Entonces la cantidad pasa a ser sus unidades mínimas (12) y el selector de cantidad lo refleja
+
+CA-2-69  Dado el stock que se conoce de la variante elegida (AGOTADO = 0, "Últimas N" = N)
+         Entonces los tramos con más unidades mínimas que ese stock se ven grises y opacos, y no se pueden elegir
+         Y sin talla elegida se usa el mayor stock conocido entre las variantes del color
+         Y con "Disponible" la API solo informa "más del umbral" (no el número exacto), así que ningún tramo se desactiva
+              por eso; el servidor sigue validando el stock real al agregar
+
+CA-2-70  Dado una variante con pocas unidades (p. ej. 4)
+         Entonces el aviso dice "¡Últimas 4 unidades!" y la barra deja gris el tramo de 6 y el de 12, pero no el de 3
+         Y con una variante "Disponible" no aparece el aviso de últimas unidades
+
+CA-2-71  Cuando abro un producto
+         Entonces las migas son "Productos / categoría padre / categoría / nombre" (solo "Productos / categoría / nombre"
+              si la categoría es raíz)
+         Y todas son enlaces salvo el nombre: "Productos" lleva a /productos y cada categoría a /categoria/:slug
+         Y si el producto está asignado a la padre y a una hija se usa la hija con su padre
+         Y si el árbol de categorías no carga, las migas siguen con la categoría del producto
+
+CA-2-72  Cuando abro la "Guía de tallas"
+         Entonces la tabla tiene bordes y los valores van centrados bajo sus columnas
+         Y se cierra con clic en el fondo oscuro (no con clic dentro del cuadro), con Escape y con el botón "Cerrar"
 ```
 
 ### HU-2-03 — Cotizar para el carrito y el checkout
@@ -348,6 +402,7 @@ CA-2-57  Dado Redis caído
 - **Ruta / proyecto:** `/producto/:slug` · storefront · público.
 - **Boceto:** ![P-2-02](img/P-2-02-detalle.png)
 - **Diseño de alta fidelidad:** ✅ [canvas "FitStore Tienda"](https://claude.ai/artifact/1iacKddHAquNYuQcFPBZLg), `Producto` (FitStore escritorio) y `ProductoKallpaMovil` (Kallpa móvil). Copia en [`docs/diseno/`](../diseno/).
+- **Migas:** Productos / categoría padre / categoría / nombre, con la padre sacada del árbol de `GET /categorias` (el contrato del detalle solo trae las categorías del producto); CA-2-71.
 - **Componentes:** `DetallePage`, `Galeria`, `SelectorColor`, `SelectorTalla`, `IndicadorStock`, `TramosDescuento`, `GuiaTallasModal`, `SelectorCantidad`, `BotonAgregarCarrito`.
 - **Estados:** cargando, 404 (producto inexistente o no activo), agotado.
 - **Endpoints:** `GET /productos/{slug}`, `GET /categorias/{slug}/guia-tallas`, `POST /carrito/items` (contrato de order).
@@ -442,6 +497,9 @@ Todo según el micro de catalog. Decisiones de implementación de esta spec:
 |---|---|---|
 | 01–07 | Datos + API | `ProductoRepositoryTest` (filtros, `EXISTS`, `unaccent`), `CatalogoPublicoControllerTest` |
 | 08–12 | Componente | `detalle.page.spec.ts`, `selector-talla.spec.ts` (tachado por stock) |
+| 62 a 65 | Componente | `listado.page.spec.ts` (categoría activa y padre, filtros que se conservan, interruptor arriba, mayúsculas) |
+| 66, 68 a 72 | Componente | `detalle.page.spec.ts` (talla al cambiar de color, clic en tramo, tramos grises, migas, guía de tallas) |
+| 67 a 69 | Componente | `tramos-descuento.spec.ts` (relleno de la barra, clic, tramos sin stock) |
 | 13–16 | Unitaria + API | `CalculadoraDescuentosTest` (casos de catalog 9), `CotizacionControllerTest` |
 | 17–20 | Datos + API | `CategoriaRepositoryTest`, `CategoriaServiceTest` (2 niveles, borrado) |
 | 21–28 | API | `ProductoServiceTest` (matriz, `precioDesde`, invariante 4), permisos OPERADOR |
@@ -471,7 +529,7 @@ Todo según el micro de catalog. Decisiones de implementación de esta spec:
 
 ## 9. Definición de terminado
 
-- [ ] CA-2-01 a CA-2-61 cumplidos en CI (k6 en Lyanna), salvo los de extensión de alcance.
+- [ ] CA-2-01 a CA-2-72 cumplidos en CI (k6 en Lyanna), salvo los de extensión de alcance.
 - [ ] Postman `catalog` en verde.
 - [ ] El OpenAPI de catalog coincide con lo implementado.
 - [ ] Demostración: cargar un producto completo desde el backoffice (matriz, fotos, publicar) y verlo en la tienda con filtros, detalle y descuento.

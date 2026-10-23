@@ -8,10 +8,11 @@ import { idUnico } from '../id-unico';
  */
 @Component({
   selector: 'fs-dialogo',
+  host: { '(document:keydown.escape)': 'alEscape()' },
   imports: [A11yModule],
   template: `
     @if (abierto()) {
-      <div class="fs-dialogo-fondo">
+      <div class="fs-dialogo-fondo" role="presentation" (click)="clicFondo($event)">
         <div
           class="fs-dialogo"
           role="dialog"
@@ -19,7 +20,6 @@ import { idUnico } from '../id-unico';
           [attr.aria-labelledby]="idTitulo"
           cdkTrapFocus
           [cdkTrapFocusAutoCapture]="true"
-          (keydown.escape)="cerrar()"
         >
           <h2 class="fs-dialogo__titulo" [id]="idTitulo">{{ titulo() }}</h2>
           <ng-content />
@@ -35,6 +35,8 @@ export class FsDialogo {
   readonly titulo = input.required<string>();
   readonly abierto = model(false);
   readonly cerrado = output<void>();
+  /** Si es `true`, el clic en el fondo oscuro también lo cierra (por defecto no, para no perder formularios a medias). */
+  readonly cerrarConFondo = input(false);
 
   private previo: HTMLElement | null = null;
   private estabaAbierto = false;
@@ -50,6 +52,14 @@ export class FsDialogo {
       }
       this.estabaAbierto = abierto;
     });
+  }
+
+  protected clicFondo(evento: MouseEvent): void {
+    if (this.cerrarConFondo() && evento.target === evento.currentTarget) this.cerrar();
+  }
+
+  protected alEscape(): void {
+    if (this.abierto()) this.cerrar();
   }
 
   protected cerrar(): void {

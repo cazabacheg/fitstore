@@ -444,7 +444,7 @@ textarea.fs-input {
 .fs-aviso {
   display: flex;
   gap: var(--espacio-3);
-  align-items: flex-start;
+  align-items: center;
   max-width: 380px;
   padding: var(--espacio-3) var(--espacio-4);
   background: var(--fs-color-superficie);
@@ -752,10 +752,25 @@ textarea.fs-input {
 }
 .fs-cabecera {
   position: relative;
-  background: var(--fs-color-superficie);
-  color: var(--fs-color-texto);
+  background: var(--fs-color-secundario);
+  color: var(--fs-color-en-secundario);
   border-bottom: 1px solid var(--fs-color-linea);
   font-family: var(--fs-font-marca);
+}
+.fs-cabecera .fs-logo,
+.fs-cabecera .fs-nav a,
+.fs-cabecera .fs-icono-boton {
+  color: var(--fs-color-en-secundario);
+}
+.fs-cabecera .fs-nav a[aria-current='page'] {
+  border-bottom-color: var(--fs-color-en-secundario);
+}
+.fs-cabecera .fs-icono-boton:hover {
+  background: rgb(from var(--fs-color-en-secundario) r g b / 0.14);
+}
+.fs-cabecera .fs-contador {
+  background: var(--fs-color-en-secundario);
+  color: var(--fs-color-secundario);
 }
 .fs-cabecera__acciones {
   display: flex;

@@ -12,7 +12,8 @@ import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { CarritoContador, SIN_TOAST, ToastService, catalogApi } from 'shared';
 import { TiendaService } from 'shared/api/catalog-service';
 import { CarritoService } from 'shared/api/order-service';
-import { map } from 'rxjs';
+import { catchError, map, of } from 'rxjs';
+import { capitalizar } from '../../ui/capitalizar';
 import { FsGaleria } from '../../ui/galeria/galeria';
 import { FsPrecio } from '../../ui/precio/precio';
 import { EstadoCargando, EstadoError, EstadoVacio } from '../../ui/estados/estados';
@@ -25,6 +26,14 @@ import { TramosDescuento } from './tramos-descuento';
 
 /** Tope de la cantidad cuando la API solo dice "Disponible" (más de 5 unidades); el servidor valida el stock real. */
 const MAXIMO_SIN_DATO = 99;
+
+/** Unidades que se sabe que hay en la variante (ver `maximo`). */
+const topeDe = (v: catalogApi.VariantePublica): number =>
+  v.disponibilidad === 'AGOTADO'
+    ? 0
+    : v.disponibilidad === 'ULTIMAS'
+      ? (v.ultimasUnidades ?? 1)
+      : MAXIMO_SIN_DATO;
 
 /** P-2-02: detalle del producto con color, talla, disponibilidad, tramos, guía de tallas y "Agregar al carrito". */
 @Component({
@@ -134,7 +143,12 @@ const MAXIMO_SIN_DATO = 99;
         <fs-galeria [imagenes]="galeria()" />
         <div class="info">
           <nav class="migas" aria-label="Migas">
-            <a routerLink="/productos">Productos</a><span aria-hidden="true">/</span><span>{{ p.nombre }}</span>
+            <a routerLink="/productos">Productos</a>
+            @for (m of migasCategoria(); track m.slug) {
+              <span aria-hidden="true">/</span>
+              <a [routerLink]="['/categoria', m.slug]">{{ m.nombre }}</a>
+            }
+            <span aria-hidden="true">/</span><span>{{ p.nombre }}</span>
           </nav>
           <h1>{{ p.nombre }}</h1>
           <fs-precio [monto]="precio()" />
@@ -142,7 +156,7 @@ const MAXIMO_SIN_DATO = 99;
             <p role="status"><strong>Agotado</strong></p>
           }
           <div>
-            <strong>Color: {{ colorElegido()?.nombre }}</strong>
+            <strong>Color: {{ nombreColor(colorElegido()?.nombre) }}</strong>
             <fs-selector-color [colores]="p.colores" [(valor)]="colorId" />
           </div>
           <div>
@@ -161,7 +175,7 @@ const MAXIMO_SIN_DATO = 99;
             />
           </div>
           <fs-indicador-stock [variante]="variante()" />
-          <fs-tramos-descuento [tramos]="p.tramos" />
+          <fs-tramos-descuento [tramos]="p.tramos" [maximo]="maximo()" [(cantidad)]="cantidad" />
           <div class="acciones">
             <fs-selector-cantidad
               [maximo]="maximo()"
@@ -220,13 +234,23 @@ export class DetallePage {
     computation: (p) =>
       p ? ((p.colores.find((c) => c.conStock) ?? p.colores[0])?.id ?? null) : null,
   });
-  protected readonly tallaId = linkedSignal<number | null, number | null>({
-    source: this.colorId,
-    computation: () => null,
+  /** Al cambiar de color la talla se conserva si en el nuevo color sigue disponible; si no, se deselecciona (CA-2-66). */
+  protected readonly tallaId = linkedSignal<
+    { p: catalogApi.ProductoDetalle | undefined; c: number | null },
+    number | null
+  >({
+    source: () => ({ p: this.producto.value(), c: this.colorId() }),
+    computation: (fuente, previo) => {
+      const talla = previo?.value ?? null;
+      if (!talla || previo?.source.p !== fuente.p) return null;
+      const v = fuente.p?.variantes.find((x) => x.colorId === fuente.c && x.tallaId === talla);
+      return v && v.disponibilidad !== 'AGOTADO' ? talla : null;
+    },
   });
-  protected readonly cantidad = linkedSignal<number | null, number>({
-    source: this.tallaId,
-    computation: () => 1,
+  /** La cantidad se conserva al cambiar de talla o color, recortada al stock conocido de la nueva variante. */
+  protected readonly cantidad = linkedSignal<number, number>({
+    source: () => this.maximo(),
+    computation: (tope, previo) => Math.min(previo?.value ?? 1, Math.max(tope, 1)),
   });
   protected readonly guiaAbierta = signal(false);
   protected readonly agregando = signal(false);
@@ -268,9 +292,43 @@ export class DetallePage {
   protected readonly precio = computed(
     () => this.variante()?.precio ?? this.producto.value()?.precioDesde ?? 0,
   );
+  /**
+   * Unidades que se pueden comprar: el stock de la variante elegida cuando se conoce (AGOTADO = 0, ULTIMAS = N;
+   * con DISPONIBLE la API solo dice "más del umbral" y se usa el tope genérico). Sin talla elegida, el mayor de las
+   * variantes del color, para que los tramos grises sigan siendo útiles antes de elegir talla (CA-2-69).
+   */
   protected readonly maximo = computed(() => {
     const v = this.variante();
-    return v?.disponibilidad === 'ULTIMAS' ? (v.ultimasUnidades ?? 1) : MAXIMO_SIN_DATO;
+    if (v) return topeDe(v);
+    const delColor = (this.producto.value()?.variantes ?? []).filter(
+      (x) => x.colorId === this.colorId(),
+    );
+    return delColor.length ? Math.max(...delColor.map(topeDe)) : MAXIMO_SIN_DATO;
+  });
+  protected readonly nombreColor = capitalizar;
+
+  /** Categorías de las migas: la padre y la hija (o solo la raíz), sacadas del árbol; sin árbol, la del producto. */
+  private readonly arbol = rxResource({
+    stream: () =>
+      this.tienda
+        .obtenerArbolCategorias('body', false, { context: new HttpContext().set(SIN_TOAST, true) })
+        .pipe(
+          map((r) => r.data ?? []),
+          catchError(() => of([] as catalogApi.CategoriaNodo[])),
+        ),
+  });
+  protected readonly migasCategoria = computed(() => {
+    const cats = this.producto.value()?.categorias ?? [];
+    const arbol = this.arbol.value() ?? [];
+    const hijaConPadre = cats
+      .map((c) => ({ c, padre: arbol.find((n) => n.hijas.some((h) => h.slug === c.slug)) }))
+      .find((x) => x.padre);
+    if (hijaConPadre)
+      return [
+        { nombre: hijaConPadre.padre!.nombre, slug: hijaConPadre.padre!.slug },
+        { nombre: hijaConPadre.c.nombre, slug: hijaConPadre.c.slug },
+      ];
+    return cats.length ? [{ nombre: cats[0].nombre, slug: cats[0].slug }] : [];
   });
   protected readonly puedeAgregar = computed(() => {
     const v = this.variante();

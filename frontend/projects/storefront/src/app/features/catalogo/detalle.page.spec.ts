@@ -31,7 +31,8 @@ async function abrir(producto: unknown = DETALLE, estado = 200, arbol: unknown =
   const el = fixture.nativeElement as HTMLElement;
   for (const req of ctrl.match(() => true)) {
     if (req.request.url.endsWith('/categorias')) {
-      if (arbol === null) req.flush({ success: false, mensaje: 'x' }, { status: 500, statusText: 'x' });
+      if (arbol === null)
+        req.flush({ success: false, mensaje: 'x' }, { status: 500, statusText: 'x' });
       else req.flush(sobre(arbol));
     } else if (estado === 200) req.flush(sobre(producto));
     else req.flush({ success: false, mensaje: 'No existe' }, { status: estado, statusText: 'x' });
@@ -278,8 +279,11 @@ describe('DetallePage', () => {
     const { el } = await abrir(pocas);
     expect(tramo(el, '3 un.').disabled).toBe(false);
     expect(tramo(el, '6 un.').disabled).toBe(true);
-    const { el: el2 } = await abrir();
-    expect(tramo(el2, '12 un.').disabled).toBe(false);
+  });
+
+  it('CA-2-69 sin talla elegida y con un color de stock amplio, ningún tramo se ve gris', async () => {
+    const { el } = await abrir();
+    expect(tramo(el, '12 un.').disabled).toBe(false);
   });
 
   it('CA-2-70 el aviso "últimas unidades" mantiene su umbral y los tramos grises dicen cuáles no se alcanzan', async () => {

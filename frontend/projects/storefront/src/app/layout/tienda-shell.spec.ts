@@ -227,7 +227,7 @@ describe('TiendaShell: cabecera', () => {
       '\\.fs-cabecera \\.fs-nav a',
       '\\.fs-cabecera \\.fs-icono-boton',
     ]) {
-      const regla = new RegExp(`${selector}\\s*\\{([^}]*)\\}`).exec(estilos);
+      const regla = new RegExp(`${selector}[^{}]*\\{([^}]*)\\}`).exec(estilos);
       expect(regla, selector).not.toBeNull();
       expect(regla![1]).toMatch(/color:\s*var\(--fs-color-en-secundario\)/);
     }
