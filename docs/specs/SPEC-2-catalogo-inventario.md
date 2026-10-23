@@ -1,11 +1,12 @@
 # SPEC-2 — Catálogo e inventario
 
-> Versión: **v13 (aprobado)**, 2026-10-22 · Estados: ✅ decidido · 🟡 propuesto · ❓ abierto
+> Versión: **v14 (aprobado)**, 2026-10-23 · Estados: ✅ decidido · 🟡 propuesto · ❓ abierto
 > **Dueña de:** `backend/catalog-service` (módulos catálogo e inventario) · tienda: `features/catalogo` · backoffice: `features/catalogo`, `features/inventario`.
 > **Depende de:** 0a, 0b, 1 (sesión de staff) · **Habilita:** 3 (destacados de la landing), 4 (cotización y reserva), 8.
 > **Contratos:** `contracts/openapi/catalog-service.yaml` (incluye `/internal/v1/inventario/reservas`); usa el contrato de order (`POST /carrito/items`); eventos `StockBajo`, `StockNoConfirmado` (publica) y `PedidoPagado`, `PedidoCancelado`, `PedidoExpirado` (consume).
 
 **Historial:**
+- v14 (2026-10-23): la cotización (`POST /precios/cotizar`) suma a cada línea el campo opcional `unidadesComprables`, con el mismo significado que en `VariantePublica` (cambio aditivo del contrato), para que el carrito conozca el stock desde el principio (CA-2-90 a CA-2-93; lo consume CA-4-80 de la SPEC-4).
 - v13 (2026-10-22): correcciones de la exploración del backoffice (decisión del autor): al marcar una subcategoría se marca su padre y al desmarcar el padre se desmarcan sus hijas (CA-2-80), el formulario de producto valida en el cliente igual que el backend (CA-2-81), muestra los errores del servidor bajo cada campo (CA-2-82) y avisa cuando una miniatura no carga (CA-2-83).
 - v12 (2026-10-22): `VariantePublica` suma el campo opcional `unidadesComprables` (cambio aditivo del contrato) para que la barra de tramos se ponga gris también con "Disponible" (CA-2-73; ajusta CA-2-69).
 - v11 (2026-10-22): ajustes de la tienda tras la revisión manual del autor (rama `fix/obs-tienda-catalogo`): filtros del listado (categoría activa y padre resaltadas, filtros que se conservan al cambiar de categoría, interruptor "Solo disponibles" arriba, colores con mayúscula inicial: CA-2-62 a CA-2-65), la talla se conserva al cambiar de color si sigue disponible (CA-2-66), barra de tramos de descuento clicable y con relleno (CA-2-67 a CA-2-70, ajusta CA-2-11), migas con categoría padre (CA-2-71) y guía de tallas con bordes, centrada y que se cierra (CA-2-72, ajusta CA-2-10). Ajusta CA-2-09 y CA-2-12.
@@ -190,6 +191,21 @@ CA-2-15  Dado una variante inactiva o un producto que ya no está ACTIVO
 
 CA-2-16  Dado más de 50 líneas
          Entonces la cotización responde 400
+
+CA-2-90  Dado un producto con tramos de descuento
+         Cuando se cotiza una variante
+         Entonces su línea trae unidadesComprables: el stock disponible acotado a las unidades del tramo más alto
+              (con tramos de 3, 6 y 12 y 40 en stock se publica 12; con 8 en stock, 8), sin exponer el inventario real
+
+CA-2-91  Dado una variante agotada o con stock menor que lo pedido
+         Entonces unidadesComprables es 0 en la agotada, y en la línea STOCK_INSUFICIENTE es el stock disponible
+              acotado al tramo más alto, igual que en VariantePublica (CA-2-73)
+
+CA-2-92  Dado un producto sin tramos de descuento (SIN_DESCUENTO)
+         Entonces la línea cotizada no trae unidadesComprables
+
+CA-2-93  Dado una línea NO_DISPONIBLE
+         Entonces no trae unidadesComprables
 ```
 
 ### HU-2-04 — Administrar categorías y guía de tallas
@@ -530,6 +546,7 @@ Todo según el micro de catalog. Decisiones de implementación de esta spec:
 | 67 a 69 | Componente | `tramos-descuento.spec.ts` (relleno de la barra, clic, tramos sin stock) |
 | 73 | API | `CatalogoPublicoControllerTest` (unidadesComprables acotado al tramo más alto) |
 | 13–16 | Unitaria + API | `CalculadoraDescuentosTest` (casos de catalog 9), `CotizacionControllerTest` |
+| 90 a 93 | API | `CotizacionControllerTest` (unidadesComprables acotado al tramo más alto, agotada y stock insuficiente, sin tramos, NO_DISPONIBLE) |
 | 17–20 | Datos + API | `CategoriaRepositoryTest`, `CategoriaServiceTest` (2 niveles, borrado) |
 | 21–28 | API | `ProductoServiceTest` (matriz, `precioDesde`, invariante 4), permisos OPERADOR |
 | 80–83 | Componente | `producto-form.page.spec.ts` (categorías, validación, errores del servidor, miniatura que no carga), `subida-imagenes.spec.ts` |
@@ -559,7 +576,7 @@ Todo según el micro de catalog. Decisiones de implementación de esta spec:
 
 ## 9. Definición de terminado
 
-- [ ] CA-2-01 a CA-2-73 y CA-2-80 a CA-2-83 cumplidos en CI (k6 en Lyanna), salvo los de extensión de alcance.
+- [ ] CA-2-01 a CA-2-73, CA-2-80 a CA-2-83 y CA-2-90 a CA-2-93 cumplidos en CI (k6 en Lyanna), salvo los de extensión de alcance.
 - [ ] Postman `catalog` en verde.
 - [ ] El OpenAPI de catalog coincide con lo implementado.
 - [ ] Demostración: cargar un producto completo desde el backoffice (matriz, fotos, publicar) y verlo en la tienda con filtros, detalle y descuento.

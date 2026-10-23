@@ -43,7 +43,7 @@ export class CarritoService {
 
   /** Último carrito que mandó el servidor: a él se vuelve si rechaza un cambio. */
   private confirmado: orderApi.Carrito | null = null;
-  /** Stock disponible por variante, aprendido de los rechazos (409) y de las líneas con STOCK_INSUFICIENTE. */
+  /** Stock disponible por variante: de `unidadesComprables` (CA-4-81), de los rechazos 409 y de las líneas con STOCK_INSUFICIENTE. */
   private readonly stock = signal<Record<number, number>>({});
   /** Tramos de descuento que el servidor ya mostró, por producto. El servidor sigue siendo quien decide. */
   private readonly tramos = new Map<number, TramoConocido[]>();
@@ -213,19 +213,40 @@ export class CarritoService {
     this.estado.set('listo');
   }
 
-  /** Guarda el stock y los tramos que trae una respuesta del servidor. */
+  /** Guarda los tramos y el stock que trae una respuesta del servidor. */
   private aprender(carrito: orderApi.Carrito): void {
+    this.aprenderTramos(carrito);
     this.stock.update((anterior) => {
       const siguiente = { ...anterior };
       for (const l of carrito.lineas) {
+        const exacto = this.stockExacto(l);
         if (l.estado === 'STOCK_INSUFICIENTE' && typeof l.disponible === 'number') {
           siguiente[l.varianteId] = l.disponible;
+        } else if (exacto !== null) {
+          siguiente[l.varianteId] = exacto; // CA-4-81: se sabe desde que se carga el carrito
         } else if (l.estado === 'OK' && l.varianteId in siguiente && l.cantidad > siguiente[l.varianteId]) {
           delete siguiente[l.varianteId]; // el stock creció: el dato viejo ya no vale
+        } else if (typeof l.unidadesComprables === 'number' && siguiente[l.varianteId] < l.unidadesComprables) {
+          delete siguiente[l.varianteId]; // unidadesComprables ya no limita (CA-4-82)
         }
       }
       return siguiente;
     });
+  }
+
+  /**
+   * CA-4-81 y CA-4-82: `unidadesComprables` es el stock acotado al tramo más alto del producto. Solo es el stock
+   * exacto cuando es menor que ese tramo; si es igual (o mayor que lo que se conoce), el stock real puede ser más
+   * grande y no se limita. Se compara con el mayor tramo que el servidor ya mostró, que nunca supera al real.
+   */
+  private stockExacto(linea: orderApi.LineaCarrito): number | null {
+    if (typeof linea.unidadesComprables !== 'number' || linea.productoId == null) return null;
+    const conocidos = this.tramos.get(linea.productoId) ?? [];
+    const masAlto = conocidos.length ? conocidos[conocidos.length - 1].unidadesMinimas : null;
+    return masAlto !== null && linea.unidadesComprables < masAlto ? linea.unidadesComprables : null;
+  }
+
+  private aprenderTramos(carrito: orderApi.Carrito): void {
     for (const aviso of carrito.avisosTramo) {
       const conocidos = this.tramos.get(aviso.productoId) ?? [];
       for (const t of [aviso.tramoAlcanzado, aviso.siguienteTramo]) {

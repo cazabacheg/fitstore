@@ -226,6 +226,53 @@ describe('Carrito (P-4-01)', () => {
     expect(p.porEtiqueta('Agregar una unidad').disabled).toBe(true);
   });
 
+  it('CA-4-81 una línea con unidadesComprables menor que el tramo más alto deshabilita el "+" al llegar a ese número, sin esperar un 409', async () => {
+    const p = await iniciar(conTramo(2, { unidadesComprables: 2 })); // tramos 3 y 6; el stock exacto es 2
+
+    expect(p.porEtiqueta('Agregar una unidad').disabled).toBe(true);
+    http().expectNone(`${RUTA}/items/101`);
+  });
+
+  it('CA-4-82 si unidadesComprables es igual al tramo más alto el "+" sigue activo (el stock real puede ser mayor) y se sugiere el tramo', async () => {
+    const igual = await iniciar(conTramo(3, { unidadesComprables: 6 })); // 6 es el tramo más alto conocido
+    expect(igual.porEtiqueta('Agregar una unidad').disabled).toBe(false);
+    expect(igual.el.textContent).toContain('agrega 3 más y ahorra 15 %');
+    TestBed.resetTestingModule();
+
+    const alTope = await iniciar(conTramo(6, { unidadesComprables: 6 }));
+    expect(alTope.porEtiqueta('Agregar una unidad').disabled).toBe(false);
+    TestBed.resetTestingModule();
+
+    const mayor = await iniciar(conTramo(1, { unidadesComprables: 5 })); // solo se conoce el tramo de 3
+    expect(mayor.porEtiqueta('Agregar una unidad').disabled).toBe(false);
+    expect(mayor.el.textContent).toContain('agrega 2 más y ahorra 10 %');
+  });
+
+  it('CA-4-83 no se sugiere un tramo que unidadesComprables no deja alcanzar', async () => {
+    const p = await iniciar(conTramo(2, { unidadesComprables: 2 })); // falta 1 para el tramo de 3, pero solo hay 2
+
+    expect(p.el.textContent).not.toContain('ahorra 10 %');
+  });
+
+  it('CA-4-84 el aprendizaje por 409 sigue como respaldo cuando unidadesComprables no limita', async () => {
+    const p = await iniciar(conTramo(3, { unidadesComprables: 6 }));
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
+    expect(p.porEtiqueta('Agregar una unidad').disabled).toBe(false);
+
+    p.porEtiqueta('Agregar una unidad').click();
+    vi.advanceTimersByTime(ESPERA_CANTIDAD_MS);
+    http()
+      .expectOne(`${RUTA}/items/101`)
+      .flush(errorApi('STOCK_INSUFICIENTE', 'Solo quedan 3 unidades', { disponible: 3 }), {
+        status: 409,
+        statusText: 'Conflict',
+      });
+    await p.estabilizar();
+
+    expect(p.el.querySelector('.fs-linea__unidades')?.textContent).toBe('3');
+    expect(p.porEtiqueta('Agregar una unidad').disabled).toBe(true);
+  });
+
   it('CA-4-64 si el descuento total es 0 la fila "Descuento" no aparece, y con descuento sí', async () => {
     const sin = await iniciar(carrito([linea(101, 'Legging Pro', 2)]));
     expect(sin.el.textContent).not.toContain('Descuento');

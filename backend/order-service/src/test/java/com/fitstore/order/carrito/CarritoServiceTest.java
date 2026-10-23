@@ -247,4 +247,44 @@ class CarritoServiceTest extends ApiBase {
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.codigo").value("CARRITO_NO_IDENTIFICADO"));
     }
+
+    @Test
+    @DisplayName("CA-4-80 cada línea del carrito trae unidadesComprables tal como la cotiza catalog")
+    void lineaTraeUnidadesComprables() throws Exception {
+        Simulados.cotizar(
+                Linea.ok(101, "Legging Pro", "59.90", 2).conUnidadesComprables(8),
+                Linea.ok(230, "Top Flex", "39.90", 1).conUnidadesComprables(12));
+        carritos.establecerLinea(carrito, 101, 2);
+        carritos.establecerLinea(carrito, 230, 1);
+
+        mvc.perform(get("/api/v1/carrito").header("X-Carrito-Id", anonimo))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.lineas[0].unidadesComprables").value(8))
+                .andExpect(jsonPath("$.data.lineas[1].unidadesComprables").value(12));
+    }
+
+    @Test
+    @DisplayName("CA-4-80 si catalog no la informa (producto sin tramos), la línea no trae unidadesComprables")
+    void lineaSinUnidadesComprables() throws Exception {
+        Simulados.cotizar(Linea.ok(101, "Legging Pro", "59.90", 2));
+        carritos.establecerLinea(carrito, 101, 2);
+
+        mvc.perform(get("/api/v1/carrito").header("X-Carrito-Id", anonimo))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.lineas[0].unidadesComprables").doesNotExist());
+    }
+
+    @Test
+    @DisplayName("CA-4-80 con catalog caído la última cotización conserva unidadesComprables")
+    void ultimaCotizacionConservaUnidadesComprables() throws Exception {
+        Simulados.cotizar(Linea.ok(101, "Legging Pro", "59.90", 2).conUnidadesComprables(8));
+        carritos.establecerLinea(carrito, 101, 2);
+        mvc.perform(get("/api/v1/carrito").header("X-Carrito-Id", anonimo)).andExpect(status().isOk());
+
+        EntornoApi.SERVICIOS.resetAll();
+        Simulados.catalogCaido();
+        mvc.perform(get("/api/v1/carrito").header("X-Carrito-Id", anonimo))
+                .andExpect(jsonPath("$.data.preciosPorConfirmar").value(true))
+                .andExpect(jsonPath("$.data.lineas[0].unidadesComprables").value(8));
+    }
 }

@@ -24,6 +24,7 @@ import com.fitstore.catalog.catalogo.service.dominio.LineaCalculada;
 import com.fitstore.catalog.catalogo.service.dominio.LineaCotizable;
 import com.fitstore.catalog.catalogo.service.dominio.PoliticaDescuentos;
 import com.fitstore.catalog.catalogo.service.dominio.ResumenProducto;
+import com.fitstore.catalog.catalogo.service.dominio.Tramo;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
@@ -101,15 +102,18 @@ public class CotizacionServiceImpl implements CotizacionService {
             if (!estaDisponible(v, productoPorId)) {
                 lineas.add(new LineaCotizadaDto(pedida.varianteId(), p == null ? null : p.getId(), v == null ? null : v.getSku(),
                         p == null ? null : p.getNombre(), p == null ? null : p.getSlug(), talla, color, imagen, CERO,
-                        pedida.cantidad(), CERO, CERO, CERO, CERO, EstadoLinea.NO_DISPONIBLE, null));
+                        pedida.cantidad(), CERO, CERO, CERO, CERO, EstadoLinea.NO_DISPONIBLE, null, null));
                 continue;
             }
             LineaCalculada c = calculo.lineas().get(siguiente++);
             int quedan = disponible.getOrDefault(v.getId(), 0);
             boolean alcanza = pedida.cantidad() <= quedan;
+            Integer topeTramos = politica.tramosDe(p.getId()).stream().map(Tramo::unidadesMinimas).max(Integer::compare)
+                    .orElse(null);
+            Integer comprables = topeTramos == null ? null : Math.max(0, Math.min(quedan, topeTramos));
             lineas.add(new LineaCotizadaDto(v.getId(), p.getId(), v.getSku(), p.getNombre(), p.getSlug(), talla, color, imagen,
                     c.precioUnitario(), c.cantidad(), c.subtotal(), c.descuentoPorcentaje(), c.descuentoMonto(), c.total(),
-                    alcanza ? EstadoLinea.OK : EstadoLinea.STOCK_INSUFICIENTE, alcanza ? null : Math.max(0, quedan)));
+                    alcanza ? EstadoLinea.OK : EstadoLinea.STOCK_INSUFICIENTE, alcanza ? null : Math.max(0, quedan), comprables));
         }
 
         List<ProductoCotizadoDto> resumen = calculo.productos().stream().map(r -> aDto(r, productoPorId.get(r.productoId()))).toList();

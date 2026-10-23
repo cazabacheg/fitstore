@@ -10,7 +10,12 @@ import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 
+/**
+ * {@code unidadesComprables}: stock disponible acotado a las unidades del tramo de descuento más alto del producto
+ * (CA-2-90); ausente si el producto no tiene tramos o la línea es NO_DISPONIBLE.
+ */
 public record LineaCotizadaDto(Long varianteId, Long productoId, String sku, String producto, String slug, String talla,
         String color, String imagenUrl, BigDecimal precioUnitario, int cantidad, BigDecimal subtotal,
-        BigDecimal descuentoPorcentaje, BigDecimal descuentoMonto, BigDecimal total, EstadoLinea estado, Integer disponible) {
+        BigDecimal descuentoPorcentaje, BigDecimal descuentoMonto, BigDecimal total, EstadoLinea estado, Integer disponible,
+        @JsonInclude(JsonInclude.Include.NON_NULL) Integer unidadesComprables) {
 }

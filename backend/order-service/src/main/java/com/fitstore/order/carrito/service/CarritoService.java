@@ -201,7 +201,7 @@ public class CarritoService {
                 .sorted(Comparator.comparing(LineaCotizada::varianteId))
                 .map(l -> new LineaCarritoDto(l.varianteId(), l.productoId(), l.slug(), l.sku(), l.producto(),
                         l.talla(), l.color(), l.imagenUrl(), l.precioUnitario(), l.cantidad(),
-                        l.descuentoPorcentaje(), l.descuentoMonto(), l.total(), l.estado(), l.disponible()))
+                        l.descuentoPorcentaje(), l.descuentoMonto(), l.total(), l.estado(), l.disponible(), l.unidadesComprables()))
                 .toList();
         List<AvisoTramoDto> avisos = cotizacion.productos() == null ? List.of() : cotizacion.productos().stream()
                 .map(p -> new AvisoTramoDto(p.productoId(), p.nombre(), p.unidades(),

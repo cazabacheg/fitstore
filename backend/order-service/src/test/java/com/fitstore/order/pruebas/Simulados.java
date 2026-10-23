@@ -24,21 +24,28 @@ public final class Simulados {
 
     /** Una línea de la cotización de catalog (LineaCotizada). */
     public record Linea(long varianteId, long productoId, String sku, String producto, String talla, String color,
-            String precio, int cantidad, String descuentoPorcentaje, String estado, Integer disponible) {
+            String precio, int cantidad, String descuentoPorcentaje, String estado, Integer disponible,
+            Integer unidadesComprables) {
 
         public static Linea ok(long varianteId, String producto, String precio, int cantidad) {
             return new Linea(varianteId, varianteId / 10, "SKU-" + varianteId, producto, "M", "Negro", precio,
-                    cantidad, "0", "OK", null);
+                    cantidad, "0", "OK", null, null);
         }
 
         public Linea conDescuento(String porcentaje) {
             return new Linea(varianteId, productoId, sku, producto, talla, color, precio, cantidad, porcentaje,
-                    estado, disponible);
+                    estado, disponible, unidadesComprables);
         }
 
         public Linea conEstado(String nuevoEstado, Integer cuantosQuedan) {
             return new Linea(varianteId, productoId, sku, producto, talla, color, precio, cantidad,
-                    descuentoPorcentaje, nuevoEstado, cuantosQuedan);
+                    descuentoPorcentaje, nuevoEstado, cuantosQuedan, unidadesComprables);
+        }
+
+        /** Stock acotado al tramo más alto que catalog publica en la cotización (CA-2-90). */
+        public Linea conUnidadesComprables(Integer unidades) {
+            return new Linea(varianteId, productoId, sku, producto, talla, color, precio, cantidad,
+                    descuentoPorcentaje, estado, disponible, unidades);
         }
 
         BigDecimal subtotal() {
@@ -59,12 +66,13 @@ public final class Simulados {
             return """
                 {"varianteId":%d,"productoId":%d,"sku":"%s","producto":"%s","slug":"slug-%d","talla":"%s","color":"%s",
                  "imagenUrl":"http://media/%d.jpg","precioUnitario":%s,"cantidad":%d,"subtotal":%s,"descuentoPorcentaje":%s,
-                 "descuentoMonto":%s,"total":%s,"estado":"%s","disponible":%s}"""
+                 "descuentoMonto":%s,"total":%s,"estado":"%s","disponible":%s%s}"""
                     .formatted(l.varianteId(), l.productoId(), l.sku(), l.producto(), l.productoId(), l.talla(),
                             l.color(), l.varianteId(), l.precio(), l.cantidad(), l.subtotal().toPlainString(),
                             l.descuentoPorcentaje(), l.descuento().toPlainString(),
                             l.subtotal().subtract(l.descuento()).toPlainString(), l.estado(),
-                            l.disponible() == null ? "null" : l.disponible().toString());
+                            l.disponible() == null ? "null" : l.disponible().toString(),
+                            l.unidadesComprables() == null ? "" : ",\"unidadesComprables\":" + l.unidadesComprables());
         }).collect(Collectors.joining(","));
         for (Linea l : lineas) {
             subtotal = subtotal.add(l.subtotal());
