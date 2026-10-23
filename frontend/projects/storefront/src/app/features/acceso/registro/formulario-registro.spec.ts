@@ -68,7 +68,12 @@ async function iniciar(opciones: { politicas?: boolean } = {}) {
 }
 
 describe('FormularioRegistro (P-1-02)', () => {
-  afterEach(() => TestBed.inject(HttpTestingController).verify());
+  afterEach(() => {
+    // Tras registrarse se carga el carrito del cliente (contador de la bolsa): no es lo que estas pruebas miran
+    const ctrl = TestBed.inject(HttpTestingController);
+    ctrl.match('/api/v1/carrito').forEach((r) => r.flush({ success: true, mensaje: 'ok', data: null }));
+    ctrl.verify();
+  });
 
   it('CA-1-01 envía el registro con las versiones de las políticas de /settings/public, inicia sesión y vuelve al origen', async () => {
     const f = await iniciar();

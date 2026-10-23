@@ -62,3 +62,33 @@ export function carrito(
     ...extra,
   };
 }
+
+/** Legging Pro (producto 10) con tramo del 10 % desde 3 unidades y del 15 % desde 6. */
+export function conTramo(unidades: number, extra: Partial<orderApi.LineaCarrito> = {}) {
+  const pct = unidades >= 3 ? 10 : 0;
+  const descuento = Math.round(59.9 * unidades * pct) / 100;
+  return carrito(
+    [
+      linea(101, 'Legging Pro', unidades, {
+        productoId: 10,
+        descuentoPorcentaje: pct,
+        descuentoMonto: descuento,
+        total: Math.round((59.9 * unidades - descuento) * 100) / 100,
+        ...extra,
+      }),
+    ],
+    {
+      avisosTramo: [
+        {
+          productoId: 10,
+          producto: 'Legging Pro',
+          unidades,
+          tramoAlcanzado: pct ? { unidadesMinimas: 3, porcentaje: 10 } : null,
+          siguienteTramo: pct
+            ? { unidadesMinimas: 6, porcentaje: 15, faltan: Math.max(0, 6 - unidades) }
+            : { unidadesMinimas: 3, porcentaje: 10, faltan: 3 - unidades },
+        },
+      ],
+    },
+  );
+}
