@@ -46,7 +46,7 @@ describe('Interceptores requestId y autenticación', () => {
 });
 
 describe('Interceptor carritoId', () => {
-  it('CA-0b-14 la tienda sin sesión manda X-Carrito-Id en /carrito, creando y guardando el UUID', () => {
+  it('CA-0b-14 y CA-4-09 la tienda sin sesión manda X-Carrito-Id en /carrito, creando y guardando el UUID', () => {
     const { http, ctrl, store } = configurar({ carrito: true });
     expect(store.autenticado()).toBe(false);
 
