@@ -5,7 +5,7 @@
 > **Depende de:** 0a (gateway y CI), la etapa de contratos (OpenAPI para generar los clientes) y la etapa de diseño (**sistema de diseño**: los componentes de `ui/` se construyen según él). · **Habilita:** pantallas de las specs 1–8.
 
 **Historial:**
-- v13 (2026-10-22): la cabecera de la tienda pasa al color secundario del tema, como la vista previa de Configuración (CA-0b-20d); el aviso queda centrado en vertical (CA-0b-25b); el diálogo cierra con Escape desde cualquier punto y, opcionalmente, con clic en el fondo (CA-0b-25c).
+- v13 (2026-10-22): la cabecera de la tienda pasa al color secundario del tema, como la vista previa de Configuración (CA-0b-20d); las etiquetas del menú no se parten (CA-0b-20e); el aviso queda centrado en vertical (CA-0b-25b); el diálogo cierra con Escape desde cualquier punto y, opcionalmente, con clic en el fondo (CA-0b-25c).
 - v12 (2026-10-20): por CK2, R2 fija que cada pantalla del backoffice carga su **propio arreglo de rutas** (exportación con nombre de su carpeta), para que dos pantallas de la misma carpeta no reciban la misma ruta. Se registran las decisiones tomadas al implementar 0b (sección "Decisiones de implementación").
 - v11 (2026-10-20): ruta de los clientes generados unificada con R1: `shared/src/lib/api/<servicio>/` (`ng-packagr` empaqueta bajo `src/`; detectado por el agente de 0b.1).
 - v10 (2026-10-20): DoD ajustado (decisión del autor): `/settings/public`, `/categorias`, `/staff/me` y `/ubigeo` llegan con las specs 1–3, así que en 0b la marca se verifica con pruebas (respuesta simulada) y en vivo con el tema por defecto (CA-0b-07); la verificación en vivo con los datos semilla pasa a la SPEC-3.
@@ -174,6 +174,10 @@ CA-0b-20c Cuando paso el mouse o el foco del teclado por una categoría del men�
 CA-0b-20d Cuando abro la tienda
           Entonces la cabecera usa el color secundario del tema (fondo `fs-color-secundario`, textos, íconos y contador
                con `fs-color-en-secundario`), igual que la vista previa de Configuración de tienda (CA-3-09)
+
+CA-0b-20e Cuando abro la tienda en escritorio (1024, 1280 o 1440 px)
+          Entonces cada etiqueta del menú queda en una sola línea (nunca "POLOS Y / TOPS") y la cabecera no desborda:
+               el espacio entre categorías y el ancho del buscador se adaptan al ancho de la ventana
 
 CA-0b-21  Cuando abro la tienda en un celular (390 px)
           Entonces todas las categorías y la cuenta pasan a un menú lateral (☰) junto al logo, sin scroll horizontal
@@ -358,7 +362,7 @@ No aplica (no hay base de datos). En el navegador: `localStorage` solo para la c
 | 05–08 | Unitaria + manual | `shared/theme/*.spec.ts` (variables escritas, respaldo, valores por defecto) |
 | 09–14 | Unitaria | `shared/http/*.spec.ts` con `HttpTestingController` (refresh único con 3 peticiones simultáneas, logout al fallar, mapeo de errores, `X-Carrito-Id`) |
 | 15–19 | Unitaria | pruebas de rutas y guards por app |
-| 20–24 (incl. 20b, 20c, 20d) | Componente | pruebas de `TiendaShell` y `BackofficeShell` (incluye ancho 390 px y el límite de 4 categorías) |
+| 20–24 (incl. 20b, 20c, 20d, 20e) | Componente | pruebas de `TiendaShell` y `BackofficeShell` (incluye ancho 390 px y el límite de 4 categorías) |
 | 25–28, 25b, 25c, 28b | Componente | pruebas de cada componente de `ui/` y de los pipes; `fs-tabla.spec.ts` (enlace, clic en fila, acciones sin propagar, tabla sin detalle) |
 | 29 | Script | `npm run api:generate` en CI |
 
@@ -376,7 +380,7 @@ No aplica (no hay base de datos). En el navegador: `localStorage` solo para la c
 
 ## 9. Definición de terminado
 
-- [ ] CA-0b-01 a CA-0b-30 (y CA-0b-20b, CA-0b-20c, CA-0b-20d, CA-0b-25b, CA-0b-25c, CA-0b-28b) cumplidos.
+- [ ] CA-0b-01 a CA-0b-30 (y CA-0b-20b, CA-0b-20c, CA-0b-20d, CA-0b-20e, CA-0b-25b, CA-0b-25c, CA-0b-28b) cumplidos.
 - [ ] Las dos apps arrancan contra la plataforma 0a; en vivo muestran el tema FitStore por defecto (CA-0b-07, porque `/settings/public` llega con la SPEC-3) y la marca de settings queda verificada con pruebas que simulan su respuesta (CA-0b-05 a CA-0b-08). La verificación en vivo con los datos semilla es parte del DoD de la SPEC-3.
 - [ ] `/_ui` muestra todos los componentes de `ui/` en ambas apps.
 - [ ] Sin tokens en `localStorage`; sin atribución de IA en commits.

@@ -27,13 +27,24 @@ import { TramosDescuento } from './tramos-descuento';
 /** Tope de la cantidad cuando la API solo dice "Disponible" (más de 5 unidades); el servidor valida el stock real. */
 const MAXIMO_SIN_DATO = 99;
 
-/** Unidades que se sabe que hay en la variante (ver `maximo`). */
-const topeDe = (v: catalogApi.VariantePublica): number =>
+/**
+ * Unidades que se sabe que hay en la variante para los tramos: AGOTADO = 0, `unidadesComprables` (stock acotado al
+ * tramo más alto, CA-2-73), "Últimas N" = N; sin ese dato, el tope genérico.
+ */
+const stockTramos = (v: catalogApi.VariantePublica): number =>
   v.disponibilidad === 'AGOTADO'
     ? 0
-    : v.disponibilidad === 'ULTIMAS'
-      ? (v.ultimasUnidades ?? 1)
-      : MAXIMO_SIN_DATO;
+    : (v.unidadesComprables ??
+      (v.disponibilidad === 'ULTIMAS' ? (v.ultimasUnidades ?? 1) : MAXIMO_SIN_DATO));
+
+/** Tope del selector de cantidad: el stock exacto si se conoce (menor que el tramo más alto o "Últimas N"); si no, el genérico. */
+const stockSelector = (v: catalogApi.VariantePublica, tramoMasAlto: number): number => {
+  if (v.disponibilidad === 'AGOTADO') return 0;
+  if (v.disponibilidad === 'ULTIMAS') return v.ultimasUnidades ?? 1;
+  return v.unidadesComprables != null && v.unidadesComprables < tramoMasAlto
+    ? v.unidadesComprables
+    : MAXIMO_SIN_DATO;
+};
 
 /** P-2-02: detalle del producto con color, talla, disponibilidad, tramos, guía de tallas y "Agregar al carrito". */
 @Component({
@@ -175,7 +186,11 @@ const topeDe = (v: catalogApi.VariantePublica): number =>
             />
           </div>
           <fs-indicador-stock [variante]="variante()" />
-          <fs-tramos-descuento [tramos]="p.tramos" [maximo]="maximo()" [(cantidad)]="cantidad" />
+          <fs-tramos-descuento
+            [tramos]="p.tramos"
+            [maximo]="maximoTramos()"
+            [(cantidad)]="cantidad"
+          />
           <div class="acciones">
             <fs-selector-cantidad
               [maximo]="maximo()"
@@ -293,18 +308,29 @@ export class DetallePage {
     () => this.variante()?.precio ?? this.producto.value()?.precioDesde ?? 0,
   );
   /**
-   * Unidades que se pueden comprar: el stock de la variante elegida cuando se conoce (AGOTADO = 0, ULTIMAS = N;
-   * con DISPONIBLE la API solo dice "más del umbral" y se usa el tope genérico). Sin talla elegida, el mayor de las
-   * variantes del color, para que los tramos grises sigan siendo útiles antes de elegir talla (CA-2-69).
+   * Tope del selector de cantidad: el stock de la variante elegida cuando se conoce (AGOTADO = 0, ULTIMAS = N,
+   * unidadesComprables si es menor que el tramo más alto; si no, el tope genérico). Sin talla elegida, el mayor de las
+   * variantes del color (CA-2-69, CA-2-73).
    */
   protected readonly maximo = computed(() => {
+    const tope = Math.max(
+      0,
+      ...(this.producto.value()?.tramos ?? []).map((t) => t.unidadesMinimas),
+    );
+    return this.mayorStock((v) => stockSelector(v, tope));
+  });
+  /** Unidades para decidir qué tramos se ven grises (CA-2-69, CA-2-73). */
+  protected readonly maximoTramos = computed(() => this.mayorStock(stockTramos));
+
+  /** Valor de la variante elegida o, sin talla, el mayor entre las variantes del color. */
+  private mayorStock(valor: (v: catalogApi.VariantePublica) => number): number {
     const v = this.variante();
-    if (v) return topeDe(v);
+    if (v) return valor(v);
     const delColor = (this.producto.value()?.variantes ?? []).filter(
       (x) => x.colorId === this.colorId(),
     );
-    return delColor.length ? Math.max(...delColor.map(topeDe)) : MAXIMO_SIN_DATO;
-  });
+    return delColor.length ? Math.max(...delColor.map(valor)) : MAXIMO_SIN_DATO;
+  }
   protected readonly nombreColor = capitalizar;
 
   /** Categorías de las migas: la padre y la hija (o solo la raíz), sacadas del árbol; sin árbol, la del producto. */

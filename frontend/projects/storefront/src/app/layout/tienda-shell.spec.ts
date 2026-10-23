@@ -236,6 +236,14 @@ describe('TiendaShell: cabecera', () => {
     expect(contador).toMatch(/color:\s*var\(--fs-color-secundario\)/);
   });
 
+  it('CA-0b-20e las etiquetas del menú no se parten en dos líneas y el espaciado se adapta al ancho', () => {
+    const enlace = /\.fs-nav a\s*\{([^}]*)\}/.exec(estilos)![1];
+    expect(enlace).toMatch(/white-space:\s*nowrap/);
+    const nav = /\.fs-nav\s*\{([^}]*)\}/.exec(estilos)![1];
+    expect(nav).toMatch(/gap:\s*clamp\(/);
+    expect(nav).toMatch(/min-width:\s*0/);
+  });
+
   it('CA-0b-22 escribir en el buscador y presionar Enter navega a /productos?q=', async () => {
     const { el, estabilizar, router } = await abrir();
     await escribir(el, 'legging negro');

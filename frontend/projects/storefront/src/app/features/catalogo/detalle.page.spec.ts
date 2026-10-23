@@ -299,6 +299,45 @@ describe('DetallePage', () => {
     expect(tramo(el, '6 un.').disabled).toBe(true);
   });
 
+  const conComprables = (n: number) => ({
+    ...DETALLE,
+    variantes: DETALLE.variantes.map((v) => (v.id === 103 ? { ...v, unidadesComprables: n } : v)),
+  });
+
+  it('CA-2-73 con "Disponible", unidadesComprables pone grises los tramos que no alcanza y limita la cantidad', async () => {
+    const { el, fixture } = await abrir(conComprables(8));
+    talla(el, 'L').click();
+    await asentar(fixture);
+    expect(el.textContent).toContain('Disponible');
+    expect(tramo(el, '6 un.').disabled).toBe(false);
+    expect(tramo(el, '12 un.').disabled).toBe(true);
+    const mas = el.querySelector<HTMLButtonElement>('button[aria-label="Más unidades"]')!;
+    for (let i = 0; i < 12; i++) {
+      mas.click();
+      await asentar(fixture);
+    }
+    expect(cantidadActual(el)).toBe('8');
+  });
+
+  it('CA-2-73 si unidadesComprables llega al tramo más alto, ningún tramo se ve gris y la cantidad no se limita a él', async () => {
+    const { el, fixture } = await abrir(conComprables(12));
+    talla(el, 'L').click();
+    await asentar(fixture);
+    expect(tramo(el, '12 un.').disabled).toBe(false);
+    const mas = el.querySelector<HTMLButtonElement>('button[aria-label="Más unidades"]')!;
+    for (let i = 0; i < 14; i++) {
+      mas.click();
+      await asentar(fixture);
+    }
+    expect(Number(cantidadActual(el))).toBeGreaterThan(12);
+  });
+
+  it('CA-2-73 sin talla elegida usa el mayor unidadesComprables del color', async () => {
+    const { el } = await abrir(conComprables(8));
+    expect(tramo(el, '6 un.').disabled).toBe(false);
+    expect(tramo(el, '12 un.').disabled).toBe(true);
+  });
+
   const migas = (el: HTMLElement) =>
     Array.from(el.querySelectorAll('nav.migas > *:not([aria-hidden])')).map((n) => ({
       texto: n.textContent?.trim(),

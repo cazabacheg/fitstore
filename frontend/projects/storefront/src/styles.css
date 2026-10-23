@@ -636,8 +636,9 @@ textarea.fs-input {
 /* Cabecera y pie de la tienda (P-0b-01: TiendaCabecera / TiendaPie) */
 .fs-nav {
   display: flex;
-  gap: 40px;
+  gap: clamp(16px, 2.2vw, 40px);
   align-items: center;
+  min-width: 0;
 }
 .fs-nav a {
   font-size: 13px;
@@ -645,6 +646,7 @@ textarea.fs-input {
   font-weight: 500;
   letter-spacing: 0.08em;
   text-transform: uppercase;
+  white-space: nowrap;
   color: var(--fs-color-texto);
   text-decoration: none;
   padding-block: 8px;
@@ -778,7 +780,15 @@ textarea.fs-input {
   align-items: center;
 }
 .fs-busqueda {
-  width: 240px;
+  width: clamp(140px, 15vw, 240px);
+}
+@media (min-width: 721px) and (max-width: 1100px) {
+  .fs-cabecera__fila {
+    gap: 24px;
+  }
+  .fs-nav a {
+    letter-spacing: 0.04em;
+  }
 }
 .fs-contador {
   position: absolute;
