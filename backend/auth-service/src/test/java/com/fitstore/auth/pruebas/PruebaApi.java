@@ -9,6 +9,7 @@ import com.fitstore.auth.repository.ClienteRepository;
 import com.fitstore.auth.repository.StaffRepository;
 import java.util.List;
 import java.util.Map;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -48,7 +49,9 @@ public abstract class PruebaApi {
     @Autowired protected ClienteRepository clientes;
     @Autowired protected StaffRepository personal;
 
+    /** Limpia antes y después: las pruebas de repositorio que corren luego cuentan filas y no deben ver restos. */
     @BeforeEach
+    @AfterEach
     void limpiarEstado() {
         jdbc.execute("TRUNCATE TABLE token_password, consentimiento, direccion, cliente, staff, outbox_evento CASCADE");
         var claves = redis.keys("auth:*");

@@ -74,7 +74,7 @@ public class AuthController {
     @Operation(operationId = "refrescarSesion", summary = "Renovar el access token",
             security = @SecurityRequirement(name = "refreshCookie"))
     public ResponseEntity<ApiResponse<SesionResponse>> refrescar(HttpServletRequest peticion) {
-        return sesion(autenticacion.refrescar(cookie.leer(peticion)));
+        return sesion(autenticacion.refrescar(cookie.leer(peticion), peticion.getHeader(HttpHeaders.USER_AGENT)));
     }
 
     @PostMapping("/logout")
