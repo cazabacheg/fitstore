@@ -522,6 +522,9 @@ export class CheckoutPage {
         const api = comoApiError(e);
         if (api?.codigo === 'FUERA_DE_COBERTURA' || api?.codigo === 'SIN_COBERTURA' || api?.codigo === 'MODALIDAD_NO_DISPONIBLE') {
           this.mensaje.set(api.mensaje);
+        } else if (api?.codigo === 'CARRITO_VACIO') {
+          // CA-4-62: un carrito vacío no es un problema de envío
+          this.mensaje.set('Tu carrito está vacío');
         } else {
           this.errorEnvio.set(true);
         }

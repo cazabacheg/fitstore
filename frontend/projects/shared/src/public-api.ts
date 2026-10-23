@@ -26,7 +26,7 @@ export { provideFitstoreHttp, type OpcionesHttp } from './lib/http/proveedores';
 export { ToastService, type Toast, type TipoToast } from './lib/http/toast.service';
 export { EstadoServicio } from './lib/http/estado-servicio';
 export { camposConError, comoApiError } from './lib/http/api-error';
-export { CLAVE_CARRITO_ID, SIN_TOAST } from './lib/http/interceptores';
+export { CLAVE_CARRITO_ID, SIN_TOAST, leerCarritoId, olvidarCarritoId } from './lib/http/interceptores';
 
 export * from './lib/theme/colores';
 export { TemaService, CLAVE_RESPALDO_CONFIG } from './lib/theme/tema.service';

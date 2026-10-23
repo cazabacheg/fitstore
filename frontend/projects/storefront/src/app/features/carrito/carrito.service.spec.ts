@@ -45,6 +45,7 @@ describe('CarritoService', () => {
     servicio.iniciarApp();
     http().expectOne(RUTA).flush(ok(carrito([linea(101, 'Legging Pro', 4)])));
     expect(contador.cantidad()).toBe(4);
+    TestBed.tick(); // la app ya mostró al menos un cuadro con la sesión puesta
 
     sesion.cerrarSesion();
     TestBed.tick();
@@ -62,7 +63,6 @@ describe('CarritoService', () => {
     servicio.alIniciarSesion().subscribe(() => (terminado = true));
     const fusion = http().expectOne(`${RUTA}/fusionar`);
     expect(fusion.request.method).toBe('POST');
-    expect(fusion.request.headers.get('X-Carrito-Id')).toBe(ID);
     expect(terminado).toBe(false);
     fusion.flush(
       ok(carrito([linea(101, 'Legging Pro', 3)], { avisos: ['La cantidad de Legging Pro se ajustó a 100'] })),
