@@ -7,6 +7,8 @@
  */
 :root {
   --fs-font-marca: var(--font-poppins);
+  /* Paso de 20 px de la escala de espaciado: las pantallas lo usan y tokens.css no lo trae */
+  --espacio-5: 20px;
 }
 
 /*
@@ -716,5 +718,132 @@ textarea.fs-input {
   }
   .fs-bo__barra {
     padding-inline: 16px;
+  }
+}
+
+/*
+ * Espaciado del contenido (CA-0b-31). Cada pantalla es un elemento propio (`<fs-pedidos-page>`…) que por defecto
+ * es `display: inline`: sin una regla compartida sus bloques (título, filtros, tabla) quedan pegados. Aquí la
+ * pantalla se vuelve una rejilla de una columna con espacio entre bloques; las que ya definen su propio `:host`
+ * (con la misma especificidad y cargadas después) lo conservan.
+ */
+.fs-bo__contenido > router-outlet {
+  display: none;
+}
+.fs-bo__contenido > * {
+  display: grid;
+  /* `minmax(0, 1fr)`: la columna no crece por el ancho de una tabla; la tabla hace su propio scroll horizontal */
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--espacio-4);
+  align-content: start;
+  min-width: 0;
+}
+/* Con `:where` estas reglas de elemento valen poco: cualquier clase del sistema (p. ej. `.fs-estado__titulo`) las vence */
+:where(.fs-bo__contenido) h1 {
+  margin: 0;
+  font-size: 28px;
+  line-height: 34px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+:where(.fs-bo__contenido) h2,
+:where(.fs-bo__contenido) h3 {
+  margin: 0;
+  font-size: 17px;
+  line-height: 24px;
+  font-weight: 600;
+}
+:where(.fs-bo__contenido) p {
+  margin: 0;
+}
+:where(.fs-bo__contenido) form {
+  display: grid;
+  gap: var(--espacio-4);
+}
+:where(.fs-bo__contenido) fieldset {
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+:where(.fs-bo__contenido) legend {
+  padding: 0;
+  margin-bottom: var(--espacio-2);
+}
+.fs-tarjeta {
+  box-sizing: border-box;
+  padding: var(--espacio-5);
+  background: var(--fs-color-superficie);
+  border: 1px solid var(--fs-color-linea);
+  border-radius: var(--radio-lg);
+}
+.fs-titulo-seccion {
+  margin: 0;
+  font-size: 17px;
+  line-height: 24px;
+  font-weight: 600;
+}
+.fs-sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+@media (max-width: 720px) {
+  :where(.fs-bo__contenido) h1 {
+    font-size: 24px;
+    line-height: 30px;
+  }
+}
+
+/* Pantallas de acceso (ingresar, recuperar, restablecer), fuera del shell */
+.fs-acceso {
+  box-sizing: border-box;
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: var(--espacio-4);
+  background: var(--fs-color-fondo);
+}
+.fs-acceso__tarjeta {
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 420px;
+  padding: var(--espacio-8) var(--espacio-6);
+  border: 1px solid var(--fs-color-linea);
+  border-radius: var(--radio-lg);
+  background: var(--fs-color-superficie);
+  box-shadow: var(--sombra-1);
+}
+.fs-acceso__marca {
+  margin: 0 0 var(--espacio-4);
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--fs-color-primario-texto);
+}
+.fs-acceso__titulo {
+  margin: 0 0 var(--espacio-6);
+  font-size: 24px;
+  line-height: 32px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+.fs-acceso__tarjeta form {
+  display: grid;
+  gap: var(--espacio-4);
+}
+.fs-acceso__tarjeta p:not(.fs-acceso__marca) {
+  margin: var(--espacio-4) 0 0;
+}
+@media (max-width: 480px) {
+  .fs-acceso__tarjeta {
+    padding: var(--espacio-6) var(--espacio-4);
   }
 }

@@ -14,22 +14,22 @@ import { errorPassword } from '../validaciones';
   selector: 'fs-restablecer-page',
   imports: [CampoFormulario, RouterLink],
   template: `
-    <main class="acceso">
-      <section class="acceso__tarjeta">
-        <p class="acceso__marca">FitStore</p>
+    <main class="fs-acceso">
+      <section class="fs-acceso__tarjeta">
+        <p class="fs-acceso__marca">FitStore</p>
         @switch (estado()) {
           @case ('listo') {
-            <h1 style="margin: 0 0 var(--espacio-4)">Tu contraseña está lista</h1>
+            <h1 class="fs-acceso__titulo">Tu contraseña está lista</h1>
             <p class="fs-suave">Ya puedes ingresar al backoffice con tu nueva contraseña.</p>
             <a class="fs-btn fs-btn--primario" routerLink="/ingresar">Ingresar</a>
           }
           @case ('invalido') {
-            <h1 style="margin: 0 0 var(--espacio-4)">Enlace inválido o expirado</h1>
+            <h1 class="fs-acceso__titulo">Enlace inválido o expirado</h1>
             <p class="fs-suave">El enlace ya se usó, venció o fue reemplazado por uno más nuevo.</p>
             <a class="fs-btn fs-btn--primario" routerLink="/recuperar">Pedir otro enlace</a>
           }
           @default {
-            <h1 style="margin: 0 0 var(--espacio-5)">
+            <h1 class="fs-acceso__titulo">
               {{ invitacion ? 'Bienvenido al equipo' : 'Crea tu nueva contraseña' }}
             </h1>
             @if (invitacion) {
@@ -68,28 +68,6 @@ import { errorPassword } from '../validaciones';
         }
       </section>
     </main>
-  `,
-  styles: `
-    .acceso {
-      min-height: 100vh;
-      display: grid;
-      place-items: center;
-      padding: var(--espacio-4);
-      background: var(--color-fondo);
-    }
-    .acceso__tarjeta {
-      width: 100%;
-      max-width: 420px;
-      padding: var(--espacio-6);
-      border: 1px solid var(--color-linea);
-      border-radius: var(--radius-lg);
-      background: var(--color-superficie);
-    }
-    .acceso__marca {
-      margin: 0 0 var(--espacio-2);
-      font-weight: 700;
-      color: var(--color-primario-texto);
-    }
   `,
 })
 export class RestablecerPage {

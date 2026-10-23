@@ -59,7 +59,7 @@ const MODALIDADES = [
     }
     .fs-pestana--activa {
       color: var(--fs-color-texto);
-      border-bottom-color: var(--fs-color-marca, currentColor);
+      border-bottom-color: var(--fs-color-primario-texto);
       font-weight: 600;
     }
   `,
