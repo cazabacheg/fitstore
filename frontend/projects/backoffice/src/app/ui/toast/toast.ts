@@ -9,7 +9,7 @@ import {
 import { ToastService, type TipoToast } from 'shared';
 
 /** Cuánto dura un aviso de éxito, información o advertencia; los de error se quedan hasta cerrarlos. */
-const DURACION_MS = 8000;
+const DURACION_MS = 3000;
 const MAXIMO_VISIBLES = 3;
 const ICONOS: Record<TipoToast, string> = {
   exito: 'check_circle',

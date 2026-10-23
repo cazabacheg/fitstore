@@ -99,6 +99,10 @@ export class CuentaRegresiva {
         color: var(--fs-color-aviso);
         font-size: 14px;
       }
+      .fs-aviso-historial--exito {
+        background: var(--fs-color-exito-suave);
+        color: var(--fs-color-exito);
+      }
       .fs-linea-tiempo {
         list-style: none;
         margin: 0;
@@ -278,7 +282,7 @@ export class CuentaRegresiva {
                 }
               </ol>
               @for (a of avisos(); track a.fecha + a.texto) {
-                <p class="fs-aviso-historial" role="status">{{ a.fecha | fecha: 'fechaHora' }} · {{ a.texto }}</p>
+                <p class="fs-aviso-historial" [class.fs-aviso-historial--exito]="a.exito" role="status">{{ a.fecha | fecha: 'fechaHora' }} · {{ a.texto }}</p>
               }
             </section>
 

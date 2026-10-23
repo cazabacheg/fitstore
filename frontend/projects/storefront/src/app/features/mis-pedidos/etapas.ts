@@ -13,10 +13,12 @@ export interface Etapa {
   final?: boolean;
 }
 
-/** Aviso dentro de la línea de tiempo: intento de entrega fallido o pago rechazado. */
+/** Aviso dentro de la línea de tiempo: intento de entrega fallido, pago rechazado o el pago que se aprobó después. */
 export interface AvisoHistorial {
   fecha: string;
   texto: string;
+  /** El pago confirmado tras un rechazo se pinta en verde (CA-4-85). */
+  exito?: boolean;
 }
 
 /** Textos de la tabla de etapas del seguimiento (SPEC-4, O9). Fijos del frontend, no editables en settings. */
@@ -136,9 +138,18 @@ function finalDe(
   }
 }
 
-/** Intentos de entrega fallidos y pagos rechazados, para mostrarlos como avisos de la línea de tiempo. */
+/**
+ * Intentos de entrega fallidos y pagos rechazados, para mostrarlos como avisos de la línea de tiempo. Si antes del pago
+ * hubo un aviso, el pago confirmado también se lista, para que el último aviso no sea el rechazo (CA-4-85).
+ */
 export function avisosDelHistorial(historial: orderApi.HistorialEntrada[]): AvisoHistorial[] {
-  return historial
-    .filter((h) => h.tipo === 'INTENTO_FALLIDO' || h.tipo === 'PAGO_RECHAZADO')
-    .map((h) => ({ fecha: h.fecha, texto: h.comentario ?? 'Aviso del pedido' }));
+  const avisos: AvisoHistorial[] = [];
+  for (const h of historial) {
+    if (h.tipo === 'INTENTO_FALLIDO' || h.tipo === 'PAGO_RECHAZADO') {
+      avisos.push({ fecha: h.fecha, texto: h.comentario ?? 'Aviso del pedido' });
+    } else if (h.tipo === 'CAMBIO_ESTADO' && h.estadoNuevo === 'PAGADO' && avisos.length > 0) {
+      avisos.push({ fecha: h.fecha, texto: 'Pago confirmado', exito: true });
+    }
+  }
+  return avisos;
 }
