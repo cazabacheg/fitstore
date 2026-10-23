@@ -191,4 +191,34 @@ describe('CarritoService', () => {
     expect(servicio.stockMaximo(101)).toBe(2);
     expect(servicio.tramoAlcanzable(servicio.carrito()!.avisosTramo[0])).toBe(false);
   });
+
+  it('CA-4-81 al cargar el carrito aprende el stock exacto de unidadesComprables menor que el tramo más alto', () => {
+    const { servicio } = crear();
+
+    servicio.cargar();
+    http().expectOne(RUTA).flush(ok(conTramo(2, { unidadesComprables: 2 })));
+
+    expect(servicio.stockMaximo(101)).toBe(2);
+  });
+
+  it('CA-4-82 unidadesComprables igual o mayor que el tramo más alto conocido no limita la variante', () => {
+    const { servicio } = crear();
+
+    servicio.cargar();
+    http().expectOne(RUTA).flush(ok(conTramo(3, { unidadesComprables: 6 })));
+
+    expect(servicio.stockMaximo(101)).toBeNull();
+  });
+
+  it('CA-4-82 si el stock crece y unidadesComprables ya no limita, se olvida el tope anterior', () => {
+    const { servicio } = crear();
+    servicio.cargar();
+    http().expectOne(RUTA).flush(ok(conTramo(2, { unidadesComprables: 2 })));
+    expect(servicio.stockMaximo(101)).toBe(2);
+
+    servicio.cargar();
+    http().expectOne(RUTA).flush(ok(conTramo(2, { unidadesComprables: 6 })));
+
+    expect(servicio.stockMaximo(101)).toBeNull();
+  });
 });

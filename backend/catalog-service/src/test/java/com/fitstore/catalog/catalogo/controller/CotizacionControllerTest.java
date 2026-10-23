@@ -9,6 +9,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import com.fitstore.catalog.catalogo.model.Categoria;
 import com.fitstore.catalog.catalogo.model.EstadoProducto;
+import com.fitstore.catalog.catalogo.model.ModoDescuento;
 import com.fitstore.catalog.catalogo.model.Producto;
 import com.fitstore.catalog.catalogo.model.Variante;
 import com.fitstore.catalog.pruebas.ApiBase;
@@ -136,5 +137,67 @@ class CotizacionControllerTest extends ApiBase {
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.codigo").value("VALIDACION"));
         cotizar("").andExpect(status().isBadRequest());
+    }
+
+    @Test
+    @DisplayName("CA-2-90 cada línea cotizada trae unidadesComprables: el stock acotado al tramo más alto (40 en stock con tramos 3, 6 y 12 publica 12; con 8, 8)")
+    void unidadesComprablesAcotadasAlTramoMasAlto() throws Exception {
+        Categoria c = categoria("Comprables cotización", null);
+        Producto p = producto("COT90A", "Legging Comprable", "50.00", EstadoProducto.ACTIVO, c); // política global: 3, 6 y 12
+        Variante mucho = variante(p, "S", "negro", 40, 0);
+        Variante poco = variante(p, "M", "negro", 8, 0);
+        sincronizar();
+
+        cotizar(l(mucho.getId(), 1) + "," + l(poco.getId(), 1))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.lineas[0].unidadesComprables").value(12))
+                .andExpect(jsonPath("$.data.lineas[1].unidadesComprables").value(8));
+    }
+
+    @Test
+    @DisplayName("CA-2-91 una variante agotada publica unidadesComprables en 0 y una con stock insuficiente publica el stock real acotado")
+    void unidadesComprablesAgotadaYStockInsuficiente() throws Exception {
+        Categoria c = categoria("Comprables agotada", null);
+        Producto p = producto("COT91A", "Legging Agotable", "50.00", EstadoProducto.ACTIVO, c);
+        Variante agotada = variante(p, "S", "negro", 3, 3);
+        Variante corta = variante(p, "M", "negro", 5, 0);
+        sincronizar();
+
+        cotizar(l(agotada.getId(), 1) + "," + l(corta.getId(), 9))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.lineas[0].unidadesComprables").value(0))
+                .andExpect(jsonPath("$.data.lineas[1].estado").value("STOCK_INSUFICIENTE"))
+                .andExpect(jsonPath("$.data.lineas[1].disponible").value(5))
+                .andExpect(jsonPath("$.data.lineas[1].unidadesComprables").value(5));
+    }
+
+    @Test
+    @DisplayName("CA-2-92 sin tramos de descuento (SIN_DESCUENTO) la línea no trae unidadesComprables")
+    void unidadesComprablesAusenteSinTramos() throws Exception {
+        Categoria c = categoria("Comprables sin tramos", null);
+        Producto p = producto("COT92A", "Top Sin Tramos", "50.00", EstadoProducto.ACTIVO, c);
+        p.setModoDescuento(ModoDescuento.SIN_DESCUENTO);
+        productos.saveAndFlush(p);
+        Variante v = variante(p, "M", "negro", 40, 0);
+        sincronizar();
+
+        cotizar(l(v.getId(), 1))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.lineas[0].estado").value("OK"))
+                .andExpect(jsonPath("$.data.lineas[0].unidadesComprables").doesNotExist());
+    }
+
+    @Test
+    @DisplayName("CA-2-93 una línea NO_DISPONIBLE no trae unidadesComprables")
+    void unidadesComprablesAusenteEnNoDisponible() throws Exception {
+        Categoria c = categoria("Comprables no disponible", null);
+        Producto p = producto("COT93A", "Legging Borrador", "50.00", EstadoProducto.BORRADOR, c);
+        Variante v = variante(p, "M", "negro", 40, 0);
+        sincronizar();
+
+        cotizar(l(v.getId(), 1))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.lineas[0].estado").value("NO_DISPONIBLE"))
+                .andExpect(jsonPath("$.data.lineas[0].unidadesComprables").doesNotExist());
     }
 }
