@@ -50,6 +50,7 @@ type Nodo = catalogApi.CategoriaAdmin | catalogApi.CategoriaAdminHija;
       cursor: pointer;
     }
     .cuenta {
+      white-space: nowrap;
       color: var(--fs-color-texto-suave);
       font-size: 13px;
     }

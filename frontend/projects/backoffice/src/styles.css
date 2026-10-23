@@ -770,6 +770,54 @@ textarea.fs-input {
   padding: 0;
   margin-bottom: var(--espacio-2);
 }
+:where(.fs-bo__contenido) section,
+:where(.fs-bo__contenido) header {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--espacio-2);
+  align-content: start;
+}
+/* Pantallas que envuelven todo en una sección propia (pagos, notificaciones) */
+:where(.fs-bo__contenido) label:has(> .fs-input, > .fs-select) {
+  display: grid;
+  gap: var(--espacio-1);
+  font-size: 13px;
+  font-weight: 600;
+}
+.fs-pagina {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--espacio-4);
+  align-content: start;
+}
+/* Barra de botones de acción de una pantalla de detalle (no confundir con la columna `.fs-acciones` de las tablas) */
+section.fs-acciones {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--espacio-2);
+}
+.fs-grid-detalle {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: var(--espacio-6);
+}
+.fs-historial {
+  display: grid;
+  gap: var(--espacio-2);
+  margin: 0;
+  padding-left: var(--espacio-5);
+}
+.fs-chip-cliente {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--espacio-2);
+  padding: var(--espacio-1) var(--espacio-3);
+  border-radius: var(--radio-pill);
+  background: var(--fs-color-primario-suave);
+  color: var(--fs-color-primario-texto);
+  font-size: 13px;
+}
 .fs-tarjeta {
   box-sizing: border-box;
   padding: var(--espacio-5);

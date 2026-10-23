@@ -9,8 +9,8 @@ import {
 import { ToastService, type TipoToast } from 'shared';
 
 /** Cuánto dura un aviso de éxito, información o advertencia; los de error se quedan hasta cerrarlos. */
-const DURACION_MS = 5000;
-const MAXIMO_VISIBLES = 2;
+const DURACION_MS = 8000;
+const MAXIMO_VISIBLES = 3;
 const ICONOS: Record<TipoToast, string> = {
   exito: 'check_circle',
   error: 'error',
@@ -18,7 +18,7 @@ const ICONOS: Record<TipoToast, string> = {
   info: 'info',
 };
 
-/** Avisos flotantes (ficha `Aviso`): dibuja los de `ToastService`, máximo dos a la vez. */
+/** Avisos flotantes (ficha `Aviso`): dibuja los de `ToastService`, máximo tres a la vez. */
 @Component({
   selector: 'fs-toast',
   changeDetection: ChangeDetectionStrategy.OnPush,

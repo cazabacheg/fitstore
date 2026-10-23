@@ -1,10 +1,45 @@
+/* Esquina superior derecha, sobre la barra y los diálogos (z-index de Material: 1000 a 1100) */
 .fs-toasts {
   position: fixed;
+  top: var(--espacio-4);
   right: var(--espacio-4);
-  bottom: var(--espacio-4);
   z-index: 2000;
   display: grid;
-  gap: var(--espacio-2);
+  gap: var(--espacio-3);
+  width: min(440px, calc(100vw - 2 * var(--espacio-4)));
+}
+.fs-aviso {
+  box-sizing: border-box;
+  align-items: center;
+  min-width: 320px;
+  max-width: none;
+  padding: var(--espacio-4) var(--espacio-5);
+  border-width: 1px 1px 1px 6px;
+  border-style: solid;
+  box-shadow: var(--sombra-2);
+}
+.fs-aviso .fs-icono {
+  font-size: 28px;
+}
+.fs-aviso--exito {
+  background: var(--fs-color-exito-suave);
+  border-color: var(--fs-color-exito);
+  color: var(--fs-color-exito);
+}
+.fs-aviso--error {
+  background: var(--fs-color-error-suave);
+  border-color: var(--fs-color-error);
+  color: var(--fs-color-error);
+}
+.fs-aviso--aviso {
+  background: var(--fs-color-aviso-suave);
+  border-color: var(--fs-color-aviso);
+  color: var(--fs-color-aviso);
+}
+.fs-aviso--info {
+  background: var(--fs-color-info-suave);
+  border-color: var(--fs-color-info);
+  color: var(--fs-color-info);
 }
 .fs-aviso--aviso .fs-icono {
   color: var(--fs-color-aviso);
@@ -12,19 +47,31 @@
 .fs-aviso__texto {
   margin: 0;
   flex: 1;
-  font-size: 14px;
-  line-height: 20px;
+  font-size: 16px;
+  line-height: 24px;
+  font-weight: 500;
 }
 .fs-aviso__cerrar {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
   border: 0;
+  border-radius: var(--radio-pill);
   background: none;
   padding: 0;
-  color: var(--fs-color-texto-suave);
+  color: inherit;
   cursor: pointer;
+}
+.fs-aviso__cerrar:hover {
+  background: rgb(0 0 0 / 0.08);
 }
 @media (max-width: 720px) {
   .fs-toasts {
     left: var(--espacio-4);
-    justify-items: center;
+    width: auto;
+  }
+  .fs-aviso {
+    min-width: 0;
   }
 }

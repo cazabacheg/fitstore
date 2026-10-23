@@ -8,7 +8,7 @@ export const appConfig: ApplicationConfig = {
     provideBrowserGlobalErrorListeners(),
     provideRouter(routes),
     // Los clientes de API llaman a /api del mismo dominio; el backoffice no usa el carrito.
-    provideFitstoreHttp({ carrito: false }),
+    provideFitstoreHttp({ carrito: false, avisarErroresDeCampos: true }),
     // El backoffice solo admite cuentas STAFF; la sesión se recupera con el refresh por cookie al arrancar.
     provideSesion({ tipo: 'STAFF', rutaLogin: '/ingresar', rutaSinPermiso: '/403' }),
     provideTema(),

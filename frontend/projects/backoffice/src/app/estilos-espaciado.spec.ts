@@ -53,7 +53,7 @@ describe('Estilos compartidos del backoffice: espaciado', () => {
 
   it('CA-0b-31 existen las clases que las pantallas ya usan: tarjeta, título de sección y accesibilidad', () => {
     const css = sinComentarios(GLOBAL);
-    for (const clase of ['fs-tarjeta', 'fs-titulo-seccion', 'fs-sr-only', 'fs-acceso', 'fs-acceso__tarjeta', 'fs-acceso__titulo']) {
+    for (const clase of ['fs-tarjeta', 'fs-titulo-seccion', 'fs-sr-only', 'fs-acceso', 'fs-acceso__tarjeta', 'fs-acceso__titulo', 'fs-pagina', 'fs-grid-detalle', 'fs-historial', 'fs-chip-cliente']) {
       expect(css).toMatch(new RegExp(`\\.${clase}\\b`));
     }
     expect(/\.fs-tarjeta\s*\{([^}]*)\}/.exec(css)?.[1]).toMatch(/padding:\s*var\(--espacio-(4|5|6)\)/);
