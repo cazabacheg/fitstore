@@ -7,7 +7,6 @@ import com.fitstore.order.carrito.dto.CambiarCantidadRequest;
 import com.fitstore.order.carrito.dto.CarritoDto;
 import com.fitstore.order.carrito.model.CarritoId;
 import com.fitstore.order.carrito.service.CarritoService;
-import com.fitstore.order.pedidos.controller.ExtensionDeAlcance;
 import jakarta.validation.Valid;
 import java.util.UUID;
 import org.springframework.http.HttpStatus;
@@ -78,12 +77,27 @@ public class CarritoController {
         return ApiResponse.ok(servicio.quitar(carrito, varianteId));
     }
 
-    /** Extensión de alcance (HU-4-02): conserva la firma del contrato, sin lógica. */
+    /**
+     * HU-4-02: al iniciar sesión suma el carrito anónimo (cabecera) al del cliente. Una cabecera ausente o que no es
+     * un UUID se trata como "sin carrito anónimo".
+     */
     @PostMapping("/fusionar")
     @PreAuthorize("hasRole('CLIENTE')")
-    public ApiResponse<CarritoDto> fusionarCarrito(
+    public ApiResponse<CarritoDto> fusionarCarrito(Authentication autenticacion,
             @RequestHeader(name = CABECERA, required = false) String carritoId) {
-        throw ExtensionDeAlcance.de("Fusionar el carrito");
+        CarritoId cliente = identificar(autenticacion, null, true);
+        return ApiResponse.ok(servicio.fusionar(cliente, anonimoOpcional(carritoId)));
+    }
+
+    private static CarritoId anonimoOpcional(String carritoId) {
+        if (carritoId == null || carritoId.isBlank()) {
+            return null;
+        }
+        try {
+            return CarritoId.anonimo(UUID.fromString(carritoId).toString());
+        } catch (IllegalArgumentException e) {
+            return null;
+        }
     }
 
     /**

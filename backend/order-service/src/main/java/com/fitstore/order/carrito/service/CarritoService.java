@@ -100,6 +100,37 @@ public class CarritoService {
         return ver(carrito);
     }
 
+    /**
+     * Fusión al iniciar sesión (CA-4-10): suma lo del carrito anónimo al del cliente, borra el anónimo y devuelve el
+     * carrito resultante. Una suma que pasa del tope por línea queda en el tope y se avisa. Sin carrito anónimo
+     * ({@code null}) solo devuelve el carrito del cliente, así que repetir la llamada no cambia nada.
+     */
+    public CarritoDto fusionar(CarritoId cliente, CarritoId anonimo) {
+        if (anonimo == null) {
+            return ver(cliente);
+        }
+        int tope = propiedades.carrito().maxUnidadesLinea();
+        Map<Long, Integer> resultado = carritos.fusionar(anonimo, cliente);
+        List<Long> ajustadas = new java.util.ArrayList<>();
+        resultado.forEach((variante, cantidad) -> {
+            if (cantidad > tope) {
+                carritos.establecerLinea(cliente, variante, tope);
+                ajustadas.add(variante);
+            }
+        });
+        CarritoDto carrito = ver(cliente);
+        if (ajustadas.isEmpty()) {
+            return carrito;
+        }
+        List<String> avisos = ajustadas.stream()
+                .map(v -> "La cantidad de " + carrito.lineas().stream().filter(l -> v.equals(l.varianteId()))
+                        .map(LineaCarritoDto::producto).findFirst().orElse("un producto") + " se ajustó a " + tope)
+                .toList();
+        return new CarritoDto(carrito.lineas(), carrito.avisosTramo(), carrito.subtotal(), carrito.descuentoTotal(),
+                carrito.total(), carrito.cantidadTotal(), carrito.preciosPorConfirmar(), carrito.puedeIrAlCheckout(),
+                avisos);
+    }
+
     public CarritoDto vaciar(CarritoId carrito) {
         carritos.vaciar(carrito);
         return CarritoDto.vacio();

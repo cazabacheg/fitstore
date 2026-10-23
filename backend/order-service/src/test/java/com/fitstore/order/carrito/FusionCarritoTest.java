@@ -130,7 +130,8 @@ class FusionCarritoTest extends ApiBase {
     @DisplayName("CA-4-12 el checkout del cliente deja de responder CARRITO_VACIO cuando el carrito se fusionó antes")
     void checkoutVeElCarritoFusionado() throws Exception {
         Simulados.cotizar(Linea.ok(101, "Legging Pro", "59.90", 2));
-        Simulados.configuracion(List.of("RECOJO"), 30);
+        Simulados.perfil(clienteId.toString());
+        Simulados.configuracion(List.of("DELIVERY_LOCAL", "AGENCIA", "RECOJO"), 30);
         carritos.establecerLinea(anonimo, 101, 2);
 
         mvc.perform(post("/api/v1/checkout/resumen").with(Sesiones.cliente(clienteId))
