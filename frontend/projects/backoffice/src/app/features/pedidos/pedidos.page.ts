@@ -20,6 +20,13 @@ const NOMBRE_MODALIDAD: Record<string, string> = {
   RECOJO: 'Recojo',
 };
 
+/**
+ * Con un orden elegido se agrega el código como desempate: muchos pedidos comparten total, estado o fecha y,
+ * sin un criterio único, el servidor puede repetir u omitir filas al pasar de página.
+ */
+const conDesempate = (sort: string[]): string[] =>
+  sort.length > 0 && !sort.some((s) => s.startsWith('codigo,')) ? [...sort, 'codigo,asc'] : sort;
+
 const CHIPS: ChipFiltro[] = Object.entries(ESTADOS.pedido).map(([valor, d]) => ({ valor, etiqueta: d.etiqueta }));
 const SELECTS: SelectFiltro[] = [
   {
@@ -87,11 +94,11 @@ export class PedidosPage {
   protected readonly selects = SELECTS;
   protected readonly chips = CHIPS;
   protected readonly columnas: ColumnaTabla<Fila>[] = [
-    { clave: 'codigo', titulo: 'Pedido', valor: (f) => f.codigo },
+    { clave: 'codigo', titulo: 'Pedido', valor: (f) => f.codigo, ordenable: true },
     { clave: 'creadoEn', titulo: 'Fecha', valor: (f) => new FechaPipe().transform(f.creadoEn, 'fechaHora'), ordenable: true },
     { clave: 'clienteNombre', titulo: 'Cliente', valor: (f) => f.clienteNombre },
     { clave: 'modalidad', titulo: 'Modalidad', valor: (f) => NOMBRE_MODALIDAD[f.modalidad] ?? f.modalidad },
-    { clave: 'estado', titulo: 'Estado' },
+    { clave: 'estado', titulo: 'Estado', ordenable: true },
     { clave: 'total', titulo: 'Total', valor: (f) => new PrecioPipe().transform(f.total), ordenable: true },
   ];
   protected readonly enlace = (fila: Fila) => ['/pedidos', fila.id];
@@ -154,7 +161,7 @@ export class PedidosPage {
         p.get('clienteId') || undefined,
         c.page,
         c.size,
-        c.sort,
+        conDesempate(c.sort ?? []),
         'body',
         false,
         { context: new HttpContext().set(SIN_TOAST, true) },
