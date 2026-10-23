@@ -9,7 +9,7 @@ import {
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
-import { SIN_TOAST, SesionStore, ToastService, catalogApi, comoApiError } from 'shared';
+import { SIN_TOAST, SesionStore, ToastService, camposConError, catalogApi, comoApiError } from 'shared';
 import { CategoriasAdminService, MaestrosAdminService, ProductosAdminService } from 'shared/api/catalog-service';
 import { forkJoin, map, of, switchMap } from 'rxjs';
 import { EncabezadoPagina } from '../../layout/encabezado-pagina';
@@ -140,27 +140,35 @@ interface OpcionCategoria {
       @switch (pestana()) {
         @case ('datos') {
           <form (submit)="$event.preventDefault(); guardar()">
-            <label class="fs-campo">
+            <label class="fs-campo" [class.fs-campo--error]="!!errores()['codigo']">
               <span class="fs-campo__etiqueta">Código</span>
               <input
                 class="fs-input"
                 name="codigo"
                 [value]="codigo()"
                 [disabled]="soloLectura()"
-                (input)="codigo.set($any($event.target).value)"
+                [attr.aria-invalid]="errores()['codigo'] ? 'true' : null"
+                (input)="codigo.set($any($event.target).value); limpiarError('codigo')"
               />
+              @if (errores()['codigo']; as e) {
+                <span class="fs-campo__error" data-error="codigo">{{ e }}</span>
+              }
             </label>
-            <label class="fs-campo">
+            <label class="fs-campo" [class.fs-campo--error]="!!errores()['nombre']">
               <span class="fs-campo__etiqueta">Nombre</span>
               <input
                 class="fs-input"
                 name="nombre"
                 [value]="nombre()"
                 [disabled]="soloLectura()"
-                (input)="nombre.set($any($event.target).value)"
+                [attr.aria-invalid]="errores()['nombre'] ? 'true' : null"
+                (input)="nombre.set($any($event.target).value); limpiarError('nombre')"
               />
+              @if (errores()['nombre']; as e) {
+                <span class="fs-campo__error" data-error="nombre">{{ e }}</span>
+              }
             </label>
-            <label class="fs-campo">
+            <label class="fs-campo" [class.fs-campo--error]="!!errores()['precioBase']">
               <span class="fs-campo__etiqueta">Precio base (S/)</span>
               <input
                 class="fs-input"
@@ -170,10 +178,14 @@ interface OpcionCategoria {
                 step="0.01"
                 [value]="precioBase()"
                 [disabled]="soloLectura()"
-                (input)="precioBase.set($any($event.target).value)"
+                [attr.aria-invalid]="errores()['precioBase'] ? 'true' : null"
+                (input)="precioBase.set($any($event.target).value); limpiarError('precioBase')"
               />
+              @if (errores()['precioBase']; as e) {
+                <span class="fs-campo__error" data-error="precioBase">{{ e }}</span>
+              }
             </label>
-            <label class="fs-campo">
+            <label class="fs-campo" [class.fs-campo--error]="!!errores()['descripcion']">
               <span class="fs-campo__etiqueta">Descripción</span>
               <textarea
                 class="fs-input"
@@ -181,8 +193,12 @@ interface OpcionCategoria {
                 rows="4"
                 [value]="descripcion()"
                 [disabled]="soloLectura()"
-                (input)="descripcion.set($any($event.target).value)"
+                [attr.aria-invalid]="errores()['descripcion'] ? 'true' : null"
+                (input)="descripcion.set($any($event.target).value); limpiarError('descripcion')"
               ></textarea>
+              @if (errores()['descripcion']; as e) {
+                <span class="fs-campo__error" data-error="descripcion">{{ e }}</span>
+              }
             </label>
             <fieldset class="categorias">
               <legend class="fs-campo__etiqueta">Categorías</legend>
@@ -266,6 +282,8 @@ export class ProductoFormPage {
   protected readonly precioBase = signal<string | number>('');
   protected readonly descripcion = signal('');
   protected readonly categoriaIds = signal<number[]>([]);
+  /** Errores por campo: los de la validación del cliente y los que devuelve el servidor (400 con `errores`). */
+  protected readonly errores = signal<Record<string, string>>({});
 
   protected readonly soloLectura = computed(() => this.sesion.rol() !== 'ADMIN');
   protected readonly opcionesCategoria = computed<OpcionCategoria[]>(() =>
@@ -310,11 +328,43 @@ export class ProductoFormPage {
     this.categoriaIds.set(p?.categoriaIds ?? []);
   }
 
+  /**
+   * Marcar una subcategoría marca también a su padre (el producto pertenece a ambas por herencia). Desmarcar al padre
+   * desmarca sus subcategorías, para no dejar una hija marcada sin su padre; desmarcar solo una hija deja al padre.
+   */
   protected alternarCategoria(id: number): void {
-    this.categoriaIds.update((l) => (l.includes(id) ? l.filter((x) => x !== id) : [...l, id]));
+    const padre = this.categorias().find((c) => c.hijas.some((h) => h.id === id));
+    const hijas = this.categorias().find((c) => c.id === id)?.hijas.map((h) => h.id) ?? [];
+    this.categoriaIds.update((lista) => {
+      if (lista.includes(id)) return lista.filter((x) => x !== id && !hijas.includes(x));
+      return padre && !lista.includes(padre.id) ? [...lista, id, padre.id] : [...lista, id];
+    });
+  }
+
+  protected limpiarError(campo: string): void {
+    if (!this.errores()[campo]) return;
+    this.errores.update(({ [campo]: _quitado, ...resto }) => resto);
+  }
+
+  /** Las mismas reglas que `ProductoRequest` del contrato (código, nombre, precio y descripción). */
+  private validar(): Record<string, string> {
+    const errores: Record<string, string> = {};
+    if (!/^[A-Z0-9]{2,20}$/.test(this.codigo().trim()))
+      errores['codigo'] = 'El código usa de 2 a 20 letras mayúsculas o números';
+    const nombre = this.nombre().trim();
+    if (nombre.length < 3 || nombre.length > 120)
+      errores['nombre'] = 'El nombre debe tener de 3 a 120 caracteres';
+    if (!/^\d{1,8}(\.\d{1,2})?$/.test(String(this.precioBase()).trim()))
+      errores['precioBase'] = 'Ingresa un precio igual o mayor que 0, con hasta 2 decimales';
+    if (this.descripcion().trim().length > 5000)
+      errores['descripcion'] = 'La descripción admite hasta 5000 caracteres';
+    return errores;
   }
 
   protected guardar(): void {
+    const invalidos = this.validar();
+    this.errores.set(invalidos);
+    if (Object.keys(invalidos).length > 0) return;
     const cuerpo: catalogApi.ProductoRequest = {
       codigo: this.codigo().trim(),
       nombre: this.nombre().trim(),
@@ -325,9 +375,11 @@ export class ProductoFormPage {
     };
     const actual = this.producto();
     this.guardando.set(true);
+    // SIN_TOAST: los errores de campo se pintan bajo cada campo; el resto se avisa aquí
+    const opciones = { context: new HttpContext().set(SIN_TOAST, true) };
     (actual
-      ? this.api.editarProducto(actual.id, cuerpo)
-      : this.api.crearProducto(cuerpo)
+      ? this.api.editarProducto(actual.id, cuerpo, 'body', false, opciones)
+      : this.api.crearProducto(cuerpo, 'body', false, opciones)
     ).subscribe({
       next: (r) => {
         this.guardando.set(false);
@@ -338,8 +390,28 @@ export class ProductoFormPage {
         if (!actual && r.data) void this.router.navigate(['/catalogo/productos', r.data.id]);
         else this.establecer(r.data ?? actual);
       },
-      error: () => this.guardando.set(false),
+      error: (e: unknown) => {
+        this.guardando.set(false);
+        this.mostrarErrorDelServidor(e);
+      },
     });
+  }
+
+  /** Cada error de campo va bajo su campo; lo que el formulario no tiene (o un error sin campos) sale en un aviso. */
+  private mostrarErrorDelServidor(e: unknown): void {
+    const campos = camposConError(e);
+    const propios = ['codigo', 'nombre', 'precioBase', 'descripcion'];
+    const porCampo = Object.fromEntries(
+      campos.filter((c) => propios.includes(c.campo)).map((c) => [c.campo, c.mensaje]),
+    );
+    this.errores.set(porCampo);
+    const otros = campos.filter((c) => !propios.includes(c.campo)).map((c) => c.mensaje);
+    if (otros.length > 0) this.toasts.mostrar('error', otros.join('. '));
+    else if (campos.length === 0)
+      this.toasts.mostrar(
+        'error',
+        comoApiError(e)?.mensaje ?? 'No pudimos guardar el producto. Inténtalo de nuevo.',
+      );
   }
 
   protected cambiarEstado(accion: 'publicar' | 'desactivar'): void {

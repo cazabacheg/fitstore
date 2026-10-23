@@ -165,6 +165,18 @@ describe('ProductoFormPage (P-2-04)', () => {
     expect((req.request.body as FormData).get('colorId')).toBe('2');
   });
 
+  it('CA-2-73 si la miniatura guardada no carga, la pestaña Imágenes muestra un aviso en su lugar y no una imagen rota', async () => {
+    const imagenes = [
+      { id: 1, colorId: 1, url: '/f/0.jpg', urlMiniatura: '/f/0-400.jpg', orden: 1, principal: true, ancho: 1200, alto: 1500 },
+    ];
+    const t = await abrir({ ...PRODUCTO, imagenes });
+    await pestana(t, 'Imágenes');
+    t.el.querySelector('figure img')!.dispatchEvent(new Event('error'));
+    await asentar(t.fixture);
+    expect(t.el.querySelector('figure img')).toBeNull();
+    expect(t.el.querySelector('figure')!.textContent).toContain('No se pudo cargar la miniatura');
+  });
+
   it('CA-2-32 con un solo color, el color se asigna solo', async () => {
     const unico = { ...PRODUCTO, variantes: [PRODUCTO.variantes[0]] };
     const t = await abrir(unico);
