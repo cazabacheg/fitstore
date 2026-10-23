@@ -1,7 +1,7 @@
 import { HttpContext } from '@angular/common/http';
 import { Component, computed, inject, signal } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
-import { PrecioPipe, SIN_TOAST, authApi, comoApiError, deliveryApi, orderApi } from 'shared';
+import { CarritoContador, PrecioPipe, SIN_TOAST, authApi, comoApiError, deliveryApi, orderApi } from 'shared';
 import { ClienteService } from 'shared/api/auth-service';
 import { EnviosService } from 'shared/api/delivery-service';
 import { CheckoutService } from 'shared/api/order-service';
@@ -115,6 +115,17 @@ const NOMBRE_MODALIDAD: Record<Modalidad, string> = {
         flex: 1;
         min-width: 0;
         font-weight: 500;
+      }
+      .ck-item__detalle {
+        display: block;
+        font-size: 13px;
+        font-weight: 400;
+      }
+      .ck-item__descuento {
+        color: var(--fs-color-exito);
+      }
+      .ck-entrega {
+        margin: 0;
       }
       .ck-item__total {
         font-variant-numeric: tabular-nums;
@@ -240,12 +251,23 @@ const NOMBRE_MODALIDAD: Record<Modalidad, string> = {
                 @if (modalidad() === 'AGENCIA') {
                   <label class="fs-agencia fs-campo">
                     <span class="fs-campo__etiqueta">Agencia</span>
-                    <select class="fs-select" [value]="agenciaId() ?? ''" (change)="elegirAgencia($event)">
+                    <select
+                      class="fs-select"
+                      [value]="agenciaId() ?? ''"
+                      [attr.aria-invalid]="agenciaId() === null ? 'true' : null"
+                      [attr.aria-describedby]="agenciaId() === null ? 'agencia-error' : null"
+                      (change)="elegirAgencia($event)"
+                    >
                       <option value="">Elige una agencia</option>
                       @for (a of agencias(); track a.id) {
                         <option [value]="a.id" [selected]="agenciaId() === a.id">{{ a.nombre }}</option>
                       }
                     </select>
+                    @if (agenciaId() === null) {
+                      <span id="agencia-error" class="fs-campo__error" role="alert">
+                        <span class="fs-icono" aria-hidden="true">error</span>Selecciona una agencia para continuar
+                      </span>
+                    }
                   </label>
                 }
               </section>
@@ -263,11 +285,22 @@ const NOMBRE_MODALIDAD: Record<Modalidad, string> = {
                             <span class="fs-icono" aria-hidden="true">checkroom</span>
                           }
                         </span>
-                        <span class="ck-item__texto">{{ i.producto }} · {{ i.talla }} · {{ i.color }} × {{ i.cantidad }}</span>
-                        <span class="ck-item__total">— {{ i.total | precio }}</span>
+                        <span class="ck-item__texto">
+                          {{ i.producto }} · {{ i.talla }} · {{ i.color }}
+                          <span class="ck-item__detalle fs-suave">{{ i.precioUnitario | precio }} c/u · Cantidad: {{ i.cantidad }}</span>
+                          @if (i.descuentoMonto > 0) {
+                            <span class="ck-item__detalle ck-item__descuento">
+                              Descuento ({{ i.descuentoPorcentaje }} %): -{{ i.descuentoMonto | precio }}
+                            </span>
+                          }
+                        </span>
+                        <span class="ck-item__total">{{ i.total | precio }}</span>
                       </li>
                     }
                   </ul>
+                  <p class="ck-entrega fs-suave">
+                    {{ nombreEntrega() }}
+                  </p>
                 }
               </section>
             </div>
@@ -285,7 +318,7 @@ const NOMBRE_MODALIDAD: Record<Modalidad, string> = {
                   <span>Descuento</span><span>-{{ r.descuentoTotal | precio }}</span>
                 </div>
                 <div class="fs-resumen__fila">
-                  <span>Envío</span>
+                  <span>Envío @if (r.envio.agenciaNombre) {<span class="fs-suave">(Agencia {{ r.envio.agenciaNombre }})</span>}</span>
                   <span>
                     {{ r.costoEnvio | precio }}
                     @if (r.envio.plazoDiasMax) {
@@ -343,6 +376,7 @@ export class CheckoutPage {
   private readonly checkout = inject(CheckoutService);
   private readonly dialogoDireccion = inject(DialogoDireccionService);
   private readonly router = inject(Router);
+  private readonly contador = inject(CarritoContador);
   private readonly sinToast = () => ({ context: new HttpContext().set(SIN_TOAST, true) });
 
   protected readonly maximoDirecciones = MAXIMO_DIRECCIONES;
@@ -389,6 +423,16 @@ export class CheckoutPage {
       lista.push({ modalidad: 'RECOJO', nombre: NOMBRE_MODALIDAD.RECOJO, costo: 0, plazoDiasMin: 0, plazoDiasMax: 0 });
     }
     return lista;
+  });
+
+  /** Línea de entrega de "Revisa tu pedido": la modalidad y, si es por agencia, cuál. */
+  protected readonly nombreEntrega = computed(() => {
+    const modalidad = this.modalidad();
+    if (!modalidad) return '';
+    if (modalidad !== 'AGENCIA') return NOMBRE_MODALIDAD[modalidad];
+    const nombre =
+      this.resumen()?.envio.agenciaNombre ?? this.agencias().find((a) => a.id === this.agenciaId())?.nombre;
+    return nombre ? `${NOMBRE_MODALIDAD.AGENCIA}: ${nombre}` : NOMBRE_MODALIDAD.AGENCIA;
   });
 
   protected readonly puedeConfirmar = computed(
@@ -555,6 +599,8 @@ export class CheckoutPage {
         next: (r) => {
           this.confirmando.set(false);
           this.clave = null;
+          // order-service vacía el carrito al confirmar (CA-4-19): el contador de la cabecera queda en 0
+          this.contador.establecer(0);
           if (r.data) void this.router.navigate(['/pago', r.data.codigo]);
         },
         error: (e: unknown) => {
