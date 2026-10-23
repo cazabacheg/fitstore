@@ -24,12 +24,12 @@ describe('Toast (ui)', () => {
     expect(aviso.classList.contains('fs-aviso--error')).toBe(true);
   });
 
-  it('CA-0b-33 los avisos de éxito e información usan role="status" y desaparecen a los 8 s', () => {
+  it('CA-0b-33 los avisos de éxito e información usan role="status" y desaparecen a los 3 s', () => {
     const { f, el, servicio } = montar();
     servicio.mostrar('exito', 'Guardado');
     f.detectChanges();
     expect(avisos(el)[0].getAttribute('role')).toBe('status');
-    vi.advanceTimersByTime(7900);
+    vi.advanceTimersByTime(2900);
     f.detectChanges();
     expect(avisos(el).length).toBe(1);
     vi.advanceTimersByTime(200);

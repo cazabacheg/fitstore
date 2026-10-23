@@ -1,10 +1,11 @@
 # SPEC-0b — Fundaciones del frontend
 
-> Versión: **v14 (aprobado)**, 2026-10-22 · Estados: ✅ decidido · 🟡 propuesto · ❓ abierto
+> Versión: **v15 (aprobado)**, 2026-10-23 · Estados: ✅ decidido · 🟡 propuesto · ❓ abierto
 > **Dueña de:** workspace Angular (`frontend/`), librería `shared`, *shells* (layouts) de storefront y backoffice, rutas y menús generales, tema white-label, carpetas `ui/` de cada app, job de frontend en CI.
 > **Depende de:** 0a (gateway y CI), la etapa de contratos (OpenAPI para generar los clientes) y la etapa de diseño (**sistema de diseño**: los componentes de `ui/` se construyen según él). · **Habilita:** pantallas de las specs 1–8.
 
 **Historial:**
+- v15 (2026-10-23): segunda exploración del autor: los avisos de éxito, advertencia e información duran 3 s en lugar de 8 s (CA-0b-33) y los botones de los diálogos quedan separados y alineados a la derecha (CA-0b-35).
 - v14 (2026-10-22): correcciones de la exploración del backoffice (decisión del autor): variables de estilo sin definir y rejilla compartida de espaciado (CA-0b-31), el orden de la tabla sobrevive a la recarga (CA-0b-32), avisos grandes arriba a la derecha con 8 s de duración y hasta 3 a la vez (CA-0b-33) y aviso visible de los errores de campo que un formulario no muestra (CA-0b-34, opción `avisarErroresDeCampos` de `provideFitstoreHttp`).
 - v13 (2026-10-22): la cabecera de la tienda pasa al color secundario del tema, como la vista previa de Configuración (CA-0b-20d); las etiquetas del menú no se parten (CA-0b-20e); el aviso queda centrado en vertical (CA-0b-25b); el diálogo cierra con Escape desde cualquier punto y, opcionalmente, con clic en el fondo (CA-0b-25c).
 - v12 (2026-10-20): por CK2, R2 fija que cada pantalla del backoffice carga su **propio arreglo de rutas** (exportación con nombre de su carpeta), para que dos pantallas de la misma carpeta no reciban la misma ruta. Se registran las decisiones tomadas al implementar 0b (sección "Decisiones de implementación").
@@ -211,7 +212,10 @@ CA-0b-32  Cuando ordeno una tabla del backoffice por una columna y la pantalla r
 
 CA-0b-33  Cuando se muestra un aviso (toast) en el backoffice
           Entonces aparece en la esquina superior derecha, grande (texto de 16 px, ancho mínimo de 320 px) y con color de éxito, error, advertencia o información
-          Y los de éxito, advertencia e información duran 8 s, los de error se quedan hasta cerrarlos, y se ven hasta 3 a la vez
+          Y los de éxito, advertencia e información duran 3 s, los de error se quedan hasta cerrarlos, y se ven hasta 3 a la vez
+
+CA-0b-35  Cuando se abre un diálogo del backoffice (confirmar, avanzar un pedido, formularios en diálogo)
+          Entonces sus botones quedan alineados a la derecha, separados entre sí y con aire alrededor (regla global de `mat-dialog-actions`)
 ```
 
 ### HU-0b-06 — Componentes compartidos documentados
@@ -385,8 +389,9 @@ No aplica (no hay base de datos). En el navegador: `localStorage` solo para la c
 | 20–24 (incl. 20b, 20c, 20d, 20e) | Componente | pruebas de `TiendaShell` y `BackofficeShell` (incluye ancho 390 px y el límite de 4 categorías) |
 | 31 | Unitaria | `estilos-espaciado.spec.ts` (variables definidas, rejilla de pantalla, clases `fs-acceso*`) |
 | 32 | Componente | `fs-tabla.spec.ts` (el orden sobrevive a la recarga) |
-| 33 | Componente | `toast.spec.ts` (8 s, hasta 3, posición, tamaño y color) |
+| 33 | Componente | `toast.spec.ts` (3 s, hasta 3, posición, tamaño y color) |
 | 34 | Unitaria | `shared/http/errores.spec.ts` (aviso de errores de campo con y sin SIN_TOAST) |
+| 35 | Unitaria | `estilos-espaciado.spec.ts` (regla de `mat-dialog-actions`: separación, alineación y relleno) |
 | 25–28, 25b, 25c, 28b | Componente | pruebas de cada componente de `ui/` y de los pipes; `fs-tabla.spec.ts` (enlace, clic en fila, acciones sin propagar, tabla sin detalle) |
 | 29 | Script | `npm run api:generate` en CI |
 
@@ -404,7 +409,7 @@ No aplica (no hay base de datos). En el navegador: `localStorage` solo para la c
 
 ## 9. Definición de terminado
 
-- [ ] CA-0b-01 a CA-0b-30 (y CA-0b-20b, CA-0b-20c, CA-0b-20d, CA-0b-20e, CA-0b-25b, CA-0b-25c, CA-0b-28b) y CA-0b-31 a CA-0b-34 cumplidos.
+- [ ] CA-0b-01 a CA-0b-30 (y CA-0b-20b, CA-0b-20c, CA-0b-20d, CA-0b-20e, CA-0b-25b, CA-0b-25c, CA-0b-28b) y CA-0b-31 a CA-0b-35 cumplidos.
 - [ ] Las dos apps arrancan contra la plataforma 0a; en vivo muestran el tema FitStore por defecto (CA-0b-07, porque `/settings/public` llega con la SPEC-3) y la marca de settings queda verificada con pruebas que simulan su respuesta (CA-0b-05 a CA-0b-08). La verificación en vivo con los datos semilla es parte del DoD de la SPEC-3.
 - [ ] `/_ui` muestra todos los componentes de `ui/` en ambas apps.
 - [ ] Sin tokens en `localStorage`; sin atribución de IA en commits.

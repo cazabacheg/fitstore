@@ -66,4 +66,12 @@ describe('Estilos compartidos del backoffice: espaciado', () => {
     const marca = /\.fs-acceso__marca\s*\{([^}]*)\}/.exec(css)?.[1] ?? '';
     expect(marca).toMatch(/margin:\s*0\s+0\s+var\(--espacio-4\)/);
   });
+
+  it('CA-0b-35 los botones de los diálogos quedan separados, alineados a la derecha y con aire alrededor', () => {
+    const css = sinComentarios(GLOBAL);
+    const regla = /\.mat-mdc-dialog-actions\s*\{([^}]*)\}/.exec(css)?.[1] ?? '';
+    expect(regla).toMatch(/gap:\s*var\(--espacio-(2|3)\)/);
+    expect(regla).toMatch(/justify-content:\s*flex-end/);
+    expect(regla).toMatch(/padding:\s*var\(--espacio-\d\)/);
+  });
 });
