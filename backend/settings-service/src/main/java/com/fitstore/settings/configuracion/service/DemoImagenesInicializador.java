@@ -32,9 +32,9 @@ public class DemoImagenesInicializador implements ApplicationRunner {
 
     /** Archivo, texto alternativo y enlace de cada imagen, en el orden del carrusel. */
     private static final List<Demo> IMAGENES = List.of(
-            new Demo("landing-1.jpg", "Mujer entrenando con top y leggings deportivos", "/productos"),
-            new Demo("landing-2.jpg", "Ropa deportiva cómoda para entrenar todos los días", "/productos"),
-            new Demo("landing-3.jpg", "Conjunto deportivo de compresión hecho en Gamarra", "/productos"));
+            new Demo("landing-1.jpg", "Mujer trotando junto al río con ropa deportiva cómoda", "/productos"),
+            new Demo("landing-2.jpg", "Pareja corriendo por el puente con ropa deportiva", "/productos"),
+            new Demo("landing-3.jpg", "Mujer practicando yoga en la playa con leggings deportivos", "/productos"));
 
     private final ImagenTiendaRepository imagenes;
     private final FileStorage almacen;
