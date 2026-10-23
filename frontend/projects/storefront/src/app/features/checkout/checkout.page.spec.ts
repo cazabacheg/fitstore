@@ -232,6 +232,19 @@ describe('Checkout (P-4-02)', () => {
     expect(p.boton('Confirmar pedido').disabled).toBe(true);
   });
 
+  it('CA-4-62 si el carrito está vacío no dice "No pudimos calcular el envío": avisa que el carrito está vacío', async () => {
+    const p = await iniciar([dir(1, 'Casa', '150122', true), dir(2, 'Trabajo', '070101')]);
+
+    p.radios('direccion')[1].click();
+    http().expectOne('/api/v1/envios/opciones?ubigeo=070101').flush(ok(OPCIONES));
+    http().expectOne('/api/v1/checkout/resumen').flush(errorApi('CARRITO_VACIO', 'Tu carrito está vacío'), { status: 400, statusText: 'Bad Request' });
+    await p.estabilizar();
+
+    expect(p.el.textContent).not.toContain('No pudimos calcular el envío');
+    expect(p.el.textContent).toContain('Tu carrito está vacío');
+    expect(p.boton('Confirmar pedido').disabled).toBe(true);
+  });
+
   function confirmable() {
     return iniciar([dir(1, 'Casa', '150122', true)]);
   }

@@ -5,6 +5,7 @@ import { SIN_TOAST, SesionStore, comoApiError } from 'shared';
 import { AutenticacionService } from 'shared/api/auth-service';
 import { FsBoton } from '../../../ui/boton/boton';
 import { FsCampo } from '../../../ui/campo/campo';
+import { CarritoService } from '../../carrito/carrito.service';
 import { errorCorreo, rutaDeRetorno } from '../validaciones';
 
 /** Formulario de ingreso del cliente (P-1-01): `POST /auth/login`, sesión en memoria y vuelta a `returnUrl` (CA-1-04). */
@@ -35,6 +36,7 @@ export class FormularioIngreso {
   private readonly api = inject(AutenticacionService);
   private readonly sesion = inject(SesionStore);
   private readonly router = inject(Router);
+  private readonly carritos = inject(CarritoService);
 
   /** Ruta de origen que puso el guard (`?returnUrl=`). */
   readonly returnUrl = input<string | null>(null);
@@ -71,7 +73,10 @@ export class FormularioIngreso {
           this.enviando.set(false);
           if (!respuesta.data) return;
           this.sesion.iniciarSesion(respuesta.data);
-          void this.router.navigateByUrl(rutaDeRetorno(this.returnUrl()));
+          // CA-4-12: el carrito anónimo se fusiona antes de volver, para que el checkout ya lo vea
+          this.carritos.alIniciarSesion().subscribe(() => {
+            void this.router.navigateByUrl(rutaDeRetorno(this.returnUrl()));
+          });
         },
         error: (error: unknown) => {
           this.enviando.set(false);

@@ -1,12 +1,13 @@
 # SPEC-4 — Pedidos
 
-> Versión: **v11 (aprobado)** — 2026-10-20 · Estados: ✅ decidido · 🟡 propuesto · ❓ abierto
+> Versión: **v13 (aprobado)** — 2026-10-22 · Estados: ✅ decidido · 🟡 propuesto · ❓ abierto
 > **Dueña de:** `backend/order-service` (carrito, checkout, pedidos, saga) · tienda: `features/carrito`, `features/checkout`, `features/mis-pedidos` · backoffice: `features/pedidos`.
 > **Depende de:** 0a, 0b, 1 (sesión y direcciones) · usa los contratos de catalog (cotizar, reservar), auth (cliente y dirección), delivery (opciones y cotización de envío) y settings (parámetros y ubigeo) · **Habilita:** 5 (pago del pedido), 6 (entrega desde `PedidoListoDespacho`), 7 (correos del pedido), 8 (dashboard y E2E).
 > **Contratos:** `contracts/openapi/order-service.yaml`; eventos que publica `PedidoCreado`, `PedidoPagado`, `PedidoCancelado`, `PedidoExpirado`, `PagoNoAplicable`, `PedidoListoDespacho`, `PedidoListoRecojo`, `PedidoRecogido`, `ReembolsoSolicitado`; consume `PagoConfirmado`, `PagoRechazado`, `BoletaEmitida`, `PagoReembolsado`, `EntregaActualizada`.
 
 **Historial:**
-- v-ordenar (2026-10-22): el orden de la tabla de pedidos del backoffice se pide al servidor (Pedido, Fecha, Estado y Total) con el código como desempate (CA-4-71).
+- v13 (2026-10-22): el orden de la tabla de pedidos del backoffice se pide al servidor (Pedido, Fecha, Estado y Total) con el código como desempate (CA-4-71).
+- v12 (2026-10-22): por las observaciones de la exploración manual de la tienda, **HU-4-02 vuelve al alcance** (decisión del autor: la fusión del carrito al iniciar sesión no estaba implementada y rompía el checkout) y se agregan CA-4-61 a CA-4-66 (contador al arrancar, checkout con carrito vacío, stock en el carrito, descuento en cero, ícono de tacho y actualización optimista). Las pruebas de CA-4-10 y CA-4-12 ahora existen. En el checkout, CA-4-67 a CA-4-70: agencia elegida y su aviso, detalle de precio y descuento por línea, contador del carrito tras confirmar y líneas visibles mientras no hay resumen.
 - v11 (2026-10-20): **recorte de alcance** (decisión del autor): HU-4-02 (carrito al iniciar sesión), HU-4-11 (datos de ventas) y HU-4-12 (reembolso postventa) pasan a [extensión de alcance](../implementacion/extension-alcance.md). Siguen especificadas aquí, marcadas, pero no cuentan para el terminado de esta spec.
 - v10 (2026-10-19): etapa de diseño cerrada: diseños de alta fidelidad enlazados (P-4-01, P-4-02, P-4-03, P-4-04, P-4-05, P-4-06).
 - v9 (2026-10-19): ajustes de la etapa de contratos: el bloque de pago de P-4-06 sale del propio pedido (order guarda proveedor y medio desde `PagoConfirmado`).
@@ -34,7 +35,7 @@ Al cerrar esta spec, el cliente **arma su carrito** (con o sin sesión), ve sus 
 - Colección Postman `order` y prueba de carga k6 del checkout.
 
 **No incluye (y dónde va):**
-- **Extensión de alcance** (decisión del autor, 2026-10-20) → [`extension-alcance.md`](../implementacion/extension-alcance.md): HU-4-02 (carrito al iniciar sesión), HU-4-11 (datos de ventas) y HU-4-12 (reembolso postventa).
+- **Extensión de alcance** (decisión del autor, 2026-10-20) → [`extension-alcance.md`](../implementacion/extension-alcance.md): HU-4-11 (datos de ventas) y HU-4-12 (reembolso postventa). HU-4-02 (carrito al iniciar sesión) volvió al alcance en v12.
 - Página de pago, cobro, reembolso y boleta → spec 5 (aquí se publica `PedidoCreado`, se consumen sus eventos y se muestra el enlace a la boleta).
 - Crear y avanzar la entrega (repartidor, agencia, intentos) → spec 6 (aquí se publica `PedidoListoDespacho` y se consume `EntregaActualizada`).
 - Correos del pedido → spec 7.
@@ -81,9 +82,31 @@ CA-4-07  Dado que catalog no responde
 
 CA-4-08  Dado un carrito vacío
          Entonces veo "Tu carrito está vacío" con un enlace a la tienda (y el pie al fondo, CA-0b-20b)
+
+CA-4-61  Dado que recargo la página, con o sin sesión
+         Entonces el contador de la bolsa se carga al arrancar la app (GET /carrito) sin entrar al carrito,
+              y vuelve a cargarse al iniciar sesión; al cerrar sesión baja a 0 y se carga el carrito anónimo
+
+CA-4-63  Dado que el servidor informó el stock de una variante (409 STOCK_INSUFICIENTE con detalles.disponible,
+              o una línea con estado STOCK_INSUFICIENTE y disponible)
+         Entonces el botón "+" de esa línea se deshabilita al llegar a ese stock
+         Y no se sugiere "Agrega N más y ahorra X %" cuando el stock conocido no alcanza para ese tramo
+
+CA-4-64  Dado que el descuento total es 0
+         Entonces el resumen no muestra la fila "Descuento" (nunca "-S/ 0.00")
+
+CA-4-65  El botón de quitar una línea es un ícono de tacho, con nombre accesible "Quitar <producto>" y título "Quitar"
+
+CA-4-66  Cuando cambio la cantidad de una línea
+         Entonces el navegador muestra al instante la cantidad, el subtotal, el descuento por tramos y el total,
+              calculados con los tramos que el servidor ya mostró
+         Y al responder el servidor, su carrito reemplaza al cálculo local (siempre manda)
+         Y si lo rechaza, vuelve a lo último confirmado y muestra el motivo (CA-4-04)
+         Y al servidor solo se envía la cantidad (PUT /carrito/items/{varianteId} {cantidad}); el descuento, el subtotal
+              y el total los calcula siempre el servidor con sus precios y tramos, e ignora cualquier monto que reciba
 ```
 
-### HU-4-02 — Conservar mi carrito al iniciar sesión (extensión de alcance)
+### HU-4-02 — Conservar mi carrito al iniciar sesión
 
 Como visitante, quiero que lo que agregué sin cuenta se mantenga al iniciar sesión, para no armar el carrito otra vez. · Cubre: RF-CRT-03, 04 · Pantallas: [P-4-01](#p-4-01--carrito)
 
@@ -103,6 +126,7 @@ CA-4-11  Dado un carrito anónimo sin cambios por 7 días (o uno de cliente por 
 
 CA-4-12  Cuando pulso "Ir al checkout" sin sesión
          Entonces voy al login con retorno a /checkout y, al volver, el carrito ya está fusionado
+              (la fusión termina antes de navegar, así el checkout ya ve los productos)
 ```
 
 ### HU-4-03 — Elegir la entrega y revisar el resumen
@@ -133,6 +157,9 @@ CA-4-17  Cuando pulso "Agregar dirección" en el checkout
 
 CA-4-18  Dado que delivery, auth o settings no responden
          Entonces el resumen muestra "No pudimos calcular el envío, inténtalo en un momento" y no se puede confirmar
+
+CA-4-62  Dado un carrito vacío en el checkout (POST /checkout/resumen responde 400 CARRITO_VACIO)
+         Entonces se avisa "Tu carrito está vacío" y no el mensaje de envío "No pudimos calcular el envío"
 
 CA-4-67  Dado que elegí envío por agencia
          Cuando todavía no he seleccionado una agencia
@@ -475,7 +502,9 @@ Todo según el micro de order. Decisiones de implementación de esta spec:
 | CA | Tipo | Dónde |
 |---|---|---|
 | 01–08 | API + componente | `CarritoServiceTest` (límites, stock, cotización caída), `CarritoRepositoryTest` (Redis), `carrito.page.spec.ts` |
-| 09–12 | Unitaria + API + componente | `FusionCarritoTest`, TTL en Redis Testcontainers, `carrito-sesion.spec.ts` (una sola fusión, retorno a checkout) |
+| 61, 63–66 | API + servicio + componente | `FusionCarritoTest` (el servidor ignora montos del navegador), `carrito.service.spec.ts` (contador al arrancar, stock, vista previa y rechazo), `carrito.page.spec.ts` (+ deshabilitado, fila de descuento, tacho, cambio al instante), `app.spec.ts` |
+| 62 | Componente | `checkout.page.spec.ts` (CARRITO_VACIO no es error de envío) |
+| 09–12 | Unitaria + API + componente | `FusionCarritoTest`, TTL en Redis Testcontainers, `carrito.service.spec.ts` y `formulario-ingreso.spec.ts` (una sola fusión antes de volver al checkout), `peticiones.spec.ts` de shared (carritoId) |
 | 13–18 | API + componente | `CheckoutServiceTest` con clientes Feign en WireMock (opciones, Lima/Callao, dependencia caída), `checkout.page.spec.ts` |
 | 67–70 | Componente | `checkout.page.spec.ts` (aviso y nombre de la agencia, detalle de precio, cantidad y descuento por línea, contador del carrito en 0 tras confirmar, líneas y montos del carrito mientras no hay resumen) |
 | 19–25 | Unitaria + datos + API | `CheckoutServiceTest` (camino feliz, idempotencia, precio cambiado, sin stock, 503 sin pedido), `PedidoRepositoryTest` (cascada, clave única, secuencia), `MontosPedidoTest` |
@@ -505,7 +534,7 @@ Todo según el micro de order. Decisiones de implementación de esta spec:
 
 ## 9. Definición de terminado
 
-- [ ] CA-4-01 a CA-4-71 cumplidos en CI (el 26 en `stage`), salvo los de extensión de alcance.
+- [ ] CA-4-01 a CA-4-71 cumplidos en CI (el 26 en `stage`), salvo los de extensión de alcance (HU-4-11 y HU-4-12).
 - [ ] Postman `order` en verde y k6 con p95 < 2 s.
 - [ ] El OpenAPI de order coincide con lo implementado; los eventos coinciden con el AsyncAPI.
 - [ ] Demostración: carrito anónimo → login → checkout → pedido en PENDIENTE_PAGO → (pago simulado) → el operador lo prepara y despacha → el cliente ve la línea de tiempo → el admin registra un reembolso postventa parcial.
