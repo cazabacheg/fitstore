@@ -15,7 +15,7 @@ public record CotizacionCatalog(List<LineaCotizada> lineas, List<ProductoCotizad
     public record LineaCotizada(Long varianteId, Long productoId, String sku, String producto, String slug,
             String talla, String color, String imagenUrl, BigDecimal precioUnitario, int cantidad, BigDecimal subtotal,
             BigDecimal descuentoPorcentaje, BigDecimal descuentoMonto, BigDecimal total, String estado,
-            Integer disponible) {
+            Integer disponible, Integer unidadesComprables) {
     }
 
     public record ProductoCotizado(Long productoId, String nombre, int unidades, Tramo tramoAlcanzado,
