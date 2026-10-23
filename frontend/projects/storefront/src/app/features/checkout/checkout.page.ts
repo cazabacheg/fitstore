@@ -4,7 +4,7 @@ import { Router, RouterLink } from '@angular/router';
 import { CarritoContador, PrecioPipe, SIN_TOAST, authApi, comoApiError, deliveryApi, orderApi } from 'shared';
 import { ClienteService } from 'shared/api/auth-service';
 import { EnviosService } from 'shared/api/delivery-service';
-import { CheckoutService } from 'shared/api/order-service';
+import { CarritoService as CarritoApi, CheckoutService } from 'shared/api/order-service';
 import { ConfiguracionPublicaService } from 'shared/api/settings-service';
 import { FsBoton } from '../../ui/boton/boton';
 import { EstadoCargando, EstadoError } from '../../ui/estados/estados';
@@ -13,6 +13,20 @@ import { DialogoDireccionService } from '../cuenta/direcciones/dialogo-direccion
 
 /** Máximo de direcciones por cliente (invariante 4 de auth). */
 export const MAXIMO_DIRECCIONES = 10;
+
+/** Lo que "Revisa tu pedido" muestra de cada línea, venga del resumen del servidor o del carrito. */
+interface LineaRevision {
+  varianteId: number;
+  producto: string;
+  talla: string;
+  color: string;
+  imagenUrl?: string | null;
+  precioUnitario: number | null;
+  cantidad: number;
+  descuentoPorcentaje: number;
+  descuentoMonto: number;
+  total: number;
+}
 const MAXIMO_NOTAS = 300;
 
 type Modalidad = orderApi.Modalidad;
@@ -274,9 +288,9 @@ const NOMBRE_MODALIDAD: Record<Modalidad, string> = {
 
               <section class="ck-paso ck-paso--ultimo" aria-labelledby="sec-revision">
                 <h2 id="sec-revision" class="ck-paso__titulo"><span class="ck-num" aria-hidden="true">3</span>Revisa tu pedido</h2>
-                @if (resumen(); as r) {
+                @if (lineas().length > 0) {
                   <ul class="ck-items">
-                    @for (i of r.items; track i.varianteId) {
+                    @for (i of lineas(); track i.varianteId) {
                       <li>
                         <span class="fs-miniatura" style="width: 48px">
                           @if (i.imagenUrl) {
@@ -287,7 +301,12 @@ const NOMBRE_MODALIDAD: Record<Modalidad, string> = {
                         </span>
                         <span class="ck-item__texto">
                           {{ i.producto }} · {{ i.talla }} · {{ i.color }}
-                          <span class="ck-item__detalle fs-suave">{{ i.precioUnitario | precio }} c/u · Cantidad: {{ i.cantidad }}</span>
+                          <span class="ck-item__detalle fs-suave">
+                            @if (i.precioUnitario !== null) {
+                              {{ i.precioUnitario | precio }} c/u ·
+                            }
+                            Cantidad: {{ i.cantidad }}
+                          </span>
                           @if (i.descuentoMonto > 0) {
                             <span class="ck-item__detalle ck-item__descuento">
                               Descuento ({{ i.descuentoPorcentaje }} %): -{{ i.descuentoMonto | precio }}
@@ -331,6 +350,19 @@ const NOMBRE_MODALIDAD: Record<Modalidad, string> = {
                   <strong>Total</strong><strong>{{ r.total | precio }}</strong>
                 </div>
                 <p class="fs-suave" style="margin: 0">Apartamos tu stock por {{ r.expiracionMinutos }} minutos.</p>
+              } @else if (carrito(); as c) {
+                <div class="fs-resumen__fila"><span>Subtotal</span><span>{{ c.subtotal | precio }}</span></div>
+                <div class="fs-resumen__fila fs-resumen__fila--descuento">
+                  <span>Descuento</span><span>-{{ c.descuentoTotal | precio }}</span>
+                </div>
+                <div class="fs-resumen__fila">
+                  <span>Envío</span>
+                  <span class="fs-suave">{{ envioPendiente() }}</span>
+                </div>
+                <hr class="fs-linea" />
+                <div class="fs-resumen__fila fs-resumen__total">
+                  <strong>Total sin envío</strong><strong>{{ c.total | precio }}</strong>
+                </div>
               } @else if (recalculando()) {
                 <p class="fs-suave" style="margin: 0">Calculando…</p>
               }
@@ -374,6 +406,7 @@ export class CheckoutPage {
   private readonly envios = inject(EnviosService);
   private readonly configuracion = inject(ConfiguracionPublicaService);
   private readonly checkout = inject(CheckoutService);
+  private readonly carritoApi = inject(CarritoApi);
   private readonly dialogoDireccion = inject(DialogoDireccionService);
   private readonly router = inject(Router);
   private readonly contador = inject(CarritoContador);
@@ -388,6 +421,8 @@ export class CheckoutPage {
   protected readonly agencias = signal<deliveryApi.Agencia[]>([]);
   protected readonly notas = signal('');
   protected readonly resumen = signal<orderApi.ResumenCheckout | null>(null);
+  /** Carrito del cliente: se muestra mientras el servidor no devuelve un resumen (agencia sin elegir, calculando o con error). */
+  protected readonly carrito = signal<orderApi.Carrito | null>(null);
   protected readonly recalculando = signal(false);
   protected readonly errorEnvio = signal(false);
   protected readonly mensaje = signal<string | null>(null);
@@ -435,6 +470,31 @@ export class CheckoutPage {
     return nombre ? `${NOMBRE_MODALIDAD.AGENCIA}: ${nombre}` : NOMBRE_MODALIDAD.AGENCIA;
   });
 
+  /** Líneas de "Revisa tu pedido": las del resumen y, si todavía no hay, las del carrito. */
+  protected readonly lineas = computed<LineaRevision[]>(() => {
+    const r = this.resumen();
+    if (r) return r.items;
+    return (this.carrito()?.lineas ?? []).map((l) => ({
+      varianteId: l.varianteId,
+      producto: l.producto ?? '',
+      talla: l.talla ?? '',
+      color: l.color ?? '',
+      imagenUrl: l.imagenUrl,
+      precioUnitario: l.precioUnitario ?? null,
+      cantidad: l.cantidad,
+      descuentoPorcentaje: l.descuentoPorcentaje ?? 0,
+      descuentoMonto: l.descuentoMonto ?? 0,
+      total: l.total ?? 0,
+    }));
+  });
+
+  /** Qué dice la fila de envío mientras no hay un resumen del servidor. */
+  protected readonly envioPendiente = computed(() => {
+    if (this.errorEnvio()) return 'No disponible';
+    if (this.modalidad() === 'AGENCIA' && this.agenciaId() === null) return 'Elige una agencia';
+    return this.recalculando() ? 'Calculando…' : 'Pendiente';
+  });
+
   protected readonly puedeConfirmar = computed(
     () => this.resumen() !== null && !this.errorEnvio() && !this.recalculando() && !this.confirmando(),
   );
@@ -445,6 +505,10 @@ export class CheckoutPage {
 
   protected iniciar(): void {
     this.estado.set('cargando');
+    this.carritoApi.obtenerCarrito(undefined, 'body', false, this.sinToast()).subscribe({
+      next: (r) => this.carrito.set(r.data ?? null),
+      error: () => this.carrito.set(null),
+    });
     this.configuracion.obtenerConfiguracionPublica('body', false, this.sinToast()).subscribe({
       next: (r) => {
         const modalidades = r.data?.parametros.modalidadesEntrega as Modalidad[] | undefined;
