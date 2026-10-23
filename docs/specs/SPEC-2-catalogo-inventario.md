@@ -1,11 +1,12 @@
 # SPEC-2 — Catálogo e inventario
 
-> Versión: **v11 (aprobado)**, 2026-10-22 · Estados: ✅ decidido · 🟡 propuesto · ❓ abierto
+> Versión: **v12 (aprobado)**, 2026-10-22 · Estados: ✅ decidido · 🟡 propuesto · ❓ abierto
 > **Dueña de:** `backend/catalog-service` (módulos catálogo e inventario) · tienda: `features/catalogo` · backoffice: `features/catalogo`, `features/inventario`.
 > **Depende de:** 0a, 0b, 1 (sesión de staff) · **Habilita:** 3 (destacados de la landing), 4 (cotización y reserva), 8.
 > **Contratos:** `contracts/openapi/catalog-service.yaml` (incluye `/internal/v1/inventario/reservas`); usa el contrato de order (`POST /carrito/items`); eventos `StockBajo`, `StockNoConfirmado` (publica) y `PedidoPagado`, `PedidoCancelado`, `PedidoExpirado` (consume).
 
 **Historial:**
+- v12 (2026-10-22): `VariantePublica` suma el campo opcional `unidadesComprables` (cambio aditivo del contrato) para que la barra de tramos se ponga gris también con "Disponible" (CA-2-73; ajusta CA-2-69).
 - v11 (2026-10-22): ajustes de la tienda tras la revisión manual del autor (rama `fix/obs-tienda-catalogo`): filtros del listado (categoría activa y padre resaltadas, filtros que se conservan al cambiar de categoría, interruptor "Solo disponibles" arriba, colores con mayúscula inicial: CA-2-62 a CA-2-65), la talla se conserva al cambiar de color si sigue disponible (CA-2-66), barra de tramos de descuento clicable y con relleno (CA-2-67 a CA-2-70, ajusta CA-2-11), migas con categoría padre (CA-2-71) y guía de tallas con bordes, centrada y que se cierra (CA-2-72, ajusta CA-2-10). Ajusta CA-2-09 y CA-2-12.
 - v10 (2026-10-20): **recorte de alcance** (decisión del autor): la pantalla P-2-09 (carga masiva); su backend se conserva pasan a [extensión de alcance](../implementacion/extension-alcance.md). Siguen especificadas aquí, marcadas, pero no cuentan para el terminado de esta spec.
 - v9 (2026-10-20): al preparar la ola 2a (decisiones del autor): el WebP se lee con TwelveMonkeys (stack v10) y la salida es JPG; el script de fotos de demostración usa Python + Pillow; sus JPG se versionan en los recursos de catalog, que las sube a Garage al arrancar con `dev` o `demo`; IDs fijos de la demo en `docs/demo/ids-demo.md`. La spec se construye en dos pasos (backend y luego frontend).
@@ -142,8 +143,18 @@ CA-2-68  Cuando hago clic en un tramo (p. ej. "12 un. −15 %")
 CA-2-69  Dado el stock que se conoce de la variante elegida (AGOTADO = 0, "Últimas N" = N)
          Entonces los tramos con más unidades mínimas que ese stock se ven grises y opacos, y no se pueden elegir
          Y sin talla elegida se usa el mayor stock conocido entre las variantes del color
-         Y con "Disponible" la API solo informa "más del umbral" (no el número exacto), así que ningún tramo se desactiva
-              por eso; el servidor sigue validando el stock real al agregar
+         Y el stock de la variante lo da unidadesComprables (CA-2-73), también con "Disponible"; el servidor sigue
+              validando el stock real al agregar
+
+CA-2-73  Dado un producto con tramos de descuento
+         Entonces cada variante del detalle trae unidadesComprables: su stock disponible acotado a las unidades del tramo
+              más alto (con tramos de 3, 6 y 12 y 40 en stock se publica 12; con 8 en stock, 8; agotada, 0), de modo que
+              no se expone el inventario real
+         Y ultimasUnidades se publica igual que antes, solo con ULTIMAS
+         Y sin tramos (SIN_DESCUENTO) el campo no viene
+         Y la tienda usa unidadesComprables para poner grises los tramos que la variante no alcanza, también con
+              "Disponible", y como tope del selector de cantidad solo cuando es menor que el tramo más alto (ahí es el
+              stock exacto)
 
 CA-2-70  Dado una variante con pocas unidades (p. ej. 4)
          Entonces el aviso dice "¡Últimas 4 unidades!" y la barra deja gris el tramo de 6 y el de 12, pero no el de 3
@@ -500,6 +511,7 @@ Todo según el micro de catalog. Decisiones de implementación de esta spec:
 | 62 a 65 | Componente | `listado.page.spec.ts` (categoría activa y padre, filtros que se conservan, interruptor arriba, mayúsculas) |
 | 66, 68 a 72 | Componente | `detalle.page.spec.ts` (talla al cambiar de color, clic en tramo, tramos grises, migas, guía de tallas) |
 | 67 a 69 | Componente | `tramos-descuento.spec.ts` (relleno de la barra, clic, tramos sin stock) |
+| 73 | API | `CatalogoPublicoControllerTest` (unidadesComprables acotado al tramo más alto) |
 | 13–16 | Unitaria + API | `CalculadoraDescuentosTest` (casos de catalog 9), `CotizacionControllerTest` |
 | 17–20 | Datos + API | `CategoriaRepositoryTest`, `CategoriaServiceTest` (2 niveles, borrado) |
 | 21–28 | API | `ProductoServiceTest` (matriz, `precioDesde`, invariante 4), permisos OPERADOR |
@@ -529,7 +541,7 @@ Todo según el micro de catalog. Decisiones de implementación de esta spec:
 
 ## 9. Definición de terminado
 
-- [ ] CA-2-01 a CA-2-72 cumplidos en CI (k6 en Lyanna), salvo los de extensión de alcance.
+- [ ] CA-2-01 a CA-2-73 cumplidos en CI (k6 en Lyanna), salvo los de extensión de alcance.
 - [ ] Postman `catalog` en verde.
 - [ ] El OpenAPI de catalog coincide con lo implementado.
 - [ ] Demostración: cargar un producto completo desde el backoffice (matriz, fotos, publicar) y verlo en la tienda con filtros, detalle y descuento.

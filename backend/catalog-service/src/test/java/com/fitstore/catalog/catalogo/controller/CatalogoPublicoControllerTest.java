@@ -363,6 +363,31 @@ class CatalogoPublicoControllerTest extends ApiBase {
     }
 
     @Test
+    @DisplayName("CA-2-73 cada variante trae unidadesComprables acotado al tramo más alto, sin exponer el inventario real")
+    void unidadesComprablesAcotadasAlTramoMasAlto() throws Exception {
+        Categoria c = categoria("Comprables", null);
+        Producto p = activo("CA73A", "Con Tope", "50.00", c); // política global: tramos 3, 6 y 12
+        Variante mucho = variante(p, "S", "negro", 40, 0);
+        Variante poco = variante(p, "M", "negro", 8, 0);
+        Variante ultimas = variante(p, "L", "negro", 5, 2);
+        Variante agotada = variante(p, "XL", "negro", 3, 3);
+        Producto sin = activo("CA73B", "Sin Tramos", "50.00", c);
+        sin.setModoDescuento(ModoDescuento.SIN_DESCUENTO);
+        productos.saveAndFlush(sin);
+        Variante deSin = variante(sin, "M", "negro", 40, 0);
+        sincronizar();
+
+        mvc.perform(get("/api/v1/productos/" + p.getSlug()))
+                .andExpect(jsonPath("$.data.variantes[?(@.id==" + mucho.getId() + ")].unidadesComprables").value(12))
+                .andExpect(jsonPath("$.data.variantes[?(@.id==" + poco.getId() + ")].unidadesComprables").value(8))
+                .andExpect(jsonPath("$.data.variantes[?(@.id==" + ultimas.getId() + ")].unidadesComprables").value(3))
+                .andExpect(jsonPath("$.data.variantes[?(@.id==" + ultimas.getId() + ")].ultimasUnidades").value(3))
+                .andExpect(jsonPath("$.data.variantes[?(@.id==" + agotada.getId() + ")].unidadesComprables").value(0));
+        mvc.perform(get("/api/v1/productos/" + sin.getSlug()))
+                .andExpect(jsonPath("$.data.variantes[?(@.id==" + deSin.getId() + ")].unidadesComprables").doesNotExist());
+    }
+
+    @Test
     @DisplayName("CA-2-01 el árbol de categorías trae solo las activas, con sus hijas, en su orden")
     void arbolDeCategorias() throws Exception {
         Categoria raiz = categoria("Arbol raíz", null);
