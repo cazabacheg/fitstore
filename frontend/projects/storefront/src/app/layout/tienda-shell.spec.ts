@@ -215,6 +215,27 @@ describe('TiendaShell: cabecera', () => {
     expect(estilos).toMatch(/\.fs-nav a\[aria-current=["']page["']\]\s*\{\s*border-bottom-color/);
   });
 
+  it('CA-0b-20d la cabecera usa el color secundario del tema, igual que la vista previa de Configuración', () => {
+    const bloque = /\.fs-cabecera\s*\{([^}]*)\}/.exec(estilos)![1];
+    expect(bloque).toMatch(/background:\s*var\(--fs-color-secundario\)/);
+    expect(bloque).toMatch(/color:\s*var\(--fs-color-en-secundario\)/);
+  });
+
+  it('CA-0b-20d el logo, el menú, los íconos y el contador usan el color de texto sobre el secundario', () => {
+    for (const selector of [
+      '\\.fs-cabecera \\.fs-logo',
+      '\\.fs-cabecera \\.fs-nav a',
+      '\\.fs-cabecera \\.fs-icono-boton',
+    ]) {
+      const regla = new RegExp(`${selector}\\s*\\{([^}]*)\\}`).exec(estilos);
+      expect(regla, selector).not.toBeNull();
+      expect(regla![1]).toMatch(/color:\s*var\(--fs-color-en-secundario\)/);
+    }
+    const contador = /\.fs-cabecera \.fs-contador\s*\{([^}]*)\}/.exec(estilos)![1];
+    expect(contador).toMatch(/background:\s*var\(--fs-color-en-secundario\)/);
+    expect(contador).toMatch(/color:\s*var\(--fs-color-secundario\)/);
+  });
+
   it('CA-0b-22 escribir en el buscador y presionar Enter navega a /productos?q=', async () => {
     const { el, estabilizar, router } = await abrir();
     await escribir(el, 'legging negro');
