@@ -132,6 +132,40 @@ describe('Detalle de mi pedido (P-4-04)', () => {
     expect(p.el.querySelector('.fs-aviso-historial')?.textContent).toContain('Cliente ausente');
   });
 
+  it('CA-4-85 si un pago fue rechazado y el siguiente se aprobó, el pago confirmado también sale en los avisos, después del rechazo', async () => {
+    const p = await abrir(
+      pedido({
+        estado: 'PAGADO',
+        puedeCancelar: false,
+        historial: [
+          paso('PENDIENTE_PAGO', '2026-10-20T15:00:00Z'),
+          { fecha: '2026-10-20T15:02:00Z', tipo: 'PAGO_RECHAZADO', actorTipo: 'SISTEMA', comentario: 'Pago rechazado: Fondos insuficientes' },
+          paso('PAGADO', '2026-10-20T15:05:00Z', { comentario: 'Pago confirmado' }),
+        ],
+      }),
+    );
+
+    const avisos = [...p.el.querySelectorAll<HTMLElement>('.fs-aviso-historial')];
+    expect(avisos.map((a) => a.textContent)).toEqual([
+      expect.stringContaining('Fondos insuficientes'),
+      expect.stringContaining('Pago confirmado'),
+    ]);
+    expect(avisos[1].classList.contains('fs-aviso-historial--exito')).toBe(true);
+    expect(avisos[0].classList.contains('fs-aviso-historial--exito')).toBe(false);
+  });
+
+  it('CA-4-85 sin avisos previos, el pago confirmado no se repite como aviso (ya está en la línea de tiempo)', async () => {
+    const p = await abrir(
+      pedido({
+        estado: 'PAGADO',
+        puedeCancelar: false,
+        historial: [paso('PENDIENTE_PAGO', '2026-10-20T15:00:00Z'), paso('PAGADO', '2026-10-20T15:05:00Z', { comentario: 'Pago confirmado' })],
+      }),
+    );
+
+    expect(p.el.querySelectorAll('.fs-aviso-historial').length).toBe(0);
+  });
+
   it('CA-4-34 un recojo termina en "Listo para recoger" y "Entregado" con el texto del recojo', async () => {
     const p = await abrir(
       pedido({

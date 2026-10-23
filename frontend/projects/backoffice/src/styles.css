@@ -522,6 +522,12 @@ textarea.fs-input {
   gap: var(--espacio-2);
   flex-wrap: wrap;
 }
+/* Botones de los diálogos de Material: los .fs-btn no traen el margen de los botones de Material (CA-0b-35) */
+.mat-mdc-dialog-container .mat-mdc-dialog-actions {
+  justify-content: flex-end;
+  gap: var(--espacio-3);
+  padding: var(--espacio-2) var(--espacio-6) var(--espacio-5);
+}
 
 /* Tabla (backoffice, regla R11) */
 .fs-tabla-contenedor {

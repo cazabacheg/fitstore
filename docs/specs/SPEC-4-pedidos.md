@@ -1,11 +1,12 @@
 # SPEC-4 — Pedidos
 
-> Versión: **v14 (aprobado)**, 2026-10-23 · Estados: ✅ decidido · 🟡 propuesto · ❓ abierto
+> Versión: **v15 (aprobado)**, 2026-10-23 · Estados: ✅ decidido · 🟡 propuesto · ❓ abierto
 > **Dueña de:** `backend/order-service` (carrito, checkout, pedidos, saga) · tienda: `features/carrito`, `features/checkout`, `features/mis-pedidos` · backoffice: `features/pedidos`.
 > **Depende de:** 0a, 0b, 1 (sesión y direcciones) · usa los contratos de catalog (cotizar, reservar), auth (cliente y dirección), delivery (opciones y cotización de envío) y settings (parámetros y ubigeo) · **Habilita:** 5 (pago del pedido), 6 (entrega desde `PedidoListoDespacho`), 7 (correos del pedido), 8 (dashboard y E2E).
 > **Contratos:** `contracts/openapi/order-service.yaml`; eventos que publica `PedidoCreado`, `PedidoPagado`, `PedidoCancelado`, `PedidoExpirado`, `PagoNoAplicable`, `PedidoListoDespacho`, `PedidoListoRecojo`, `PedidoRecogido`, `ReembolsoSolicitado`; consume `PagoConfirmado`, `PagoRechazado`, `BoletaEmitida`, `PagoReembolsado`, `EntregaActualizada`.
 
 **Historial:**
+- v15 (2026-10-23): en el detalle del pedido, cuando hubo avisos antes (un pago rechazado), el pago confirmado también sale en la lista de avisos, en verde, para que el cliente vea que el reintento sí pasó (CA-4-85, decisión del autor).
 - v14 (2026-10-23): cada línea del carrito trae el campo opcional `unidadesComprables` de la cotización de catalog (cambio aditivo del contrato; CA-2-90 de la SPEC-2) y la tienda lo usa desde que carga el carrito para deshabilitar "+" y no sugerir tramos inalcanzables (CA-4-80 a CA-4-84; completa CA-4-63).
 - v13 (2026-10-22): el orden de la tabla de pedidos del backoffice se pide al servidor (Pedido, Fecha, Estado y Total) con el código como desempate (CA-4-71).
 - v12 (2026-10-22): por las observaciones de la exploración manual de la tienda, **HU-4-02 vuelve al alcance** (decisión del autor: la fusión del carrito al iniciar sesión no estaba implementada y rompía el checkout) y se agregan CA-4-61 a CA-4-66 (contador al arrancar, checkout con carrito vacío, stock en el carrito, descuento en cero, ícono de tacho y actualización optimista). Las pruebas de CA-4-10 y CA-4-12 ahora existen. En el checkout, CA-4-67 a CA-4-70: agencia elegida y su aviso, detalle de precio y descuento por línea, contador del carrito tras confirmar y líneas visibles mientras no hay resumen.
@@ -277,6 +278,11 @@ CA-4-34  Cuando abro un pedido
          Y debajo del nombre de cada etapa, una breve descripción de lo que significa (tabla de O9),
               según la modalidad; las etapas futuras también la muestran, atenuadas
 
+CA-4-85  Dado un pedido con un pago rechazado y, después, el pago confirmado
+         Cuando abro el pedido
+         Entonces debajo de la línea de tiempo veo los avisos en orden: el rechazo y luego "Pago confirmado" en verde
+         Y si no hubo avisos antes, el pago confirmado no se repite como aviso (ya está en la línea de tiempo)
+
 CA-4-35  Dado un pedido PENDIENTE_PAGO
          Entonces veo cuánto tiempo queda y el botón "Pagar ahora" (a /pago/:codigo)
 
@@ -536,6 +542,7 @@ Todo según el micro de order. Decisiones de implementación de esta spec:
 | 33–37 | API + componente | `PedidoControllerTest` (paginado, 404 ajeno), `detalle-pedido.page.spec.ts` (línea de tiempo, cuenta regresiva) |
 | 38–39, 49–50 | Unitaria + API | `MaquinaEstadosPedidoTest` (tabla parametrizada de todas las transiciones y actores, incluida DEVUELTO), `CancelacionTest` |
 | 71 | Componente | `pedidos.page.spec.ts` (columnas ordenables y `sort` enviado), `fs-tabla.spec.ts` (CA-0b-32) |
+| 85 | Componente | `detalle-pedido.page.spec.ts` (pago confirmado tras un rechazo, en verde; sin avisos previos no se repite) |
 | 40–42 | Datos + API | `PedidoSpecificationsTest` (cada filtro y combinados), contadores por estado |
 | 43–48, 60 | API + integración | `AdminPedidoControllerTest` (permisos, transiciones, 409 por versión), `SagaPedidoIT` (`EntregaActualizada`) |
 | 51–53 | Datos + API | `ResumenVentasQueriesTest` (fecha de pago, sin cancelados, neto de reembolsos), 403 a OPERADOR |
@@ -557,7 +564,7 @@ Todo según el micro de order. Decisiones de implementación de esta spec:
 
 ## 9. Definición de terminado
 
-- [ ] CA-4-01 a CA-4-71 y CA-4-80 a CA-4-84 cumplidos en CI (el 26 en `stage`), salvo los de extensión de alcance (HU-4-11 y HU-4-12).
+- [ ] CA-4-01 a CA-4-71 y CA-4-80 a CA-4-85 cumplidos en CI (el 26 en `stage`), salvo los de extensión de alcance (HU-4-11 y HU-4-12).
 - [ ] Postman `order` en verde y k6 con p95 < 2 s.
 - [ ] El OpenAPI de order coincide con lo implementado; los eventos coinciden con el AsyncAPI.
 - [ ] Demostración: carrito anónimo → login → checkout → pedido en PENDIENTE_PAGO → (pago simulado) → el operador lo prepara y despacha → el cliente ve la línea de tiempo → el admin registra un reembolso postventa parcial.
