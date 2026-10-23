@@ -11,6 +11,8 @@ const POLITICAS = { terminos: 3, privacidad: 2, cambiosDevoluciones: 1, envios: 
 const ok = (data: unknown) => ({ success: true, mensaje: 'Operación exitosa', data });
 
 async function iniciar(opciones: { politicas?: boolean } = {}) {
+  // Sin carrito anónimo de otra prueba: si quedara un fs_carrito_id, el registro pediría la fusión del carrito
+  localStorage.removeItem('fs_carrito_id');
   const m = await montar(FormularioRegistro, { returnUrl: '/checkout' }, [
     provideRouter([]),
     provideFitstoreHttp({ carrito: false }),

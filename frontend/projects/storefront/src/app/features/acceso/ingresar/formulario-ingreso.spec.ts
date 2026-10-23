@@ -32,6 +32,9 @@ async function iniciar(returnUrl: string | null = '/carrito') {
 }
 
 describe('FormularioIngreso (P-1-01)', () => {
+  // Cada prueba arranca sin carrito anónimo; la que lo necesita lo guarda ella misma
+  beforeEach(() => localStorage.removeItem('fs_carrito_id'));
+
   afterEach(() => {
     // Tras ingresar se carga el carrito del cliente (contador de la bolsa): no es lo que estas pruebas miran
     const ctrl = TestBed.inject(HttpTestingController);
