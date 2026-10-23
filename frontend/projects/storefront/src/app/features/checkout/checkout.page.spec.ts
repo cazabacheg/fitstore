@@ -1,6 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import { Router } from '@angular/router';
-import { authApi, orderApi } from 'shared';
+import { CarritoContador, authApi, orderApi } from 'shared';
 import { vi } from 'vitest';
 import { montar } from '../../testing';
 import { PROVEEDORES, errorApi, http, ok } from '../carrito/pruebas-carrito';
@@ -304,6 +304,95 @@ describe('Checkout (P-4-02)', () => {
 
     expect(p.el.textContent).toContain('Inténtalo en un momento');
     expect(navegar).not.toHaveBeenCalled();
+  });
+
+  it('CA-4-61 con agencia sin elegir avisa debajo del selector que debe seleccionar una y no deja confirmar', async () => {
+    const p = await iniciar([dir(1, 'Casa', '150122', true)]);
+    p.radios('modalidad')[1].click();
+    http().expectOne('/api/v1/agencias').flush(ok([{ id: 1, nombre: 'Shalom', activa: true, orden: 1 }]));
+    await p.estabilizar();
+
+    const campo = p.el.querySelector('.fs-agencia')!;
+    const aviso = campo.querySelector('[role="alert"]');
+    expect(aviso?.textContent).toContain('Selecciona una agencia');
+    expect(campo.querySelector('select')?.getAttribute('aria-invalid')).toBe('true');
+    expect(p.boton('Confirmar pedido').disabled).toBe(true);
+  });
+
+  it('CA-4-61 con la agencia elegida desaparece el aviso y el resumen y "Revisa tu pedido" muestran su nombre', async () => {
+    const p = await iniciar([dir(1, 'Casa', '150122', true)]);
+    p.radios('modalidad')[1].click();
+    http().expectOne('/api/v1/agencias').flush(ok([{ id: 1, nombre: 'Shalom', activa: true, orden: 1 }]));
+    await p.estabilizar();
+    const select = p.el.querySelector<HTMLSelectElement>('.fs-agencia select')!;
+    select.value = '1';
+    select.dispatchEvent(new Event('change'));
+    http()
+      .expectOne('/api/v1/checkout/resumen')
+      .flush(ok(resumenDe(137.8, { envio: { modalidad: 'AGENCIA', costo: 18, plazoDiasMin: 2, plazoDiasMax: 3, agenciaNombre: 'Shalom' } })));
+    await p.estabilizar();
+
+    expect(p.el.querySelector('.fs-agencia [role="alert"]')).toBeNull();
+    expect(p.el.querySelector('.fs-resumen')?.textContent).toContain('Agencia Shalom');
+    expect(p.el.querySelector('[aria-labelledby="sec-revision"]')?.textContent).toContain('Envío por agencia: Shalom');
+  });
+
+  it('CA-4-62 cada línea de "Revisa tu pedido" muestra precio base unitario, cantidad y el descuento de esa línea', async () => {
+    const p = await iniciar([dir(1, 'Casa', '150122', true), dir(2, 'Trabajo', '070101')]);
+    p.radios('direccion')[1].click();
+    http().expectOne('/api/v1/envios/opciones?ubigeo=070101').flush(ok(OPCIONES));
+    const base = resumenDe(127.8);
+    http()
+      .expectOne('/api/v1/checkout/resumen')
+      .flush(
+        ok({
+          ...base,
+          descuentoTotal: 12,
+          items: [{ ...base.items[0], descuentoPorcentaje: 10, descuentoMonto: 12, total: 107.8 }],
+        }),
+      );
+    await p.estabilizar();
+
+    const linea = p.el.querySelector('.ck-items li')?.textContent ?? '';
+    expect(linea).toContain('Legging Pro');
+    expect(linea).toContain('S/ 59.90 c/u');
+    expect(linea).toContain('Cantidad: 2');
+    expect(linea).toContain('Descuento (10 %): -S/ 12.00');
+    expect(linea).toContain('S/ 107.80');
+    expect(p.el.querySelector('.fs-resumen__fila--descuento')?.textContent).toContain('-S/ 12.00');
+  });
+
+  it('CA-4-62 una línea sin descuento no muestra el detalle de descuento', async () => {
+    const p = await iniciar([dir(1, 'Casa', '150122', true)]);
+
+    const linea = p.el.querySelector('.ck-items li')?.textContent ?? '';
+    expect(linea).toContain('S/ 59.90 c/u');
+    expect(linea).not.toContain('Descuento');
+  });
+
+  it('CA-4-63 al confirmar el pedido el contador del carrito en la cabecera queda en 0', async () => {
+    const p = await confirmable();
+    vi.spyOn(TestBed.inject(Router), 'navigate').mockResolvedValue(true);
+    const contador = TestBed.inject(CarritoContador);
+    contador.establecer(3);
+
+    p.boton('Confirmar pedido').click();
+    http().expectOne('/api/v1/pedidos').flush(ok({ codigo: 'FS-000124', total: 129.8, expiraEn: '2026-10-22T15:30:00Z' }), { status: 201, statusText: 'Created' });
+    await p.estabilizar();
+
+    expect(contador.cantidad()).toBe(0);
+  });
+
+  it('CA-4-63 si la confirmación falla el contador del carrito no cambia', async () => {
+    const p = await confirmable();
+    const contador = TestBed.inject(CarritoContador);
+    contador.establecer(3);
+
+    p.boton('Confirmar pedido').click();
+    http().expectOne('/api/v1/pedidos').flush(errorApi('SERVICIO_NO_DISPONIBLE', 'No disponible'), { status: 503, statusText: 'Service Unavailable' });
+    await p.estabilizar();
+
+    expect(contador.cantidad()).toBe(3);
   });
 
   it('CA-4-24 si no se pueden cargar las direcciones ofrece reintentar', async () => {
