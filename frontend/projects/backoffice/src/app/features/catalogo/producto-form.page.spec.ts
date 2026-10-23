@@ -1,4 +1,6 @@
 import { Component } from '@angular/core';
+import { TestBed } from '@angular/core/testing';
+import { ToastService } from 'shared';
 import { SESION_ADMIN, SESION_OPERADOR } from '../../testing/sesiones';
 import { ProductoFormPage } from './producto-form.page';
 import { MAESTROS_FORM, PRODUCTO, armar, asentar, atender, boton, sobre } from './prueba-catalogo';
@@ -218,5 +220,121 @@ describe('ProductoFormPage (P-2-04)', () => {
       modo: 'PERSONALIZADO',
       tramos: [{ unidadesMinimas: 3, porcentaje: 5 }],
     });
+  });
+});
+
+describe('ProductoFormPage: categorías, validación y errores del servidor', () => {
+  const nuevo = async () => {
+    const t = await armar(RUTAS, '/catalogo/productos/nuevo');
+    atender(t.ctrl, MAESTROS_FORM);
+    await asentar(t.fixture);
+    return t;
+  };
+  const marca = (t: Awaited<ReturnType<typeof abrir>>, id: number) =>
+    t.el.querySelector<HTMLInputElement>(`input[data-categoria="${id}"]`)!;
+  const alternar = async (t: Awaited<ReturnType<typeof abrir>>, id: number) => {
+    marca(t, id).click();
+    await asentar(t.fixture);
+  };
+  const llenarValido = async (t: Awaited<ReturnType<typeof abrir>>) => {
+    await poner(t, 'input[name="codigo"]', 'LEG02');
+    await poner(t, 'input[name="nombre"]', 'Legging Aire');
+    await poner(t, 'input[name="precioBase"]', '49.9');
+  };
+  const error = (t: Awaited<ReturnType<typeof abrir>>, campo: string) =>
+    t.el.querySelector(`[data-error="${campo}"]`)?.textContent?.trim();
+
+  it('CA-2-70 al marcar una subcategoría se marca también su categoría padre', async () => {
+    const t = await nuevo();
+    await alternar(t, 11);
+    expect(marca(t, 11).checked).toBe(true);
+    expect(marca(t, 10).checked).toBe(true);
+    await llenarValido(t);
+    boton(t.el, 'Guardar')!.click();
+    await asentar(t.fixture);
+    expect(t.ctrl.expectOne('/api/v1/admin/productos').request.body.categoriaIds).toEqual([11, 10]);
+  });
+
+  it('CA-2-70 al desmarcar la categoría padre se desmarcan también sus subcategorías', async () => {
+    const t = await nuevo();
+    await alternar(t, 11);
+    await alternar(t, 10);
+    expect(marca(t, 10).checked).toBe(false);
+    expect(marca(t, 11).checked).toBe(false);
+  });
+
+  it('CA-2-70 marcar solo el padre no marca sus subcategorías, y desmarcar una subcategoría deja al padre marcado', async () => {
+    const t = await nuevo();
+    await alternar(t, 10);
+    expect(marca(t, 11).checked).toBe(false);
+    await alternar(t, 11);
+    await alternar(t, 11);
+    expect(marca(t, 11).checked).toBe(false);
+    expect(marca(t, 10).checked).toBe(true);
+  });
+
+  it('CA-2-71 un código con minúsculas o símbolos no se envía y el error aparece bajo el campo', async () => {
+    const t = await nuevo();
+    await llenarValido(t);
+    await poner(t, 'input[name="codigo"]', 'leg-1');
+    boton(t.el, 'Guardar')!.click();
+    await asentar(t.fixture);
+    t.ctrl.expectNone('/api/v1/admin/productos');
+    expect(error(t, 'codigo')).toBe('El código usa de 2 a 20 letras mayúsculas o números');
+    expect(t.el.querySelector('input[name="codigo"]')!.getAttribute('aria-invalid')).toBe('true');
+  });
+
+  it('CA-2-71 nombre corto y precio vacío también se validan antes de enviar, cada uno bajo su campo', async () => {
+    const t = await nuevo();
+    await poner(t, 'input[name="codigo"]', 'LEG02');
+    await poner(t, 'input[name="nombre"]', 'ab');
+    boton(t.el, 'Guardar')!.click();
+    await asentar(t.fixture);
+    t.ctrl.expectNone('/api/v1/admin/productos');
+    expect(error(t, 'nombre')).toBe('El nombre debe tener de 3 a 120 caracteres');
+    expect(error(t, 'precioBase')).toBe('Ingresa un precio igual o mayor que 0, con hasta 2 decimales');
+    expect(error(t, 'codigo')).toBeUndefined();
+  });
+
+  it('CA-2-72 si el servidor rechaza el código, el error de ese campo aparece bajo él y no se pierde lo escrito', async () => {
+    const t = await nuevo();
+    await llenarValido(t);
+    boton(t.el, 'Guardar')!.click();
+    await asentar(t.fixture);
+    t.ctrl.expectOne('/api/v1/admin/productos').flush(
+      {
+        success: false,
+        mensaje: 'Revisa los datos ingresados',
+        codigo: 'VALIDACION',
+        errores: [{ campo: 'codigo', mensaje: 'El código usa de 2 a 20 letras mayúsculas o números' }],
+      },
+      { status: 400, statusText: 'Bad Request' },
+    );
+    await asentar(t.fixture);
+    expect(error(t, 'codigo')).toBe('El código usa de 2 a 20 letras mayúsculas o números');
+    expect(t.el.querySelector<HTMLInputElement>('input[name="nombre"]')!.value).toBe('Legging Aire');
+    // al corregir el campo, su error desaparece
+    await poner(t, 'input[name="codigo"]', 'LEG03');
+    expect(error(t, 'codigo')).toBeUndefined();
+  });
+
+  it('CA-2-72 un error de campo que el formulario no tiene (p. ej. categoriaIds) se muestra en un aviso visible', async () => {
+    const t = await nuevo();
+    await llenarValido(t);
+    boton(t.el, 'Guardar')!.click();
+    await asentar(t.fixture);
+    t.ctrl.expectOne('/api/v1/admin/productos').flush(
+      {
+        success: false,
+        mensaje: 'Revisa los datos ingresados',
+        codigo: 'VALIDACION',
+        errores: [{ campo: 'categoriaIds', mensaje: 'Hay categorías que no existen' }],
+      },
+      { status: 400, statusText: 'Bad Request' },
+    );
+    await asentar(t.fixture);
+    expect(TestBed.inject(ToastService).toasts().map((a) => a.mensaje)).toEqual([
+      'Hay categorías que no existen',
+    ]);
   });
 });
