@@ -9,8 +9,26 @@ import { FsDialogo } from '../../ui/dialogo/dialogo';
   selector: 'fs-guia-tallas-modal',
   imports: [FsDialogo],
   changeDetection: ChangeDetectionStrategy.OnPush,
+  styles: `
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    th,
+    td {
+      border-width: 1px;
+      border-style: solid;
+      border-color: var(--fs-color-linea, #ddd);
+      padding: 8px 12px;
+      text-align: center;
+    }
+    th {
+      background: var(--fs-color-superficie-alterna, #f5f5f5);
+      font-weight: 600;
+    }
+  `,
   template: `
-    <fs-dialogo titulo="Guía de tallas" [(abierto)]="abierto">
+    <fs-dialogo titulo="Guía de tallas" [cerrarConFondo]="true" [(abierto)]="abierto">
       @if (guia.value(); as g) {
         <table class="fs-tabla-guia">
           <thead>
@@ -36,6 +54,14 @@ import { FsDialogo } from '../../ui/dialogo/dialogo';
       } @else {
         <p>Cargando…</p>
       }
+      <button
+        fsAcciones
+        type="button"
+        class="fs-btn fs-btn--secundario"
+        (click)="abierto.set(false)"
+      >
+        Cerrar
+      </button>
     </fs-dialogo>
   `,
 })

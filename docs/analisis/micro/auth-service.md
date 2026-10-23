@@ -1,9 +1,10 @@
 # FitStore — Análisis micro: `auth-service`
 
-> Versión: **v6 (aprobado)** — 2026-10-19. Fuente: [`01-analisis-macro.md`](../01-analisis-macro.md) v11.
+> Versión: **v7 (aprobado)** — 2026-10-22. Fuente: [`01-analisis-macro.md`](../01-analisis-macro.md) v11.
 > Estados: ✅ decidido · 🟡 propuesto · ❓ abierto · 🕓 diferido
 
 **Historial:**
+- v7 (2026-10-22): margen de reuso del refresh (SPEC-1 v7, CA-1-40): claves `auth:refresh:rotado:{jti}` y `auth:refresh:cerrado:{jti}` de 10 segundos.
 - v6 (2026-10-20): por la implementación de 0a.2: tamaños no definidos: `consentimiento.version_politica varchar(20)`, `ip varchar(45)`, `tipo` y `token_password.motivo varchar(20)` con `CHECK` de sus valores; FK sin `ON DELETE CASCADE`.
 - v5 (2026-10-19): ajustes de la etapa de contratos: nombre de la cookie de refresh: `fs_refresh` (contracts K8).
 - v4 (2026-10-18): sección 10 aprobada → **documento completo aprobado**.
@@ -197,6 +198,8 @@ Las direcciones **se eliminan físicamente** (`DELETE`): los pedidos guardan una
 | `auth:login:fallos:{tipo}:{email}` | contador | 15 min | Intentos fallidos consecutivos (`tipo` = `cliente` o `staff`) |
 | `auth:login:bloqueo:{tipo}:{email}` | marca | 15 min | Cuenta bloqueada temporalmente |
 | `auth:refresh:revocado:{jti}` | marca | vida restante del token | Refresh tokens revocados (logout y rotación) |
+| `auth:refresh:rotado:{jti}` | huella del navegador y `jti` sucesor | 10 s | Margen de reuso tras la rotación (CA-1-40) |
+| `auth:refresh:cerrado:{jti}` | marca | 10 s | Logout reciente: el margen no revive un token anterior |
 
 Si Redis no está disponible, el login sigue funcionando sin bloqueo temporal (se registra una advertencia); el gateway mantiene su propio rate limiting.
 
@@ -295,7 +298,7 @@ sequenceDiagram
 
 - **No se incluye el DNI ni datos sensibles** en los tokens (se pueden decodificar).
 - Guardar el refresh en una cookie `HttpOnly` evita que un script malicioso (XSS) lo robe; el access token en memoria dura poco. Al recargar la página, el frontend llama a `/refresh` y recupera la sesión. Storefront y backoffice se sirven en subdominios distintos, así que cada uno tiene su propia cookie.
-- **Rotación:** cada `/refresh` revoca el `jti` usado (Redis) y entrega un refresh nuevo. Si llega un refresh ya revocado → `401` y se registra como posible robo.
+- **Rotación:** cada `/refresh` revoca el `jti` usado (Redis) y entrega un refresh nuevo. Si llega un refresh ya revocado → `401` y se registra como posible robo. Excepción: si el mismo navegador (mismo `User-Agent`) lo rotó hace menos de 10 segundos y su sucesor no se cerró con logout, recibe un par nuevo. Cubre las recargas seguidas, donde la respuesta de la primera se pierde al cerrarse la página.
 - **Invalidar todas las sesiones** (cambio o restablecimiento de contraseña, desactivación): se actualiza `credenciales_actualizadas_en`; todo refresh emitido antes de esa fecha se rechaza. Los access tokens ya emitidos caducan solos en ≤ 15 min.
 - **Claves:** el par RSA se carga desde archivos PEM montados por variables de entorno (nunca en el repo). En el perfil `dev` se genera uno al arrancar si no existe. El JWKS publica `kid` para poder rotar claves en el futuro.
 

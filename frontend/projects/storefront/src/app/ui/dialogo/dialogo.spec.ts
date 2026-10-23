@@ -25,6 +25,34 @@ describe('Diálogo de ui/', () => {
     expect(cierres).toEqual([1]);
   });
 
+  it('CA-0b-25c con cerrarConFondo, el clic en el fondo lo cierra y el clic dentro no', async () => {
+    const { el, comp, estabilizar } = await montar(FsDialogo, {
+      titulo: 'Guía',
+      abierto: true,
+      cerrarConFondo: true,
+    });
+    el.querySelector<HTMLElement>('.fs-dialogo')!.click();
+    await estabilizar();
+    expect(comp.abierto()).toBe(true);
+    el.querySelector<HTMLElement>('.fs-dialogo-fondo')!.click();
+    await estabilizar();
+    expect(comp.abierto()).toBe(false);
+  });
+
+  it('CA-0b-25c por defecto el clic en el fondo no lo cierra', async () => {
+    const { el, comp, estabilizar } = await montar(FsDialogo, { titulo: 'X', abierto: true });
+    el.querySelector<HTMLElement>('.fs-dialogo-fondo')!.click();
+    await estabilizar();
+    expect(comp.abierto()).toBe(true);
+  });
+
+  it('CA-0b-25c Esc lo cierra aunque el foco no esté dentro del diálogo', async () => {
+    const { comp, estabilizar } = await montar(FsDialogo, { titulo: 'X', abierto: true });
+    document.body.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+    await estabilizar();
+    expect(comp.abierto()).toBe(false);
+  });
+
   it('CA-0b-25 devuelve el foco al elemento que lo abrió', async () => {
     const abridor = document.createElement('button');
     document.body.append(abridor);

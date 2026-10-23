@@ -9,7 +9,8 @@ import { EstadoCargando, EstadoError } from '../../ui/estados/estados';
 import { ESTILOS_PANTALLA } from '../estilos-pantalla';
 import { BrickMercadoPago, type EnvioBrick } from './brick-mercado-pago';
 import { FormularioSimulado } from './formulario-simulado';
-import { ResultadoPago, type TipoResultado } from './resultado-pago';
+import { ModalPago, type EstadoModalPago } from './modal-pago';
+import type { TipoResultado } from './resultado-pago';
 
 type Pagina = paymentApi.PaginaPago;
 type Medio = paymentApi.MedioDisponible;
@@ -32,7 +33,7 @@ const PAGADOS = ['PAGADA', 'REEMBOLSADA_PARCIAL', 'REEMBOLSADA'];
 /** Página de pago y su resultado (P-5-01 y P-5-02): una sola ruta, el resultado es un estado de la página (P3). */
 @Component({
   selector: 'fs-pago-page',
-  imports: [RouterLink, PrecioPipe, FsBoton, EstadoCargando, EstadoError, BrickMercadoPago, FormularioSimulado, ResultadoPago],
+  imports: [RouterLink, PrecioPipe, FsBoton, EstadoCargando, EstadoError, BrickMercadoPago, FormularioSimulado, ModalPago],
   templateUrl: './pago.page.html',
   styles: [
     ESTILOS_PANTALLA,
@@ -105,14 +106,19 @@ export class PagoPage implements OnInit, OnDestroy {
   });
 
   /** Qué se muestra: el resultado, el estado del pedido o el formulario de pago. */
-  protected readonly vista = computed<'resultado' | 'pagado' | 'anulado' | 'vencido' | 'pagar' | null>(() => {
+  protected readonly vista = computed<'pagado' | 'anulado' | 'vencido' | 'pagar' | null>(() => {
     const p = this.pagina();
     if (!p) return null;
-    if (this.resultado()) return 'resultado';
+    // con un cobro en curso o con su resultado, la pantalla de pago sigue detrás del modal (CA-5-42)
+    if (this.resultado() || this.procesando()) return 'pagar';
     if (PAGADOS.includes(p.estado)) return 'pagado';
     if (p.estado === 'ANULADA') return 'anulado';
     return this.restanteMs() <= 0 ? 'vencido' : 'pagar';
   });
+  /** Estado del modal de pago: procesando mientras se cobra y luego el resultado; `null` si está cerrado. */
+  protected readonly estadoModal = computed<EstadoModalPago | null>(
+    () => this.resultado()?.tipo ?? (this.procesando() ? 'procesando' : null),
+  );
   protected readonly medio = computed(() => {
     const clave = this.medioElegido();
     return this.pagina()?.medios.find((m) => claveDe(m) === clave) ?? null;
@@ -332,9 +338,6 @@ export class PagoPage implements OnInit, OnDestroy {
     });
   }
 
-  protected tipoResultado(): TipoResultado {
-    return this.resultado()?.tipo ?? 'confirmando';
-  }
 }
 
 function claveDe(m: Medio): string {

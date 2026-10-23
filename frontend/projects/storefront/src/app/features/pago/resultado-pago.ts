@@ -12,7 +12,6 @@ export type TipoResultado = 'aprobado' | 'rechazado' | 'confirmando' | 'sin-conf
   template: `
     <section
       style="display: grid; justify-items: center; gap: 16px; text-align: center; max-width: 520px; margin-inline: auto"
-      aria-live="polite"
     >
       @switch (tipo()) {
         @case ('aprobado') {

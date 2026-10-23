@@ -23,6 +23,12 @@ Desvíos acordados con respecto a la spec: correo con **Mailpit** (sin Amazon SE
 2. **Azure:** la VM permite entrada en 80 y 443 (todo el mundo) y en 22 (regla `ssh-solo-llave` del NSG, abierta a todos porque los *runners* de GitHub entran por ahí para desplegar). Nada más.
 
    **Endurecimiento del SSH** (hecho una vez): sin contraseña ni acceso de `root` (`PasswordAuthentication no`, `PermitRootLogin no`), solo el usuario `fitstore` (`AllowUsers fitstore`), **fail2ban** que bloquea las IP con intentos fallidos y actualizaciones de seguridad automáticas. Las llaves autorizadas son la del autor y una llave ed25519 **solo para el despliegue** (la privada vive únicamente en el secreto `VM_SSH_KEY` de GitHub). Para quitarle acceso a GitHub basta borrar esa línea de `~/.ssh/authorized_keys` de la VM.
+   **Swap de 4 GB** (hecho una vez, necesario): construir las imágenes con Maven junto a la plataforma en marcha agota los 8 GB y la VM deja de responder, incluso por SSH (pasó el 21 de octubre; solo se recuperó reiniciándola desde Azure). Con swap se puede construir en caliente; si falta, `desplegar.sh` detiene la plataforma antes de construir.
+   ```bash
+   sudo fallocate -l 4G /swapfile && sudo chmod 600 /swapfile && sudo mkswap /swapfile && sudo swapon /swapfile
+   echo '/swapfile none swap sw 0 0' | sudo tee -a /etc/fstab
+   echo 'vm.swappiness=10' | sudo tee /etc/sysctl.d/99-swap.conf && sudo sysctl -p /etc/sysctl.d/99-swap.conf
+   ```
 3. **`.env` de la VM:** crea `~/fitstore/infra/.env` a partir de `infra/.env.example` con las variables de la sección 3.
 4. **Despliegue:** desde una copia del repositorio en tu máquina:
    ```bash

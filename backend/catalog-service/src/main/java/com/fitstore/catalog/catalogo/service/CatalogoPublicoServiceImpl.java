@@ -225,12 +225,14 @@ public class CatalogoPublicoServiceImpl implements CatalogoPublicoService {
                 () -> construirBase(slug));
         Map<Long, Integer> disponible = disponibilidad.disponibles(base.variantes().stream().map(VarianteBase::id).toList());
         int umbral = inventario.umbralUltimasUnidades();
+        Integer topeTramos = base.tramos().stream().map(TramoDto::unidadesMinimas).max(Integer::compare).orElse(null);
 
         List<VariantePublicaDto> variantesPublicas = base.variantes().stream().map(v -> {
             int d = disponible.getOrDefault(v.id(), 0);
             Disponibilidad nivel = d <= 0 ? Disponibilidad.AGOTADO : d <= umbral ? Disponibilidad.ULTIMAS : Disponibilidad.DISPONIBLE;
             return new VariantePublicaDto(v.id(), v.sku(), v.tallaId(), v.colorId(), v.precio(), nivel,
-                    nivel == Disponibilidad.ULTIMAS ? d : null);
+                    nivel == Disponibilidad.ULTIMAS ? d : null,
+                    topeTramos == null ? null : Math.max(0, Math.min(d, topeTramos)));
         }).toList();
         Set<Long> coloresConStock = base.variantes().stream().filter(v -> disponible.getOrDefault(v.id(), 0) > 0)
                 .map(VarianteBase::colorId).collect(Collectors.toSet());

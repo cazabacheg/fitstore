@@ -95,6 +95,82 @@ class TokenServiceTest extends PruebaApi {
         assertThatThrownBy(() -> tokens.refrescar(original.refreshToken())).isInstanceOf(SesionInvalidaException.class);
     }
 
+    private static final String CHROME = "Mozilla/5.0 (X11; Linux x86_64) Chrome/141.0";
+    private static final String FIREFOX = "Mozilla/5.0 (X11; Linux x86_64; rv:140.0) Gecko/20100101 Firefox/140.0";
+
+    @Test
+    @DisplayName("CA-1-40 un refresh recién rotado vuelve a servir dentro del margen desde el mismo navegador")
+    void margenDeReusoMismoNavegador() {
+        Cliente cliente = crearCliente("ana@correo.com", "45678912");
+        ParTokens original = tokens.emitir(cliente);
+        SesionEmitida primera = tokens.refrescar(original.refreshToken(), CHROME);
+
+        SesionEmitida segunda = tokens.refrescar(original.refreshToken(), CHROME);
+
+        assertThat(segunda.cuenta().getId()).isEqualTo(cliente.getId());
+        assertThat(segunda.tokens().refreshToken()).isNotEqualTo(primera.tokens().refreshToken());
+        assertThat(tokens.refrescar(segunda.tokens().refreshToken(), CHROME).cuenta().getId()).isEqualTo(cliente.getId());
+    }
+
+    @Test
+    @DisplayName("CA-1-40 la marca del margen dura 10 segundos como máximo")
+    void margenDeReusoDuraDiezSegundos() {
+        Cliente cliente = crearCliente("ana@correo.com", "45678912");
+        tokens.refrescar(tokens.emitir(cliente).refreshToken(), CHROME);
+
+        List<String> marcas = redis.keys("auth:refresh:rotado:*").stream().toList();
+        assertThat(marcas).hasSize(1);
+        assertThat(redis.getExpire(marcas.get(0))).isBetween(1L, 10L);
+    }
+
+    @Test
+    @DisplayName("CA-1-09 dentro del margen, el refresh ya usado desde otro navegador o sin navegador identificable se rechaza")
+    void margenDeReusoOtroNavegador() {
+        Cliente cliente = crearCliente("ana@correo.com", "45678912");
+        ParTokens original = tokens.emitir(cliente);
+        tokens.refrescar(original.refreshToken(), CHROME);
+
+        assertThatThrownBy(() -> tokens.refrescar(original.refreshToken(), FIREFOX)).isInstanceOf(SesionInvalidaException.class);
+        assertThatThrownBy(() -> tokens.refrescar(original.refreshToken(), null)).isInstanceOf(SesionInvalidaException.class);
+        assertThatThrownBy(() -> tokens.refrescar(original.refreshToken(), " ")).isInstanceOf(SesionInvalidaException.class);
+    }
+
+    @Test
+    @DisplayName("CA-1-09 pasado el margen, el refresh ya usado se rechaza aunque venga del mismo navegador")
+    void margenDeReusoVencido() {
+        Cliente cliente = crearCliente("ana@correo.com", "45678912");
+        ParTokens original = tokens.emitir(cliente);
+        tokens.refrescar(original.refreshToken(), CHROME);
+        redis.delete(redis.keys("auth:refresh:rotado:*"));
+
+        assertThatThrownBy(() -> tokens.refrescar(original.refreshToken(), CHROME)).isInstanceOf(SesionInvalidaException.class);
+    }
+
+    @Test
+    @DisplayName("CA-1-10 tras cerrar sesión, el refresh anterior ya no sirve aunque esté dentro del margen")
+    void margenDeReusoTrasCerrarSesion() {
+        Cliente cliente = crearCliente("ana@correo.com", "45678912");
+        ParTokens original = tokens.emitir(cliente);
+        SesionEmitida nueva = tokens.refrescar(original.refreshToken(), CHROME);
+
+        tokens.revocar(nueva.tokens().refreshToken());
+
+        assertThatThrownBy(() -> tokens.refrescar(original.refreshToken(), CHROME)).isInstanceOf(SesionInvalidaException.class);
+    }
+
+    @Test
+    @DisplayName("CA-1-11 dentro del margen, un refresh emitido antes de cambiar las credenciales se rechaza")
+    void margenDeReusoTrasCambiarCredenciales() {
+        Cliente cliente = crearCliente("ana@correo.com", "45678912");
+        ParTokens original = tokens.emitir(cliente);
+        tokens.refrescar(original.refreshToken(), CHROME);
+
+        cliente.setCredencialesActualizadasEn(cliente.getCredencialesActualizadasEn().plusMillis(5));
+        clientes.saveAndFlush(cliente);
+
+        assertThatThrownBy(() -> tokens.refrescar(original.refreshToken(), CHROME)).isInstanceOf(SesionInvalidaException.class);
+    }
+
     @Test
     @DisplayName("CA-1-10 revocar deja el refresh inservible e ignora un token ilegible")
     void revocar() {

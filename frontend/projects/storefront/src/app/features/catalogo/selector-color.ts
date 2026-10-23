@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, Component, input, model } from '@angular/core';
 import type { catalogApi } from 'shared';
+import { capitalizar } from '../../ui/capitalizar';
 
 /** Muestras de color: las que no tienen stock en ninguna talla se ven opacas, tachadas y no se pueden elegir. */
 @Component({
@@ -40,8 +41,8 @@ import type { catalogApi } from 'shared';
     @for (c of colores(); track c.id) {
       <button
         type="button"
-        [title]="c.nombre"
-        [attr.aria-label]="c.nombre + (c.conStock ? '' : ' (sin stock)')"
+        [title]="nombre(c.nombre)"
+        [attr.aria-label]="nombre(c.nombre) + (c.conStock ? '' : ' (sin stock)')"
         [style.background]="c.hex"
         [class.tachado]="!c.conStock"
         [disabled]="!c.conStock"
@@ -54,4 +55,5 @@ import type { catalogApi } from 'shared';
 export class SelectorColor {
   readonly colores = input<catalogApi.ColorDetalle[]>([]);
   readonly valor = model<number | null>(null);
+  protected readonly nombre = capitalizar;
 }

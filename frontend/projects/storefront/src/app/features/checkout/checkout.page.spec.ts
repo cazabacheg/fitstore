@@ -1,9 +1,9 @@
 import { TestBed } from '@angular/core/testing';
 import { Router } from '@angular/router';
-import { authApi, orderApi } from 'shared';
+import { CarritoContador, authApi, orderApi } from 'shared';
 import { vi } from 'vitest';
 import { montar } from '../../testing';
-import { PROVEEDORES, errorApi, http, ok } from '../carrito/pruebas-carrito';
+import { PROVEEDORES, carrito, errorApi, http, linea, ok } from '../carrito/pruebas-carrito';
 import { DialogoDireccionService } from '../cuenta/direcciones/dialogo-direccion.service';
 import { CheckoutPage } from './checkout.page';
 
@@ -42,6 +42,9 @@ const resumenDe = (total: number, extra: Partial<orderApi.ResumenCheckout> = {})
   ...extra,
 });
 
+/** Carrito del cliente: lo que el checkout muestra mientras el servidor no tiene un resumen de envío para devolver. */
+const CARRITO_BASE = carrito([linea(101, 'Legging Pro', 2, { descuentoPorcentaje: 10, descuentoMonto: 12, total: 107.8 })]);
+
 const OPCIONES = [
   { modalidad: 'DELIVERY_LOCAL', costo: 10, plazoDiasMin: 1, plazoDiasMax: 2 },
   { modalidad: 'AGENCIA', costo: 18, plazoDiasMin: 2, plazoDiasMax: 3 },
@@ -60,6 +63,7 @@ const abrirDialogo = vi.fn<() => Promise<authApi.Direccion | undefined>>();
 async function iniciar(direcciones: authApi.Direccion[], opciones = OPCIONES, total = 129.8, modalidades?: string[]) {
   const m = await montar(CheckoutPage, {}, [...PROVEEDORES, { provide: DialogoDireccionService, useValue: { abrir: abrirDialogo } }]);
   http().expectOne('/api/v1/settings/public').flush(ok(configuracion(modalidades)));
+  http().expectOne('/api/v1/carrito').flush(ok(CARRITO_BASE));
   http().expectOne('/api/v1/clientes/me/direcciones').flush(ok(direcciones));
   const principal = direcciones.find((d) => d.predeterminada) ?? direcciones[0];
   if (principal) {
@@ -116,6 +120,7 @@ describe('Checkout (P-4-02)', () => {
   it('CA-4-14 fuera de Lima y Callao el distrito no trae delivery local y no se ofrece', async () => {
     const m = await montar(CheckoutPage, {}, [...PROVEEDORES, { provide: DialogoDireccionService, useValue: { abrir: abrirDialogo } }]);
     http().expectOne('/api/v1/settings/public').flush(ok(configuracion()));
+    http().expectOne('/api/v1/carrito').flush(ok(CARRITO_BASE));
     http().expectOne('/api/v1/clientes/me/direcciones').flush(ok([dir(1, 'Casa', '040101', true)]));
     http().expectOne('/api/v1/envios/opciones?ubigeo=040101').flush(ok([OPCIONES[1]]));
     // Con solo agencia disponible queda elegida y hay que escoger la agencia antes de pedir el resumen
@@ -306,9 +311,145 @@ describe('Checkout (P-4-02)', () => {
     expect(navegar).not.toHaveBeenCalled();
   });
 
+  it('CA-4-67 con agencia sin elegir avisa debajo del selector que debe seleccionar una y no deja confirmar', async () => {
+    const p = await iniciar([dir(1, 'Casa', '150122', true)]);
+    p.radios('modalidad')[1].click();
+    http().expectOne('/api/v1/agencias').flush(ok([{ id: 1, nombre: 'Shalom', activa: true, orden: 1 }]));
+    await p.estabilizar();
+
+    const campo = p.el.querySelector('.fs-agencia')!;
+    const aviso = campo.querySelector('[role="alert"]');
+    expect(aviso?.textContent).toContain('Selecciona una agencia');
+    expect(campo.querySelector('select')?.getAttribute('aria-invalid')).toBe('true');
+    expect(p.boton('Confirmar pedido').disabled).toBe(true);
+  });
+
+  it('CA-4-67 con la agencia elegida desaparece el aviso y el resumen y "Revisa tu pedido" muestran su nombre', async () => {
+    const p = await iniciar([dir(1, 'Casa', '150122', true)]);
+    p.radios('modalidad')[1].click();
+    http().expectOne('/api/v1/agencias').flush(ok([{ id: 1, nombre: 'Shalom', activa: true, orden: 1 }]));
+    await p.estabilizar();
+    const select = p.el.querySelector<HTMLSelectElement>('.fs-agencia select')!;
+    select.value = '1';
+    select.dispatchEvent(new Event('change'));
+    http()
+      .expectOne('/api/v1/checkout/resumen')
+      .flush(ok(resumenDe(137.8, { envio: { modalidad: 'AGENCIA', costo: 18, plazoDiasMin: 2, plazoDiasMax: 3, agenciaNombre: 'Shalom' } })));
+    await p.estabilizar();
+
+    expect(p.el.querySelector('.fs-agencia [role="alert"]')).toBeNull();
+    expect(p.el.querySelector('.fs-resumen')?.textContent).toContain('Agencia Shalom');
+    expect(p.el.querySelector('[aria-labelledby="sec-revision"]')?.textContent).toContain('Envío por agencia: Shalom');
+  });
+
+  it('CA-4-68 cada línea de "Revisa tu pedido" muestra precio base unitario, cantidad y el descuento de esa línea', async () => {
+    const p = await iniciar([dir(1, 'Casa', '150122', true), dir(2, 'Trabajo', '070101')]);
+    p.radios('direccion')[1].click();
+    http().expectOne('/api/v1/envios/opciones?ubigeo=070101').flush(ok(OPCIONES));
+    const base = resumenDe(127.8);
+    http()
+      .expectOne('/api/v1/checkout/resumen')
+      .flush(
+        ok({
+          ...base,
+          descuentoTotal: 12,
+          items: [{ ...base.items[0], descuentoPorcentaje: 10, descuentoMonto: 12, total: 107.8 }],
+        }),
+      );
+    await p.estabilizar();
+
+    const linea = p.el.querySelector('.ck-items li')?.textContent ?? '';
+    expect(linea).toContain('Legging Pro');
+    expect(linea).toContain('S/ 59.90 c/u');
+    expect(linea).toContain('Cantidad: 2');
+    expect(linea).toContain('Descuento (10 %): -S/ 12.00');
+    expect(linea).toContain('S/ 107.80');
+    expect(p.el.querySelector('.fs-resumen__fila--descuento')?.textContent).toContain('-S/ 12.00');
+  });
+
+  it('CA-4-68 una línea sin descuento no muestra el detalle de descuento', async () => {
+    const p = await iniciar([dir(1, 'Casa', '150122', true)]);
+
+    const linea = p.el.querySelector('.ck-items li')?.textContent ?? '';
+    expect(linea).toContain('S/ 59.90 c/u');
+    expect(linea).not.toContain('Descuento');
+  });
+
+  it('CA-4-70 con la agencia sin elegir "Revisa tu pedido" y el resumen siguen mostrando las líneas, el subtotal y el descuento del carrito', async () => {
+    const p = await iniciar([dir(1, 'Casa', '150122', true)]);
+    p.radios('modalidad')[1].click();
+    http().expectOne('/api/v1/agencias').flush(ok([{ id: 1, nombre: 'Shalom', activa: true, orden: 1 }]));
+    await p.estabilizar();
+
+    const revision = p.el.querySelector('[aria-labelledby="sec-revision"]')?.textContent ?? '';
+    expect(revision).toContain('Legging Pro');
+    expect(revision).toContain('S/ 59.90 c/u');
+    expect(revision).toContain('Cantidad: 2');
+    expect(revision).toContain('Descuento (10 %): -S/ 12.00');
+    const resumen = p.el.querySelector('.fs-resumen')?.textContent ?? '';
+    expect(resumen).toContain('S/ 119.80');
+    expect(resumen).toContain('-S/ 12.00');
+    expect(resumen).toContain('Elige una agencia');
+    expect(resumen).toContain('Total sin envío');
+    expect(resumen).toContain('S/ 107.80');
+    expect(p.boton('Confirmar pedido').disabled).toBe(true);
+  });
+
+  it('CA-4-70 si el resumen falla de verdad avisa que no pudo calcular el envío pero las líneas siguen visibles y no deja confirmar', async () => {
+    const p = await iniciar([dir(1, 'Casa', '150122', true), dir(2, 'Trabajo', '070101')]);
+
+    p.radios('direccion')[1].click();
+    http().expectOne('/api/v1/envios/opciones?ubigeo=070101').flush(ok(OPCIONES));
+    http().expectOne('/api/v1/checkout/resumen').flush(errorApi('SERVICIO_NO_DISPONIBLE', 'No disponible'), { status: 503, statusText: 'Service Unavailable' });
+    await p.estabilizar();
+
+    expect(p.el.textContent).toContain('No pudimos calcular el envío, inténtalo en un momento');
+    expect(p.el.querySelector('[aria-labelledby="sec-revision"]')?.textContent).toContain('Legging Pro');
+    expect(p.el.querySelector('.fs-resumen')?.textContent).toContain('S/ 119.80');
+    expect(p.boton('Confirmar pedido').disabled).toBe(true);
+  });
+
+  it('CA-4-70 con recojo en tienda las líneas y los montos se ven completos y se puede confirmar', async () => {
+    const p = await iniciar([dir(1, 'Casa', '150122', true)]);
+    p.radios('modalidad')[2].click();
+    http().expectOne('/api/v1/checkout/resumen').flush(ok(resumenDe(107.8, { costoEnvio: 0, descuentoTotal: 12, envio: { modalidad: 'RECOJO', costo: 0 } })));
+    await p.estabilizar();
+
+    expect(p.el.querySelector('[aria-labelledby="sec-revision"]')?.textContent).toContain('Legging Pro');
+    expect(p.el.querySelector('.fs-resumen')?.textContent).toContain('S/ 107.80');
+    expect(p.el.querySelector('.fs-resumen')?.textContent).not.toContain('Total sin envío');
+    expect(p.boton('Confirmar pedido').disabled).toBe(false);
+  });
+
+  it('CA-4-69 al confirmar el pedido el contador del carrito en la cabecera queda en 0', async () => {
+    const p = await confirmable();
+    vi.spyOn(TestBed.inject(Router), 'navigate').mockResolvedValue(true);
+    const contador = TestBed.inject(CarritoContador);
+    contador.establecer(3);
+
+    p.boton('Confirmar pedido').click();
+    http().expectOne('/api/v1/pedidos').flush(ok({ codigo: 'FS-000124', total: 129.8, expiraEn: '2026-10-22T15:30:00Z' }), { status: 201, statusText: 'Created' });
+    await p.estabilizar();
+
+    expect(contador.cantidad()).toBe(0);
+  });
+
+  it('CA-4-69 si la confirmación falla el contador del carrito no cambia', async () => {
+    const p = await confirmable();
+    const contador = TestBed.inject(CarritoContador);
+    contador.establecer(3);
+
+    p.boton('Confirmar pedido').click();
+    http().expectOne('/api/v1/pedidos').flush(errorApi('SERVICIO_NO_DISPONIBLE', 'No disponible'), { status: 503, statusText: 'Service Unavailable' });
+    await p.estabilizar();
+
+    expect(contador.cantidad()).toBe(3);
+  });
+
   it('CA-4-24 si no se pueden cargar las direcciones ofrece reintentar', async () => {
     const m = await montar(CheckoutPage, {}, [...PROVEEDORES, { provide: DialogoDireccionService, useValue: { abrir: abrirDialogo } }]);
     http().expectOne('/api/v1/settings/public').flush(ok(configuracion()));
+    http().expectOne('/api/v1/carrito').flush(ok(CARRITO_BASE));
     http().expectOne('/api/v1/clientes/me/direcciones').flush(errorApi('ERROR_INTERNO', 'Falló'), { status: 500, statusText: 'Error' });
     await m.estabilizar();
 
