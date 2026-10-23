@@ -13,7 +13,7 @@ public interface AutenticacionService {
     SesionEmitida iniciarSesion(TipoCuenta tipo, String email, String password);
 
     /** Nuevo par de tokens a partir de la cookie de refresh, que se rota. */
-    SesionEmitida refrescar(String refreshToken);
+    SesionEmitida refrescar(String refreshToken, String agenteUsuario);
 
     /** Revoca el refresh token. No falla si ya no es válido. */
     void cerrarSesion(String refreshToken);

@@ -24,6 +24,10 @@ export interface VariantePublica {
      * Solo cuando la disponibilidad es ULTIMAS (\"¡Últimas 3 unidades!\").
      */
     ultimasUnidades?: number | null;
+    /**
+     * Stock disponible acotado a las unidades del tramo de descuento más alto del producto (con tramos de 3, 6 y 12 y 40 en stock se publica 12). Sirve para saber qué tramos alcanza la variante sin exponer el inventario real (CA-2-73). Ausente si el producto no tiene tramos.
+     */
+    unidadesComprables?: number | null;
 }
 export namespace VariantePublica {
 }

@@ -106,6 +106,17 @@ CA-5-11  Dado un cargo rechazado (tarjeta de prueba de fondos insuficientes)
               y puedo reintentar con otra tarjeta u otro medio mientras el pedido no venza
 
 CA-5-12  Ningún número de tarjeta ni CVV llega al backend ni a los logs (solo el token de un solo uso, que tampoco se registra)
+
+CA-5-42  Cuando pago (con cualquier medio)
+         Entonces se abre un modal de procesamiento con un spinner mientras se cobra, y la pantalla de pago sigue detrás
+         Y al terminar, el mismo modal muestra el resultado con los mensajes y botones de siempre: "¡Pago aprobado!"
+              ("Ver mi pedido", "Descargar boleta"), "No pudimos cobrar tu pago" con el motivo e "Intentar de nuevo"
+              (que cierra el modal para reintentar sin salir de la pantalla), o "Estamos confirmando tu pago" (202)
+
+CA-5-43  El modal de pago es accesible
+         Entonces tiene role="dialog" y aria-modal, anuncia su estado con aria-live, deja el foco dentro
+              (en el primer botón del resultado o en el propio modal mientras procesa) y no se cierra con Esc
+              mientras se procesa; con un rechazo, Esc equivale a "Intentar de nuevo"
 ```
 
 ### HU-5-04 — Pagar con Yape (extensión de alcance)
@@ -202,6 +213,18 @@ CA-5-28  Dado que la generación falla (Garage caído)
 
 CA-5-29  Cuando descargo mi boleta (GET /pagos/{codigo}/boleta)
          Entonces recibo el PDF; la de otro cliente responde 404; no existe ninguna URL pública del archivo
+
+CA-5-44  Dado una boleta generada
+         Entonces cada valor de la tabla de ítems queda bajo su cabecera: P. unit., Dscto. e Importe alineados a la derecha
+              con su cabecera, y Cant. centrada con su valor
+
+CA-5-45  Dado una boleta cuyo descuento total es 0
+         Entonces la fila "Descuentos" del cuadro de resumen no aparece; con descuento sí
+
+CA-5-41  Dado una boleta generada
+         Entonces el cuadro de resumen (subtotal, descuentos, envío, total e IGV) va alineado a la derecha, alineado con
+              la columna de importes de la tabla, ocupa menos de la mitad del ancho de la página y su letra es más
+              pequeña que la de los valores de la tabla de ítems
 ```
 
 ### HU-5-10 — Devolver el dinero automáticamente (extensión de alcance)
@@ -271,7 +294,8 @@ CA-5-38  Cuando lo marco como resuelto manualmente (p. ej. devolví por transfer
 - **Boceto (baja fidelidad):** ![P-5-01](img/P-5-01-pago.png)
 - **Diseño de alta fidelidad:** ✅ [canvas "FitStore Tienda"](https://claude.ai/artifact/1iacKddHAquNYuQcFPBZLg), `Pago` (FitStore escritorio) y `PagoKallpaMovil` (Kallpa móvil). Copia en [`docs/diseno/`](../diseno/).
 - **Componentes:** `PagoPage`, `ResumenPago` (código, productos, total, `CuentaRegresiva` de la spec 4 por contrato visual), `SelectorMedio` (Tarjeta, Yape, Mercado Pago, Pago de prueba), `FormularioCulqi` (tarjeta y Yape, con la librería de Culqi cargada solo en esta ruta), `BrickMercadoPago`, `FormularioSimulado`, `BotonPagar` (deshabilitado mientras procesa; genera la `Idempotency-Key` al montar el formulario y la reutiliza en los reintentos de red).
-- **Estados:** preparando (404 con reintentos), listo, procesando, rechazado (mensaje y reintento), confirmando (202 con consulta cada 3 s), vencido, ya pagado, medio no disponible (circuito abierto).
+- **Estados:** preparando (404 con reintentos), listo, procesando (modal con spinner, CA-5-42), rechazado (mensaje y reintento en el modal), confirmando (202 con consulta cada 3 s, en el modal), vencido, ya pagado, medio no disponible (circuito abierto).
+- **Modal de pago:** `ModalPago` (`features/pago/modal-pago.ts`) con foco atrapado, `role="dialog"` y estado en `aria-live` (CA-5-43).
 - **Validaciones:** las de cada librería de pasarela; Yape: celular de 9 dígitos que empieza con 9 y código de 6 dígitos.
 - **Endpoints:** `GET /pagos/{codigo}`, `POST /pagos/{codigo}/cargos`. Scripts externos: `checkout.culqi.com`, `sdk.mercadopago.com` (dominios que la spec 8 permite en la CSP).
 
@@ -280,7 +304,7 @@ CA-5-38  Cuando lo marco como resuelto manualmente (p. ej. devolví por transfer
 - **Ruta / proyecto:** la misma `/pago/:codigo` (estado final de la página, P3) · storefront · CLIENTE.
 - **Boceto:** ![P-5-02](img/P-5-02-resultado.png)
 - **Diseño de alta fidelidad:** ✅ [canvas "FitStore Tienda"](https://claude.ai/artifact/1iacKddHAquNYuQcFPBZLg), `PagoResultado` (FitStore escritorio) y `PagoResultadoKallpaMovil` (Kallpa móvil). Copia en [`docs/diseno/`](../diseno/).
-- **Componentes:** `ResultadoPago`: aprobado (código del pedido, "Te enviamos la confirmación a tu correo", botones "Ver mi pedido" y "Descargar boleta" que aparece cuando la boleta está lista), rechazado (motivo y "Intentar de nuevo"), confirmando (indicador y texto "Puede tardar hasta 2 minutos; no cierres ni vuelvas a pagar").
+- **Componentes:** `ResultadoPago`, que se muestra dentro del modal de pago (`ModalPago`) sin sacar a la persona de la pantalla de pago: aprobado (código del pedido, "Te enviamos la confirmación a tu correo", botones "Ver mi pedido" y "Descargar boleta" que aparece cuando la boleta está lista), rechazado (motivo y "Intentar de nuevo"), confirmando (indicador y texto "Puede tardar hasta 2 minutos; no cierres ni vuelvas a pagar").
 - **Endpoints:** `GET /pagos/{codigo}` (consulta del estado y de la boleta), `GET /pagos/{codigo}/boleta`.
 
 ### P-5-03 — Pagos (backoffice)
@@ -315,6 +339,8 @@ CA-5-38  Cuando lo marco como resuelto manualmente (p. ej. devolví por transfer
 - **No es una ruta:** es la plantilla Thymeleaf `boleta.html` que se convierte a PDF (A4).
 - **Boceto:** ![P-5-06](img/P-5-06-boleta.png)
 - **Diseño de alta fidelidad:** 🕓 deriva del sistema de diseño (logo y color primario de la tienda; legible en blanco y negro).
+- **Cuadro de resumen:** a la derecha, más angosto que la tabla y con letra menor que los valores de los ítems (CA-5-41); la fila "Descuentos" solo sale si hay descuento (CA-5-45).
+- **Tabla de ítems:** columnas de ancho fijo; números a la derecha bajo su cabecera y cantidad centrada (CA-5-44).
 
 ## 5. Backend
 
@@ -347,6 +373,8 @@ Todo según el micro de payment. Decisiones de implementación de esta spec:
 | 16–19 | Integración | `DobleCobroIT` (2 hilos), `IdempotenciaCobroTest`, timeout con WireMock (202 sin reintento); 429 en la colección Postman |
 | 20–23 | API + integración | `WebhookControllerTest` (firma válida e inválida, duplicado), `VerificadorPagosTest`, circuito abierto |
 | 24–25 | Unitaria + API | `SimuladoProviderTest`, configuración habilitada y deshabilitada |
+| 41, 44–45 | Unitaria | `BoletaPdfTest` (posición y tamaño de letra del cuadro de totales, alineación de la tabla de ítems y fila de descuentos con PDFBox) |
+| 42–43 | Componente | `pago.page.spec.ts` (modal de procesamiento, resultado en el mismo modal, accesibilidad y foco) |
 | 26–29 | Datos + integración | `BoletaServiceTest` (contenido del PDF con PDFBox), `CorrelativoBoletaIT` (20 concurrentes), Garage caído (Testcontainers), descarga ajena 404 |
 | 30–32, 39–40 | Integración | `ReembolsoServiceTest` (esperas 1-5-15-60 con reloj simulado, total único por intención, parciales con suma ≤ monto y concurrencia, `ReembolsoSolicitado` duplicado), WireMock de reembolso parcial en Culqi y Mercado Pago |
 | 33–38 | API + componente | `AdminPagoControllerTest` (filtros, 403 a OPERADOR), `reembolsos.page.spec.ts` |
@@ -369,7 +397,7 @@ Todo según el micro de payment. Decisiones de implementación de esta spec:
 ## 9. Definición de terminado
 
 - [ ] Prueba de concepto documentada y spec ajustada a su resultado.
-- [ ] CA-5-01 a CA-5-40 cumplidos en CI, salvo los de extensión de alcance.
+- [ ] CA-5-01 a CA-5-45 cumplidos en CI, salvo los de extensión de alcance.
 - [ ] Postman `payment` en verde.
 - [ ] El OpenAPI de payment coincide con lo implementado; los eventos coinciden con el AsyncAPI.
 - [ ] Demostración en sandbox: pago con tarjeta de Culqi, con Yape (o con el simulado si el sandbox no lo permite, documentado), con Mercado Pago, un rechazo con reintento, un reembolso tras cancelar y un reembolso postventa parcial.

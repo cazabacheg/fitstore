@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
 import type { catalogApi } from 'shared';
+import { capitalizar } from '../../ui/capitalizar';
 import type { Filtros } from './filtros';
 
 /** Chips de los filtros activos; cada uno quita su filtro. */
@@ -66,7 +67,7 @@ export class ChipsFiltrosActivos {
         sin: (x) => ({ ...x, tallas: x.tallas.filter((y) => y !== t), pagina: 0 }),
       });
     for (const id of f.colores) {
-      const nombre = this.colores().find((c) => c.id === id)?.nombre ?? `Color ${id}`;
+      const nombre = capitalizar(this.colores().find((c) => c.id === id)?.nombre ?? `Color ${id}`);
       lista.push({
         clave: 'c' + id,
         texto: nombre,

@@ -1,9 +1,18 @@
+import { readFileSync } from 'node:fs';
 import { TestBed } from '@angular/core/testing';
 import { ToastService } from 'shared';
 import { FsToast } from './toast';
 import { montar } from '../../testing';
 
+const estilos = readFileSync(`${process.cwd()}/projects/storefront/src/styles.css`, 'utf8');
+
 describe('Toast de ui/', () => {
+  it('CA-0b-25b el ícono, el texto y la X del aviso quedan centrados en el eje vertical', () => {
+    const bloque = /\.fs-aviso\s*\{([^}]*)\}/.exec(estilos)![1];
+    expect(bloque).toMatch(/align-items:\s*center/);
+    expect(bloque).not.toMatch(/align-items:\s*flex-start/);
+  });
+
   afterEach(() => vi.useRealTimers());
 
   it('CA-0b-13 muestra el mensaje que llega por ToastService', async () => {

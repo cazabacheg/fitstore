@@ -20,17 +20,6 @@
     @case ('listo') {
       @if (pagina(); as p) {
         @switch (vista()) {
-          @case ('resultado') {
-            <fs-resultado-pago
-              [tipo]="tipoResultado()"
-              [codigo]="p.codigoPedido"
-              [motivo]="resultado()?.motivo ?? 'El pago no se pudo completar'"
-              [boletaDisponible]="p.boletaDisponible"
-              [descargando]="descargando()"
-              (reintentar)="reintentarPago()"
-              (descargarBoleta)="descargarBoleta()"
-            />
-          }
           @case ('pagado') {
             <section class="fs-estado">
               <span class="fs-icono" aria-hidden="true">task_alt</span>
@@ -160,6 +149,19 @@
           }
         }
       }
+    }
+  }
+  @if (pagina(); as p) {
+    @if (estadoModal(); as estado) {
+      <fs-modal-pago
+        [estado]="estado"
+        [codigo]="p.codigoPedido"
+        [motivo]="resultado()?.motivo ?? 'El pago no se pudo completar'"
+        [boletaDisponible]="p.boletaDisponible"
+        [descargando]="descargando()"
+        (reintentar)="reintentarPago()"
+        (descargarBoleta)="descargarBoleta()"
+      />
     }
   }
 </section>

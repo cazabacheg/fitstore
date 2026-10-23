@@ -58,6 +58,12 @@ if [[ ! -f "$JWT_DIR/privada.pem" ]]; then
 fi
 
 COMPOSE=(docker compose -f infra/docker-compose.yml -f infra/docker-compose.cloud.yml)
+# Construir con Maven junto a la plataforma en marcha agota los 8 GB de la VM y la deja sin responder (ni por SSH).
+# Con swap (ver docs/despliegue.md, paso 2) se construye en caliente; sin swap, se detiene la plataforma antes.
+if ! swapon --show | grep -q .; then
+  echo "La VM no tiene swap: se detiene la plataforma mientras se construyen las imágenes"
+  "${COMPOSE[@]}" stop
+fi
 COMPOSE_PARALLEL_LIMIT=1 "${COMPOSE[@]}" build
 "${COMPOSE[@]}" up -d --remove-orphans
 

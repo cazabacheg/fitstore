@@ -2,6 +2,7 @@ package com.fitstore.auth.controller;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.cookie;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -231,6 +232,22 @@ class AuthControllerTest extends PruebaApi {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.cuenta.tipo").value("STAFF"))
                 .andExpect(jsonPath("$.data.cuenta.rol").value("ADMIN"));
+    }
+
+    @Test
+    @DisplayName("CA-1-40 dos recargas seguidas desde el mismo navegador mantienen la sesión")
+    void recargasSeguidasMismoNavegador() throws Exception {
+        crearCliente("ana@correo.com", "45678912");
+        Cookie original = cookieDe(mvc.perform(postJson(LOGIN, credenciales("ana@correo.com", PASSWORD))).andReturn());
+        String chrome = "Mozilla/5.0 (X11; Linux x86_64) Chrome/141.0";
+        mvc.perform(post(REFRESH).cookie(original).header("User-Agent", chrome)).andExpect(status().isOk());
+
+        mvc.perform(post(REFRESH).cookie(original).header("User-Agent", chrome))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.accessToken").isNotEmpty())
+                .andExpect(cookie().exists("fs_refresh"));
+        mvc.perform(post(REFRESH).cookie(original).header("User-Agent", "Mozilla/5.0 Firefox/140.0"))
+                .andExpect(status().isUnauthorized());
     }
 
     @Test

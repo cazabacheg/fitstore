@@ -548,3 +548,124 @@ describe('Pagar con Mercado Pago, el simulado y el resultado (P-5-01 y P-5-02)',
     expect(URL.createObjectURL).toHaveBeenCalled();
   });
 });
+
+describe('Pago en un modal de procesamiento (P-5-01 y P-5-02)', () => {
+  beforeEach(() => {
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout', 'setInterval', 'clearInterval', 'Date'] });
+  });
+  afterEach(() => {
+    vi.useRealTimers();
+    TestBed.inject(HttpTestingController).verify();
+  });
+
+  const dialogo = (f: ComponentFixture<unknown>) => el(f).querySelector<HTMLElement>('[role="dialog"]');
+
+  async function pagar(f: ComponentFixture<PagoPage>, tarjeta: string) {
+    elegirMedio(f, 'Pago de prueba');
+    await estable(f);
+    const campo = el(f).querySelector<HTMLInputElement>('input[name="tarjeta-simulada"]')!;
+    campo.value = tarjeta;
+    campo.dispatchEvent(new Event('input'));
+    await estable(f);
+    boton(f, 'Pagar').click();
+    await vi.advanceTimersByTimeAsync(0);
+    await estable(f);
+  }
+
+  const APROBADA = sobre({ estado: 'APROBADA', codigoPedido: CODIGO, monto: 419.8, proveedor: 'SIMULADO', medio: 'TARJETA' });
+
+  it('CA-5-42 al pagar abre un modal de procesamiento con spinner y la pantalla de pago sigue detrás', async () => {
+    const ctrl = preparar();
+    const f = await abrir(ctrl);
+
+    await pagar(f, '4111 1111 1111 1111');
+
+    const d = dialogo(f);
+    expect(d).not.toBeNull();
+    expect(d?.textContent).toContain('Procesando tu pago');
+    expect(d?.querySelector('.fs-spinner')).not.toBeNull();
+    expect(el(f).querySelector('[role="radio"]')).not.toBeNull();
+    expect(texto(f)).toContain('Paga tu pedido');
+    ctrl.expectOne(URL_CARGOS).flush(APROBADA);
+    await estable(f);
+    ctrl.match(URL_PAGINA).forEach((r) => r.flush(sobre(pagina({ estado: 'PAGADA' }))));
+  });
+
+  it('CA-5-42 al aprobarse el mismo modal pasa a "¡Pago aprobado!" con sus botones, sin reemplazar la pantalla de pago', async () => {
+    const ctrl = preparar();
+    const f = await abrir(ctrl);
+    await pagar(f, '4111 1111 1111 1111');
+
+    ctrl.expectOne(URL_CARGOS).flush(APROBADA);
+    await estable(f);
+
+    const d = dialogo(f);
+    expect(d?.textContent).toContain('¡Pago aprobado!');
+    expect(d?.textContent).not.toContain('Procesando tu pago');
+    expect(d?.querySelector('a[href="/cuenta/pedidos/FS-000124"]')).not.toBeNull();
+    expect(texto(f)).not.toContain('Ya pagaste este pedido');
+    expect(el(f).querySelector('[role="radio"]')).not.toBeNull();
+    ctrl.match(URL_PAGINA).forEach((r) => r.flush(sobre(pagina({ estado: 'PAGADA' }))));
+  });
+
+  it('CA-5-42 al rechazarse el modal muestra el motivo y "Intentar de nuevo" lo cierra para reintentar sin salir de la pantalla', async () => {
+    const ctrl = preparar();
+    const f = await abrir(ctrl);
+    await pagar(f, '4000 0000 0000 0002');
+
+    ctrl.expectOne(URL_CARGOS).flush(errorApi('PAGO_RECHAZADO', 'Fondos insuficientes'), { status: 402, statusText: 'Payment Required' });
+    await estable(f);
+
+    expect(dialogo(f)?.textContent).toContain('No pudimos cobrar tu pago');
+    expect(dialogo(f)?.textContent).toContain('Fondos insuficientes');
+    expect(el(f).querySelector('[role="radio"]')).not.toBeNull();
+
+    boton(f, 'Intentar de nuevo').click();
+    await estable(f);
+
+    expect(dialogo(f)).toBeNull();
+    expect(texto(f)).toContain('Paga tu pedido');
+  });
+
+  it('CA-5-42 un pago en confirmación (202) mantiene el modal con "Estamos confirmando tu pago"', async () => {
+    const ctrl = preparar();
+    const f = await abrir(ctrl);
+    await pagar(f, '4000 0000 0000 0119');
+
+    ctrl
+      .expectOne(URL_CARGOS)
+      .flush(sobre({ estado: 'PROCESANDO', codigoPedido: CODIGO, monto: 419.8, proveedor: 'SIMULADO', medio: 'TARJETA' }), {
+        status: 202,
+        statusText: 'Accepted',
+      });
+    await estable(f);
+
+    expect(dialogo(f)?.textContent).toContain('Estamos confirmando tu pago');
+    await vi.advanceTimersByTimeAsync(3_000);
+    ctrl.expectOne(URL_PAGINA).flush(sobre(pagina({ estado: 'PAGADA' })));
+    await estable(f);
+    expect(dialogo(f)?.textContent).toContain('¡Pago aprobado!');
+    await vi.advanceTimersByTimeAsync(3_000);
+    ctrl.match(URL_PAGINA).forEach((r) => r.flush(sobre(pagina({ estado: 'PAGADA' }))));
+  });
+
+  it('CA-5-43 el modal es accesible: role dialog, modal, estado en aria-live y el foco queda dentro', async () => {
+    const ctrl = preparar();
+    const f = await abrir(ctrl);
+    await pagar(f, '4000 0000 0000 0002');
+
+    const d = dialogo(f)!;
+    expect(d.getAttribute('aria-modal')).toBe('true');
+    expect(d.getAttribute('aria-label') ?? d.getAttribute('aria-labelledby')).toBeTruthy();
+    expect(d.querySelector('[aria-live="polite"]')).not.toBeNull();
+    expect(d.contains(document.activeElement)).toBe(true);
+
+    ctrl.expectOne(URL_CARGOS).flush(errorApi('PAGO_RECHAZADO', 'Fondos insuficientes'), { status: 402, statusText: 'Payment Required' });
+    await estable(f);
+    await vi.advanceTimersByTimeAsync(0);
+    await estable(f);
+
+    expect(d.contains(document.activeElement)).toBe(true);
+    expect(document.activeElement?.textContent).toContain('Intentar de nuevo');
+  });
+});
