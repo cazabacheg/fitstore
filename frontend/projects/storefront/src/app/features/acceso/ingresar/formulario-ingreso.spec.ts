@@ -32,7 +32,15 @@ async function iniciar(returnUrl: string | null = '/carrito') {
 }
 
 describe('FormularioIngreso (P-1-01)', () => {
-  afterEach(() => TestBed.inject(HttpTestingController).verify());
+  // Cada prueba arranca sin carrito anónimo; la que lo necesita lo guarda ella misma
+  beforeEach(() => localStorage.removeItem('fs_carrito_id'));
+
+  afterEach(() => {
+    // Tras ingresar se carga el carrito del cliente (contador de la bolsa): no es lo que estas pruebas miran
+    const ctrl = TestBed.inject(HttpTestingController);
+    ctrl.match('/api/v1/carrito').forEach((r) => r.flush({ success: true, mensaje: 'ok', data: null }));
+    ctrl.verify();
+  });
 
   it('CA-1-04 ingresa con correo y contraseña, guarda la sesión y vuelve a la ruta de origen (?returnUrl=)', async () => {
     const f = await iniciar('/carrito');
@@ -49,6 +57,25 @@ describe('FormularioIngreso (P-1-01)', () => {
     expect(f.store.autenticado()).toBe(true);
     expect(f.store.cuenta()?.email).toBe('rosa@correo.pe');
     expect(f.navegar).toHaveBeenCalledWith('/carrito');
+  });
+
+  it('CA-4-12 con carrito anónimo fusiona antes de volver a la ruta de origen, para que el checkout ya vea los productos', async () => {
+    localStorage.setItem('fs_carrito_id', '3f6b2a10-7c4e-4a52-9d1b-0e8f5a6c7d21');
+    const f = await iniciar('/checkout');
+    await f.escribir('email', 'rosa@correo.pe');
+    await f.escribir('password', 'Gamarra2026');
+    await f.enviar();
+    f.ctrl.expectOne(RUTA).flush(sesion(SESION_CLIENTE));
+    await f.estabilizar();
+
+    expect(f.navegar).not.toHaveBeenCalled();
+    const fusion = f.ctrl.expectOne('/api/v1/carrito/fusionar');
+    expect(fusion.request.method).toBe('POST');
+    fusion.flush({ success: true, mensaje: 'ok', data: { lineas: [], avisosTramo: [], subtotal: 0, descuentoTotal: 0, total: 0, cantidadTotal: 2, preciosPorConfirmar: false, puedeIrAlCheckout: true } });
+    await f.estabilizar();
+
+    expect(f.navegar).toHaveBeenCalledWith('/checkout');
+    expect(localStorage.getItem('fs_carrito_id')).toBeNull();
   });
 
   it('CA-1-04 sin returnUrl, o con uno que apunta fuera de la tienda, va al inicio', async () => {

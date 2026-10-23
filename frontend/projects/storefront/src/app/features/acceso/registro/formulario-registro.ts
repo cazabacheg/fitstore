@@ -15,6 +15,7 @@ import {
   errorPassword,
   rutaDeRetorno,
 } from '../validaciones';
+import { CarritoService } from '../../carrito/carrito.service';
 import { IndicadorFortaleza } from './indicador-fortaleza';
 
 type Politicas = Pick<settingsApi.VersionesPoliticas, 'terminos' | 'privacidad'>;
@@ -145,6 +146,7 @@ export class FormularioRegistro {
   private readonly publica = inject(ConfiguracionPublicaService);
   private readonly sesion = inject(SesionStore);
   private readonly router = inject(Router);
+  private readonly carritos = inject(CarritoService);
 
   /** Ruta de origen (`?returnUrl=`): tras registrarse se vuelve a ella (CA-1-01). */
   readonly returnUrl = input<string | null>(null);
@@ -257,7 +259,10 @@ export class FormularioRegistro {
           this.enviando.set(false);
           if (!respuesta.data) return;
           this.sesion.iniciarSesion(respuesta.data);
-          void this.router.navigateByUrl(rutaDeRetorno(this.returnUrl()));
+          // CA-4-12: el carrito anónimo se fusiona antes de volver, para que el checkout ya lo vea
+          this.carritos.alIniciarSesion().subscribe(() => {
+            void this.router.navigateByUrl(rutaDeRetorno(this.returnUrl()));
+          });
         },
         error: (error: unknown) => {
           this.enviando.set(false);

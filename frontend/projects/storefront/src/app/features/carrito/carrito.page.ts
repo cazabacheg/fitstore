@@ -1,4 +1,4 @@
-import { Component, DestroyRef, effect, inject, signal } from '@angular/core';
+import { Component, DestroyRef, inject, signal } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import { PrecioPipe, orderApi } from 'shared';
 import { FsBoton } from '../../ui/boton/boton';
@@ -179,11 +179,16 @@ export const ESPERA_CANTIDAD_MS = 400;
             }
             <div class="fs-carrito fs-dos-columnas">
               <section style="display: grid; align-content: start">
+                @for (m of carritos.avisos(); track m) {
+                  <p class="fs-banner-aviso" role="status">{{ m }}</p>
+                }
                 @for (a of c.avisosTramo; track a.productoId) {
                   @if (a.siguienteTramo; as s) {
+                    @if (carritos.tramoAlcanzable(a)) {
                     <p class="fs-aviso-tramo">
                       {{ a.producto }}: agrega {{ s.faltan }} más y ahorra {{ s.porcentaje }} %
                     </p>
+                    }
                   }
                 }
                 <ul class="carrito__lineas">
@@ -241,7 +246,7 @@ export const ESPERA_CANTIDAD_MS = 400;
                               variante="contorno"
                               tamano="sm"
                               aria-label="Agregar una unidad"
-                              [disabled]="cantidadMostrada(l) >= maximoUnidades"
+                              [disabled]="cantidadMostrada(l) >= tope(l)"
                               (click)="cambiar(l, 1)"
                             >
                               +
@@ -256,10 +261,11 @@ export const ESPERA_CANTIDAD_MS = 400;
                             fsBoton
                             variante="texto"
                             tamano="sm"
+                            title="Quitar"
                             [attr.aria-label]="'Quitar ' + l.producto"
                             (click)="carritos.quitar(l.varianteId)"
                           >
-                            Quitar
+                            <span class="fs-icono" aria-hidden="true">delete</span>
                           </button>
                           <strong class="fs-linea__total">{{ l.total | precio }}</strong>
                         </div>
@@ -277,9 +283,11 @@ export const ESPERA_CANTIDAD_MS = 400;
                 <div class="fs-resumen__fila">
                   <span>Subtotal</span><span>{{ c.subtotal | precio }}</span>
                 </div>
-                <div class="fs-resumen__fila fs-resumen__fila--descuento">
-                  <span>Descuento</span><span>-{{ c.descuentoTotal | precio }}</span>
-                </div>
+                @if (c.descuentoTotal > 0) {
+                  <div class="fs-resumen__fila fs-resumen__fila--descuento">
+                    <span>Descuento</span><span>-{{ c.descuentoTotal | precio }}</span>
+                  </div>
+                }
                 <hr class="fs-separador" />
                 <div class="fs-resumen__fila fs-resumen__total">
                   <strong>Total</strong><strong>{{ c.total | precio }}</strong>
@@ -327,22 +335,20 @@ export class CarritoPage {
 
   protected readonly maximoUnidades = 100;
   protected readonly confirmandoVaciar = signal(false);
-  /** Cantidad que la persona ve mientras espera los 400 ms; vuelve a la del servidor al llegar su respuesta. */
-  private readonly pendientes = signal<Record<number, number>>({});
   private readonly temporizadores = new Map<number, ReturnType<typeof setTimeout>>();
 
   constructor() {
     this.carritos.cargar();
-    // Cada respuesta del servidor (éxito o rechazo) deja la línea con la cantidad que el servidor tiene
-    effect(() => {
-      this.carritos.carrito();
-      this.pendientes.set({});
-    });
     this.destruir.onDestroy(() => this.temporizadores.forEach((t) => clearTimeout(t)));
   }
 
   protected cantidadMostrada(linea: orderApi.LineaCarrito): number {
-    return this.pendientes()[linea.varianteId] ?? linea.cantidad;
+    return linea.cantidad;
+  }
+
+  /** Hasta cuánto se puede subir: el límite por línea o el stock que el servidor informó, lo que sea menor (CA-4-63). */
+  protected tope(linea: orderApi.LineaCarrito): number {
+    return Math.min(this.maximoUnidades, this.carritos.stockMaximo(linea.varianteId) ?? this.maximoUnidades);
   }
 
   /** "7 prendas" junto al título, como en el diseño. */
@@ -351,10 +357,11 @@ export class CarritoPage {
     return total === 1 ? '1 prenda' : `${total} prendas`;
   }
 
-  /** Espera 400 ms desde el último toque antes de llamar a la API (CA-4-03). */
+  /** Muestra el cambio al instante y espera 400 ms desde el último toque antes de llamar a la API (CA-4-03, CA-4-66). */
   protected cambiar(linea: orderApi.LineaCarrito, delta: number): void {
-    const nueva = Math.min(this.maximoUnidades, Math.max(1, this.cantidadMostrada(linea) + delta));
-    this.pendientes.update((p) => ({ ...p, [linea.varianteId]: nueva }));
+    const actual = this.carritos.carrito()?.lineas.find((l) => l.varianteId === linea.varianteId) ?? linea;
+    const nueva = Math.min(this.maximoUnidades, Math.max(1, actual.cantidad + delta));
+    this.carritos.previsualizar(linea.varianteId, nueva); // CA-4-66: se ve al instante
     clearTimeout(this.temporizadores.get(linea.varianteId));
     this.temporizadores.set(
       linea.varianteId,

@@ -3,6 +3,7 @@ import { HttpTestingController, provideHttpClientTesting } from '@angular/common
 import { TestBed } from '@angular/core/testing';
 import { SesionStore } from '../auth/sesion.store';
 import { SESION_STAFF } from '../testing/datos';
+import { leerCarritoId, olvidarCarritoId } from './interceptores';
 import { provideFitstoreHttp } from './proveedores';
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
@@ -88,12 +89,34 @@ describe('Interceptor carritoId', () => {
 
   it('CA-0b-14 sigue mandando X-Carrito-Id con sesión (la fusión necesita el JWT y el id)', () => {
     const { http, ctrl, store } = configurar({ carrito: true });
+    localStorage.setItem('fs_carrito_id', '3f6b2a10-7c4e-4a52-9d1b-0e8f5a6c7d21');
     store.iniciarSesion({ ...SESION_STAFF, accessToken: 'tok' });
 
     http.post('/api/v1/carrito/fusionar', {}).subscribe();
 
     const req = ctrl.expectOne('/api/v1/carrito/fusionar');
-    expect(req.request.headers.get('X-Carrito-Id')).toMatch(UUID);
+    expect(req.request.headers.get('X-Carrito-Id')).toBe('3f6b2a10-7c4e-4a52-9d1b-0e8f5a6c7d21');
     expect(req.request.headers.get('Authorization')).toBe('Bearer tok');
+  });
+
+  it('CA-4-10 con sesión no inventa un carritoId nuevo: sin id guardado no manda la cabecera ni lo guarda', () => {
+    const { http, ctrl, store } = configurar({ carrito: true });
+    store.iniciarSesion({ ...SESION_STAFF, accessToken: 'tok' });
+
+    http.get('/api/v1/carrito').subscribe();
+
+    expect(ctrl.expectOne('/api/v1/carrito').request.headers.has('X-Carrito-Id')).toBe(false);
+    expect(localStorage.getItem('fs_carrito_id')).toBeNull();
+  });
+
+  it('CA-4-10 olvidarCarritoId borra el id del navegador y leerCarritoId deja de verlo', () => {
+    configurar({ carrito: true });
+    localStorage.setItem('fs_carrito_id', '3f6b2a10-7c4e-4a52-9d1b-0e8f5a6c7d21');
+    expect(leerCarritoId()).toBe('3f6b2a10-7c4e-4a52-9d1b-0e8f5a6c7d21');
+
+    olvidarCarritoId();
+
+    expect(leerCarritoId()).toBeNull();
+    expect(localStorage.getItem('fs_carrito_id')).toBeNull();
   });
 });

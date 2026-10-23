@@ -55,11 +55,34 @@ function idDeCarrito(): string {
 }
 let idEnMemoria: string | undefined;
 
-/** 3. Solo la tienda: agrega `X-Carrito-Id` en `/carrito/**`, también con sesión (la fusión necesita ambos). */
-export const carritoIdInterceptor: HttpInterceptorFn = (req, next) =>
-  RUTA_CARRITO.test(req.url)
-    ? next(req.clone({ setHeaders: { 'X-Carrito-Id': idDeCarrito() } }))
-    : next(req);
+/** El `carritoId` anónimo que ya tiene el navegador, o `null` si todavía no armó ningún carrito sin sesión. */
+export function leerCarritoId(): string | null {
+  try {
+    return localStorage.getItem(CLAVE_CARRITO_ID) ?? idEnMemoria ?? null;
+  } catch {
+    return idEnMemoria ?? null;
+  }
+}
+
+/** Borra el `carritoId` del navegador: se llama cuando el carrito anónimo ya se fusionó con el de la cuenta (CA-4-10). */
+export function olvidarCarritoId(): void {
+  idEnMemoria = undefined;
+  try {
+    localStorage.removeItem(CLAVE_CARRITO_ID);
+  } catch {
+    // Sin almacenamiento disponible: no hay nada que borrar.
+  }
+}
+
+/**
+ * 3. Solo la tienda: agrega `X-Carrito-Id` en `/carrito/**`. Sin sesión lo crea si falta; con sesión solo manda el que
+ * ya existe (la fusión lo necesita junto al JWT) y no inventa uno nuevo, para que tras fusionar no vuelva a aparecer.
+ */
+export const carritoIdInterceptor: HttpInterceptorFn = (req, next) => {
+  if (!RUTA_CARRITO.test(req.url)) return next(req);
+  const id = inject(SesionStore).token() ? leerCarritoId() : idDeCarrito();
+  return next(id ? req.clone({ setHeaders: { 'X-Carrito-Id': id } }) : req);
+};
 
 /**
  * 4. Ante un 401 hace UN solo refresh compartido y reintenta con el token nuevo (CA-0b-10).

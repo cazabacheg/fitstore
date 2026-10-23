@@ -5,7 +5,7 @@ import { vi } from 'vitest';
 import { montar } from '../../testing';
 import { CarritoPage, ESPERA_CANTIDAD_MS } from './carrito.page';
 import { CarritoService } from './carrito.service';
-import { PROVEEDORES, carrito, errorApi, http, linea, ok } from './pruebas-carrito';
+import { PROVEEDORES, carrito, conTramo, errorApi, http, linea, ok } from './pruebas-carrito';
 
 const RUTA = '/api/v1/carrito';
 
@@ -199,5 +199,72 @@ describe('Carrito (P-4-01)', () => {
     await m.estabilizar();
 
     expect(m.el.textContent).toContain('No pudimos cargar tu carrito');
+  });
+  it('CA-4-63 al llegar al stock que informó el servidor el "+" se deshabilita y no se sugiere un tramo inalcanzable', async () => {
+    const p = await iniciar(conTramo(2));
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
+    expect(p.el.textContent).toContain('agrega 1 más y ahorra 10 %');
+
+    p.porEtiqueta('Agregar una unidad').click();
+    vi.advanceTimersByTime(ESPERA_CANTIDAD_MS);
+    http()
+      .expectOne(`${RUTA}/items/101`)
+      .flush(errorApi('STOCK_INSUFICIENTE', 'Solo quedan 2 unidades', { disponible: 2 }), {
+        status: 409,
+        statusText: 'Conflict',
+      });
+    await p.estabilizar();
+
+    expect(p.el.querySelector('.fs-linea__unidades')?.textContent).toBe('2');
+    expect(p.porEtiqueta('Agregar una unidad').disabled).toBe(true);
+    expect(p.el.textContent).not.toContain('ahorra 10 %');
+  });
+
+  it('CA-4-63 una línea con STOCK_INSUFICIENTE y disponible deshabilita el "+" desde que se carga', async () => {
+    const p = await iniciar(conTramo(3, { estado: 'STOCK_INSUFICIENTE', disponible: 3 }));
+
+    expect(p.porEtiqueta('Agregar una unidad').disabled).toBe(true);
+  });
+
+  it('CA-4-64 si el descuento total es 0 la fila "Descuento" no aparece, y con descuento sí', async () => {
+    const sin = await iniciar(carrito([linea(101, 'Legging Pro', 2)]));
+    expect(sin.el.textContent).not.toContain('Descuento');
+    expect(sin.el.textContent).not.toContain('-S/ 0.00');
+    TestBed.resetTestingModule();
+
+    const con = await iniciar(conTramo(3));
+    expect(con.el.textContent).toContain('Descuento');
+    expect(con.el.textContent).toContain('-S/ 17.97');
+  });
+
+  it('CA-4-65 "Quitar" es un ícono de tacho con nombre accesible, no un texto', async () => {
+    const p = await iniciar(carrito([linea(101, 'Legging Pro', 1)]));
+
+    const quitar = p.el.querySelector<HTMLButtonElement>('button[aria-label="Quitar Legging Pro"]')!;
+    expect(quitar.title).toBe('Quitar');
+    expect(quitar.querySelector('.fs-icono')?.textContent?.trim()).toBe('delete');
+    expect(quitar.textContent?.replace('delete', '').trim()).toBe('');
+    quitar.click();
+    expect(http().expectOne(`${RUTA}/items/101`).request.method).toBe('DELETE');
+  });
+
+  it('CA-4-66 al tocar "+" el descuento y los totales se ven al instante, sin esperar a la API', async () => {
+    const p = await iniciar(conTramo(2));
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
+
+    p.porEtiqueta('Agregar una unidad').click();
+    await p.estabilizar();
+
+    expect(p.el.querySelector('.fs-linea__unidades')?.textContent).toBe('3');
+    expect(p.el.textContent).toContain('Ahorras S/ 17.97 (10 %)');
+    expect(p.el.textContent).toContain('S/ 161.73');
+    http().expectNone(`${RUTA}/items/101`);
+
+    vi.advanceTimersByTime(ESPERA_CANTIDAD_MS);
+    const cambio = http().expectOne(`${RUTA}/items/101`);
+    expect(cambio.request.body).toEqual({ cantidad: 3 });
+    cambio.flush(ok(conTramo(3, { descuentoPorcentaje: 12, descuentoMonto: 21.56, total: 158.14 })));
+    await p.estabilizar();
+    expect(p.el.textContent).toContain('Ahorras S/ 21.56 (12 %)');
   });
 });

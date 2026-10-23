@@ -311,13 +311,11 @@ class AdminPedidoControllerTest extends ApiBase {
     // ---------- extensión de alcance: responden 501 con la misma firma del contrato ----------
 
     @Test
-    @DisplayName("extensión de alcance: fusionar, el resumen de ventas y el reembolso postventa responden 501 EXTENSION_DE_ALCANCE")
+    @DisplayName("extensión de alcance: el resumen de ventas y el reembolso postventa responden 501 EXTENSION_DE_ALCANCE")
     void extensionesDeAlcance() throws Exception {
         Pedido p = pedido(cliente, EstadoPedido.ENTREGADO, Modalidad.DELIVERY_LOCAL);
 
-        mvc.perform(post("/api/v1/carrito/fusionar").with(Sesiones.cliente(cliente)))
-                .andExpect(status().isNotImplemented())
-                .andExpect(jsonPath("$.codigo").value("EXTENSION_DE_ALCANCE"));
+        // POST /carrito/fusionar ya no es extensión de alcance (SPEC-4 v12, HU-4-02): lo cubre FusionCarritoTest
         mvc.perform(get("/api/v1/admin/pedidos/resumen").with(Sesiones.admin()))
                 .andExpect(status().isNotImplemented())
                 .andExpect(jsonPath("$.codigo").value("EXTENSION_DE_ALCANCE"));
