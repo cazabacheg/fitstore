@@ -11,8 +11,8 @@
 		Referrer-Policy "strict-origin-when-cross-origin"
 		# El hash es del único script en línea que genera Angular (carga diferida del CSS crítico); si cambia el
 		# constructor de Angular, se recalcula con el índice compilado (ver docs/despliegue.md).
-		# Solo la propia tienda, sus imágenes (/media), las fuentes de Google y los scripts de Culqi y Mercado Pago (CA-8-17)
-		Content-Security-Policy "default-src 'self'; script-src 'self' 'sha256-LMY6wYoFV9I4wWzxaq1N/dTpl4iurQktw706UCHK3vM=' https://checkout.culqi.com https://sdk.mercadopago.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob:; connect-src 'self' https://api.culqi.com https://secure.culqi.com https://api.mercadopago.com https://api.mercadolibre.com https://*.mercadopago.com; frame-src https://checkout.culqi.com https://*.mercadopago.com https://*.mercadolibre.com; object-src 'none'; base-uri 'self'; frame-ancestors 'none'"
+		# Solo la propia tienda, sus imágenes (/media, también desde el panel: MEDIA_BASE_URL apunta a tienda.<DOMINIO>), las fuentes de Google y los scripts de Culqi y Mercado Pago (CA-8-17)
+		Content-Security-Policy "default-src 'self'; script-src 'self' 'sha256-LMY6wYoFV9I4wWzxaq1N/dTpl4iurQktw706UCHK3vM=' https://checkout.culqi.com https://sdk.mercadopago.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' https://tienda.{$DOMINIO} data: blob:; connect-src 'self' https://api.culqi.com https://secure.culqi.com https://api.mercadopago.com https://api.mercadolibre.com https://*.mercadopago.com; frame-src https://checkout.culqi.com https://*.mercadopago.com https://*.mercadolibre.com; object-src 'none'; base-uri 'self'; frame-ancestors 'none'"
 		-Server
 	}
 }

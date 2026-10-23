@@ -111,6 +111,9 @@ verificar "CA-8-17 HSTS, nosniff, Referrer-Policy y CSP presentes" bash -c "
   h=\$(curl -sI --max-time 20 '$TIENDA/'); grep -qi '^strict-transport-security' <<<\"\$h\" &&
   grep -qi '^x-content-type-options: nosniff' <<<\"\$h\" && grep -qi '^referrer-policy' <<<\"\$h\" &&
   grep -qi '^content-security-policy' <<<\"\$h\""
+# CA-8-17 El panel carga las imágenes de la tienda: MEDIA_BASE_URL apunta a tienda.<DOMINIO>/media
+verificar "CA-8-17 la CSP del panel permite las imágenes de la tienda" bash -c "
+  curl -sI --max-time 20 '$ADMIN/' | grep -i '^content-security-policy' | grep -q 'img-src [^;]*$TIENDA'"
 verificar "CA-8-18 /swagger-ui pide contraseña (401 sin credenciales)" bash -c "[[ \"\$(curl -s -o /dev/null -w '%{http_code}' --max-time 20 '$ADMIN/swagger-ui/index.html')\" == 401 ]]"
 if [[ -n "${SWAGGER_PASSWORD:-}" ]]; then
   verificar "CA-8-18 /swagger-ui abre con usuario y contraseña" bash -c "[[ \"\$(curl -s -o /dev/null -w '%{http_code}' --max-time 20 -u '$SWAGGER_USER:$SWAGGER_PASSWORD' '$ADMIN/swagger-ui/index.html')\" == 200 ]]"
